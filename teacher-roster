@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>師資陣容管理系統</title>
+
+  <!-- Tailwind 與 XLSX（CDN） -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- fonts（推薦加 preconnect，GitHub Pages 也OK） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
+    body{font-family:'Noto Sans TC',system-ui,-apple-system,sans-serif}
+    .fade-in{animation:fadeIn .3s ease-in}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .slide-in{animation:slideIn .3s ease-out}@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+    .move-transition{transition:transform .2s ease-in-out}
+    .location-option.selected{border-color:#3b82f6;background-color:#eff6ff}
+    .location-option.selected.onboard{border-color:#3b82f6;background-color:#dbeafe}
+    .location-option.selected.onshore{border-color:#10b981;background-color:#d1fae5}
+    .teacher-type-option.selected{border-color:#3b82f6;background-color:#eff6ff}
+    .teacher-type-option.selected.internal{border-color:#3b82f6;background-color:#dbeafe}
+    .teacher-type-option.selected.external{border-color:#8b5cf6;background-color:#f3e8ff}
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <!-- 標題區域 -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-gray-800 mb-2">師資陣容管理</h1>
+      <p class="text-gray-600">管理您的教師團隊資訊</p>
+    </div>
+
+    <!-- 師資列表頁面 -->
+    <div id="teacherList" class="fade-in">
+      <div class="flex flex-col space-y-4 mb-6">
+        <!-- 標題和模式切換 -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+          <div class="flex items-center space-x-4">
+            <h2 class="text-2xl font-semibold text-gray-800">師資列表</h2>
+
+            <!-- 模式切換 -->
+            <div class="flex bg-gray-100 rounded-lg p-1">
+              <button onclick="switchMode('edit')" id="editModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white">✏️ 編輯模式</button>
+              <button onclick="switchMode('display')" id="displayModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800">👁️ 呈現模式</button>
+            </div>
+
+            <div class="flex space-x-3">
+              <!-- 匯出 -->
+              <div class="flex space-x-2">
+                <button type="button" onclick="exportToCSV_API()" id="exportCSVBtn" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
+                  <span>📊</span><span>CSV</span>
+                </button>
+                <button type="button" onclick="exportToXLSX_API()" id="exportXLSXBtn" class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
+                  <span>📋</span><span>XLSX</span>
+                </button>
+              </div>
+
+              <!-- 雲端同步（未設定 API 會自動隱藏） -->
+              <div class="flex space-x-2">
+                <button type="button" onclick="cloudLoad()" class="cloud-btn bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
+                  ☁️ 由雲端載入
+                </button>
+                <button type="button" onclick="cloudSave()" class="cloud-btn bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
+                  ☁️ 儲存到雲端
+                </button>
+              </div>
+
+              <!-- 測試 -->
+              <button type="button" onclick="testFunction()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm">測試</button>
+
+              <!-- 統計 -->
+              <button onclick="showStatisticsView()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
+                <span>📈</span><span>統計分析</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 搜尋 + 新增 -->
+          <div class="flex flex-col md:flex-row items-stretch md:items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto">
+            <div class="relative">
+              <input id="searchInput" type="text" placeholder="搜尋師資姓名、課程、經歷..." class="w-full md:w-80 px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" oninput="searchTeachers()">
+              <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</div>
+              <button onclick="clearSearch()" id="clearBtn" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">✕</button>
+            </div>
+            <button onclick="addNewTeacher()" id="addTeacherBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 shadow-lg hover:shadow-xl whitespace-nowrap">
+              ➕ 新增師資
+            </button>
+          </div>
+        </div>
+
+        <!-- 模式說明 -->
+        <div id="modeDescription" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div class="flex items-center space-x-2">
+            <span class="text-blue-600">ℹ️</span>
+            <span class="text-blue-700 text-sm font-medium">編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 搜尋提示 -->
+      <div id="searchResults" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <span class="text-blue-700 font-medium"></span>
+      </div>
+
+      <!-- 卡片網格 -->
+      <div id="teacherGrid" class="grid gap-6"></div>
+    </div>
+
+    <!-- 統計頁 -->
+    <div id="executiveView" class="hidden fade-in">
+      <div class="bg-white rounded-xl shadow-2xl p-8 max-w-7xl mx-auto">
+        <button onclick="backToListFromExecutive()" class="mb-6 text-purple-600 hover:text-purple-800 font-medium flex items-center transition-colors">← 返回師資管理</button>
+        <div class="text-center mb-8">
+          <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">師資統計分析</h1>
+          <p class="text-gray-600">深度分析師資陣容結構與分布</p>
+        </div>
+
+        <!-- 統計卡 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-blue-100 text-sm font-medium">總師資數量</p>
+                <p id="totalCount" class="text-3xl font-bold">0</p>
+              </div><div class="text-4xl opacity-80">👥</div>
+            </div>
+          </div>
+          <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-6 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-indigo-100 text-sm font-medium">內部師資</p>
+                <p id="internalCount" class="text-3xl font-bold">0</p>
+                <p id="internalPercent" class="text-indigo-200 text-xs">0%</p>
+              </div><div class="text-4xl opacity-80">👨‍💼</div>
+            </div>
+          </div>
+          <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-purple-100 text-sm font-medium">外部師資</p>
+                <p id="externalCount" class="text-3xl font-bold">0</p>
+                <p id="externalPercent" class="text-purple-200 text-xs">0%</p>
+              </div><div class="text-4xl opacity-80">👨‍🎓</div>
+            </div>
+          </div>
+          <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-green-100 text-sm font-medium">海上/陸地</p>
+                <p class="text-lg font-bold"><span id="onboardCount">0</span>/<span id="onshoreCount">0</span></p>
+                <p id="locationRatio" class="text-green-200 text-xs">比例 0:0</p>
+              </div><div class="text-4xl opacity-80">🚢</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 詳細分析 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">📊</span>師資類型分析</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-blue-500 rounded-full"></div><span class="font-medium text-gray-700">內部師資</span></div>
+                <div class="text-right"><div class="font-bold text-blue-600" id="internalCountDetail">0 位</div><div class="text-sm text-gray-500" id="internalPercentDetail">0%</div></div>
+              </div>
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-purple-500 rounded-full"></div><span class="font-medium text-gray-700">外部師資</span></div>
+                <div class="text-right"><div class="font-bold text-purple-600" id="externalCountDetail">0 位</div><div class="text-sm text-gray-500" id="externalPercentDetail">0%</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">🗺️</span>工作地點分析</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-orange-500 rounded-full"></div><span class="font-medium text-gray-700">海上工作</span></div>
+                <div class="text-right"><div class="font-bold text-orange-600" id="onboardCountDetail">0 位</div><div class="text-sm text-gray-500" id="onboardPercentDetail">0%</div></div>
+              </div>
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-green-500 rounded-full"></div><span class="font-medium text-gray-700">陸地工作</span></div>
+                <div class="text-right"><div class="font-bold text-green-600" id="onshoreCountDetail">0 位</div><div class="text-sm text-gray-500" id="onshorePercentDetail">0%</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 交叉分析 -->
+        <div class="bg-gray-50 rounded-xl p-6 mb-8">
+          <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">🔄</span>交叉分析</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold text-orange-600" id="internalOnboard">0</div><div class="text-sm text-gray-600">內部海上師資</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold text-green-600" id="internalOnshore">0</div><div class="text-sm text-gray-600">內部陸地師資</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold text-orange-600" id="externalOnboard">0</div><div class="text-sm text-gray-600">外部海上師資</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold text-green-600" id="externalOnshore">0</div><div class="text-sm text-gray-600">外部陸地師資</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 課程統計 -->
+        <div class="bg-gray-50 rounded-xl p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">📚</span>課程統計分析</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg p-4 shadow-sm text-center">
+              <div class="text-3xl font-bold text-indigo-600" id="totalSubjects">0</div>
+              <div class="text-sm text-gray-600 mt-1">總課程數</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 shadow-sm text-center">
+              <div class="text-3xl font-bold text-purple-600" id="avgSubjectsPerTeacher">0</div>
+              <div class="text-sm text-gray-600 mt-1">平均每人課程數</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 shadow-sm text-center">
+              <div class="text-3xl font-bold text-orange-600" id="uniqueSubjects">0</div>
+              <div class="text-sm text-gray-600 mt-1">不重複課程數</div>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h4 class="text-lg font-semibold text-gray-700 mb-3">熱門課程排行</h4>
+            <div id="popularSubjects" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 師資詳細（呈現模式） -->
+    <div id="teacherDetailView" class="hidden slide-in">
+      <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
+        <button onclick="backToList()" class="mb-6 text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors">← 返回師資列表</button>
+        <div id="teacherDetailContent"></div>
+      </div>
+    </div>
+
+    <!-- 師資詳細（編輯） -->
+    <div id="teacherDetail" class="hidden slide-in">
+      <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
+        <button onclick="backToList()" class="mb-6 text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors">← 返回師資列表</button>
+        <form id="teacherForm" class="space-y-6">
+          <!-- 基本資訊 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">基本資訊</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">姓名 *</label>
+                <input type="text" id="teacherName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input type="email" id="teacherEmail" placeholder="example@email.com" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-3">師資類型 *</label>
+                <div class="flex space-x-4">
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="teacherType" value="internal" id="typeInternal" class="sr-only">
+                    <div class="teacher-type-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-blue-400 hover:bg-blue-50">
+                      <div class="text-2xl">👨‍💼</div>
+                      <div><div class="font-medium text-gray-800">內部師資</div><div class="text-sm text-gray-500">公司內部教師</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="teacherType" value="external" id="typeExternal" class="sr-only">
+                    <div class="teacher-type-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-purple-400 hover:bg-purple-50">
+                      <div class="text-2xl">👨‍🎓</div>
+                      <div><div class="font-medium text-gray-800">外部師資</div><div class="text-sm text-gray-500">外聘專業教師</div></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-3">工作地點 *</label>
+                <div class="flex space-x-4">
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="workLocation" value="onboard" id="locationOnboard" class="sr-only">
+                    <div class="location-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-orange-400 hover:bg-orange-50">
+                      <div class="text-2xl">🚢</div><div><div class="font-medium text-gray-800">在船</div><div class="text-sm text-gray-500">海上工作</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="workLocation" value="onshore" id="locationOnshore" class="sr-only">
+                    <div class="location-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-green-400 hover:bg-green-50">
+                      <div class="text-2xl">🏢</div><div><div class="font-medium text-gray-800">在岸</div><div class="text-sm text-gray-500">陸地工作</div></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">照片</label>
+                <div class="flex items-center space-x-4">
+                  <div id="photoPreview" class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-2xl">👤</div>
+                  <input type="file" id="teacherPhoto" accept="image/*" class="hidden" onchange="previewPhoto(this)">
+                  <button type="button" onclick="document.getElementById('teacherPhoto').click()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">選擇照片</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 經歷 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800">工作經歷</h3>
+              <button type="button" onclick="addExperience()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增經歷</button>
+            </div>
+            <div id="experienceList" class="space-y-3"></div>
+          </div>
+
+          <!-- 證書 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800">證書與資格</h3>
+              <button type="button" onclick="addCertificate()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增證書</button>
+            </div>
+            <div id="certificateList" class="space-y-3"></div>
+          </div>
+
+          <!-- 課程 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800">講授課程</h3>
+              <button type="button" onclick="addSubject()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增課程</button>
+            </div>
+            <div id="subjectList" class="space-y-3"></div>
+          </div>
+
+          <div class="flex justify-between pt-6">
+            <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors hidden">🗑️ 刪除師資</button>
+            <div class="flex space-x-4 ml-auto">
+              <button type="button" onclick="backToList()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">取消</button>
+              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">💾 儲存</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ========= 可選：填入你的 Apps Script Web App /exec =========
+       例：const API_BASE = 'https://script.google.com/macros/s/xxxxxxxxxxxx/exec';
+       未設定（空字串）時，雲端按鈕會自動隱藏，只用本機 localStorage。
+    */
+    const API_BASE = '';
+
+    function hasAPI(){
+      return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
+    }
+
+    // 師資資料存儲
+    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+    let currentTeacherId = null;
+    let draggedElement = null;
+    let filteredTeachers = [];
+    let currentMode = 'edit';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      renderTeacherGrid();
+      setupLocationSelection();
+      // 未設定 API 就隱藏雲端按鈕
+      if (!hasAPI()) {
+        document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
+      }
+    });
+
+    // ====== 雲端同步：載入與儲存（Apps Script） ======
+    async function cloudLoad(){
+      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+      try{
+        const res = await fetch(API_BASE, { method: 'GET' });
+        const data = await res.json();
+        if(Array.isArray(data)){
+          teachers = data;
+          localStorage.setItem('teachers', JSON.stringify(teachers));
+          renderTeacherGrid();
+          alert('已從雲端載入 ' + teachers.length + ' 筆資料');
+        }else{
+          alert('雲端回傳格式不正確');
+        }
+      }catch(err){
+        console.error(err); alert('雲端載入失敗，請稍後再試');
+      }
+    }
+    function _sanitizeForCloud(){
+      return teachers.map(t=>({
+        id:t.id, name:t.name, email:t.email,
+        teacherType:t.teacherType, workLocation:t.workLocation,
+        experiences:t.experiences||[],
+        certificates:(t.certificates||[]).map(c=>typeof c==='string'?c:(c?.name||'')),
+        subjects:t.subjects||[]
+      }));
+    }
+    async function cloudSave(){
+      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+      try{
+        const payload = { action:'saveAll', teachers:_sanitizeForCloud() };
+        const res = await fetch(API_BASE, {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // 避免 preflight
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data.ok){
+          alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
+        }else{
+          alert('儲存失敗：' + (data.error || '未知錯誤'));
+        }
+      }catch(err){
+        console.error(err); alert('雲端儲存失敗，請稍後再試');
+      }
+    }
+
+    // ======（以下皆為你原本的前端程式，僅移除 Cloudflare 片段）======
+
+    function setupLocationSelection() {
+      document.addEventListener('change', function(e) {
+        if (e.target.name === 'workLocation') {
+          document.querySelectorAll('.location-option').forEach(option => option.classList.remove('selected','onboard','onshore'));
+          const box = e.target.closest('label').querySelector('.location-option');
+          box.classList.add('selected', e.target.value);
+        }
+        if (e.target.name === 'teacherType') {
+          document.querySelectorAll('.teacher-type-option').forEach(option => option.classList.remove('selected','internal','external'));
+          const box = e.target.closest('label').querySelector('.teacher-type-option');
+          box.classList.add('selected', e.target.value);
+        }
+      });
+    }
+
+    function switchMode(mode){
+      currentMode = mode;
+      const editBtn = document.getElementById('editModeBtn');
+      const displayBtn = document.getElementById('displayModeBtn');
+      const addBtn = document.getElementById('addTeacherBtn');
+      const modeDescription = document.getElementById('modeDescription');
+
+      if (mode === 'edit') {
+        if (editBtn) editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white';
+        if (displayBtn) displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
+        if (addBtn) addBtn.classList.remove('hidden');
+        document.getElementById('exportCSVBtn')?.classList.remove('hidden');
+        document.getElementById('exportXLSXBtn')?.classList.remove('hidden');
+        if (modeDescription) {
+          modeDescription.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <span class="text-blue-600">ℹ️</span>
+              <span class="text-blue-700 text-sm font-medium">編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
+            </div>`;
+          modeDescription.className = 'bg-blue-50 border border-blue-200 rounded-lg p-3';
+        }
+      } else {
+        if (editBtn) editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
+        if (displayBtn) displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-green-600 text-white';
+        if (addBtn) addBtn.classList.add('hidden');
+        document.getElementById('exportCSVBtn')?.classList.add('hidden');
+        document.getElementById('exportXLSXBtn')?.classList.add('hidden');
+        if (modeDescription) {
+          modeDescription.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <span class="text-green-600">👁️</span>
+              <span class="text-green-700 text-sm font-medium">呈現模式：以美觀的方式展示師資陣容，適合對外展示</span>
+            </div>`;
+          modeDescription.className = 'bg-green-50 border border-green-200 rounded-lg p-3';
+        }
+      }
+      renderTeacherGrid();
+    }
+
+    function renderTeacherGrid(teachersToRender = null) {
+      const grid = document.getElementById('teacherGrid');
+      grid.innerHTML = '';
+      grid.className = currentMode==='edit'
+        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+        : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8';
+
+      const displayTeachers = teachersToRender || teachers;
+      if (displayTeachers.length === 0) {
+        const searchInput = document.getElementById('searchInput');
+        const isSearching = searchInput && searchInput.value.trim() !== '';
+        grid.innerHTML = isSearching ? `
+          <div class="col-span-full text-center py-12">
+            <div class="text-6xl mb-4">🔍</div>
+            <h3 class="text-xl font-medium text-gray-600 mb-2">找不到符合的師資</h3>
+            <p class="text-gray-500">請嘗試其他關鍵字或清除搜尋條件</p>
+          </div>` : `
+          <div class="col-span-full text-center py-12">
+            <div class="text-6xl mb-4">👨‍🏫</div>
+            <h3 class="text-xl font-medium text-gray-600 mb-2">尚未新增任何師資</h3>
+            <p class="text-gray-500">點擊上方「新增師資」按鈕開始建立您的師資陣容</p>
+          </div>`;
+        return;
+      }
+
+      displayTeachers.forEach((teacher, index) => {
+        const card = document.createElement('div');
+
+        if (currentMode === 'edit') {
+          card.className = 'bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group';
+          card.draggable = true;
+          card.dataset.teacherId = teacher.id;
+          card.dataset.index = index;
+          card.onclick = () => editTeacher(teacher.id);
+          card.addEventListener('dragstart', handleDragStart);
+          card.addEventListener('dragover', handleDragOver);
+          card.addEventListener('drop', handleDrop);
+          card.addEventListener('dragend', handleDragEnd);
+          card.innerHTML = `
+            <div class="p-4 text-center relative">
+              <div class="absolute top-2 left-2 flex flex-col space-y-1">
+                ${teacher.teacherType==='internal' ? `
+                  <div class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span>👨‍💼</span><span>內部</span>
+                  </div>` :
+                teacher.teacherType==='external' ? `
+                  <div class="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span>👨‍🎓</span><span>外部</span>
+                  </div>` : ''}
+                ${teacher.workLocation==='onboard' ? `
+                  <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span>🚢</span><span>在船</span>
+                  </div>` : `
+                  <div class="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span>🏢</span><span>在岸</span>
+                  </div>`}
+              </div>
+              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : (teacher.name||'?').charAt(0)}
+              </div>
+              <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
+              <div class="mt-1 text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">
+                ${teacher.workLocation==='onboard'?'🚢 海上工作':'🏢 陸地工作'}
+              </div>
+              <div class="mt-2 text-xs text-gray-500 cursor-move">⋮⋮ 拖拽排序</div>
+              <button onclick="event.stopPropagation(); copyTeacher(${teacher.id})"
+                class="absolute top-2 right-2 bg-green-500 hover:bg-green-600 text-white p-2 rounded-full text-xs transition-colors shadow-lg opacity-0 group-hover:opacity-100" title="複製師資">📋</button>
+            </div>`;
+        } else {
+          const isInternal = teacher.teacherType === 'internal';
+          const bgGradient = isInternal ? 'from-blue-50 to-indigo-50' : 'from-purple-50 to-pink-50';
+          const titleColor = isInternal ? 'text-blue-800' : 'text-purple-800';
+          const categoryTitle = isInternal ? '公司內部講師' : '外聘專業講師';
+          const categoryIcon = isInternal ? '👨‍💼' : '👨‍🎓';
+          const categoryBadgeColor = isInternal ? 'bg-blue-500' : 'bg-purple-500';
+          card.className = 'bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer';
+          card.onclick = () => viewTeacherDetail(teacher.id);
+          card.innerHTML = `
+            <div class="relative p-8 bg-gradient-to-br ${bgGradient} text-center">
+              <div class="absolute top-3 right-3">
+                <div class="${categoryBadgeColor} text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                  <span>${categoryIcon}</span><span>${categoryTitle}</span>
+                </div>
+              </div>
+              <div class="w-20 h-20 mx-auto mb-4 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-1 shadow-lg">
+                <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
+                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-18 h-18 object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+                </div>
+              </div>
+              <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}</h3>
+              <div class="text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium mb-2">
+                ${teacher.workLocation==='onboard'?'🚢 海上工作':'🏢 陸地工作'}
+              </div>
+              <div class="text-xs text-gray-500 opacity-70">點擊查看詳細資料</div>
+            </div>`;
+        }
+        grid.appendChild(card);
+      });
+    }
+
+    function addNewTeacher(){
+      currentTeacherId = null;
+      document.getElementById('teacherList').classList.add('hidden');
+      document.getElementById('teacherDetail').classList.remove('hidden');
+      document.getElementById('deleteBtn').classList.add('hidden');
+      document.getElementById('teacherForm').reset();
+      document.getElementById('photoPreview').innerHTML = '👤';
+      document.getElementById('experienceList').innerHTML = '';
+      document.getElementById('certificateList').innerHTML = '';
+      document.getElementById('subjectList').innerHTML = '';
+      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
+      document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
+      addExperience(); addCertificate(); addSubject();
+    }
+
+    function editTeacher(teacherId){
+      const teacher = teachers.find(t=>t.id===teacherId); if(!teacher) return;
+      currentTeacherId = teacherId;
+      document.getElementById('teacherList').classList.add('hidden');
+      document.getElementById('teacherDetail').classList.remove('hidden');
+      document.getElementById('deleteBtn').classList.remove('hidden');
+      document.getElementById('teacherName').value = teacher.name;
+      document.getElementById('teacherEmail').value = teacher.email || '';
+      const teacherType = teacher.teacherType || 'internal';
+      document.getElementById(teacherType==='internal'?'typeInternal':'typeExternal').checked = true;
+      const workLocation = teacher.workLocation || 'onshore';
+      document.getElementById(workLocation==='onboard'?'locationOnboard':'locationOnshore').checked = true;
+
+      document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
+      document.querySelector(`input[value="${teacherType}"]`).closest('label').querySelector('.teacher-type-option').classList.add('selected',teacherType);
+      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
+      document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
+
+      if (teacher.photo) document.getElementById('photoPreview').innerHTML = `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">`;
+
+      document.getElementById('experienceList').innerHTML = '';
+      (teacher.experiences||[]).forEach(exp=>addExperience(exp));
+      document.getElementById('certificateList').innerHTML = '';
+      (teacher.certificates||[]).forEach(cert=>{
+        if (typeof cert === 'string') addCertificate(cert);
+        else addCertificate(cert.name||'', cert.fileName||'', cert.fileData||'');
+      });
+      document.getElementById('subjectList').innerHTML = '';
+      (teacher.subjects||[]).forEach(s=>addSubject(s));
+    }
+
+    function viewTeacherDetail(teacherId){
+      const teacher = teachers.find(t=>t.id===teacherId); if(!teacher) return;
+      document.getElementById('teacherList').classList.add('hidden');
+      document.getElementById('teacherDetailView').classList.remove('hidden');
+      const isInternal = teacher.teacherType==='internal';
+      const bgGradient = isInternal?'from-blue-50 to-indigo-50':'from-purple-50 to-pink-50';
+      const titleColor = isInternal?'text-blue-800':'text-purple-800';
+      const categoryTitle = isInternal?'公司內部講師':'外聘專業講師';
+      const categoryIcon = isInternal?'👨‍💼':'👨‍🎓';
+      const categoryBadgeColor = isInternal?'bg-blue-500':'bg-purple-500';
+
+      const content = document.getElementById('teacherDetailContent');
+      content.innerHTML = `
+        <div class="bg-gradient-to-br ${bgGradient} rounded-2xl p-8 mb-8 relative overflow-hidden">
+          <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+            <div class="w-32 h-32 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-2 shadow-xl">
+              <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+              </div>
+            </div>
+            <div class="flex-1 text-center md:text-left">
+              <div class="mb-4">
+                <div class="${categoryBadgeColor} text-white px-4 py-2 rounded-full text-sm font-medium inline-flex items-center space-x-2">
+                  <span>${categoryIcon}</span><span>${categoryTitle}</span>
+                </div>
+              </div>
+              <h1 class="text-4xl font-bold ${titleColor} mb-3">${teacher.name}</h1>
+              <div class="space-y-2 text-lg">
+                ${teacher.email ? `<div class="flex items-center justify-center md:justify-start space-x-2"><span class="text-gray-600">📧</span><span class="text-gray-700">${teacher.email}</span></div>` : ''}
+                <div class="flex items-center justify-center md:justify-start space-x-2">
+                  <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'}">${teacher.workLocation==='onboard'?'🚢':'🏢'}</span>
+                  <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">${teacher.workLocation==='onboard'?'海上工作':'陸地工作'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl">💼</span>工作經歷</h3>
+            ${(teacher.experiences&&teacher.experiences.length>0)?`
+              <div class="space-y-3">
+                ${teacher.experiences.map(exp=>`<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-blue-500"><p class="text-gray-700">${exp}</p></div>`).join('')}
+              </div>`:`
+              <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📝</div><p>尚未填寫工作經歷</p></div>`}
+          </div>
+
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl">🏆</span>證書與資格</h3>
+            ${(teacher.certificates&&teacher.certificates.length>0)?`
+              <div class="space-y-3">
+                ${teacher.certificates.map(cert=>{
+                  const certName = typeof cert==='string'?cert:cert.name;
+                  const hasFile = typeof cert==='object' && cert.fileName;
+                  return `<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                      <p class="text-gray-700 flex-1">${certName}</p>
+                      ${hasFile?`<button onclick="viewCertificateFromDetail('${cert.fileName}','${cert.fileData}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors ml-3">👁️ 檢視</button>`:''}
+                    </div></div>`;
+                }).join('')}
+              </div>`:`
+              <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">🎓</div><p>尚未填寫證書資格</p></div>`}
+          </div>
+        </div>
+
+        <div class="bg-gray-50 rounded-xl p-6 mt-8">
+          <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl">📚</span>講授課程</h3>
+          ${(teacher.subjects&&teacher.subjects.length>0)?`
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              ${teacher.subjects.map(s=>`<div class="bg-white rounded-lg p-4 shadow-sm text-center border-l-4 border-purple-500"><p class="text-gray-700 font-medium">${s}</p></div>`).join('')}
+            </div>`:`
+            <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📖</div><p>尚未填寫講授課程</p></div>`}
+        </div>
+
+        ${currentMode==='edit'?`
+        <div class="mt-8 text-center">
+          <button onclick="editTeacher(${teacher.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl">✏️ 編輯師資資料</button>
+        </div>`:''}
+      `;
+    }
+
+    function viewCertificateFromDetail(fileName,fileData){
+      if(!fileData){ alert('沒有檔案可以檢視'); return; }
+      const w = window.open('', '_blank');
+      if(fileName.toLowerCase().endsWith('.pdf')){
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><embed src="${fileData}" type="application/pdf" width="100%" height="100%"></body></html>`);
+      }else{
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;"><img src="${fileData}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
+      }
+    }
+
+    function backToList(){
+      document.getElementById('teacherDetail').classList.add('hidden');
+      document.getElementById('teacherDetailView').classList.add('hidden');
+      document.getElementById('teacherList').classList.remove('hidden');
+      renderTeacherGrid();
+    }
+
+    function addExperience(value=''){
+      const c = document.getElementById('experienceList');
+      const div = document.createElement('div');
+      div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
+      div.innerHTML = `
+        <div class="flex flex-col space-y-1">
+          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+        </div>
+        <input type="text" value="${value}" placeholder="請輸入工作經歷..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+      c.appendChild(div);
+    }
+
+    function addCertificate(value='', fileName='', fileData=''){
+      const c = document.getElementById('certificateList');
+      const div = document.createElement('div');
+      div.className = 'bg-white p-4 rounded-lg border border-gray-200 move-transition';
+      const uid = Date.now()+Math.random();
+      div.innerHTML = `
+        <div class="flex items-start space-x-3">
+          <div class="flex flex-col space-y-1">
+            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+          </div>
+          <div class="flex-1 space-y-3">
+            <input type="text" value="${value}" placeholder="請輸入證書或資格名稱..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <div class="flex items-center space-x-2">
+              <input type="file" id="certFile_${uid}" accept=".jpg,.jpeg,.pdf" class="hidden" onchange="handleCertificateFile(this)">
+              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">📎 上傳檔案</button>
+              <div class="file-info text-sm text-gray-600" data-filename="${fileName}" data-filedata="${fileData}">${fileName?`已上傳: ${fileName}`:'未上傳檔案'}</div>
+              ${fileName?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">👁️ 檢視</button>`:''}
+            </div>
+          </div>
+          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
+        </div>`;
+      c.appendChild(div);
+    }
+
+    function handleCertificateFile(input){
+      if(input.files && input.files[0]){
+        const file = input.files[0];
+        const info = input.parentElement.querySelector('.file-info');
+        const okTypes = ['image/jpeg','image/jpg','application/pdf'];
+        if(!okTypes.includes(file.type)){ alert('只支援 JPG 和 PDF 檔案格式'); return; }
+        if(file.size > 10*1024*1024){ alert('檔案大小不能超過 10MB'); return; }
+        const reader = new FileReader();
+        reader.onload = e=>{
+          info.setAttribute('data-filename', file.name);
+          info.setAttribute('data-filedata', e.target.result);
+          info.textContent = `已上傳: ${file.name}`;
+          const exist = info.parentElement.querySelector('button[onclick="viewCertificateFile(this)"]');
+          if(!exist){
+            const btn = document.createElement('button');
+            btn.type='button'; btn.onclick=()=>viewCertificateFile(btn);
+            btn.className='bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs'; btn.innerHTML='👁️ 檢視';
+            info.parentElement.appendChild(btn);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function viewCertificateFile(button){
+      const info = button.parentElement.querySelector('.file-info');
+      const fileName = info.getAttribute('data-filename');
+      const fileData = info.getAttribute('data-filedata');
+      if(!fileData){ alert('沒有檔案可以檢視'); return; }
+      const w = window.open('', '_blank');
+      if(fileName.toLowerCase().endsWith('.pdf')){
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><embed src="${fileData}" type="application/pdf" width="100%" height="100%"></body></html>`);
+      }else{
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;"><img src="${fileData}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
+      }
+    }
+
+    function addSubject(value=''){
+      const c = document.getElementById('subjectList');
+      const div = document.createElement('div');
+      div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
+      div.innerHTML = `
+        <div class="flex flex-col space-y-1">
+          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+        </div>
+        <input type="text" value="${value}" placeholder="請輸入講授課程..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+      c.appendChild(div);
+    }
+
+    function moveUp(button){
+      const item = button.closest('.bg-white') || button.closest('.flex.items-center');
+      const prev = item.previousElementSibling;
+      if(prev){ item.parentNode.insertBefore(item, prev); item.style.transform='translateY(-5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
+    }
+    function moveDown(button){
+      const item = button.closest('.bg-white') || button.closest('.flex.items-center');
+      const next = item.nextElementSibling;
+      if(next){ item.parentNode.insertBefore(next, item); item.style.transform='translateY(5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
+    }
+
+    function previewPhoto(input){
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { document.getElementById('photoPreview').innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-full">`; };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    document.getElementById('teacherForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      const name = document.getElementById('teacherName').value.trim();
+      const email = document.getElementById('teacherEmail').value.trim();
+      const teacherType = document.querySelector('input[name="teacherType"]:checked')?.value;
+      const workLocation = document.querySelector('input[name="workLocation"]:checked')?.value;
+      if(!name){ alert('請輸入師資姓名'); return; }
+      if(!teacherType){ alert('請選擇師資類型'); return; }
+      if(!workLocation){ alert('請選擇工作地點'); return; }
+      if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('請輸入正確的Email格式'); return; }
+
+      const experiences = Array.from(document.querySelectorAll('#experienceList input')).map(i=>i.value.trim()).filter(Boolean);
+      const certificates = Array.from(document.querySelectorAll('#certificateList .bg-white')).map(item=>{
+        const nameInput = item.querySelector('input[type="text"]');
+        const info = item.querySelector('.file-info');
+        const nm = nameInput.value.trim(); if(!nm) return null;
+        const fileName = info.getAttribute('data-filename');
+        const fileData = info.getAttribute('data-filedata');
+        return (fileName && fileData) ? { name:nm, fileName, fileData } : nm;
+      }).filter(Boolean);
+      const subjects = Array.from(document.querySelectorAll('#subjectList input')).map(i=>i.value.trim()).filter(Boolean);
+      const photoImg = document.querySelector('#photoPreview img');
+      const photo = photoImg ? photoImg.src : null;
+
+      const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, photo, experiences, certificates, subjects };
+      if(currentTeacherId){ const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData; }
+      else { teachers.push(teacherData); }
+      localStorage.setItem('teachers', JSON.stringify(teachers));
+      backToList();
+      alert(currentTeacherId ? '師資資料已更新！' : '師資已新增！');
+    });
+
+    function deleteTeacher(){
+      if(!currentTeacherId) return;
+      if(confirm('確定要刪除這位師資嗎？此操作無法復原。')){
+        teachers = teachers.filter(t=>t.id!==currentTeacherId);
+        localStorage.setItem('teachers', JSON.stringify(teachers));
+        backToList();
+        alert('師資已刪除！');
+      }
+    }
+
+    function copyTeacher(teacherId){
+      const t = teachers.find(x=>x.id===teacherId); if(!t) return;
+      const copy = {
+        id: Date.now(),
+        name: t.name + ' (複製)',
+        email: t.email || '',
+        teacherType: t.teacherType || 'internal',
+        workLocation: t.workLocation || 'onshore',
+        photo: t.photo,
+        experiences: [...(t.experiences||[])],
+        certificates: (t.certificates||[]).map(c=> typeof c==='string'? c : ({name:c.name,fileName:c.fileName,fileData:c.fileData})),
+        subjects: [...(t.subjects||[])]
+      };
+      const i = teachers.findIndex(x=>x.id===teacherId);
+      teachers.splice(i+1,0,copy);
+      localStorage.setItem('teachers', JSON.stringify(teachers));
+      renderTeacherGrid();
+      alert(`已複製師資「${t.name}」！`);
+    }
+
+    function handleDragStart(e){ draggedElement = this; this.style.opacity='0.5'; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/html', this.outerHTML); }
+    function handleDragOver(e){ if(e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect='move'; return false; }
+    function handleDrop(e){
+      if(e.stopPropagation) e.stopPropagation();
+      if(draggedElement !== this){
+        const di = parseInt(draggedElement.dataset.index);
+        const ti = parseInt(this.dataset.index);
+        const d = teachers[di];
+        teachers.splice(di,1);
+        teachers.splice(ti,0,d);
+        localStorage.setItem('teachers', JSON.stringify(teachers));
+        renderTeacherGrid();
+      }
+      return false;
+    }
+    function handleDragEnd(){ this.style.opacity='1'; draggedElement=null; }
+
+    function searchTeachers(){
+      const searchInput = document.getElementById('searchInput');
+      const kw = searchInput.value.trim().toLowerCase();
+      const clearBtn = document.getElementById('clearBtn');
+      const searchResults = document.getElementById('searchResults');
+      if(kw){ clearBtn.classList.remove('hidden'); }
+      else { clearBtn.classList.add('hidden'); searchResults.classList.add('hidden'); renderTeacherGrid(); return; }
+
+      filteredTeachers = teachers.filter(t=>{
+        if((t.name||'').toLowerCase().includes(kw)) return true;
+        if(t.email && t.email.toLowerCase().includes(kw)) return true;
+        if((t.experiences||[]).some(x=>x.toLowerCase().includes(kw))) return true;
+        if((t.certificates||[]).some(c=> typeof c==='string' ? c.toLowerCase().includes(kw) : (c.name||'').toLowerCase().includes(kw))) return true;
+        if((t.subjects||[]).some(s=>s.toLowerCase().includes(kw))) return true;
+        return false;
+      });
+
+      if(filteredTeachers.length>0){
+        searchResults.classList.remove('hidden');
+        searchResults.querySelector('span').textContent = `找到 ${filteredTeachers.length} 位符合「${searchInput.value}」的師資`;
+      }else{ searchResults.classList.add('hidden'); }
+      renderTeacherGrid(filteredTeachers);
+    }
+
+    function clearSearch(){
+      const searchInput = document.getElementById('searchInput');
+      searchInput.value = '';
+      document.getElementById('clearBtn').classList.add('hidden');
+      document.getElementById('searchResults').classList.add('hidden');
+      filteredTeachers = [];
+      renderTeacherGrid();
+    }
+
+    function showStatisticsView(){ document.getElementById('teacherList').classList.add('hidden'); document.getElementById('executiveView').classList.remove('hidden'); renderStatisticsView(); }
+    function backToListFromExecutive(){ document.getElementById('executiveView').classList.add('hidden'); document.getElementById('teacherList').classList.remove('hidden'); }
+
+    function renderStatisticsView(){
+      const total = teachers.length;
+      const internal = teachers.filter(t=>t.teacherType==='internal').length;
+      const external = teachers.filter(t=>t.teacherType==='external').length;
+      const onboard = teachers.filter(t=>t.workLocation==='onboard').length;
+      const onshore = teachers.filter(t=>t.workLocation==='onshore').length;
+      const internalOnboard = teachers.filter(t=>t.teacherType==='internal' && t.workLocation==='onboard').length;
+      const internalOnshore = teachers.filter(t=>t.teacherType==='internal' && t.workLocation==='onshore').length;
+      const externalOnboard = teachers.filter(t=>t.teacherType==='external' && t.workLocation==='onboard').length;
+      const externalOnshore = teachers.filter(t=>t.teacherType==='external' && t.workLocation==='onshore').length;
+      const allSubjects = teachers.flatMap(t=>t.subjects||[]);
+      const uniqueSubjects = [...new Set(allSubjects)];
+      const avg = total>0 ? (allSubjects.length/total).toFixed(1) : 0;
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('internalCount').textContent = internal;
+      document.getElementById('externalCount').textContent = external;
+      document.getElementById('onboardCount').textContent = onboard;
+      document.getElementById('onshoreCount').textContent = onshore;
+
+      const ip = total>0 ? ((internal/total)*100).toFixed(1) : 0;
+      const ep = total>0 ? ((external/total)*100).toFixed(1) : 0;
+      const obp = total>0 ? ((onboard/total)*100).toFixed(1) : 0;
+      const osp = total>0 ? ((onshore/total)*100).toFixed(1) : 0;
+
+      document.getElementById('internalPercent').textContent = `${ip}%`;
+      document.getElementById('externalPercent').textContent = `${ep}%`;
+      document.getElementById('locationRatio').textContent = `比例 ${onboard}:${onshore}`;
+
+      document.getElementById('internalCountDetail').textContent = `${internal} 位`;
+      document.getElementById('internalPercentDetail').textContent = `${ip}%`;
+      document.getElementById('externalCountDetail').textContent = `${external} 位`;
+      document.getElementById('externalPercentDetail').textContent = `${ep}%`;
+      document.getElementById('onboardCountDetail').textContent = `${onboard} 位`;
+      document.getElementById('onboardPercentDetail').textContent = `${obp}%`;
+      document.getElementById('onshoreCountDetail').textContent = `${onshore} 位`;
+      document.getElementById('onshorePercentDetail').textContent = `${osp}%`;
+
+      document.getElementById('internalOnboard').textContent = internalOnboard;
+      document.getElementById('internalOnshore').textContent = internalOnshore;
+      document.getElementById('externalOnboard').textContent = externalOnboard;
+      document.getElementById('externalOnshore').textContent = externalOnshore;
+
+      document.getElementById('totalSubjects').textContent = allSubjects.length;
+      document.getElementById('avgSubjectsPerTeacher').textContent = avg;
+      document.getElementById('uniqueSubjects').textContent = uniqueSubjects.length;
+
+      const counts = {}; allSubjects.forEach(s=>counts[s]=(counts[s]||0)+1);
+      const sorted = Object.entries(counts).sort(([,a],[,b])=>b-a).slice(0,10);
+      const box = document.getElementById('popularSubjects');
+      box.innerHTML = sorted.length>0 ? sorted.map(([s,c],i)=>`
+        <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold">${i+1}</div>
+            <span class="font-medium text-gray-700">${s}</span>
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-purple-600">${c} 位</div>
+            <div class="text-xs text-gray-500">師資教授</div>
+          </div>
+        </div>`).join('') : `
+        <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📚</div><p>尚未有課程資料</p></div>`;
+    }
+
+    function testFunction(){ console.log('測試按鈕被點擊'); alert('測試按鈕正常工作！'); }
+
+    // 匯出
+    function _collectRows(){
+      if(!Array.isArray(teachers) || teachers.length===0){ alert('目前沒有師資資料可以匯出'); return null; }
+      return teachers.map((t,i)=>({
+        idx:i+1,
+        name:t.name||'',
+        email:t.email||'',
+        teacherType:t.teacherType==='internal'?'內部師資':'外部師資',
+        workLocation:t.workLocation==='onboard'?'海上工作':'陸地工作',
+        experiences:(t.experiences||[]).join('；') || '無',
+        certificates:(t.certificates||[]).map(c=> typeof c==='string'? c : (c?.name||'')).filter(Boolean).join('；') || '無',
+        subjects:(t.subjects||[]).join('；') || '無'
+      }));
+    }
+    function forceDownload(dataOrBlob, filename, mime='text/plain;charset=utf-8'){
+      const blob = dataOrBlob instanceof Blob ? dataOrBlob : new Blob([String(dataOrBlob)],{type:mime});
+      try{
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.target = '_blank'; a.rel='noopener';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(()=>URL.revokeObjectURL(url),1500);
+        return;
+      }catch(e){}
+      try{
+        const fr = new FileReader();
+        fr.onload = ()=>{ const w = window.open(fr.result,'_blank'); if(!w) alert('瀏覽器封鎖了下載視窗，請允許彈出視窗'); };
+        fr.readAsDataURL(blob); return;
+      }catch(e){}
+      blob.text().then(txt=>{
+        const w = window.open('','_blank');
+        if(w){
+          w.document.write('<pre style="white-space:pre-wrap;word-break:break-all;font:12px/1.4 monospace;">'
+            + txt.replace(/[<>&]/g, s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s])) + '</pre>');
+        }else{ alert('無法另開視窗，請允許彈出視窗'); }
+      });
+    }
+    function csvCell(s){ s=(s??'').toString().replace(/\r\n|\r/g,'\n').replace(/"/g,'""'); return `"${s}"`; }
+    function _fn(prefix,ext){ const d=new Date(); return `${prefix}_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}.${ext}`; }
+
+    function exportToCSV_API(){
+      const rows = _collectRows(); if(!rows) return;
+      const headers = ['序號','姓名','Email','師資類型','工作地點','工作經歷','證書與資格','講授課程'];
+      let csv = headers.join(',') + '\n';
+      rows.forEach(r=>{
+        csv += [r.idx,csvCell(r.name),csvCell(r.email),csvCell(r.teacherType),csvCell(r.workLocation),csvCell(r.experiences),csvCell(r.certificates),csvCell(r.subjects)].join(',') + '\n';
+      });
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csv], { type:'text/csv;charset=utf-8' });
+      forceDownload(blob, _fn('師資陣容','csv'), 'text/csv;charset=utf-8');
+    }
+    function exportToXLSX_API(){
+      const rows = _collectRows(); if(!rows) return;
+      const aoa = [['序號','姓名','Email','師資類型','工作地點','工作經歷','證書與資格','講授課程'], ...rows.map(r=>[r.idx,r.name,r.email,r.teacherType,r.workLocation,r.experiences,r.certificates,r.subjects])];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = aoa[0].map((_,c)=>({wch: Math.min(40, Math.max(...aoa.map(r=> (r[c]? String(r[c]).length : 0)))+2)}));
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '師資陣容');
+      const ab = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+      const blob = new Blob([ab], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      forceDownload(blob, _fn('師資陣容','xlsx'), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+  </script>
+</body>
+</html>
