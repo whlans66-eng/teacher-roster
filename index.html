@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <!-- fonts -->
+  <!-- fonts（推薦加 preconnect，GitHub Pages 也OK） -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <style>
@@ -348,14 +348,12 @@
   </div>
 
   <script>
-    /* ========= GAS 連線設定（已幫你填好） ========= */
-    const API_BASE  = 'https://script.google.com/macros/s/AKfycbybEMr1tK4coMLx9FA1bA-mIIk4Op82D1W1kMewUoedbX6--eJb9oXC3qK6h6DM-qcLhw/exec';
-    const API_TOKEN = 'tr_demo_12345'; // 與你後端一致即可
+    /* ========= 後端 API 設定（已為你接好） ========= */
+    const API_BASE  = 'https://script.google.com/macros/s/AKfycbzT52CHyZa2gcy1Xy5EfPKIyFPXmCSYfL4B6IynL6dwi2tiFY-zSZZoORI85kBmQ2QDLA/exec';
+    const API_TOKEN = 'tr_demo_12345';
 
     function hasAPI(){
-      return typeof API_BASE === 'string'
-        && API_BASE.startsWith('https://script.google.com/macros/s/')
-        && API_TOKEN && API_TOKEN.length > 0;
+      return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
     }
 
     // 師資資料存儲
@@ -365,81 +363,63 @@
     let filteredTeachers = [];
     let currentMode = 'edit';
 
-    document.addEventListener('DOMContentLoaded', async function () {
+    document.addEventListener('DOMContentLoaded', function () {
+      renderTeacherGrid();
       setupLocationSelection();
       // 未設定 API 就隱藏雲端按鈕
       if (!hasAPI()) {
         document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
-        renderTeacherGrid();
-      } else {
-        // 有 API：自動嘗試由雲端載入，失敗才顯示本機資料
-        const ok = await cloudLoad(true);
-        if (!ok) renderTeacherGrid();
       }
     });
 
-    /* ======== 雲端同步：載入與儲存（與你的 GAS 對接） ======== */
-    async function cloudLoad(silent=false){
-      if(!hasAPI()){ if(!silent) alert('尚未設定後端 API'); return false; }
+    // ====== 雲端同步：載入與儲存（Apps Script） ======
+    async function cloudLoad(){
+      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
       try{
-        const url = new URL(API_BASE);
-        url.searchParams.set('action','list');
-        url.searchParams.set('token', API_TOKEN);
-        const res = await fetch(url.toString(), { method: 'GET' });
+        const res = await fetch(`${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`, { method: 'GET' });
         const data = await res.json();
-        // 後端可能回 {ok:true,data:[...]} 或直接回陣列，兩者皆支援
-        const list = Array.isArray(data) ? data : (data && data.ok && Array.isArray(data.data) ? data.data : null);
-        if(list){
-          teachers = list;
+        if(data && data.ok && Array.isArray(data.data)){
+          teachers = data.data;
           localStorage.setItem('teachers', JSON.stringify(teachers));
           renderTeacherGrid();
-          if(!silent) alert('已從雲端載入 ' + teachers.length + ' 筆資料');
-          return true;
+          alert('已從雲端載入 ' + teachers.length + ' 筆資料');
         }else{
-          if(!silent) alert('雲端回傳格式不正確');
-          return false;
+          alert('雲端回傳格式不正確');
         }
       }catch(err){
-        console.error(err);
-        if(!silent) alert('雲端載入失敗，請稍後再試');
-        return false;
+        console.error(err); alert('雲端載入失敗，請稍後再試');
       }
     }
-
     function _sanitizeForCloud(){
       return teachers.map(t=>({
         id:t.id, name:t.name, email:t.email,
         teacherType:t.teacherType, workLocation:t.workLocation,
-        // 後端若支援 photoUrl，可在資料表生成；前端仍保留 photo base64 以相容
-        photoUrl: t.photoUrl || '',
         experiences:t.experiences||[],
         certificates:(t.certificates||[]).map(c=>typeof c==='string'?c:(c?.name||'')),
         subjects:t.subjects||[]
       }));
     }
-
     async function cloudSave(){
       if(!hasAPI()){ alert('尚未設定後端 API'); return; }
       try{
         const payload = { action:'saveAll', token: API_TOKEN, teachers:_sanitizeForCloud() };
         const res = await fetch(API_BASE, {
           method:'POST',
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // 避免 preflight
+          headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if(data && data.ok){
+        if(data.ok){
           alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
         }else{
-          alert('儲存失敗：' + (data && (data.error||'未知錯誤')));
+          alert('儲存失敗：' + (data.error || '未知錯誤'));
         }
       }catch(err){
         console.error(err); alert('雲端儲存失敗，請稍後再試');
       }
     }
 
-    /* ====== 以下為前端互動 ====== */
-
+    // ======（以下皆為前端互動程式）======
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
         if (e.target.name === 'workLocation') {
@@ -494,10 +474,6 @@
       renderTeacherGrid();
     }
 
-    function avatarUrl(t){
-      return t.photoUrl || t.photo || '';
-    }
-
     function renderTeacherGrid(teachersToRender = null) {
       const grid = document.getElementById('teacherGrid');
       grid.innerHTML = '';
@@ -515,7 +491,7 @@
             <h3 class="text-xl font-medium text-gray-600 mb-2">找不到符合的師資</h3>
             <p class="text-gray-500">請嘗試其他關鍵字或清除搜尋條件</p>
           </div>` : `
-          <div class="col-span-full text-center py-12">
+          <div class="col-span-full text中心 py-12">
             <div class="text-6xl mb-4">👨‍🏫</div>
             <h3 class="text-xl font-medium text-gray-600 mb-2">尚未新增任何師資</h3>
             <p class="text-gray-500">點擊上方「新增師資」按鈕開始建立您的師資陣容</p>
@@ -536,7 +512,6 @@
           card.addEventListener('dragover', handleDragOver);
           card.addEventListener('drop', handleDrop);
           card.addEventListener('dragend', handleDragEnd);
-          const av = avatarUrl(teacher);
           card.innerHTML = `
             <div class="p-4 text-center relative">
               <div class="absolute top-2 left-2 flex flex-col space-y-1">
@@ -557,7 +532,7 @@
                   </div>`}
               </div>
               <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
-                ${av ? `<img src="${av}" class="w-full h-full object-cover rounded-full">` : (teacher.name||'?').charAt(0)}
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : (teacher.name||'?').charAt(0)}
               </div>
               <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
               <div class="mt-1 text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">
@@ -574,7 +549,6 @@
           const categoryTitle = isInternal ? '公司內部講師' : '外聘專業講師';
           const categoryIcon = isInternal ? '👨‍💼' : '👨‍🎓';
           const categoryBadgeColor = isInternal ? 'bg-blue-500' : 'bg-purple-500';
-          const av = avatarUrl(teacher);
           card.className = 'bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer';
           card.onclick = () => viewTeacherDetail(teacher.id);
           card.innerHTML = `
@@ -585,8 +559,8 @@
                 </div>
               </div>
               <div class="w-20 h-20 mx-auto mb-4 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-1 shadow-lg">
-                <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  ${av ? `<img src="${av}" class="w-18 h-18 object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+                <div class="w-full h-full rounded-full bg白 flex items-center justify-center">
+                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-18 h-18 object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
                 </div>
               </div>
               <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}</h3>
@@ -633,8 +607,7 @@
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
       document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
 
-      const av = avatarUrl(teacher);
-      if (av) document.getElementById('photoPreview').innerHTML = `<img src="${av}" class="w-full h-full object-cover rounded-full">`;
+      if (teacher.photo) document.getElementById('photoPreview').innerHTML = `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">`;
 
       document.getElementById('experienceList').innerHTML = '';
       (teacher.experiences||[]).forEach(exp=>addExperience(exp));
@@ -657,7 +630,6 @@
       const categoryTitle = isInternal?'公司內部講師':'外聘專業講師';
       const categoryIcon = isInternal?'👨‍💼':'👨‍🎓';
       const categoryBadgeColor = isInternal?'bg-blue-500':'bg-purple-500';
-      const av = avatarUrl(teacher);
 
       const content = document.getElementById('teacherDetailContent');
       content.innerHTML = `
@@ -665,7 +637,7 @@
           <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
             <div class="w-32 h-32 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-2 shadow-xl">
               <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                ${av ? `<img src="${av}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
               </div>
             </div>
             <div class="flex-1 text-center md:text-left">
@@ -754,10 +726,10 @@
       div.innerHTML = `
         <div class="flex flex-col space-y-1">
           <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↓</button>
         </div>
         <input type="text" value="${value}" placeholder="請輸入工作經歷..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text白 px-3 py-2 rounded-lg text-sm">✕</button>`;
       c.appendChild(div);
     }
 
@@ -769,19 +741,19 @@
       div.innerHTML = `
         <div class="flex items-start space-x-3">
           <div class="flex flex-col space-y-1">
-            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↑</button>
+            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↓</button>
           </div>
           <div class="flex-1 space-y-3">
             <input type="text" value="${value}" placeholder="請輸入證書或資格名稱..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <div class="flex items-center space-x-2">
               <input type="file" id="certFile_${uid}" accept=".jpg,.jpeg,.pdf" class="hidden" onchange="handleCertificateFile(this)">
-              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">📎 上傳檔案</button>
+              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text白 px-3 py-2 rounded-lg text-sm">📎 上傳檔案</button>
               <div class="file-info text-sm text-gray-600" data-filename="${fileName}" data-filedata="${fileData}">${fileName?`已上傳: ${fileName}`:'未上傳檔案'}</div>
-              ${fileName?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">👁️ 檢視</button>`:''}
+              ${fileName?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text白 px-2 py-1 rounded text-xs">👁️ 檢視</button>`:''}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
+          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text白 px-3 py-2 rounded-lg text-sm">✕</button>
         </div>`;
       c.appendChild(div);
     }
@@ -802,7 +774,7 @@
           if(!exist){
             const btn = document.createElement('button');
             btn.type='button'; btn.onclick=()=>viewCertificateFile(btn);
-            btn.className='bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs'; btn.innerHTML='👁️ 檢視';
+            btn.className='bg-green-500 hover:bg-green-600 text白 px-2 py-1 rounded text-xs'; btn.innerHTML='👁️ 檢視';
             info.parentElement.appendChild(btn);
           }
         };
@@ -829,11 +801,11 @@
       div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
       div.innerHTML = `
         <div class="flex flex-col space-y-1">
-          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↑</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↓</button>
         </div>
         <input type="text" value="${value}" placeholder="請輸入講授課程..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text白 px-3 py-2 rounded-lg text-sm">✕</button>`;
       c.appendChild(div);
     }
 
@@ -907,7 +879,6 @@
         teacherType: t.teacherType || 'internal',
         workLocation: t.workLocation || 'onshore',
         photo: t.photo,
-        photoUrl: t.photoUrl || '',
         experiences: [...(t.experiences||[])],
         certificates: (t.certificates||[]).map(c=> typeof c==='string'? c : ({name:c.name,fileName:c.fileName,fileData:c.fileData})),
         subjects: [...(t.subjects||[])]
