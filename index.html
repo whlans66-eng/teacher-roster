@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <!-- fonts（推薦加 preconnect，GitHub Pages 也OK） -->
+  <!-- fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <style>
@@ -59,7 +59,7 @@
                 </button>
               </div>
 
-              <!-- 雲端同步（未設定 API 會自動隱藏） -->
+              <!-- 雲端同步 -->
               <div class="flex space-x-2">
                 <button type="button" onclick="cloudLoad()" class="cloud-btn bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
                   ☁️ 由雲端載入
@@ -348,14 +348,14 @@
   </div>
 
   <script>
-    /* ========= 可選：填入你的 Apps Script Web App /exec =========
-       例：const API_BASE = 'https://script.google.com/macros/s/xxxxxxxxxxxx/exec';
-       未設定（空字串）時，雲端按鈕會自動隱藏，只用本機 localStorage。
-    */
-    const API_BASE = '';
+    /* ========= GAS 連線設定（已幫你填好） ========= */
+    const API_BASE  = 'https://script.google.com/macros/s/AKfycbybEMr1tK4coMLx9FA1bA-mIIk4Op82D1W1kMewUoedbX6--eJb9oXC3qK6h6DM-qcLhw/exec';
+    const API_TOKEN = 'tr_demo_12345'; // 與你後端一致即可
 
     function hasAPI(){
-      return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
+      return typeof API_BASE === 'string'
+        && API_BASE.startsWith('https://script.google.com/macros/s/')
+        && API_TOKEN && API_TOKEN.length > 0;
     }
 
     // 師資資料存儲
@@ -365,63 +365,80 @@
     let filteredTeachers = [];
     let currentMode = 'edit';
 
-    document.addEventListener('DOMContentLoaded', function () {
-      renderTeacherGrid();
+    document.addEventListener('DOMContentLoaded', async function () {
       setupLocationSelection();
       // 未設定 API 就隱藏雲端按鈕
       if (!hasAPI()) {
         document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
+        renderTeacherGrid();
+      } else {
+        // 有 API：自動嘗試由雲端載入，失敗才顯示本機資料
+        const ok = await cloudLoad(true);
+        if (!ok) renderTeacherGrid();
       }
     });
 
-    // ====== 雲端同步：載入與儲存（Apps Script） ======
-    async function cloudLoad(){
-      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+    /* ======== 雲端同步：載入與儲存（與你的 GAS 對接） ======== */
+    async function cloudLoad(silent=false){
+      if(!hasAPI()){ if(!silent) alert('尚未設定後端 API'); return false; }
       try{
-        const res = await fetch(API_BASE, { method: 'GET' });
+        const url = new URL(API_BASE);
+        url.searchParams.set('action','list');
+        url.searchParams.set('token', API_TOKEN);
+        const res = await fetch(url.toString(), { method: 'GET' });
         const data = await res.json();
-        if(Array.isArray(data)){
-          teachers = data;
+        // 後端可能回 {ok:true,data:[...]} 或直接回陣列，兩者皆支援
+        const list = Array.isArray(data) ? data : (data && data.ok && Array.isArray(data.data) ? data.data : null);
+        if(list){
+          teachers = list;
           localStorage.setItem('teachers', JSON.stringify(teachers));
           renderTeacherGrid();
-          alert('已從雲端載入 ' + teachers.length + ' 筆資料');
+          if(!silent) alert('已從雲端載入 ' + teachers.length + ' 筆資料');
+          return true;
         }else{
-          alert('雲端回傳格式不正確');
+          if(!silent) alert('雲端回傳格式不正確');
+          return false;
         }
       }catch(err){
-        console.error(err); alert('雲端載入失敗，請稍後再試');
+        console.error(err);
+        if(!silent) alert('雲端載入失敗，請稍後再試');
+        return false;
       }
     }
+
     function _sanitizeForCloud(){
       return teachers.map(t=>({
         id:t.id, name:t.name, email:t.email,
         teacherType:t.teacherType, workLocation:t.workLocation,
+        // 後端若支援 photoUrl，可在資料表生成；前端仍保留 photo base64 以相容
+        photoUrl: t.photoUrl || '',
         experiences:t.experiences||[],
         certificates:(t.certificates||[]).map(c=>typeof c==='string'?c:(c?.name||'')),
         subjects:t.subjects||[]
       }));
     }
+
     async function cloudSave(){
       if(!hasAPI()){ alert('尚未設定後端 API'); return; }
       try{
-        const payload = { action:'saveAll', teachers:_sanitizeForCloud() };
+        const payload = { action:'saveAll', token: API_TOKEN, teachers:_sanitizeForCloud() };
         const res = await fetch(API_BASE, {
           method:'POST',
           headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // 避免 preflight
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if(data.ok){
+        if(data && data.ok){
           alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
         }else{
-          alert('儲存失敗：' + (data.error || '未知錯誤'));
+          alert('儲存失敗：' + (data && (data.error||'未知錯誤')));
         }
       }catch(err){
         console.error(err); alert('雲端儲存失敗，請稍後再試');
       }
     }
 
-    // ======（以下皆為你原本的前端程式，僅移除 Cloudflare 片段）======
+    /* ====== 以下為前端互動 ====== */
 
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
@@ -477,6 +494,10 @@
       renderTeacherGrid();
     }
 
+    function avatarUrl(t){
+      return t.photoUrl || t.photo || '';
+    }
+
     function renderTeacherGrid(teachersToRender = null) {
       const grid = document.getElementById('teacherGrid');
       grid.innerHTML = '';
@@ -515,6 +536,7 @@
           card.addEventListener('dragover', handleDragOver);
           card.addEventListener('drop', handleDrop);
           card.addEventListener('dragend', handleDragEnd);
+          const av = avatarUrl(teacher);
           card.innerHTML = `
             <div class="p-4 text-center relative">
               <div class="absolute top-2 left-2 flex flex-col space-y-1">
@@ -535,7 +557,7 @@
                   </div>`}
               </div>
               <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
-                ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : (teacher.name||'?').charAt(0)}
+                ${av ? `<img src="${av}" class="w-full h-full object-cover rounded-full">` : (teacher.name||'?').charAt(0)}
               </div>
               <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
               <div class="mt-1 text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">
@@ -552,6 +574,7 @@
           const categoryTitle = isInternal ? '公司內部講師' : '外聘專業講師';
           const categoryIcon = isInternal ? '👨‍💼' : '👨‍🎓';
           const categoryBadgeColor = isInternal ? 'bg-blue-500' : 'bg-purple-500';
+          const av = avatarUrl(teacher);
           card.className = 'bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer';
           card.onclick = () => viewTeacherDetail(teacher.id);
           card.innerHTML = `
@@ -563,7 +586,7 @@
               </div>
               <div class="w-20 h-20 mx-auto mb-4 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-1 shadow-lg">
                 <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-18 h-18 object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+                  ${av ? `<img src="${av}" class="w-18 h-18 object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
                 </div>
               </div>
               <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}</h3>
@@ -610,7 +633,8 @@
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
       document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
 
-      if (teacher.photo) document.getElementById('photoPreview').innerHTML = `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">`;
+      const av = avatarUrl(teacher);
+      if (av) document.getElementById('photoPreview').innerHTML = `<img src="${av}" class="w-full h-full object-cover rounded-full">`;
 
       document.getElementById('experienceList').innerHTML = '';
       (teacher.experiences||[]).forEach(exp=>addExperience(exp));
@@ -633,6 +657,7 @@
       const categoryTitle = isInternal?'公司內部講師':'外聘專業講師';
       const categoryIcon = isInternal?'👨‍💼':'👨‍🎓';
       const categoryBadgeColor = isInternal?'bg-blue-500':'bg-purple-500';
+      const av = avatarUrl(teacher);
 
       const content = document.getElementById('teacherDetailContent');
       content.innerHTML = `
@@ -640,7 +665,7 @@
           <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
             <div class="w-32 h-32 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-2 shadow-xl">
               <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                ${teacher.photo ? `<img src="${teacher.photo}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+                ${av ? `<img src="${av}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
               </div>
             </div>
             <div class="flex-1 text-center md:text-left">
@@ -882,6 +907,7 @@
         teacherType: t.teacherType || 'internal',
         workLocation: t.workLocation || 'onshore',
         photo: t.photo,
+        photoUrl: t.photoUrl || '',
         experiences: [...(t.experiences||[])],
         certificates: (t.certificates||[]).map(c=> typeof c==='string'? c : ({name:c.name,fileName:c.fileName,fileData:c.fileData})),
         subjects: [...(t.subjects||[])]
