@@ -347,72 +347,89 @@
     </div>
   </div>
 
-  <script>
-/* ========= 後端 API 設定（已為你換好） =========== */
-const API_BASE  = 'https://script.google.com/macros/s/AKfycbzT52CHyZa2gcy1Xy5EfPKIyFPXmCSYfL4B6IynL6dwi2tiFY-zSZZoORI85kBmQ2QDLA/exec';
-const API_TOKEN = 'tr_demo_12345';
+<script>
+  /* ========= 後端 API 設定（已為你接好） ========= */
+  const API_BASE  = 'https://script.google.com/macros/s/AKfycbzT52CHyZa2gcy1Xy5EfPKIyFPXmCSYfL4B6IynL6dwi2tiFY-zSZZoORI85kBmQ2QDLA/exec';
+  const API_TOKEN = 'tr_demo_12345';
 
-function hasAPI(){
-  return typeof API_BASE === 'string' &&
-         API_BASE.startsWith('https://script.google.com/macros/s/');
-}
-
-/* ====== 雲端同步：載入與儲存（Apps Script） ====== */
-async function cloudLoad(){
-  if(!hasAPI()){ alert('尚未設定後端 API'); return; }
-  try{
-    const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
-    const res = await fetch(url, { method: 'GET' });       // 不要加自訂 header，避免 preflight
-    const data = await res.json();
-
-    // 兼容 {ok:true,data:[...]} 或直接回傳陣列兩種格式
-    const list = Array.isArray(data) ? data : (data.ok ? data.data : null);
-    if(Array.isArray(list)){
-      teachers = list;
-      localStorage.setItem('teachers', JSON.stringify(teachers));
-      renderTeacherGrid();
-      alert('已從雲端載入 ' + teachers.length + ' 筆資料');
-    }else{
-      alert('雲端回傳格式不正確');
-    }
-  }catch(err){
-    console.error(err);
-    alert('雲端載入失敗，請稍後再試');
+  function hasAPI(){
+    return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
   }
-}
 
-function _sanitizeForCloud(){
-  return teachers.map(t=>({
-    id:t.id, name:t.name, email:t.email,
-    teacherType:t.teacherType, workLocation:t.workLocation,
-    experiences:t.experiences||[],
-    certificates:(t.certificates||[]).map(c=>typeof c==='string'?c:(c?.name||'')),
-    subjects:t.subjects||[]
-  }));
-}
+  // 師資資料存儲（原本就有，保留）
+  let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+  let currentTeacherId = null;
+  let draggedElement = null;
+  let filteredTeachers = [];
+  let currentMode = 'edit';
 
-async function cloudSave(){
-  if(!hasAPI()){ alert('尚未設定後端 API'); return; }
-  try{
-    const payload = { action:'saveAll', token: API_TOKEN, teachers: _sanitizeForCloud() };
-    const res = await fetch(API_BASE, {
-      method:'POST',
-      headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // 簡單型別，避免 CORS preflight
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if(data.ok){
-      alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
-    }else{
-      alert('儲存失敗：' + (data.error || '未知錯誤'));
+  document.addEventListener('DOMContentLoaded', function () {
+    renderTeacherGrid();
+    setupLocationSelection();
+    // 未設定 API 就隱藏雲端按鈕
+    if (!hasAPI()) {
+      document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
     }
-  }catch(err){
-    console.error(err);
-    alert('雲端儲存失敗，請稍後再試');
+  });
+
+  // ====== 雲端同步：載入與儲存（Apps Script） ======
+  async function cloudLoad(){
+    if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+    try{
+      // GET 讀取（無 preflight）
+      const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
+      const res = await fetch(url, { method: 'GET' });
+      const data = await res.json();
+      if(data && data.ok && Array.isArray(data.data)){
+        teachers = data.data;
+        localStorage.setItem('teachers', JSON.stringify(teachers));
+        renderTeacherGrid();
+        alert('已從雲端載入 ' + teachers.length + ' 筆資料');
+      }else{
+        alert('雲端回傳格式不正確');
+      }
+    }catch(err){
+      console.error(err);
+      alert('雲端載入失敗，請稍後再試');
+    }
   }
-}
+
+  // 只把要存到雲端的欄位挑出來（不含 base64 檔案）
+  function _sanitizeForCloud(){
+    return teachers.map(t=>({
+      id:t.id,
+      name:t.name,
+      email:t.email,
+      teacherType:t.teacherType,
+      workLocation:t.workLocation,
+      experiences:t.experiences || [],
+      certificates:(t.certificates||[]).map(c=> typeof c==='string' ? c : (c?.name || '')),
+      subjects:t.subjects || []
+    }));
+  }
+
+  async function cloudSave(){
+    if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+    try{
+      // POST 寫入：用 text/plain 避免 CORS preflight
+      const payload = { action:'saveAll', token: API_TOKEN, teachers:_sanitizeForCloud() };
+      const res = await fetch(API_BASE, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data.ok){
+        alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
+      }else{
+        alert('儲存失敗：' + (data.error || '未知錯誤'));
+      }
+    }catch(err){
+      console.error(err);
+      alert('雲端儲存失敗，請稍後再試');
+    }
+  }
 </script>
-
 
     // ======（以下皆為前端互動程式）======
     function setupLocationSelection() {
