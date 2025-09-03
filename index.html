@@ -59,7 +59,7 @@
                 </button>
               </div>
 
-              <!-- 雲端同步 -->
+              <!-- 雲端同步（未設定 API 會自動隱藏） -->
               <div class="flex space-x-2">
                 <button type="button" onclick="cloudLoad()" class="cloud-btn bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
                   ☁️ 由雲端載入
@@ -347,91 +347,88 @@
     </div>
   </div>
 
-<script>
-  /* ========= 後端 API 設定（已為你接好） ========= */
-  const API_BASE  = 'https://script.google.com/macros/s/AKfycbzT52CHyZa2gcy1Xy5EfPKIyFPXmCSYfL4B6IynL6dwi2tiFY-zSZZoORI85kBmQ2QDLA/exec';
-  const API_TOKEN = 'tr_demo_12345';
+  <script>
+    /* ========= 後端 API 設定（已為你接好） =========
+       若之後你換了 GAS 版本，只要把 API_BASE 改成新的 /exec URL 即可
+    */
+    const API_BASE  = 'https://script.google.com/macros/s/AKfycbzT52CHyZa2gcy1Xy5EfPKIyFPXmCSYfL4B6IynL6dwi2tiFY-zSZZoORI85kBmQ2QDLA/exec';
+    const API_TOKEN = 'tr_demo_12345';
 
-  function hasAPI(){
-    return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
-  }
-
-  // 師資資料存儲（原本就有，保留）
-  let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
-  let currentTeacherId = null;
-  let draggedElement = null;
-  let filteredTeachers = [];
-  let currentMode = 'edit';
-
-  document.addEventListener('DOMContentLoaded', function () {
-    renderTeacherGrid();
-    setupLocationSelection();
-    // 未設定 API 就隱藏雲端按鈕
-    if (!hasAPI()) {
-      document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
+    function hasAPI(){
+      return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
     }
-  });
 
-  // ====== 雲端同步：載入與儲存（Apps Script） ======
-  async function cloudLoad(){
-    if(!hasAPI()){ alert('尚未設定後端 API'); return; }
-    try{
-      // GET 讀取（無 preflight）
-      const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
-      const res = await fetch(url, { method: 'GET' });
-      const data = await res.json();
-      if(data && data.ok && Array.isArray(data.data)){
-        teachers = data.data;
-        localStorage.setItem('teachers', JSON.stringify(teachers));
-        renderTeacherGrid();
-        alert('已從雲端載入 ' + teachers.length + ' 筆資料');
-      }else{
-        alert('雲端回傳格式不正確');
+    // 師資資料存儲
+    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+    let currentTeacherId = null;
+    let draggedElement = null;
+    let filteredTeachers = [];
+    let currentMode = 'edit';
+
+    document.addEventListener('DOMContentLoaded', function () {
+      renderTeacherGrid();
+      setupLocationSelection();
+      // 未設定 API 就隱藏雲端按鈕
+      if (!hasAPI()) {
+        document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
       }
-    }catch(err){
-      console.error(err);
-      alert('雲端載入失敗，請稍後再試');
-    }
-  }
+    });
 
-  // 只把要存到雲端的欄位挑出來（不含 base64 檔案）
-  function _sanitizeForCloud(){
-    return teachers.map(t=>({
-      id:t.id,
-      name:t.name,
-      email:t.email,
-      teacherType:t.teacherType,
-      workLocation:t.workLocation,
-      experiences:t.experiences || [],
-      certificates:(t.certificates||[]).map(c=> typeof c==='string' ? c : (c?.name || '')),
-      subjects:t.subjects || []
-    }));
-  }
-
-  async function cloudSave(){
-    if(!hasAPI()){ alert('尚未設定後端 API'); return; }
-    try{
-      // POST 寫入：用 text/plain 避免 CORS preflight
-      const payload = { action:'saveAll', token: API_TOKEN, teachers:_sanitizeForCloud() };
-      const res = await fetch(API_BASE, {
-        method:'POST',
-        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.ok){
-        alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
-      }else{
-        alert('儲存失敗：' + (data.error || '未知錯誤'));
+    // ====== 雲端同步：載入與儲存（Apps Script） ======
+    async function cloudLoad(){
+      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+      try{
+        // GET 讀取（無 preflight）
+        const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
+        const res = await fetch(url, { method: 'GET' });
+        const data = await res.json();
+        if(data && data.ok && Array.isArray(data.data)){
+          teachers = data.data;
+          localStorage.setItem('teachers', JSON.stringify(teachers));
+          renderTeacherGrid();
+          alert('已從雲端載入 ' + teachers.length + ' 筆資料');
+        }else{
+          alert('雲端回傳格式不正確');
+        }
+      }catch(err){
+        console.error(err); alert('雲端載入失敗，請稍後再試');
       }
-    }catch(err){
-      console.error(err);
-      alert('雲端儲存失敗，請稍後再試');
     }
-  }
-</script>
 
-    // ======（以下皆為前端互動程式）======
+    // 只把要存到雲端的欄位挑出來（不含 base64 檔案）
+    function _sanitizeForCloud(){
+      return teachers.map(t=>({
+        id:t.id, name:t.name, email:t.email,
+        teacherType:t.teacherType, workLocation:t.workLocation,
+        experiences:t.experiences||[],
+        certificates:(t.certificates||[]).map(c=>typeof c==='string'?c:(c?.name||'')),
+        subjects:t.subjects||[]
+      }));
+    }
+
+    async function cloudSave(){
+      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+      try{
+        // POST 寫入：用 text/plain 避免 CORS preflight
+        const payload = { action:'saveAll', token: API_TOKEN, teachers:_sanitizeForCloud() };
+        const res = await fetch(API_BASE, {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // 關鍵：避免 preflight
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data.ok){
+          alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
+        }else{
+          alert('儲存失敗：' + (data.error || '未知錯誤'));
+        }
+      }catch(err){
+        console.error(err); alert('雲端儲存失敗，請稍後再試');
+      }
+    }
+
+    /* ================== 以下為主程式（UI/邏輯） ================== */
+
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
         if (e.target.name === 'workLocation') {
@@ -503,7 +500,7 @@
             <h3 class="text-xl font-medium text-gray-600 mb-2">找不到符合的師資</h3>
             <p class="text-gray-500">請嘗試其他關鍵字或清除搜尋條件</p>
           </div>` : `
-          <div class="col-span-full text中心 py-12">
+          <div class="col-span-full text-center py-12">
             <div class="text-6xl mb-4">👨‍🏫</div>
             <h3 class="text-xl font-medium text-gray-600 mb-2">尚未新增任何師資</h3>
             <p class="text-gray-500">點擊上方「新增師資」按鈕開始建立您的師資陣容</p>
@@ -571,7 +568,7 @@
                 </div>
               </div>
               <div class="w-20 h-20 mx-auto mb-4 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-1 shadow-lg">
-                <div class="w-full h-full rounded-full bg白 flex items-center justify-center">
+                <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
                   ${teacher.photo ? `<img src="${teacher.photo}" class="w-18 h-18 object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
                 </div>
               </div>
@@ -738,10 +735,10 @@
       div.innerHTML = `
         <div class="flex flex-col space-y-1">
           <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↓</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
         </div>
         <input type="text" value="${value}" placeholder="請輸入工作經歷..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text白 px-3 py-2 rounded-lg text-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
       c.appendChild(div);
     }
 
@@ -753,19 +750,19 @@
       div.innerHTML = `
         <div class="flex items-start space-x-3">
           <div class="flex flex-col space-y-1">
-            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↑</button>
-            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↓</button>
+            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
           </div>
           <div class="flex-1 space-y-3">
             <input type="text" value="${value}" placeholder="請輸入證書或資格名稱..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <div class="flex items-center space-x-2">
               <input type="file" id="certFile_${uid}" accept=".jpg,.jpeg,.pdf" class="hidden" onchange="handleCertificateFile(this)">
-              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text白 px-3 py-2 rounded-lg text-sm">📎 上傳檔案</button>
+              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">📎 上傳檔案</button>
               <div class="file-info text-sm text-gray-600" data-filename="${fileName}" data-filedata="${fileData}">${fileName?`已上傳: ${fileName}`:'未上傳檔案'}</div>
-              ${fileName?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text白 px-2 py-1 rounded text-xs">👁️ 檢視</button>`:''}
+              ${fileName?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">👁️ 檢視</button>`:''}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text白 px-3 py-2 rounded-lg text-sm">✕</button>
+          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
         </div>`;
       c.appendChild(div);
     }
@@ -786,7 +783,7 @@
           if(!exist){
             const btn = document.createElement('button');
             btn.type='button'; btn.onclick=()=>viewCertificateFile(btn);
-            btn.className='bg-green-500 hover:bg-green-600 text白 px-2 py-1 rounded text-xs'; btn.innerHTML='👁️ 檢視';
+            btn.className='bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs'; btn.innerHTML='👁️ 檢視';
             info.parentElement.appendChild(btn);
           }
         };
@@ -813,11 +810,11 @@
       div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
       div.innerHTML = `
         <div class="flex flex-col space-y-1">
-          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↑</button>
-          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↓</button>
+          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
         </div>
         <input type="text" value="${value}" placeholder="請輸入講授課程..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text白 px-3 py-2 rounded-lg text-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
       c.appendChild(div);
     }
 
@@ -987,7 +984,7 @@
       document.getElementById('internalCountDetail').textContent = `${internal} 位`;
       document.getElementById('internalPercentDetail').textContent = `${ip}%`;
       document.getElementById('externalCountDetail').textContent = `${external} 位`;
-      document.getElementById('externalPercentDetail').textContent = `${ep}%`;
+      document.getElementById['externalPercentDetail']?.textContent = `${ep}%`;
       document.getElementById('onboardCountDetail').textContent = `${onboard} 位`;
       document.getElementById('onboardPercentDetail').textContent = `${obp}%`;
       document.getElementById('onshoreCountDetail').textContent = `${onshore} 位`;
@@ -1035,6 +1032,7 @@
         subjects:(t.subjects||[]).join('；') || '無'
       }));
     }
+
     function forceDownload(dataOrBlob, filename, mime='text/plain;charset=utf-8'){
       const blob = dataOrBlob instanceof Blob ? dataOrBlob : new Blob([String(dataOrBlob)],{type:mime});
       try{
@@ -1058,6 +1056,7 @@
         }else{ alert('無法另開視窗，請允許彈出視窗'); }
       });
     }
+
     function csvCell(s){ s=(s??'').toString().replace(/\r\n|\r/g,'\n').replace(/"/g,'""'); return `"${s}"`; }
     function _fn(prefix,ext){ const d=new Date(); return `${prefix}_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}.${ext}`; }
 
@@ -1072,6 +1071,7 @@
       const blob = new Blob([BOM + csv], { type:'text/csv;charset=utf-8' });
       forceDownload(blob, _fn('師資陣容','csv'), 'text/csv;charset=utf-8');
     }
+
     function exportToXLSX_API(){
       const rows = _collectRows(); if(!rows) return;
       const aoa = [['序號','姓名','Email','師資類型','工作地點','工作經歷','證書與資格','講授課程'], ...rows.map(r=>[r.idx,r.name,r.email,r.teacherType,r.workLocation,r.experiences,r.certificates,r.subjects])];
