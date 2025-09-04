@@ -350,78 +350,78 @@
   </div>
 
   <!-- ====== 後端 API 設定（已為你接好） ====== -->
-  <script>
-    const API_BASE  = 'https://script.google.com/macros/s/AKfycbwdAMbl7h3e3KTwzRiSA-fo_A4NcmC2cKYl_sSibkYMbMskfg8DRwEiDF8P3O1feq7jcQ/exec';
-    const API_TOKEN = 'tr_demo_12345';
+<script>
+  /* ========= 後端 API 設定 ========= */
+  const API_BASE  = 'https://script.google.com/macros/s/AKfycbw6lXfe_YhHYQLMVwfmAJ3iFjbzgtmDBnVVNMH8JH0kZXxTPQ_cMbL4N3pXvtIVt8ZHHg/exec';
+  const API_TOKEN = 'tr_demo_12345';
 
-    function hasAPI(){
-      return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
-    }
+  function hasAPI(){
+    return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
+  }
 
-    // ====== 資料與狀態 ======
-    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
-    let currentTeacherId = null;
-    let draggedElement = null;
-    let filteredTeachers = [];
-    let currentMode = 'edit';
+  // 你的 teachers / currentTeacherId / 其它函式照舊…
 
-    document.addEventListener('DOMContentLoaded', function () {
-      renderTeacherGrid();
-      setupLocationSelection();
-      // 未設定 API 就隱藏雲端按鈕
-      if (!hasAPI()) {
-        document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
+  // ====== 雲端同步：載入（GET） ======
+  async function cloudLoad(){
+    if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+    try{
+      const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
+      const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+      const data = await res.json();
+      if(data && data.ok && Array.isArray(data.data)){
+        teachers = data.data;
+        localStorage.setItem('teachers', JSON.stringify(teachers));
+        renderTeacherGrid();
+        alert('已從雲端載入 ' + teachers.length + ' 筆資料');
+      }else{
+        alert('雲端回傳格式不正確：' + (data?.error || ''));
       }
-    });
+    }catch(err){
+      console.error(err);
+      alert('雲端載入失敗：' + err.message);
+    }
+  }
 
-    // ====== 雲端同步（避開 preflight） ======
-    async function cloudLoad(){
-      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
-      try{
-        const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
-        const res = await fetch(url, { method: 'GET' });
-        const data = await res.json();
-        if(data && data.ok && Array.isArray(data.data)){
-          teachers = data.data;
-          localStorage.setItem('teachers', JSON.stringify(teachers));
-          renderTeacherGrid();
-          alert('已從雲端載入 ' + teachers.length + ' 筆資料');
-        }else{
-          alert('雲端回傳格式不正確');
-        }
-      }catch(err){
-        console.error(err); alert('雲端載入失敗，請稍後再試');
+  // 輕量化資料：把物件壓成只有要寫入試算表的欄位
+  function _sanitizeForCloud(){
+    return (Array.isArray(teachers)?teachers:[]).map(t=>({
+      id: t.id, name: t.name, email: t.email,
+      teacherType: t.teacherType, workLocation: t.workLocation,
+      photo: t.photo || '',
+      experiences: t.experiences || [],
+      certificates: (t.certificates || []).map(c => typeof c==='string' ? c : (c?.name || '')),
+      subjects: t.subjects || []
+    }));
+  }
+
+  // ====== 雲端同步：儲存（POST x-www-form-urlencoded，避免 preflight） ======
+  async function cloudSave(){
+    if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+    try{
+      const body = new URLSearchParams();
+      body.set('action', 'saveAll');
+      body.set('token',  API_TOKEN);
+      body.set('teachers', JSON.stringify(_sanitizeForCloud()));
+
+      const res = await fetch(API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: body.toString()
+      });
+
+      const data = await res.json();
+      if (data.ok){
+        alert('已儲存到雲端，共 ' + (data.count ?? 0) + ' 筆');
+      }else{
+        alert('儲存失敗：' + (data.error || '未知錯誤'));
       }
+    }catch(err){
+      console.error(err);
+      alert('雲端儲存失敗：' + err.message);
     }
-    function _sanitizeForCloud(){
-      return teachers.map(t=>({
-        id:t.id, name:t.name, email:t.email,
-        teacherType:t.teacherType, workLocation:t.workLocation,
-        experiences:t.experiences||[],
-        certificates:(t.certificates||[]).map(c=>typeof c==='string'?c:(c?.name||'')),
-        subjects:t.subjects||[]
-      }));
-    }
-    async function cloudSave(){
-      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
-      try{
-        const body = new URLSearchParams();
-        body.append('action', 'saveAll');
-        body.append('token',  API_TOKEN);
-        body.append('teachers', JSON.stringify(_sanitizeForCloud()));
-
-        const res  = await fetch(API_BASE, { method: 'POST', body });
-        const data = await res.json();
-        if(data.ok){
-          alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
-        }else{
-          alert('儲存失敗：' + (data.error || '未知錯誤'));
-        }
-      }catch(err){
-        console.error(err); alert('雲端儲存失敗，請稍後再試');
-      }
-    }
-
+  }
+</script>
+  
     // ====== 前端互動程式 ======
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
