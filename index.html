@@ -9,14 +9,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <!-- fonts（推薦加 preconnect，GitHub Pages 也OK） -->
+  <!-- 字體 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
     body{font-family:'Noto Sans TC',system-ui,-apple-system,sans-serif}
-    .fade-in{animation:fadeIn .3s ease-in}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    .slide-in{animation:slideIn .3s ease-out}@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+    .fade-in{animation:fadeIn .3s ease-in}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .slide-in{animation:slideIn .3s ease-out}
+    @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
     .move-transition{transition:transform .2s ease-in-out}
     .location-option.selected{border-color:#3b82f6;background-color:#eff6ff}
     .location-option.selected.onboard{border-color:#3b82f6;background-color:#dbeafe}
@@ -59,7 +61,7 @@
                 </button>
               </div>
 
-              <!-- 雲端同步（未設定 API 會自動隱藏） -->
+              <!-- 雲端同步（由 hasAPI 決定是否顯示） -->
               <div class="flex space-x-2">
                 <button type="button" onclick="cloudLoad()" class="cloud-btn bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
                   ☁️ 由雲端載入
@@ -347,10 +349,8 @@
     </div>
   </div>
 
+  <!-- ====== 後端 API 設定（已為你接好） ====== -->
   <script>
-    /* ========= 後端 API 設定（已為你接好） =========
-       若之後你換了 GAS 版本，只要把 API_BASE 改成新的 /exec URL 即可
-    */
     const API_BASE  = 'https://script.google.com/macros/s/AKfycbw6lXfe_YhHYQLMVwfmAJ3iFjbzgtmDBnVVNMH8JH0kZXxTPQ_cMbL4N3pXvtIVt8ZHHg/exec';
     const API_TOKEN = 'tr_demo_12345';
 
@@ -358,7 +358,7 @@
       return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
     }
 
-    // 師資資料存儲
+    // ====== 資料與狀態 ======
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     let currentTeacherId = null;
     let draggedElement = null;
@@ -374,11 +374,10 @@
       }
     });
 
-    // ====== 雲端同步：載入與儲存（Apps Script） ======
+    // ====== 雲端同步（避開 preflight） ======
     async function cloudLoad(){
       if(!hasAPI()){ alert('尚未設定後端 API'); return; }
       try{
-        // GET 讀取（無 preflight）
         const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
         const res = await fetch(url, { method: 'GET' });
         const data = await res.json();
@@ -394,8 +393,6 @@
         console.error(err); alert('雲端載入失敗，請稍後再試');
       }
     }
-
-    // 只把要存到雲端的欄位挑出來（不含 base64 檔案）
     function _sanitizeForCloud(){
       return teachers.map(t=>({
         id:t.id, name:t.name, email:t.email,
@@ -405,17 +402,15 @@
         subjects:t.subjects||[]
       }));
     }
-
     async function cloudSave(){
       if(!hasAPI()){ alert('尚未設定後端 API'); return; }
       try{
-        // POST 寫入：用 text/plain 避免 CORS preflight
-        const payload = { action:'saveAll', token: API_TOKEN, teachers:_sanitizeForCloud() };
-        const res = await fetch(API_BASE, {
-          method:'POST',
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // 關鍵：避免 preflight
-          body: JSON.stringify(payload)
-        });
+        const body = new URLSearchParams();
+        body.append('action', 'saveAll');
+        body.append('token',  API_TOKEN);
+        body.append('teachers', JSON.stringify(_sanitizeForCloud()));
+
+        const res  = await fetch(API_BASE, { method: 'POST', body });
         const data = await res.json();
         if(data.ok){
           alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
@@ -427,8 +422,7 @@
       }
     }
 
-    /* ================== 以下為主程式（UI/邏輯） ================== */
-
+    // ====== 前端互動程式 ======
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
         if (e.target.name === 'workLocation') {
@@ -540,7 +534,7 @@
                     <span>🏢</span><span>在岸</span>
                   </div>`}
               </div>
-              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
+              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
                 ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : (teacher.name||'?').charAt(0)}
               </div>
               <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
@@ -568,8 +562,8 @@
                 </div>
               </div>
               <div class="w-20 h-20 mx-auto mb-4 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-1 shadow-lg">
-                <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-18 h-18 object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+                <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
                 </div>
               </div>
               <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}</h3>
@@ -645,7 +639,7 @@
         <div class="bg-gradient-to-br ${bgGradient} rounded-2xl p-8 mb-8 relative overflow-hidden">
           <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
             <div class="w-32 h-32 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-2 shadow-xl">
-              <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
+              <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                 ${teacher.photo ? `<img src="${teacher.photo}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
               </div>
             </div>
@@ -984,7 +978,7 @@
       document.getElementById('internalCountDetail').textContent = `${internal} 位`;
       document.getElementById('internalPercentDetail').textContent = `${ip}%`;
       document.getElementById('externalCountDetail').textContent = `${external} 位`;
-      document.getElementById['externalPercentDetail']?.textContent = `${ep}%`;
+      document.getElementById('externalPercentDetail').textContent = `${ep}%`;
       document.getElementById('onboardCountDetail').textContent = `${onboard} 位`;
       document.getElementById('onboardPercentDetail').textContent = `${obp}%`;
       document.getElementById('onshoreCountDetail').textContent = `${onshore} 位`;
@@ -1032,7 +1026,6 @@
         subjects:(t.subjects||[]).join('；') || '無'
       }));
     }
-
     function forceDownload(dataOrBlob, filename, mime='text/plain;charset=utf-8'){
       const blob = dataOrBlob instanceof Blob ? dataOrBlob : new Blob([String(dataOrBlob)],{type:mime});
       try{
@@ -1056,7 +1049,6 @@
         }else{ alert('無法另開視窗，請允許彈出視窗'); }
       });
     }
-
     function csvCell(s){ s=(s??'').toString().replace(/\r\n|\r/g,'\n').replace(/"/g,'""'); return `"${s}"`; }
     function _fn(prefix,ext){ const d=new Date(); return `${prefix}_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}.${ext}`; }
 
@@ -1071,7 +1063,6 @@
       const blob = new Blob([BOM + csv], { type:'text/csv;charset=utf-8' });
       forceDownload(blob, _fn('師資陣容','csv'), 'text/csv;charset=utf-8');
     }
-
     function exportToXLSX_API(){
       const rows = _collectRows(); if(!rows) return;
       const aoa = [['序號','姓名','Email','師資類型','工作地點','工作經歷','證書與資格','講授課程'], ...rows.map(r=>[r.idx,r.name,r.email,r.teacherType,r.workLocation,r.experiences,r.certificates,r.subjects])];
