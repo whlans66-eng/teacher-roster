@@ -112,16 +112,16 @@
       <div id="teacherGrid" class="grid gap-6"></div>
     </div>
 
-    <!-- 統計頁 -->
+    <!-- 統計頁（略，內容同你原始碼） -->
     <div id="executiveView" class="hidden fade-in">
+      <!-- ... 內容保持不變 ... -->
+      <!-- 我保留你原本的統計頁內容（為節省篇幅，此區塊上下只做縮排與保留，不改動邏輯） -->
       <div class="bg-white rounded-xl shadow-2xl p-8 max-w-7xl mx-auto">
         <button onclick="backToListFromExecutive()" class="mb-6 text-purple-600 hover:text-purple-800 font-medium flex items-center transition-colors">← 返回師資管理</button>
         <div class="text-center mb-8">
           <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">師資統計分析</h1>
           <p class="text-gray-600">深度分析師資陣容結構與分布</p>
         </div>
-
-        <!-- 統計卡 -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
             <div class="flex items-center justify-between">
@@ -159,8 +159,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 詳細分析 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div class="bg-gray-50 rounded-xl p-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">📊</span>師資類型分析</h3>
@@ -176,7 +174,7 @@
             </div>
           </div>
           <div class="bg-gray-50 rounded-xl p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">🗺️</span>工作地點分析</h3>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items中心"><span class="mr-2">🗺️</span>工作地點分析</h3>
             <div class="space-y-4">
               <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
                 <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-orange-500 rounded-full"></div><span class="font-medium text-gray-700">海上工作</span></div>
@@ -189,8 +187,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 交叉分析 -->
         <div class="bg-gray-50 rounded-xl p-6 mb-8">
           <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">🔄</span>交叉分析</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -208,8 +204,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 課程統計 -->
         <div class="bg-gray-50 rounded-xl p-6">
           <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">📚</span>課程統計分析</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -226,7 +220,6 @@
               <div class="text-sm text-gray-600 mt-1">不重複課程數</div>
             </div>
           </div>
-
           <div class="mt-6">
             <h4 class="text-lg font-semibold text-gray-700 mb-3">熱門課程排行</h4>
             <div id="popularSubjects" class="space-y-2"></div>
@@ -349,7 +342,7 @@
     </div>
   </div>
 
-  <!-- ====== 後端 API 設定（已為你接好） ====== -->
+  <!-- ====== 後端 API 設定 / 工具 ====== -->
   <script>
     const API_BASE  = 'https://script.google.com/macros/s/AKfycbw6lXfe_YhHYQLMVwfmAJ3iFjbzgtmDBnVVNMH8JH0kZXxTPQ_cMbL4N3pXvtIVt8ZHHg/exec';
     const API_TOKEN = 'tr_demo_12345';
@@ -358,8 +351,33 @@
       return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
     }
 
+    // —— 資料正常化（關鍵修正：避免 name 為數字/null 造成 charAt 錯誤）——
+    function normalize(list){
+      if (!Array.isArray(list)) return [];
+      const toStr = v => (v == null ? '' : String(v));
+      const arrStr = a => Array.isArray(a) ? a.map(toStr).filter(Boolean) : [];
+      return list.map(t => ({
+        id: t?.id ?? Date.now(),
+        name: toStr(t?.name),
+        email: toStr(t?.email),
+        teacherType: (t?.teacherType === 'external' ? 'external' : 'internal'),
+        workLocation: (t?.workLocation === 'onboard' ? 'onboard' : 'onshore'),
+        photo: toStr(t?.photo),
+        experiences: arrStr(t?.experiences),
+        certificates: Array.isArray(t?.certificates)
+          ? t.certificates.map(c => (typeof c === 'string'
+              ? toStr(c)
+              : { name: toStr(c?.name), fileName: toStr(c?.fileName), fileData: toStr(c?.fileData) }
+            )).filter(x => (typeof x === 'string' ? x : x.name))
+          : [],
+        subjects: arrStr(t?.subjects),
+      }));
+    }
+    // 安全取得姓名首字
+    const initial = name => (String(name ?? '').trim()[0] || '?');
+
     // ====== 資料與狀態 ======
-    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+    let teachers = normalize(JSON.parse(localStorage.getItem('teachers') || '[]'));
     let currentTeacherId = null;
     let draggedElement = null;
     let filteredTeachers = [];
@@ -368,7 +386,6 @@
     document.addEventListener('DOMContentLoaded', function () {
       renderTeacherGrid();
       setupLocationSelection();
-      // 未設定 API 就隱藏雲端按鈕
       if (!hasAPI()) {
         document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
       }
@@ -382,7 +399,7 @@
         const res = await fetch(url, { method: 'GET' });
         const data = await res.json();
         if(data && data.ok && Array.isArray(data.data)){
-          teachers = data.data;
+          teachers = normalize(data.data);                 // ★ 正常化
           localStorage.setItem('teachers', JSON.stringify(teachers));
           renderTeacherGrid();
           alert('已從雲端載入 ' + teachers.length + ' 筆資料');
@@ -461,7 +478,7 @@
         }
       } else {
         if (editBtn) editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
-        if (displayBtn) displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-green-600 text-white';
+        if (displayBtn) displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-green-600 text白';
         if (addBtn) addBtn.classList.add('hidden');
         document.getElementById('exportCSVBtn')?.classList.add('hidden');
         document.getElementById('exportXLSXBtn')?.classList.add('hidden');
@@ -535,7 +552,7 @@
                   </div>`}
               </div>
               <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
-                ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : (teacher.name||'?').charAt(0)}
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : initial(teacher.name)}
               </div>
               <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
               <div class="mt-1 text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">
@@ -563,7 +580,7 @@
               </div>
               <div class="w-20 h-20 mx-auto mb-4 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-1 shadow-lg">
                 <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${initial(teacher.name)}</span>`}
                 </div>
               </div>
               <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}</h3>
@@ -640,7 +657,7 @@
           <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
             <div class="w-32 h-32 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-2 shadow-xl">
               <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                ${teacher.photo ? `<img src="${teacher.photo}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${initial(teacher.name)}</span>`}
               </div>
             </div>
             <div class="flex-1 text-center md:text-left">
@@ -818,7 +835,7 @@
       if(prev){ item.parentNode.insertBefore(item, prev); item.style.transform='translateY(-5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
     }
     function moveDown(button){
-      const item = button.closest('.bg-white') || button.closest('.flex.items-center');
+      const item = button.closest('.bg白') || button.closest('.flex.items-center');
       const next = item.nextElementSibling;
       if(next){ item.parentNode.insertBefore(next, item); item.style.transform='translateY(5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
     }
@@ -858,6 +875,7 @@
       const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, photo, experiences, certificates, subjects };
       if(currentTeacherId){ const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData; }
       else { teachers.push(teacherData); }
+      teachers = normalize(teachers); // 保存前也正規化一次
       localStorage.setItem('teachers', JSON.stringify(teachers));
       backToList();
       alert(currentTeacherId ? '師資資料已更新！' : '師資已新增！');
@@ -877,7 +895,7 @@
       const t = teachers.find(x=>x.id===teacherId); if(!t) return;
       const copy = {
         id: Date.now(),
-        name: t.name + ' (複製)',
+        name: (t.name || '') + ' (複製)',
         email: t.email || '',
         teacherType: t.teacherType || 'internal',
         workLocation: t.workLocation || 'onshore',
@@ -888,6 +906,7 @@
       };
       const i = teachers.findIndex(x=>x.id===teacherId);
       teachers.splice(i+1,0,copy);
+      teachers = normalize(teachers);
       localStorage.setItem('teachers', JSON.stringify(teachers));
       renderTeacherGrid();
       alert(`已複製師資「${t.name}」！`);
@@ -919,11 +938,11 @@
       else { clearBtn.classList.add('hidden'); searchResults.classList.add('hidden'); renderTeacherGrid(); return; }
 
       filteredTeachers = teachers.filter(t=>{
-        if((t.name||'').toLowerCase().includes(kw)) return true;
-        if(t.email && t.email.toLowerCase().includes(kw)) return true;
-        if((t.experiences||[]).some(x=>x.toLowerCase().includes(kw))) return true;
-        if((t.certificates||[]).some(c=> typeof c==='string' ? c.toLowerCase().includes(kw) : (c.name||'').toLowerCase().includes(kw))) return true;
-        if((t.subjects||[]).some(s=>s.toLowerCase().includes(kw))) return true;
+        if(String(t.name||'').toLowerCase().includes(kw)) return true;
+        if(t.email && String(t.email).toLowerCase().includes(kw)) return true;
+        if((t.experiences||[]).some(x=>String(x).toLowerCase().includes(kw))) return true;
+        if((t.certificates||[]).some(c=> typeof c==='string' ? String(c).toLowerCase().includes(kw) : String(c.name||'').toLowerCase().includes(kw))) return true;
+        if((t.subjects||[]).some(s=>String(s).toLowerCase().includes(kw))) return true;
         return false;
       });
 
