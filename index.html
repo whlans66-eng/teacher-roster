@@ -385,8 +385,8 @@
       if (hasAPI()) {
         // 啟動時先從雲端拉一次（靜默）
         cloudLoad(true);
-        // 每 5 秒自動同步
-        setInterval(syncTick, 5000);
+        // 每 0.1 秒自動同步
+        setInterval(syncTick, 100);
       }
     });
 
