@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
@@ -9,14 +9,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <!-- fonts（推薦加 preconnect，GitHub Pages 也OK） -->
+  <!-- 字體 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
     body{font-family:'Noto Sans TC',system-ui,-apple-system,sans-serif}
-    .fade-in{animation:fadeIn .3s ease-in}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    .slide-in{animation:slideIn .3s ease-out}@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+    .fade-in{animation:fadeIn .3s ease-in}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .slide-in{animation:slideIn .3s ease-out}
+    @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
     .move-transition{transition:transform .2s ease-in-out}
     .location-option.selected{border-color:#3b82f6;background-color:#eff6ff}
     .location-option.selected.onboard{border-color:#3b82f6;background-color:#dbeafe}
@@ -59,23 +61,7 @@
                 </button>
               </div>
 
-              <!-- 雲端同步 -->
-              <div class="flex space-x-2">
-                <button type="button" onclick="cloudLoad()" class="cloud-btn bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
-                  ☁️ 由雲端載入
-                </button>
-                <button type="button" onclick="cloudSave()" class="cloud-btn bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
-                  ☁️ 儲存到雲端
-                </button>
-              </div>
-
-              <!-- 測試 -->
-              <button type="button" onclick="testFunction()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm">測試</button>
-
-              <!-- 統計 -->
-              <button onclick="showStatisticsView()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
-                <span>📈</span><span>統計分析</span>
-              </button>
+              <!-- *已移除* 由雲端載入 / 儲存到雲端 / 測試 按鈕 -->
             </div>
           </div>
 
@@ -110,7 +96,7 @@
       <div id="teacherGrid" class="grid gap-6"></div>
     </div>
 
-    <!-- 統計頁 -->
+    <!-- 統計頁（略） -->
     <div id="executiveView" class="hidden fade-in">
       <div class="bg-white rounded-xl shadow-2xl p-8 max-w-7xl mx-auto">
         <button onclick="backToListFromExecutive()" class="mb-6 text-purple-600 hover:text-purple-800 font-medium flex items-center transition-colors">← 返回師資管理</button>
@@ -118,8 +104,6 @@
           <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">師資統計分析</h1>
           <p class="text-gray-600">深度分析師資陣容結構與分布</p>
         </div>
-
-        <!-- 統計卡 -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
             <div class="flex items-center justify-between">
@@ -157,8 +141,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 詳細分析 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div class="bg-gray-50 rounded-xl p-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">📊</span>師資類型分析</h3>
@@ -187,8 +169,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 交叉分析 -->
         <div class="bg-gray-50 rounded-xl p-6 mb-8">
           <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">🔄</span>交叉分析</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -206,8 +186,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 課程統計 -->
         <div class="bg-gray-50 rounded-xl p-6">
           <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">📚</span>課程統計分析</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -224,7 +202,6 @@
               <div class="text-sm text-gray-600 mt-1">不重複課程數</div>
             </div>
           </div>
-
           <div class="mt-6">
             <h4 class="text-lg font-semibold text-gray-700 mb-3">熱門課程排行</h4>
             <div id="popularSubjects" class="space-y-2"></div>
@@ -347,69 +324,51 @@
     </div>
   </div>
 
+  <!-- ====== 後端 API 設定 / 工具 ====== -->
   <script>
-    /* ========= 後端 API 設定（已為你接好） ========= */
-    const API_BASE  = 'https://script.google.com/macros/s/AKfycbzT52CHyZa2gcy1Xy5EfPKIyFPXmCSYfL4B6IynL6dwi2tiFY-zSZZoORI85kBmQ2QDLA/exec';
+    const API_BASE  = 'https://script.google.com/macros/s/AKfycbw6lXfe_YhHYQLMVwfmAJ3iFjbzgtmDBnVVNMH8JH0kZXxTPQ_cMbL4N3pXvtIVt8ZHHg/exec';
     const API_TOKEN = 'tr_demo_12345';
 
     function hasAPI(){
       return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
     }
 
-    // 師資資料存儲
-    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+    // —— 資料正常化（避免 name 為數字/null 造成錯誤）——
+    function normalize(list){
+      if (!Array.isArray(list)) return [];
+      const toStr = v => (v == null ? '' : String(v));
+      const arrStr = a => Array.isArray(a) ? a.map(toStr).filter(Boolean) : [];
+      return list.map(t => ({
+        id: t?.id ?? Date.now(),
+        name: toStr(t?.name),
+        email: toStr(t?.email),
+        teacherType: (t?.teacherType === 'external' ? 'external' : 'internal'),
+        workLocation: (t?.workLocation === 'onboard' ? 'onboard' : 'onshore'),
+        photo: toStr(t?.photo),
+        experiences: arrStr(t?.experiences),
+        certificates: Array.isArray(t?.certificates)
+          ? t.certificates.map(c => (typeof c === 'string'
+              ? toStr(c)
+              : { name: toStr(c?.name), fileName: toStr(c?.fileName), fileData: toStr(c?.fileData) }
+            )).filter(x => (typeof x === 'string' ? x : x.name))
+          : [],
+        subjects: arrStr(t?.subjects),
+      }));
+    }
+    // 安全取得姓名首字
+    const initial = name => (String(name ?? '').trim()[0] || '?');
+
+    // ====== 資料與狀態 ======
+    let teachers = normalize(JSON.parse(localStorage.getItem('teachers') || '[]'));
     let currentTeacherId = null;
     let draggedElement = null;
     let filteredTeachers = [];
     let currentMode = 'edit';
 
-    document.addEventListener('DOMContentLoaded', function () {
-      renderTeacherGrid();
-      setupLocationSelection();
-      // 未設定 API 就隱藏雲端按鈕
-      if (!hasAPI()) {
-        document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
-      }
-    });
-
-    // --------- 共用：安全解析（支援 text / json）---------
-    async function safeParseResponse(res){
-      // 有些 GAS 會回 text/plain，即使內容是 JSON
-      const text = await res.text().catch(()=>null);
-      if (text == null) return { ok:false, error:'無回應內容', status: res.status };
-      try { return JSON.parse(text); }
-      catch { 
-        // 若不是 JSON，至少把原文帶回
-        return { ok:false, error:'非 JSON 回應', raw:text, status: res.status };
-      }
-    }
-
-    // ====== 雲端同步：載入與儲存（Apps Script） ======
-    async function cloudLoad(){
-      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
-      try{
-        const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}&t=${Date.now()}`;
-        const res = await fetch(url, { method: 'GET', cache:'no-store', redirect:'follow', credentials:'omit' });
-        const data = await safeParseResponse(res);
-        // 期望格式：{ ok:true, data:[...] }
-        if(data && data.ok && Array.isArray(data.data)){
-          teachers = data.data;
-        }else if (Array.isArray(data)){ // 一些後端可能直接回傳陣列
-          teachers = data;
-        }else{
-          throw new Error(data?.error || '雲端回傳格式不正確');
-        }
-        localStorage.setItem('teachers', JSON.stringify(teachers));
-        renderTeacherGrid();
-        alert('已從雲端載入 ' + teachers.length + ' 筆資料');
-      }catch(err){
-        console.error(err);
-        alert('雲端載入失敗：' + (err.message || err));
-      }
-    }
-
+    // --- Auto-sync 相關 ---
+    let _dirty = false;               // 是否有尚未上傳的變更
+    let _saveInFlight = false;        // 是否正在上傳
     function _sanitizeForCloud(){
-      // 保留必要欄位，避免上傳大檔（如證書 Base64）
       return teachers.map(t=>({
         id:t.id, name:t.name, email:t.email,
         teacherType:t.teacherType, workLocation:t.workLocation,
@@ -418,65 +377,82 @@
         subjects:t.subjects||[]
       }));
     }
+    const _snapshot = () => JSON.stringify(_sanitizeForCloud());
+    let _lastSavedSnapshot = _snapshot();
 
-    async function cloudSave(){
-      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
-      const clean = _sanitizeForCloud();
+    function _markDirty(){ _dirty = true; }
 
-      // 優先：x-www-form-urlencoded（GAS 常見，無 preflight）
-      const bodyForm = new URLSearchParams();
-      bodyForm.set('action','saveAll');
-      bodyForm.set('token', API_TOKEN);
-      bodyForm.set('teachers', JSON.stringify(clean));
-
+    async function cloudLoad(silent = false){
+      if(!hasAPI()){ return; }
       try{
-        // 方案 A：application/x-www-form-urlencoded
-        let res = await fetch(API_BASE, {
-          method:'POST',
-          headers:{ 'Content-Type':'application/x-www-form-urlencoded;charset=utf-8' },
-          body: bodyForm,
-          cache:'no-store', redirect:'follow', credentials:'omit'
-        });
-        let data = await safeParseResponse(res);
-        if(data && data.ok){
-          alert('已儲存到雲端，共 ' + (data.count ?? clean.length) + ' 筆');
-          return;
+        const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
+        const res = await fetch(url, { method: 'GET' });
+        const data = await res.json();
+        if(data && data.ok && Array.isArray(data.data)){
+          teachers = normalize(data.data);
+          localStorage.setItem('teachers', JSON.stringify(teachers));
+          _lastSavedSnapshot = _snapshot(); // 與雲端對齊
+          _dirty = false;
+          renderTeacherGrid();
+          if(!silent){ /* 不彈窗 */ }
+        }else{
+          if(!silent){ /* 不彈窗 */ }
         }
-
-        // 方案 B：text/plain（避免預檢）
-        res = await fetch(API_BASE, {
-          method:'POST',
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action:'saveAll', token: API_TOKEN, teachers: clean }),
-          cache:'no-store', redirect:'follow', credentials:'omit'
-        });
-        data = await safeParseResponse(res);
-        if(data && data.ok){
-          alert('已儲存到雲端，共 ' + (data.count ?? clean.length) + ' 筆');
-          return;
-        }
-
-        // 方案 C：application/json
-        res = await fetch(API_BASE, {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify({ action:'saveAll', token: API_TOKEN, teachers: clean }),
-          cache:'no-store', redirect:'follow', credentials:'omit'
-        });
-        data = await safeParseResponse(res);
-        if(data && data.ok){
-          alert('已儲存到雲端，共 ' + (data.count ?? clean.length) + ' 筆');
-          return;
-        }
-
-        throw new Error(data?.error || '未知錯誤（請確認 GAS 部署權限與回應格式）');
       }catch(err){
         console.error(err);
-        alert('雲端儲存失敗：' + (err.message || err));
+        if(!silent){ /* 不彈窗 */ }
       }
     }
 
-    // ======（以下皆為前端互動程式）======
+    async function cloudSave(silent = false){
+      if(!hasAPI()){ return; }
+      if(_saveInFlight) return; // 保護：同時只送一筆
+      _saveInFlight = true;
+      try{
+        const body = new URLSearchParams();
+        body.append('action', 'saveAll');
+        body.append('token',  API_TOKEN);
+        body.append('teachers', _snapshot());
+
+        const res  = await fetch(API_BASE, { method: 'POST', body });
+        const data = await res.json();
+        if(data && data.ok){
+          _lastSavedSnapshot = _snapshot();
+          _dirty = false;
+        }else{
+          // 失敗就保持 _dirty = true，下一輪再試
+          console.warn('雲端儲存失敗', data);
+          _dirty = true;
+        }
+      }catch(err){
+        console.error('雲端儲存錯誤', err);
+        _dirty = true;
+      }finally{
+        _saveInFlight = false;
+      }
+    }
+
+    // 每 0.1 秒：如有本地變更（比對快照）就靜默上傳
+    async function syncTick(){
+      // 偵測本地是否改變
+      if (_snapshot() !== _lastSavedSnapshot) _dirty = true;
+      if (_dirty && !_saveInFlight) {
+        await cloudSave(true); // 靜默
+      }
+    }
+
+    // 啟動：先渲染，再靜默載入雲端，然後開啟 0.1 秒輪詢
+    document.addEventListener('DOMContentLoaded', async function () {
+      renderTeacherGrid();
+      setupLocationSelection();
+
+      if (hasAPI()) {
+        await cloudLoad(true);              // 開頁靜默拉雲端
+        setInterval(syncTick, 100);         // 0.1 秒自動同步
+      }
+    });
+
+    // ====== 前端互動程式 ======
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
         if (e.target.name === 'workLocation') {
@@ -588,8 +564,8 @@
                     <span>🏢</span><span>在岸</span>
                   </div>`}
               </div>
-              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
-                ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : (teacher.name||'?').charAt(0)}
+              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : initial(teacher.name)}
               </div>
               <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
               <div class="mt-1 text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">
@@ -616,8 +592,8 @@
                 </div>
               </div>
               <div class="w-20 h-20 mx-auto mb-4 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-1 shadow-lg">
-                <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-18 h-18 object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+                <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${initial(teacher.name)}</span>`}
                 </div>
               </div>
               <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}</h3>
@@ -693,8 +669,8 @@
         <div class="bg-gradient-to-br ${bgGradient} rounded-2xl p-8 mb-8 relative overflow-hidden">
           <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
             <div class="w-32 h-32 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-2 shadow-xl">
-              <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                ${teacher.photo ? `<img src="${teacher.photo}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${(teacher.name||'?').charAt(0)}</span>`}
+              <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${initial(teacher.name)}</span>`}
               </div>
             </div>
             <div class="flex-1 text-center md:text-left">
@@ -885,6 +861,7 @@
       }
     }
 
+    // —— 表單儲存：本地更新 + 標記髒資料（0.1 秒內上傳）——
     document.getElementById('teacherForm').addEventListener('submit', function(e){
       e.preventDefault();
       const name = document.getElementById('teacherName').value.trim();
@@ -912,7 +889,9 @@
       const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, photo, experiences, certificates, subjects };
       if(currentTeacherId){ const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData; }
       else { teachers.push(teacherData); }
+      teachers = normalize(teachers);
       localStorage.setItem('teachers', JSON.stringify(teachers));
+      _markDirty(); // ← 標記變更，讓 0.1 秒輪詢上傳
       backToList();
       alert(currentTeacherId ? '師資資料已更新！' : '師資已新增！');
     });
@@ -922,6 +901,7 @@
       if(confirm('確定要刪除這位師資嗎？此操作無法復原。')){
         teachers = teachers.filter(t=>t.id!==currentTeacherId);
         localStorage.setItem('teachers', JSON.stringify(teachers));
+        _markDirty();  // ← 靜默上傳
         backToList();
         alert('師資已刪除！');
       }
@@ -931,7 +911,7 @@
       const t = teachers.find(x=>x.id===teacherId); if(!t) return;
       const copy = {
         id: Date.now(),
-        name: t.name + ' (複製)',
+        name: (t.name || '') + ' (複製)',
         email: t.email || '',
         teacherType: t.teacherType || 'internal',
         workLocation: t.workLocation || 'onshore',
@@ -942,7 +922,9 @@
       };
       const i = teachers.findIndex(x=>x.id===teacherId);
       teachers.splice(i+1,0,copy);
+      teachers = normalize(teachers);
       localStorage.setItem('teachers', JSON.stringify(teachers));
+      _markDirty();  // ← 靜默上傳
       renderTeacherGrid();
       alert(`已複製師資「${t.name}」！`);
     }
@@ -958,6 +940,7 @@
         teachers.splice(di,1);
         teachers.splice(ti,0,d);
         localStorage.setItem('teachers', JSON.stringify(teachers));
+        _markDirty(); // ← 靜默上傳
         renderTeacherGrid();
       }
       return false;
@@ -973,11 +956,11 @@
       else { clearBtn.classList.add('hidden'); searchResults.classList.add('hidden'); renderTeacherGrid(); return; }
 
       filteredTeachers = teachers.filter(t=>{
-        if((t.name||'').toLowerCase().includes(kw)) return true;
-        if(t.email && t.email.toLowerCase().includes(kw)) return true;
-        if((t.experiences||[]).some(x=>x.toLowerCase().includes(kw))) return true;
-        if((t.certificates||[]).some(c=> typeof c==='string' ? c.toLowerCase().includes(kw) : (c.name||'').toLowerCase().includes(kw))) return true;
-        if((t.subjects||[]).some(s=>s.toLowerCase().includes(kw))) return true;
+        if(String(t.name||'').toLowerCase().includes(kw)) return true;
+        if(t.email && String(t.email).toLowerCase().includes(kw)) return true;
+        if((t.experiences||[]).some(x=>String(x).toLowerCase().includes(kw))) return true;
+        if((t.certificates||[]).some(c=> typeof c==='string' ? String(c).toLowerCase().includes(kw) : String(c.name||'').toLowerCase().includes(kw))) return true;
+        if((t.subjects||[]).some(s=>String(s).toLowerCase().includes(kw))) return true;
         return false;
       });
 
@@ -1053,7 +1036,7 @@
       box.innerHTML = sorted.length>0 ? sorted.map(([s,c],i)=>`
         <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
           <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold">${i+1}</div>
+            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full flex items-center justify中心 text-sm font-bold">${i+1}</div>
             <span class="font-medium text-gray-700">${s}</span>
           </div>
           <div class="text-right">
@@ -1063,8 +1046,6 @@
         </div>`).join('') : `
         <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📚</div><p>尚未有課程資料</p></div>`;
     }
-
-    function testFunction(){ console.log('測試按鈕被點擊'); alert('測試按鈕正常工作！'); }
 
     // 匯出
     function _collectRows(){
