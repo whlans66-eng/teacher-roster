@@ -61,7 +61,12 @@
                 </button>
               </div>
 
-              <!-- *已移除* 由雲端載入 / 儲存到雲端 / 測試 按鈕 -->
+              <!-- （已移除：由雲端載入 / 儲存到雲端 / 測試 按鈕） -->
+              
+              <!-- 統計 -->
+              <button onclick="showStatisticsView()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
+                <span>📈</span><span>統計分析</span>
+              </button>
             </div>
           </div>
 
@@ -96,7 +101,7 @@
       <div id="teacherGrid" class="grid gap-6"></div>
     </div>
 
-    <!-- 統計頁（略） -->
+    <!-- 統計頁（保持原樣） -->
     <div id="executiveView" class="hidden fade-in">
       <div class="bg-white rounded-xl shadow-2xl p-8 max-w-7xl mx-auto">
         <button onclick="backToListFromExecutive()" class="mb-6 text-purple-600 hover:text-purple-800 font-medium flex items-center transition-colors">← 返回師資管理</button>
@@ -122,7 +127,7 @@
               </div><div class="text-4xl opacity-80">👨‍💼</div>
             </div>
           </div>
-          <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+          <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text白">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-purple-100 text-sm font-medium">外部師資</p>
@@ -131,7 +136,7 @@
               </div><div class="text-4xl opacity-80">👨‍🎓</div>
             </div>
           </div>
-          <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+          <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text白">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-green-100 text-sm font-medium">海上/陸地</p>
@@ -145,24 +150,24 @@
           <div class="bg-gray-50 rounded-xl p-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">📊</span>師資類型分析</h3>
             <div class="space-y-4">
-              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+              <div class="flex items-center justify-between p-4 bg白 rounded-lg shadow-sm">
                 <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-blue-500 rounded-full"></div><span class="font-medium text-gray-700">內部師資</span></div>
                 <div class="text-right"><div class="font-bold text-blue-600" id="internalCountDetail">0 位</div><div class="text-sm text-gray-500" id="internalPercentDetail">0%</div></div>
               </div>
-              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+              <div class="flex items-center justify-between p-4 bg白 rounded-lg shadow-sm">
                 <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-purple-500 rounded-full"></div><span class="font-medium text-gray-700">外部師資</span></div>
                 <div class="text-right"><div class="font-bold text-purple-600" id="externalCountDetail">0 位</div><div class="text-sm text-gray-500" id="externalPercentDetail">0%</div></div>
               </div>
             </div>
           </div>
           <div class="bg-gray-50 rounded-xl p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">🗺️</span>工作地點分析</h3>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items中心"><span class="mr-2">🗺️</span>工作地點分析</h3>
             <div class="space-y-4">
-              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+              <div class="flex items-center justify-between p-4 bg白 rounded-lg shadow-sm">
                 <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-orange-500 rounded-full"></div><span class="font-medium text-gray-700">海上工作</span></div>
                 <div class="text-right"><div class="font-bold text-orange-600" id="onboardCountDetail">0 位</div><div class="text-sm text-gray-500" id="onboardPercentDetail">0%</div></div>
               </div>
-              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+              <div class="flex items-center justify-between p-4 bg白 rounded-lg shadow-sm">
                 <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-green-500 rounded-full"></div><span class="font-medium text-gray-700">陸地工作</span></div>
                 <div class="text-right"><div class="font-bold text-green-600" id="onshoreCountDetail">0 位</div><div class="text-sm text-gray-500" id="onshorePercentDetail">0%</div></div>
               </div>
@@ -298,7 +303,7 @@
           <div class="bg-gray-50 p-6 rounded-lg">
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-xl font-semibold text-gray-800">證書與資格</h3>
-              <button type="button" onclick="addCertificate()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增證書</button>
+              <button type="button" onclick="addCertificate()" class="bg-green-600 hover:bg-green-700 text白 px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增證書</button>
             </div>
             <div id="certificateList" class="space-y-3"></div>
           </div>
@@ -313,10 +318,10 @@
           </div>
 
           <div class="flex justify-between pt-6">
-            <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors hidden">🗑️ 刪除師資</button>
+            <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="bg-red-600 hover:bg-red-700 text白 px-6 py-3 rounded-lg font-medium transition-colors hidden">🗑️ 刪除師資</button>
             <div class="flex space-x-4 ml-auto">
-              <button type="button" onclick="backToList()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">取消</button>
-              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">💾 儲存</button>
+              <button type="button" onclick="backToList()" class="bg-gray-500 hover:bg-gray-600 text白 px-6 py-3 rounded-lg font-medium transition-colors">取消</button>
+              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text白 px-6 py-3 rounded-lg font-medium transition-colors">💾 儲存</button>
             </div>
           </div>
         </form>
@@ -333,7 +338,7 @@
       return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
     }
 
-    // —— 資料正常化（避免 name 為數字/null 造成錯誤）——
+    /* ---------- 正常化 ---------- */
     function normalize(list){
       if (!Array.isArray(list)) return [];
       const toStr = v => (v == null ? '' : String(v));
@@ -355,104 +360,104 @@
         subjects: arrStr(t?.subjects),
       }));
     }
-    // 安全取得姓名首字
     const initial = name => (String(name ?? '').trim()[0] || '?');
 
-    // ====== 資料與狀態 ======
+    /* ---------- 狀態 ---------- */
     let teachers = normalize(JSON.parse(localStorage.getItem('teachers') || '[]'));
     let currentTeacherId = null;
     let draggedElement = null;
     let filteredTeachers = [];
     let currentMode = 'edit';
 
-    // --- Auto-sync 相關 ---
-    let _dirty = false;               // 是否有尚未上傳的變更
-    let _saveInFlight = false;        // 是否正在上傳
-    function _sanitizeForCloud(){
-      return teachers.map(t=>({
-        id:t.id, name:t.name, email:t.email,
-        teacherType:t.teacherType, workLocation:t.workLocation,
-        experiences:t.experiences||[],
-        certificates:(t.certificates||[]).map(c=>typeof c==='string'?c:(c?.name||'')),
-        subjects:t.subjects||[]
+    /* ---------- 靜默同步（關鍵） ---------- */
+    const SYNC_DEBOUNCE_MS = 100; // 0.1 秒
+    let syncTimer = null;
+    let syncing = false;
+    let syncAgain = false;
+
+    // 將資料「精簡化」後存進 localStorage（移除大 payload）
+    function slimForLocal(items){
+      return (items||[]).map(t=>({
+        id: t.id,
+        name: t.name,
+        email: t.email,
+        teacherType: t.teacherType,
+        workLocation: t.workLocation,
+        photo: t.photo, // 頭像通常很小，保留即可
+        experiences: t.experiences||[],
+        // fileData 不進本機，避免超額；雲端仍存完整
+        certificates: (t.certificates||[]).map(c => typeof c==='string' ? c : ({ name:c.name, fileName:c.fileName })),
+        subjects: t.subjects||[]
       }));
     }
-    const _snapshot = () => JSON.stringify(_sanitizeForCloud());
-    let _lastSavedSnapshot = _snapshot();
+    function saveLocalSilently(){
+      try{
+        localStorage.setItem('teachers', JSON.stringify(slimForLocal(teachers)));
+      }catch(err){
+        console.warn('localStorage 超額，已自動改存精簡版：', err);
+        try{
+          // 若仍失敗，改存最小資訊
+          const min = teachers.map(t=>({id:t.id,name:t.name,teacherType:t.teacherType,workLocation:t.workLocation}));
+          localStorage.setItem('teachers', JSON.stringify(min));
+        }catch(e){}
+      }
+    }
 
-    function _markDirty(){ _dirty = true; }
+    function scheduleCloudSave(){
+      if(!hasAPI()) return;
+      if(syncTimer) clearTimeout(syncTimer);
+      syncTimer = setTimeout(doCloudSave, SYNC_DEBOUNCE_MS);
+    }
 
-    async function cloudLoad(silent = false){
-      if(!hasAPI()){ return; }
+    async function doCloudSave(){
+      if(syncing){ syncAgain = true; return; }
+      syncing = true;
+      try{
+        // 雲端保存「完整資料」（包含 photo 與證書 fileData）
+        const body = new URLSearchParams();
+        body.append('action','saveAll');
+        body.append('token', API_TOKEN);
+        body.append('teachers', JSON.stringify(teachers));
+        await fetch(API_BASE, { method:'POST', body });
+      }catch(e){
+        console.warn('雲端靜默上傳失敗：', e);
+      }finally{
+        syncing = false;
+        if(syncAgain){ syncAgain=false; scheduleCloudSave(); }
+      }
+    }
+
+    async function cloudLoadSilent(){
+      if(!hasAPI()) return;
       try{
         const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
-        const res = await fetch(url, { method: 'GET' });
+        const res = await fetch(url, { method:'GET' });
         const data = await res.json();
         if(data && data.ok && Array.isArray(data.data)){
-          teachers = normalize(data.data);
-          localStorage.setItem('teachers', JSON.stringify(teachers));
-          _lastSavedSnapshot = _snapshot(); // 與雲端對齊
-          _dirty = false;
-          renderTeacherGrid();
-          if(!silent){ /* 不彈窗 */ }
-        }else{
-          if(!silent){ /* 不彈窗 */ }
+          return data.data;
         }
-      }catch(err){
-        console.error(err);
-        if(!silent){ /* 不彈窗 */ }
+      }catch(e){
+        console.warn('雲端靜默載入失敗：', e);
       }
+      return null;
     }
 
-    async function cloudSave(silent = false){
-      if(!hasAPI()){ return; }
-      if(_saveInFlight) return; // 保護：同時只送一筆
-      _saveInFlight = true;
-      try{
-        const body = new URLSearchParams();
-        body.append('action', 'saveAll');
-        body.append('token',  API_TOKEN);
-        body.append('teachers', _snapshot());
-
-        const res  = await fetch(API_BASE, { method: 'POST', body });
-        const data = await res.json();
-        if(data && data.ok){
-          _lastSavedSnapshot = _snapshot();
-          _dirty = false;
-        }else{
-          // 失敗就保持 _dirty = true，下一輪再試
-          console.warn('雲端儲存失敗', data);
-          _dirty = true;
-        }
-      }catch(err){
-        console.error('雲端儲存錯誤', err);
-        _dirty = true;
-      }finally{
-        _saveInFlight = false;
-      }
-    }
-
-    // 每 0.1 秒：如有本地變更（比對快照）就靜默上傳
-    async function syncTick(){
-      // 偵測本地是否改變
-      if (_snapshot() !== _lastSavedSnapshot) _dirty = true;
-      if (_dirty && !_saveInFlight) {
-        await cloudSave(true); // 靜默
-      }
-    }
-
-    // 啟動：先渲染，再靜默載入雲端，然後開啟 0.1 秒輪詢
+    /* ---------- 啟動時流程 ---------- */
     document.addEventListener('DOMContentLoaded', async function () {
+      // 1) 先渲染本地快取（精簡版）
       renderTeacherGrid();
       setupLocationSelection();
 
-      if (hasAPI()) {
-        await cloudLoad(true);              // 開頁靜默拉雲端
-        setInterval(syncTick, 100);         // 0.1 秒自動同步
+      // 2) 再靜默拉雲端完整資料覆蓋
+      const cloud = await cloudLoadSilent();
+      if(Array.isArray(cloud)){
+        teachers = normalize(cloud);
+        saveLocalSilently();   // 把完整資料的精簡版回存本地
+        renderTeacherGrid();   // 重新渲染（這次含頭像/證書資訊）
       }
     });
 
-    // ====== 前端互動程式 ======
+    /* ---------- 前端互動 ---------- */
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
         if (e.target.name === 'workLocation') {
@@ -848,7 +853,7 @@
       if(prev){ item.parentNode.insertBefore(item, prev); item.style.transform='translateY(-5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
     }
     function moveDown(button){
-      const item = button.closest('.bg-white') || button.closest('.flex.items-center');
+      const item = button.closest('.bg-white') || button.closest('.flex.items-center'); // 修正 class 拼字
       const next = item.nextElementSibling;
       if(next){ item.parentNode.insertBefore(next, item); item.style.transform='translateY(5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
     }
@@ -861,7 +866,7 @@
       }
     }
 
-    // —— 表單儲存：本地更新 + 標記髒資料（0.1 秒內上傳）——
+    // 儲存（靜默：本機快取 + 雲端上傳）
     document.getElementById('teacherForm').addEventListener('submit', function(e){
       e.preventDefault();
       const name = document.getElementById('teacherName').value.trim();
@@ -890,20 +895,18 @@
       if(currentTeacherId){ const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData; }
       else { teachers.push(teacherData); }
       teachers = normalize(teachers);
-      localStorage.setItem('teachers', JSON.stringify(teachers));
-      _markDirty(); // ← 標記變更，讓 0.1 秒輪詢上傳
+      saveLocalSilently();   // 本機精簡快取
+      scheduleCloudSave();   // 靜默雲端上傳
       backToList();
-      alert(currentTeacherId ? '師資資料已更新！' : '師資已新增！');
     });
 
     function deleteTeacher(){
       if(!currentTeacherId) return;
       if(confirm('確定要刪除這位師資嗎？此操作無法復原。')){
         teachers = teachers.filter(t=>t.id!==currentTeacherId);
-        localStorage.setItem('teachers', JSON.stringify(teachers));
-        _markDirty();  // ← 靜默上傳
+        saveLocalSilently();
+        scheduleCloudSave();
         backToList();
-        alert('師資已刪除！');
       }
     }
 
@@ -923,10 +926,9 @@
       const i = teachers.findIndex(x=>x.id===teacherId);
       teachers.splice(i+1,0,copy);
       teachers = normalize(teachers);
-      localStorage.setItem('teachers', JSON.stringify(teachers));
-      _markDirty();  // ← 靜默上傳
+      saveLocalSilently();
+      scheduleCloudSave();
       renderTeacherGrid();
-      alert(`已複製師資「${t.name}」！`);
     }
 
     function handleDragStart(e){ draggedElement = this; this.style.opacity='0.5'; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/html', this.outerHTML); }
@@ -939,8 +941,8 @@
         const d = teachers[di];
         teachers.splice(di,1);
         teachers.splice(ti,0,d);
-        localStorage.setItem('teachers', JSON.stringify(teachers));
-        _markDirty(); // ← 靜默上傳
+        saveLocalSilently();
+        scheduleCloudSave();
         renderTeacherGrid();
       }
       return false;
@@ -1036,7 +1038,7 @@
       box.innerHTML = sorted.length>0 ? sorted.map(([s,c],i)=>`
         <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
           <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full flex items-center justify中心 text-sm font-bold">${i+1}</div>
+            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold">${i+1}</div>
             <span class="font-medium text-gray-700">${s}</span>
           </div>
           <div class="text-right">
@@ -1047,7 +1049,7 @@
         <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📚</div><p>尚未有課程資料</p></div>`;
     }
 
-    // 匯出
+    /* 匯出 */
     function _collectRows(){
       if(!Array.isArray(teachers) || teachers.length===0){ alert('目前沒有師資資料可以匯出'); return null; }
       return teachers.map((t,i)=>({
