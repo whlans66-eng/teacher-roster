@@ -61,18 +61,9 @@
                 </button>
               </div>
 
-              <!-- 雲端同步（由 hasAPI 決定是否顯示） -->
-              <div class="flex space-x-2">
-                <button type="button" onclick="cloudLoad()" class="cloud-btn bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
-                  ☁️ 由雲端載入
-                </button>
-                <button type="button" onclick="cloudSave()" class="cloud-btn bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl">
-                  ☁️ 儲存到雲端
-                </button>
-              </div>
+              <!-- （已移除：雲端載入/儲存按鈕） -->
 
-              <!-- 測試 -->
-              <button type="button" onclick="testFunction()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm">測試</button>
+              <!-- （已移除：測試按鈕） -->
 
               <!-- 統計 -->
               <button onclick="showStatisticsView()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
@@ -114,8 +105,6 @@
 
     <!-- 統計頁（略，內容同你原始碼） -->
     <div id="executiveView" class="hidden fade-in">
-      <!-- ... 內容保持不變 ... -->
-      <!-- 我保留你原本的統計頁內容（為節省篇幅，此區塊上下只做縮排與保留，不改動邏輯） -->
       <div class="bg-white rounded-xl shadow-2xl p-8 max-w-7xl mx-auto">
         <button onclick="backToListFromExecutive()" class="mb-6 text-purple-600 hover:text-purple-800 font-medium flex items-center transition-colors">← 返回師資管理</button>
         <div class="text-center mb-8">
@@ -351,7 +340,7 @@
       return typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
     }
 
-    // —— 資料正常化（關鍵修正：避免 name 為數字/null 造成 charAt 錯誤）——
+    // —— 資料正常化（避免 name 為數字/null 造成 charAt 錯誤）——
     function normalize(list){
       if (!Array.isArray(list)) return [];
       const toStr = v => (v == null ? '' : String(v));
@@ -383,35 +372,71 @@
     let filteredTeachers = [];
     let currentMode = 'edit';
 
+    // 自動同步狀態
+    let isSyncing = false;
+    let pendingPush = false; // 有本地變更待上傳
+
+    function markDirty() { pendingPush = true; }
+
     document.addEventListener('DOMContentLoaded', function () {
       renderTeacherGrid();
       setupLocationSelection();
-      if (!hasAPI()) {
-        document.querySelectorAll('.cloud-btn').forEach(b=>b.classList.add('hidden'));
+
+      if (hasAPI()) {
+        // 啟動時先從雲端拉一次（靜默）
+        cloudLoad(true);
+        // 每 5 秒自動同步
+        setInterval(syncTick, 5000);
       }
     });
 
+    async function syncTick(){
+      if(!hasAPI() || isSyncing) return;
+      // 若正在編輯表單，避免覆蓋使用者尚未送出的內容
+      const editing = !document.getElementById('teacherDetail').classList.contains('hidden');
+      isSyncing = true;
+      try{
+        if (pendingPush) {
+          await cloudSave(true); // 靜默推上雲端
+          pendingPush = false;
+        }
+        if (!editing) {
+          await cloudLoad(true); // 靜默拉雲端資料
+        }
+      }catch(e){
+        console.error('syncTick error:', e);
+      }finally{
+        isSyncing = false;
+      }
+    }
+
     // ====== 雲端同步（避開 preflight） ======
-    async function cloudLoad(){
-      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+    async function cloudLoad(silent = true){
+      if(!hasAPI()){ if(!silent) alert('尚未設定後端 API'); return; }
       try{
         const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
         const res = await fetch(url, { method: 'GET' });
         const data = await res.json();
         if(data && data.ok && Array.isArray(data.data)){
-          teachers = normalize(data.data);                 // ★ 正常化
-          localStorage.setItem('teachers', JSON.stringify(teachers));
-          renderTeacherGrid();
-          alert('已從雲端載入 ' + teachers.length + ' 筆資料');
+          const incoming = normalize(data.data);
+          // 若資料有變再覆蓋
+          const localStr = JSON.stringify(_sanitizeForCloud(teachers));
+          const incomingStr = JSON.stringify(_sanitizeForCloud(incoming));
+          if (localStr !== incomingStr) {
+            teachers = incoming;
+            localStorage.setItem('teachers', JSON.stringify(teachers));
+            renderTeacherGrid();
+          }
+          if(!silent) alert('已從雲端載入 ' + teachers.length + ' 筆資料');
         }else{
-          alert('雲端回傳格式不正確');
+          if(!silent) alert('雲端回傳格式不正確');
         }
       }catch(err){
-        console.error(err); alert('雲端載入失敗，請稍後再試');
+        console.error(err); if(!silent) alert('雲端載入失敗，請稍後再試');
       }
     }
-    function _sanitizeForCloud(){
-      return teachers.map(t=>({
+    function _sanitizeForCloud(arr = teachers){
+      return (arr || teachers).map(t=>({
         id:t.id, name:t.name, email:t.email,
         teacherType:t.teacherType, workLocation:t.workLocation,
         experiences:t.experiences||[],
@@ -419,8 +444,8 @@
         subjects:t.subjects||[]
       }));
     }
-    async function cloudSave(){
-      if(!hasAPI()){ alert('尚未設定後端 API'); return; }
+    async function cloudSave(silent = true){
+      if(!hasAPI()){ if(!silent) alert('尚未設定後端 API'); return; }
       try{
         const body = new URLSearchParams();
         body.append('action', 'saveAll');
@@ -430,12 +455,12 @@
         const res  = await fetch(API_BASE, { method: 'POST', body });
         const data = await res.json();
         if(data.ok){
-          alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
+          if(!silent) alert('已儲存到雲端，共 ' + (data.count ?? teachers.length) + ' 筆');
         }else{
-          alert('儲存失敗：' + (data.error || '未知錯誤'));
+          if(!silent) alert('儲存失敗：' + (data.error || '未知錯誤'));
         }
       }catch(err){
-        console.error(err); alert('雲端儲存失敗，請稍後再試');
+        console.error(err); if(!silent) alert('雲端儲存失敗，請稍後再試');
       }
     }
 
@@ -478,7 +503,7 @@
         }
       } else {
         if (editBtn) editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
-        if (displayBtn) displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-green-600 text白';
+        if (displayBtn) displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-green-600 text-white';
         if (addBtn) addBtn.classList.add('hidden');
         document.getElementById('exportCSVBtn')?.classList.add('hidden');
         document.getElementById('exportXLSXBtn')?.classList.add('hidden');
@@ -835,7 +860,7 @@
       if(prev){ item.parentNode.insertBefore(item, prev); item.style.transform='translateY(-5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
     }
     function moveDown(button){
-      const item = button.closest('.bg白') || button.closest('.flex.items-center');
+      const item = button.closest('.bg-white') || button.closest('.flex.items-center');
       const next = item.nextElementSibling;
       if(next){ item.parentNode.insertBefore(next, item); item.style.transform='translateY(5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
     }
@@ -848,7 +873,7 @@
       }
     }
 
-    document.getElementById('teacherForm').addEventListener('submit', function(e){
+    document.getElementById('teacherForm').addEventListener('submit', async function(e){
       e.preventDefault();
       const name = document.getElementById('teacherName').value.trim();
       const email = document.getElementById('teacherEmail').value.trim();
@@ -875,8 +900,10 @@
       const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, photo, experiences, certificates, subjects };
       if(currentTeacherId){ const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData; }
       else { teachers.push(teacherData); }
-      teachers = normalize(teachers); // 保存前也正規化一次
+      teachers = normalize(teachers);
       localStorage.setItem('teachers', JSON.stringify(teachers));
+      markDirty();           // 標記本地有變更
+      await cloudSave(true); // 立即靜默上傳
       backToList();
       alert(currentTeacherId ? '師資資料已更新！' : '師資已新增！');
     });
@@ -886,6 +913,8 @@
       if(confirm('確定要刪除這位師資嗎？此操作無法復原。')){
         teachers = teachers.filter(t=>t.id!==currentTeacherId);
         localStorage.setItem('teachers', JSON.stringify(teachers));
+        markDirty();
+        cloudSave(true);
         backToList();
         alert('師資已刪除！');
       }
@@ -908,6 +937,8 @@
       teachers.splice(i+1,0,copy);
       teachers = normalize(teachers);
       localStorage.setItem('teachers', JSON.stringify(teachers));
+      markDirty();
+      cloudSave(true);
       renderTeacherGrid();
       alert(`已複製師資「${t.name}」！`);
     }
@@ -923,6 +954,8 @@
         teachers.splice(di,1);
         teachers.splice(ti,0,d);
         localStorage.setItem('teachers', JSON.stringify(teachers));
+        markDirty();
+        cloudSave(true);
         renderTeacherGrid();
       }
       return false;
@@ -1028,8 +1061,6 @@
         </div>`).join('') : `
         <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📚</div><p>尚未有課程資料</p></div>`;
     }
-
-    function testFunction(){ console.log('測試按鈕被點擊'); alert('測試按鈕正常工作！'); }
 
     // 匯出
     function _collectRows(){
