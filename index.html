@@ -331,7 +331,7 @@
 
   <!-- ====== 後端 API 設定 / 工具 ====== -->
   <script>
-    const API_BASE  = 'https://script.google.com/macros/s/AKfycbw6lXfe_YhHYQLMVwfmAJ3iFjbzgtmDBnVVNMH8JH0kZXxTPQ_cMbL4N3pXvtIVt8ZHHg/exec';
+    const API_BASE  = 'https://script.google.com/macros/s/AKfycbyN9TPK1veD9l4BhmWD8fwk9MsYQj6bIUWc8tw21XHWlisTJWDlcQSmM78mHWP7KXF7HQ/exec';
     const API_TOKEN = 'tr_demo_12345';
 
     function hasAPI(){
@@ -796,29 +796,42 @@
       c.appendChild(div);
     }
 
-    function handleCertificateFile(input){
-      if(input.files && input.files[0]){
-        const file = input.files[0];
-        const info = input.parentElement.querySelector('.file-info');
-        const okTypes = ['image/jpeg','image/jpg','application/pdf'];
-        if(!okTypes.includes(file.type)){ alert('只支援 JPG 和 PDF 檔案格式'); return; }
-        if(file.size > 10*1024*1024){ alert('檔案大小不能超過 10MB'); return; }
-        const reader = new FileReader();
-        reader.onload = e=>{
-          info.setAttribute('data-filename', file.name);
-          info.setAttribute('data-filedata', e.target.result);
-          info.textContent = `已上傳: ${file.name}`;
-          const exist = info.parentElement.querySelector('button[onclick="viewCertificateFile(this)"]');
-          if(!exist){
-            const btn = document.createElement('button');
-            btn.type='button'; btn.onclick=()=>viewCertificateFile(btn);
-            btn.className='bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs'; btn.innerHTML='👁️ 檢視';
-            info.parentElement.appendChild(btn);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
+function handleCertificateFile(input){
+  if(input.files && input.files[0]){
+    const file = input.files[0];
+    const info = input.parentElement.querySelector('.file-info');
+    const okTypes = ['image/jpeg','image/jpg','application/pdf'];
+
+    if(!okTypes.includes(file.type)){
+      alert('只支援 JPG 和 PDF 檔案格式');
+      return;
     }
+
+    // ★ 改成 30MB
+    if(file.size > 30*1024*1024){
+      alert('檔案大小不能超過 30MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e=>{
+      info.setAttribute('data-filename', file.name);
+      info.setAttribute('data-filedata', e.target.result);
+      info.textContent = `已上傳: ${file.name}`;
+      const exist = info.parentElement.querySelector('button[onclick="viewCertificateFile(this)"]');
+      if(!exist){
+        const btn = document.createElement('button');
+        btn.type='button';
+        btn.onclick=()=>viewCertificateFile(btn);
+        btn.className='bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs';
+        btn.innerHTML='👁️ 檢視';
+        info.parentElement.appendChild(btn);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
 
     function viewCertificateFile(button){
       const info = button.parentElement.querySelector('.file-info');
