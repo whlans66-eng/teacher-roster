@@ -26,6 +26,17 @@
     .teacher-type-option.selected{border-color:#3b82f6;background-color:#eff6ff}
     .teacher-type-option.selected.internal{border-color:#3b82f6;background-color:#dbeafe}
     .teacher-type-option.selected.external{border-color:#8b5cf6;background-color:#f3e8ff}
+
+    /* 簡易登入遮罩 */
+    .gate-backdrop{position:fixed;inset:0;background:#0f172acc;display:flex;align-items:center;justify-content:center;z-index:9999}
+    .gate-card{width:92%;max-width:420px;background:white;border-radius:1rem;box-shadow:0 20px 45px rgba(0,0,0,.25);padding:28px}
+    .gate-title{font-size:20px;font-weight:700;color:#111827;margin-bottom:10px}
+    .gate-desc{font-size:14px;color:#6b7280;margin-bottom:16px}
+    .gate-input{width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:.75rem;outline:none}
+    .gate-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px #93c5fd80}
+    .gate-btn{width:100%;margin-top:14px;background:#2563eb;color:#fff;border:none;border-radius:.75rem;padding:12px 14px;font-weight:600;cursor:pointer}
+    .gate-btn:hover{background:#1d4ed8}
+    .gate-err{margin-top:10px;color:#dc2626;font-size:13px;min-height:18px}
   </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
@@ -327,8 +338,64 @@
     </div>
   </div>
 
-  <!-- ====== 後端 API 設定 / 工具 ====== -->
+  <!-- ====== 後端 API 設定 / 工具 & 登入保護 ====== -->
   <script>
+    /* === 簡易前端登入保護 === */
+    const PASSWORD_HASH = 'b5221e4a135f3928a8b0ba7c4d0435be03c9b72459c0d0527d12990ca34c7548'; // 你的 SHA-256
+    const LS_LOGIN_KEY  = 'teacher_mgmt_login_v1';
+
+    function toHex(buf){
+      return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+    async function sha256(text){
+      const enc = new TextEncoder().encode(text);
+      const digest = await crypto.subtle.digest('SHA-256', enc);
+      return toHex(digest);
+    }
+    function buildGate(){
+      const wrap = document.createElement('div');
+      wrap.className = 'gate-backdrop';
+      wrap.innerHTML = `
+        <div class="gate-card">
+          <div class="gate-title">請輸入密碼</div>
+          <div class="gate-desc">此頁面僅供內部使用。輸入正確密碼後方可進入系統。</div>
+          <input id="gatePw" type="password" placeholder="請輸入密碼" class="gate-input" autocomplete="current-password" />
+          <button id="gateBtn" class="gate-btn">登入</button>
+          <div id="gateErr" class="gate-err"></div>
+        </div>`;
+      document.body.appendChild(wrap);
+      return wrap;
+    }
+    function requireLogin(){
+      return new Promise((resolve)=>{
+        if(localStorage.getItem(LS_LOGIN_KEY)==='ok'){ resolve(true); return; }
+        const ui = buildGate();
+        const $pw  = ui.querySelector('#gatePw');
+        const $btn = ui.querySelector('#gateBtn');
+        const $err = ui.querySelector('#gateErr');
+        const go = async ()=>{
+          const pw = ($pw.value||'').trim();
+          if(!pw){ $err.textContent='請輸入密碼'; return; }
+          try{
+            const h = await sha256(pw);
+            if(h === PASSWORD_HASH){
+              localStorage.setItem(LS_LOGIN_KEY,'ok');
+              ui.remove();
+              resolve(true);
+            }else{
+              $err.textContent='密碼錯誤，請再試一次';
+              $pw.select();
+            }
+          }catch(e){
+            $err.textContent='瀏覽器不支援加密模組，請更換瀏覽器再試';
+          }
+        };
+        $btn.addEventListener('click', go);
+        $pw.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); });
+        setTimeout(()=> $pw.focus(), 50);
+      });
+    }
+
     /* === 你的 Web App URL（請保持 Execute as: Me、Who has access: Anyone） === */
     const API_BASE  = 'https://script.google.com/macros/s/AKfycbwboryIzd9D60pnkVmffL23httEhuZIApOd9O5Ofgnv4MGm9u3gUTkfmOweEAX-hQ07Pg/exec';
     const API_TOKEN = 'tr_demo_12345';
@@ -361,7 +428,7 @@
         email: toStr(t?.email),
         teacherType: (t?.teacherType === 'external' ? 'external' : 'internal'),
         workLocation: (t?.workLocation === 'onboard' ? 'onboard' : 'onshore'),
-        photo: toStr(t?.photo), // URL（Drive）
+        photo: toStr(t?.photo),
         experiences: arrStr(t?.experiences),
         certificates: Array.isArray(t?.certificates)
           ? t.certificates.map(c => (typeof c === 'string'
@@ -443,6 +510,10 @@
 
     /* ---------- 啟動 ---------- */
     document.addEventListener('DOMContentLoaded', async () => {
+      // 先要求登入
+      const ok = await requireLogin();
+      if(!ok) return;
+
       renderTeacherGrid();
       setupLocationSelection();
 
@@ -454,7 +525,7 @@
       }
     });
 
-    /* ---------- 互動 ---------- */
+    /* ---------- 互動（以下原本功能不變） ---------- */
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
         if (e.target.name === 'workLocation') {
@@ -520,7 +591,7 @@
             <h3 class="text-xl font-medium text-gray-600 mb-2">找不到符合的師資</h3>
             <p class="text-gray-500">請嘗試其他關鍵字或清除搜尋條件</p>
           </div>` : `
-          <div class="col-span-full text-center py-12">
+          <div class="col-span-full text中心 py-12">
             <div class="text-6xl mb-4">👨‍🏫</div>
             <h3 class="text-xl font-medium text-gray-600 mb-2">尚未新增任何師資</h3>
             <p class="text-gray-500">點擊上方「新增師資」按鈕開始建立您的師資陣容</p>
@@ -559,7 +630,7 @@
                     <span>🏢</span><span>在岸</span>
                   </div>`}
               </div>
-              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text白 text-xl font-bold overflow-hidden">
                 ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : initial(teacher.name)}
               </div>
               <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
@@ -684,7 +755,7 @@
               <h1 class="text-4xl font-bold ${titleColor} mb-3">${teacher.name}</h1>
               <div class="space-y-2 text-lg">
                 ${teacher.email ? `<div class="flex items-center justify-center md:justify-start space-x-2"><span class="text-gray-600">📧</span><span class="text-gray-700">${teacher.email}</span></div>` : ''}
-                <div class="flex items-center justify-center md:justify-start space-x-2">
+                <div class="flex items中心 justify-center md:justify-start space-x-2">
                   <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'}">${teacher.workLocation==='onboard'?'🚢':'🏢'}</span>
                   <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">${teacher.workLocation==='onboard'?'海上工作':'陸地工作'}</span>
                 </div>
@@ -710,7 +781,7 @@
                 ${teacher.certificates.map(cert=>{
                   const certName = typeof cert==='string'?cert:cert.name;
                   const fileUrl  = typeof cert==='object' ? cert.fileUrl : '';
-                  return `<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-green-500">
+                  return `<div class="bg白 rounded-lg p-4 shadow-sm border-l-4 border-green-500">
                     <div class="flex items-center justify-between">
                       <p class="text-gray-700 flex-1">${certName}</p>
                       ${fileUrl?`<button onclick="viewCertificateFromDetail('${certName}','${fileUrl}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors ml-3">👁️ 檢視</button>`:''}
@@ -725,14 +796,14 @@
           <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl">📚</span>講授課程</h3>
           ${(teacher.subjects&&teacher.subjects.length>0)?`
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              ${teacher.subjects.map(s=>`<div class="bg-white rounded-lg p-4 shadow-sm text-center border-l-4 border-purple-500"><p class="text-gray-700 font-medium">${s}</p></div>`).join('')}
+              ${teacher.subjects.map(s=>`<div class="bg白 rounded-lg p-4 shadow-sm text中心 border-l-4 border-purple-500"><p class="text-gray-700 font-medium">${s}</p></div>`).join('')}
             </div>`:`
             <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📖</div><p>尚未填寫講授課程</p></div>`}
         </div>
 
         ${currentMode==='edit'?`
         <div class="mt-8 text-center">
-          <button onclick="editTeacher(${teacher.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl">✏️ 編輯師資資料</button>
+          <button onclick="editTeacher(${teacher.id})" class="bg-blue-600 hover:bg-blue-700 text白 px-8 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl">✏️ 編輯師資資料</button>
         </div>`:''}
       `;
     }
@@ -758,38 +829,38 @@
     function addExperience(value=''){
       const c = document.getElementById('experienceList');
       const div = document.createElement('div');
-      div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
+      div.className = 'flex items-center space-x-2 bg白 p-3 rounded-lg border border-gray-200 move-transition';
       div.innerHTML = `
         <div class="flex flex-col space-y-1">
-          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↑</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↓</button>
         </div>
         <input type="text" value="${value}" placeholder="請輸入工作經歷..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text白 px-3 py-2 rounded-lg text-sm">✕</button>`;
       c.appendChild(div);
     }
 
     function addCertificate(value='', fileName='', fileUrl=''){
       const c = document.getElementById('certificateList');
       const div = document.createElement('div');
-      div.className = 'bg-white p-4 rounded-lg border border-gray-200 move-transition';
+      div.className = 'bg白 p-4 rounded-lg border border-gray-200 move-transition';
       const uid = Date.now()+Math.random();
       div.innerHTML = `
         <div class="flex items-start space-x-3">
           <div class="flex flex-col space-y-1">
-            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↑</button>
+            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↓</button>
           </div>
           <div class="flex-1 space-y-3">
             <input type="text" value="${value}" placeholder="請輸入證書或資格名稱..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <div class="flex items-center space-x-2">
               <input type="file" id="certFile_${uid}" accept=".jpg,.jpeg,.pdf" class="hidden" onchange="handleCertificateFile(this)">
-              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">📎 上傳檔案</button>
+              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text白 px-3 py-2 rounded-lg text-sm">📎 上傳檔案</button>
               <div class="file-info text-sm text-gray-600" data-filename="${fileName}" data-fileurl="${fileUrl}">${fileName?`已上傳: ${fileName}`:'未上傳檔案'}</div>
-              ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">👁️ 檢視</button>`:''}
+              ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text白 px-2 py-1 rounded text-xs">👁️ 檢視</button>`:''}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
+          <button type="button" onclick="this.closest('.bg白').remove()" class="bg-red-500 hover:bg-red-600 text白 px-3 py-2 rounded-lg text-sm">✕</button>
         </div>`;
       c.appendChild(div);
     }
@@ -814,7 +885,7 @@
           btn = document.createElement('button');
           btn.type='button';
           btn.onclick=()=>viewCertificateFile(btn);
-          btn.className='bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs';
+          btn.className='bg-green-500 hover:bg-green-600 text白 px-2 py-1 rounded text-xs';
           btn.innerHTML='👁️ 檢視';
           info.parentElement.appendChild(btn);
         }
@@ -842,24 +913,24 @@
     function addSubject(value=''){
       const c = document.getElementById('subjectList');
       const div = document.createElement('div');
-      div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
+      div.className = 'flex items-center space-x-2 bg白 p-3 rounded-lg border border-gray-200 move-transition';
       div.innerHTML = `
         <div class="flex flex-col space-y-1">
-          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↑</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text白 px-2 py-1 rounded text-xs">↓</button>
         </div>
         <input type="text" value="${value}" placeholder="請輸入講授課程..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text白 px-3 py-2 rounded-lg text-sm">✕</button>`;
       c.appendChild(div);
     }
 
     function moveUp(button){
-      const item = button.closest('.bg-white') || button.closest('.flex.items-center');
+      const item = button.closest('.bg白') || button.closest('.flex.items-center');
       const prev = item.previousElementSibling;
       if(prev){ item.parentNode.insertBefore(item, prev); item.style.transform='translateY(-5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
     }
     function moveDown(button){
-      const item = button.closest('.bg-white') || button.closest('.flex.items-center');
+      const item = button.closest('.bg白') || button.closest('.flex.items-center');
       const next = item.nextElementSibling;
       if(next){ item.parentNode.insertBefore(next, item); item.style.transform='translateY(5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
     }
@@ -897,7 +968,7 @@
       if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('請輸入正確的Email格式'); return; }
 
       const experiences = Array.from(document.querySelectorAll('#experienceList input')).map(i=>i.value.trim()).filter(Boolean);
-      const certificates = Array.from(document.querySelectorAll('#certificateList .bg-white')).map(item=>{
+      const certificates = Array.from(document.querySelectorAll('#certificateList .bg白')).map(item=>{
         const nameInput = item.querySelector('input[type="text"]');
         const info = item.querySelector('.file-info');
         const nm = nameInput.value.trim(); if(!nm) return null;
@@ -1029,7 +1100,7 @@
       document.getElementById('onshoreCount').textContent = onshore;
 
       const ip = total>0 ? ((internal/total)*100).toFixed(1) : 0;
-      const ep = total>0 ? ((external/total)*100).toFixed(1) : 0;
+      const ep = total>0 ? ((外部/total)*100).toFixed(1) : 0;
       const obp = total>0 ? ((onboard/total)*100).toFixed(1) : 0;
       const osp = total>0 ? ((onshore/total)*100).toFixed(1) : 0;
 
@@ -1059,9 +1130,9 @@
       const sorted = Object.entries(counts).sort(([,a],[,b])=>b-a).slice(0,10);
       const box = document.getElementById('popularSubjects');
       box.innerHTML = sorted.length>0 ? sorted.map(([s,c],i)=>`
-        <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-          <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold">${i+1}</div>
+        <div class="flex items-center justify-between p-3 bg白 rounded-lg shadow-sm">
+          <div class="flex items中心 space-x-3">
+            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text白 rounded-full flex items中心 justify中心 text-sm font-bold">${i+1}</div>
             <span class="font-medium text-gray-700">${s}</span>
           </div>
           <div class="text-right">
@@ -1069,7 +1140,7 @@
             <div class="text-xs text-gray-500">師資教授</div>
           </div>
         </div>`).join('') : `
-        <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📚</div><p>尚未有課程資料</p></div>`;
+        <div class="text中心 py-8 text-gray-500"><div class="text-4xl mb-2">📚</div><p>尚未有課程資料</p></div>`;
     }
 
     /* 匯出 */
