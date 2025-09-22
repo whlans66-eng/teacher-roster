@@ -69,7 +69,7 @@
           </div>
 
           <!-- 搜尋 + 新增 -->
-          <div class="flex flex-col md:flex-row items-stretch md:items-center space-y-3 md:space-y-0 md:space-x-4 w<strong></strong>full md:w-auto">
+          <div class="flex flex-col md:flex-row items-stretch md:items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto">
             <div class="relative">
               <input id="searchInput" type="text" placeholder="搜尋師資姓名、課程、經歷..." class="w-full md:w-80 px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" oninput="searchTeachers()">
               <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</div>
@@ -125,7 +125,7 @@
               </div><div class="text-4xl opacity-80">👨‍💼</div>
             </div>
           </div>
-          <div class="bg-gradient-to-br from紫-500 to紫-600 rounded-xl p-6 text-white">
+          <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-purple-100 text-sm font-medium">外部師資</p>
@@ -159,13 +159,13 @@
             </div>
           </div>
           <div class="bg-gray-50 rounded-xl p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items中心"><span class="mr-2">🗺️</span>工作地點分析</h3>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">🗺️</span>工作地點分析</h3>
             <div class="space-y-4">
               <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
                 <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-orange-500 rounded-full"></div><span class="font-medium text-gray-700">海上工作</span></div>
                 <div class="text-right"><div class="font-bold text-orange-600" id="onboardCountDetail">0 位</div><div class="text-sm text-gray-500" id="onboardPercentDetail">0%</div></div>
               </div>
-              <div class="flex items-center justify之間 p-4 bg-white rounded-lg shadow-sm">
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
                 <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-green-500 rounded-full"></div><span class="font-medium text-gray-700">陸地工作</span></div>
                 <div class="text-right"><div class="font-bold text-green-600" id="onshoreCountDetail">0 位</div><div class="text-sm text-gray-500" id="onshorePercentDetail">0%</div></div>
               </div>
@@ -184,7 +184,7 @@
             <div class="bg-white rounded-lg p-4 text-center shadow-sm">
               <div class="text-2xl font-bold text-orange-600" id="externalOnboard">0</div><div class="text-sm text-gray-600">外部海上師資</div>
             </div>
-            <div class="bg-white rounded-lg p-4 text中心 shadow-sm">
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
               <div class="text-2xl font-bold text-green-600" id="externalOnshore">0</div><div class="text-sm text-gray-600">外部陸地師資</div>
             </div>
           </div>
@@ -215,7 +215,7 @@
 
     <!-- 師資詳細（呈現模式） -->
     <div id="teacherDetailView" class="hidden slide-in">
-      <div class="bg白 rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
+      <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
         <button onclick="backToList()" class="mb-6 text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors">← 返回師資列表</button>
         <div id="teacherDetailContent"></div>
       </div>
@@ -299,7 +299,7 @@
 
           <!-- 證書 -->
           <div class="bg-gray-50 p-6 rounded-lg">
-            <div class="flex justify之間 items-center mb-4">
+            <div class="flex justify-between items-center mb-4">
               <h3 class="text-xl font-semibold text-gray-800">證書與資格</h3>
               <button type="button" onclick="addCertificate()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增證書</button>
             </div>
@@ -329,61 +329,6 @@
 
   <!-- ====== 後端 API 設定 / 工具 ====== -->
   <script>
-    /* === (新增) 簡易前端登入保護：只存 SHA-256 雜湊，不存明碼 === */
-    const PASSWORD_HASH = '8c3b73d24b3d2e678b314d748ec17fa0fb97880f51ddcdf13c0b64bd34fb50f'; // 你的密碼的 SHA-256
-    const LS_LOGIN_KEY  = 'teacher_mgmt_login_v1';
-
-    const toHex = (buf)=>[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
-    async function sha256(text){
-      const enc = new TextEncoder().encode(text);
-      const digest = await crypto.subtle.digest('SHA-256', enc);
-      return toHex(digest);
-    }
-    function buildGate(){
-      const wrap = document.createElement('div');
-      wrap.className = 'fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center';
-      wrap.innerHTML = `
-        <div class="w-[92vw] max-w-[420px] bg-white rounded-2xl shadow-2xl p-6">
-          <div class="text-2xl font-extrabold text-slate-900 mb-1">請輸入密碼</div>
-          <div class="text-sm text-slate-500 mb-3">此頁面僅供內部使用。輸入正確密碼後方可進入系統。</div>
-          <input id="gatePw" type="password" placeholder="請輸入密碼" class="w-full border-2 border-slate-200 rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" autocomplete="current-password">
-          <button id="gateBtn" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 font-semibold">登入</button>
-          <div id="gateErr" class="mt-2 text-red-600 text-sm min-h-[1.2rem]"></div>
-        </div>`;
-      document.body.appendChild(wrap);
-      return wrap;
-    }
-    function requireLogin(){
-      return new Promise((resolve)=>{
-        if(localStorage.getItem(LS_LOGIN_KEY)==='ok'){ resolve(true); return; }
-        const ui = buildGate();
-        const $pw  = ui.querySelector('#gatePw');
-        const $btn = ui.querySelector('#gateBtn');
-        const $err = ui.querySelector('#gateErr');
-
-        const go = async ()=>{
-          const pw = ($pw.value||'').trim();
-          if(!pw){ $err.textContent='請輸入密碼'; return; }
-          try{
-            const h = await sha256(pw);
-            if(h === PASSWORD_HASH){
-              localStorage.setItem(LS_LOGIN_KEY,'ok');
-              ui.remove();
-              resolve(true);
-            }else{
-              $err.textContent='密碼錯誤，請再試一次';
-              $pw.select();
-            }
-          }catch(e){
-            $err.textContent='瀏覽器不支援加密模組，請更換瀏覽器再試';
-          }
-        };
-        $btn.addEventListener('click', go);
-        $pw.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); });
-        setTimeout(()=> $pw.focus(), 50);
-      });
-    }
-
     /* === 你的 Web App URL（請保持 Execute as: Me、Who has access: Anyone） === */
     const API_BASE  = 'https://script.google.com/macros/s/AKfycbwboryIzd9D60pnkVmffL23httEhuZIApOd9O5Ofgnv4MGm9u3gUTkfmOweEAX-hQ07Pg/exec';
     const API_TOKEN = 'tr_demo_12345';
@@ -496,9 +441,8 @@
       return null;
     }
 
-    /* ---------- 啟動（改：先通過密碼閘，再初始化） ---------- */
+    /* ---------- 啟動 ---------- */
     document.addEventListener('DOMContentLoaded', async () => {
-      await requireLogin(); // ★ 先登入
       renderTeacherGrid();
       setupLocationSelection();
 
@@ -608,7 +552,7 @@
                     <span>👨‍🎓</span><span>外部</span>
                   </div>`}
                 ${teacher.workLocation==='onboard' ? `
-                  <div class="bg-orange-500 text白 px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                  <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                     <span>🚢</span><span>在船</span>
                   </div>` : `
                   <div class="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
@@ -1115,7 +1059,7 @@
       const sorted = Object.entries(counts).sort(([,a],[,b])=>b-a).slice(0,10);
       const box = document.getElementById('popularSubjects');
       box.innerHTML = sorted.length>0 ? sorted.map(([s,c],i)=>`
-        <div class="flex items-center justify之間 p-3 bg-white rounded-lg shadow-sm">
+        <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
           <div class="flex items-center space-x-3">
             <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold">${i+1}</div>
             <span class="font-medium text-gray-700">${s}</span>
