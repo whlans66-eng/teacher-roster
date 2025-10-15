@@ -220,73 +220,132 @@
       </div>
     </div>
 
-    <!-- 行事曆視圖 -->
-<div id="calendarView" class="hidden fade-in">
-  <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-7xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <button onclick="backToListFromCalendar()"
-        class="text-rose-600 hover:text-rose-800 font-medium flex items-center transition-colors">← 返回師資管理</button>
-      <div class="flex items-center space-x-2">
-        <button id="calPrevBtn" class="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">◀</button>
-        <div id="calTitle" class="text-xl font-bold text-gray-800 w-40 text-center">2025 年 10 月</div>
-        <button id="calNextBtn" class="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">▶</button>
-        <button id="calTodayBtn" class="ml-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">今天</button>
-      </div>
-      <div class="flex items-center space-x-2">
-        <button onclick="exportCalendarJSON()" class="px-3 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">匯出 JSON</button>
-        <label class="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer">
-          匯入 JSON<input type="file" accept="application/json" class="hidden" onchange="importCalendarJSON(this)">
-        </label>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- 月曆 -->
-      <div class="lg:col-span-2">
-        <div class="grid grid-cols-7 text-center text-gray-500 text-sm mb-2">
-          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
-        </div>
-        <div id="calGrid" class="grid grid-cols-7 gap-2"></div>
-      </div>
-
-      <!-- 右側面板：建立/列表 -->
-      <div>
-        <div class="bg-gray-50 rounded-xl p-4 mb-4">
-          <h3 class="text-lg font-semibold text-gray-800 mb-3">新增事件</h3>
-          <div class="space-y-3">
-            <div>
-              <label class="block text-sm text-gray-600 mb-1">日期 *</label>
-              <input id="evtDate" type="date" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div>
-              <label class="block text-sm text-gray-600 mb-1">標題 *</label>
-              <input id="evtTitle" type="text" placeholder="例如：教學會議" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div>
-              <label class="block text-sm text-gray-600 mb-1">指派師資（可選）</label>
-              <select id="evtTeacherId" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
-                <option value="">（未指派）</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm text-gray-600 mb-1">地點</label>
-              <input id="evtLocation" type="text" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="會議室 A / 線上">
-            </div>
-            <div>
-              <label class="block text-sm text-gray-600 mb-1">備註</label>
-              <textarea id="evtNote" rows="2" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"></textarea>
-            </div>
-            <button onclick="createCalendarEvent()"
-              class="w-full bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded">➕ 建立事件</button>
-            <div id="evtMsg" class="text-sm h-5 text-rose-600"></div>
+    <!-- 行事曆視圖（新樣式） -->
+<div id="calendarView" class="hidden">
+  <div class="gradient-bg min-h-full">
+    <div class="container mx-auto p-8 max-w-7xl">
+      <!-- 標題和控制項 -->
+      <div class="glass-effect rounded-2xl shadow-2xl p-8 mb-8">
+        <div class="flex justify-between items-center mb-6">
+          <h1 class="text-4xl font-bold flex items-center">
+            <span class="text-4xl mr-3">📅</span>
+            <span class="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">行事曆</span>
+          </h1>
+          <div class="flex items-center gap-3">
+            <button onclick="openAddEventModal()" class="btn-primary text-white px-8 py-3 rounded-xl font-semibold shadow-lg">
+              ✨ 新增事件
+            </button>
+            <button onclick="backToListFromCalendar()" class="bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl">
+              ← 返回師資管理
+            </button>
           </div>
         </div>
 
-        <div class="bg-gray-50 rounded-xl p-4">
-          <h3 class="text-lg font-semibold text-gray-800 mb-3">當日事件</h3>
-          <div id="dayEventList" class="space-y-2"></div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-6">
+            <button onclick="previousPeriod()" class="bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl hover:transform hover:-translate-y-1">
+              ← <span id="prevLabel">上個月</span>
+            </button>
+            <h2 id="currentMonth" class="text-2xl font-bold text-gray-800 min-w-[200px] text-center"></h2>
+            <button onclick="nextPeriod()" class="bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl hover:transform hover:-translate-y-1">
+              <span id="nextLabel">下個月</span> →
+            </button>
+          </div>
+          <div class="flex items-center space-x-4">
+            <div class="flex bg-white bg-opacity-60 rounded-xl p-2 shadow-lg">
+              <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md">
+                📅 月檢視
+              </button>
+              <button id="weekViewBtn" onclick="setViewMode('week')" class="px-4 py-2 rounded-lg text-sm font-semibold transition-all text-gray-600 hover:text-gray-800 hover:bg-white hover:bg-opacity-50">
+                📊 週檢視
+              </button>
+            </div>
+            <button onclick="goToToday()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:transform hover:-translate-y-1">
+              🎯 今天
+            </button>
+          </div>
         </div>
       </div>
+
+      <!-- 今日提醒 -->
+      <div id="todayReminders" class="bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 rounded-2xl shadow-2xl p-6 mb-8 text-white hidden">
+        <div class="flex items-center mb-4">
+          <span class="text-3xl mr-3 animate-bounce">⏰</span>
+          <h3 class="text-2xl font-bold">今日提醒</h3>
+        </div>
+        <div id="remindersList" class="space-y-3"></div>
+      </div>
+
+      <!-- 行事曆網格 -->
+      <div class="glass-effect rounded-2xl shadow-2xl overflow-hidden">
+        <!-- 星期標題 -->
+        <div class="grid grid-cols-7 bg-gradient-to-r from-purple-500 to-blue-500">
+          <div class="p-5 text-center font-bold text-white border-r border-white border-opacity-20"><span class="text-lg">🌅</span> 日</div>
+          <div class="p-5 text-center font-bold text-white border-r border-white border-opacity-20"><span class="text-lg">🌟</span> 一</div>
+          <div class="p-5 text-center font-bold text-white border-r border-white border-opacity-20"><span class="text-lg">💫</span> 二</div>
+          <div class="p-5 text-center font-bold text-white border-r border-white border-opacity-20"><span class="text-lg">⭐</span> 三</div>
+          <div class="p-5 text-center font-bold text-white border-r border-white border-opacity-20"><span class="text-lg">✨</span> 四</div>
+          <div class="p-5 text-center font-bold text-white border-r border-white border-opacity-20"><span class="text-lg">🌙</span> 五</div>
+          <div class="p-5 text-center font-bold text-white"><span class="text-lg">🎉</span> 六</div>
+        </div>
+        <!-- 日期網格 -->
+        <div id="calendarGrid" class="grid grid-cols-7"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增事件彈窗（整合師資/地點/備註） -->
+  <div id="addEventModal" class="fixed inset-0 bg-black bg-opacity-60 modal-backdrop hidden flex items-center justify-center z-50">
+    <div class="glass-effect rounded-2xl p-8 w-[480px] mx-4 shadow-2xl border border-white border-opacity-20">
+      <h3 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">✨ 新增事件</h3>
+      <form onsubmit="addEventIntegrated(event)">
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold mb-2">📝 事件標題</label>
+          <input type="text" id="eventTitle" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80" required>
+        </div>
+        <div class="mb-4 grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-2">📅 日期</label>
+            <input type="date" id="eventDate" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-2">⏰ 時間</label>
+            <input type="time" id="eventTime" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold mb-2">👩‍🏫 指派師資（可選）</label>
+          <select id="eventTeacherId" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+            <option value="">（未指派）</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold mb-2">📍 地點</label>
+          <input type="text" id="eventLocation" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80" placeholder="會議室 A / 線上">
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 font-semibold mb-2">🗒️ 備註</label>
+          <textarea id="eventNote" rows="2" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80"></textarea>
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 font-semibold mb-3">🎨 顏色</label>
+          <div class="flex space-x-3 justify-center">
+            <button type="button" onclick="selectColor('bg-blue-500')" class="w-8 h-8 bg-blue-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+            <button type="button" onclick="selectColor('bg-green-500')" class="w-8 h-8 bg-green-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+            <button type="button" onclick="selectColor('bg-red-500')" class="w-8 h-8 bg-red-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+            <button type="button" onclick="selectColor('bg-purple-500')" class="w-8 h-8 bg-purple-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+            <button type="button" onclick="selectColor('bg-yellow-500')" class="w-8 h-8 bg-yellow-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+          </div>
+        </div>
+        <div class="flex space-x-4">
+          <button type="button" onclick="closeAddEventModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-semibold transition-all shadow-md">
+            ❌ 取消
+          </button>
+          <button type="submit" class="flex-1 btn-primary text-white py-3 rounded-xl font-semibold shadow-lg">
+            ✅ 儲存
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -1212,243 +1271,314 @@
       forceDownload(blob, _fn('師資陣容','xlsx'), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
-    // ======== 行事曆：狀態與工具 ========
-    let calendarState = (() => {
-      const d = new Date();
-      return { y: d.getFullYear(), m: d.getMonth() }; // m: 0-11
-    })();
-    let calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
-    // event = { id, date:'YYYY-MM-DD', title, teacherId:null|number, location:'', note:'' }
+   <script>
+/* ======== 行事曆（新樣式整合，沿用既有資料結構） ======== */
+let currentDate = new Date();
+let viewMode = 'month';            // 'month' | 'week'
+let selectedColor = 'bg-blue-500'; // 事件色
+let reminderInterval = null;
 
-    function saveCalendarLocal(){
-      localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+// 仍沿用你前面定義的全域 teachers（師資陣列）
+let calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
+// event = { id, date:'YYYY-MM-DD', title, time:'HH:MM'|'', teacherId:null|number, location:'', note:'', color:'bg-xxx-500' }
+
+function saveCalendarLocal(){
+  localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+}
+
+function fmtDate(y,m,d){
+  const mm = String(m+1).padStart(2,'0');
+  const dd = String(d).padStart(2,'0');
+  return `${y}-${mm}-${dd}`;
+}
+function todayStr(){
+  const d = new Date();
+  return fmtDate(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/* —— 顯示 / 返回 —— */
+function showCalendarView(){
+  // 切換視圖
+  document.getElementById('teacherList').classList.add('hidden');
+  document.getElementById('executiveView').classList.add('hidden');
+  document.getElementById('teacherDetail').classList.add('hidden');
+  document.getElementById('teacherDetailView').classList.add('hidden');
+  document.getElementById('calendarView').classList.remove('hidden');
+
+  // 師資下拉
+  const sel = document.getElementById('eventTeacherId');
+  sel.innerHTML = `<option value="">（未指派）</option>` + (teachers||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+
+  // 預設今日
+  const d = new Date();
+  currentDate = d;
+  document.getElementById('eventDate').value = todayStr();
+
+  // 渲染、提醒
+  renderCalendar();
+  startReminderCheck();
+}
+function backToListFromCalendar(){
+  stopReminderCheck();
+  document.getElementById('calendarView').classList.add('hidden');
+  document.getElementById('teacherList').classList.remove('hidden');
+}
+
+/* —— UI 行為 —— */
+function setViewMode(mode){
+  viewMode = mode;
+  const monthBtn = document.getElementById('monthViewBtn');
+  const weekBtn  = document.getElementById('weekViewBtn');
+  if(mode==='month'){
+    monthBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md';
+    weekBtn.className  = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all text-gray-600 hover:text-gray-800 hover:bg-white hover:bg-opacity-50';
+    document.getElementById('prevLabel').textContent = '上個月';
+    document.getElementById('nextLabel').textContent = '下個月';
+  }else{
+    weekBtn.className  = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md';
+    monthBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold transition-all text-gray-600 hover:text-gray-800 hover:bg-white hover:bg-opacity-50';
+    document.getElementById('prevLabel').textContent = '上週';
+    document.getElementById('nextLabel').textContent = '下週';
+  }
+  renderCalendar();
+}
+function previousPeriod(){
+  if(viewMode==='month'){ currentDate.setMonth(currentDate.getMonth()-1); }
+  else{ currentDate.setDate(currentDate.getDate()-7); }
+  renderCalendar();
+}
+function nextPeriod(){
+  if(viewMode==='month'){ currentDate.setMonth(currentDate.getMonth()+1); }
+  else{ currentDate.setDate(currentDate.getDate()+7); }
+  renderCalendar();
+}
+function goToToday(){ currentDate = new Date(); renderCalendar(); }
+
+/* —— Modal —— */
+function openAddEventModal(){
+  document.getElementById('eventTitle').value = '';
+  document.getElementById('eventTime').value  = '';
+  document.getElementById('eventLocation').value = '';
+  document.getElementById('eventNote').value = '';
+  selectedColor = 'bg-blue-500';
+  document.getElementById('eventDate').value = todayStr();
+  document.getElementById('addEventModal').classList.remove('hidden');
+}
+function openAddEventModalForDate(dateKey){
+  openAddEventModal();
+  document.getElementById('eventDate').value = dateKey;
+}
+function closeAddEventModal(){
+  document.getElementById('addEventModal').classList.add('hidden');
+}
+function selectColor(color){
+  selectedColor = color;
+}
+
+/* —— 資料 CRUD —— */
+function addEventIntegrated(e){
+  e.preventDefault();
+  const title = (document.getElementById('eventTitle').value||'').trim();
+  const date  = (document.getElementById('eventDate').value||'').trim();
+  const time  = (document.getElementById('eventTime').value||'').trim();
+  const teacherIdVal = document.getElementById('eventTeacherId').value;
+  const teacherId = teacherIdVal ? Number(teacherIdVal) : null;
+  const location = (document.getElementById('eventLocation').value||'').trim();
+  const note     = (document.getElementById('eventNote').value||'').trim();
+
+  if(!title || !date){ return; }
+
+  calendarEvents.push({
+    id: Date.now(),
+    date, title, time,
+    teacherId, location, note,
+    color: selectedColor
+  });
+  saveCalendarLocal();
+  closeAddEventModal();
+  renderCalendar();
+}
+function deleteEventById(id){
+  calendarEvents = calendarEvents.filter(ev=>ev.id!==id);
+  saveCalendarLocal();
+  renderCalendar();
+}
+
+/* —— 渲染 —— */
+function renderCalendar(){
+  if(viewMode==='month') renderMonthView();
+  else renderWeekView();
+}
+
+function renderMonthView(){
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('currentMonth').textContent = `${year}年 ${monthNames[month]}`;
+
+  const firstDay = new Date(year, month, 1);
+  const start = new Date(firstDay);
+  start.setDate(start.getDate() - firstDay.getDay());
+
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+  grid.className = 'grid grid-cols-7';
+
+  const today = new Date().toDateString();
+
+  for(let w=0; w<6; w++){
+    for(let d=0; d<7; d++){
+      const cellDate = new Date(start);
+      cellDate.setDate(start.getDate() + (w*7) + d);
+      const isCurrentMonth = (cellDate.getMonth()===month);
+      const isToday = (cellDate.toDateString()===today);
+      const dateKey = cellDate.toISOString().split('T')[0];
+
+      // 取出該日事件（依時間排序）
+      const dayEvents = calendarEvents
+        .filter(ev=>ev.date===dateKey)
+        .sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+
+      const cell = document.createElement('div');
+      cell.className = `calendar-day border-r border-b border-white border-opacity-20 p-4 ${
+        isCurrentMonth ? 'bg-white bg-opacity-60' : 'bg-gray-100 bg-opacity-40'
+      } ${isToday ? 'today-highlight' : ''} hover:bg-white hover:bg-opacity-80 transition-all cursor-pointer`;
+      cell.onclick = ()=> openAddEventModalForDate(dateKey);
+
+      cell.innerHTML = `
+        <div class="flex justify-between items-start mb-2">
+          <span class="text-lg font-bold ${isCurrentMonth ? (isToday?'text-white':'text-gray-800'):'text-gray-400'} ${isToday?'bg-white bg-opacity-20 px-2 py-1 rounded-lg':''}">
+            ${cellDate.getDate()}
+          </span>
+        </div>
+        <div class="space-y-1">
+          ${dayEvents.map(ev=>`
+            <div class="event-item ${ev.color||'bg-blue-500'} text-white text-xs truncate"
+                 title="點擊刪除：${ev.title}${ev.time?' '+ev.time:''}${ev.location?(' · '+ev.location):''}${ev.teacherId?(' · '+(teachers.find(t=>t.id===ev.teacherId)?.name||'')):''}"
+                 onclick="event.stopPropagation(); deleteEventById(${ev.id})">
+              ${ev.time? ev.time+' ': ''}${ev.title}${ev.teacherId?` · ${(teachers.find(t=>t.id===ev.teacherId)?.name||'')}`:''}
+            </div>`).join('')}
+        </div>
+      `;
+      grid.appendChild(cell);
     }
+  }
+}
 
-    function fmtDate(y,m,d){ // m:0-11
-      const mm = String(m+1).padStart(2,'0');
-      const dd = String(d).padStart(2,'0');
-      return `${y}-${mm}-${dd}`;
-    }
-    function parseDateStr(s){ const [y,m,d] = s.split('-').map(n=>parseInt(n,10)); return {y,m:m-1,d}; }
+function renderWeekView(){
+  const startOfWeek = new Date(currentDate);
+  startOfWeek.setDate(startOfWeek.getDate()-startOfWeek.getDay());
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate()+6);
 
-    function showCalendarView(){
-      document.getElementById('teacherList').classList.add('hidden');
-      document.getElementById('executiveView').classList.add('hidden');
-      document.getElementById('teacherDetail').classList.add('hidden');
-      document.getElementById('teacherDetailView').classList.add('hidden');
-      document.getElementById('calendarView').classList.remove('hidden');
+  const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('currentMonth').textContent =
+    `${startOfWeek.getFullYear()}年 ${monthNames[startOfWeek.getMonth()]} ${startOfWeek.getDate()}日 - ${endOfWeek.getDate()}日`;
 
-      // 生成師資下拉
-      const sel = document.getElementById('evtTeacherId');
-      sel.innerHTML = `<option value="">（未指派）</option>` + (teachers||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+  grid.className = 'grid grid-cols-7';
 
-      // 今天預選
-      const today = new Date();
-      document.getElementById('evtDate').value = fmtDate(today.getFullYear(), today.getMonth(), today.getDate());
+  const dayNames = ['日','一','二','三','四','五','六'];
+  const today = new Date().toDateString();
 
-      bindCalendarNav();
-      renderCalendar();
-    }
-    function backToListFromCalendar(){
-      document.getElementById('calendarView').classList.add('hidden');
-      document.getElementById('teacherList').classList.remove('hidden');
-    }
+  for(let i=0; i<7; i++){
+    const cellDate = new Date(startOfWeek);
+    cellDate.setDate(startOfWeek.getDate()+i);
+    const isToday = (cellDate.toDateString()===today);
+    const dateKey = cellDate.toISOString().split('T')[0];
 
-    function bindCalendarNav(){
-      document.getElementById('calPrevBtn').onclick = ()=>{
-        calendarState.m--; if(calendarState.m<0){calendarState.m=11; calendarState.y--;} renderCalendar();
-      };
-      document.getElementById('calNextBtn').onclick = ()=>{
-        calendarState.m++; if(calendarState.m>11){calendarState.m=0; calendarState.y++;} renderCalendar();
-      };
-      document.getElementById('calTodayBtn').onclick = ()=>{
-        const d = new Date(); calendarState.y = d.getFullYear(); calendarState.m = d.getMonth();
-        renderCalendar(); selectDay(fmtDate(d.getFullYear(), d.getMonth(), d.getDate()));
-      };
-    }
+    const dayEvents = calendarEvents
+      .filter(ev=>ev.date===dateKey)
+      .sort((a,b)=> (a.time||'').localeCompare(b.time||''));
 
-    function renderCalendar(){
-      const y = calendarState.y, m = calendarState.m;
-      document.getElementById('calTitle').textContent = `${y} 年 ${m+1} 月`;
+    const cell = document.createElement('div');
+    cell.className = `week-day border-r border-b border-white border-opacity-20 p-4 bg-white bg-opacity-60 ${isToday?'today-highlight':''} hover:bg-white hover:bg-opacity-80 transition-all cursor-pointer`;
+    cell.onclick = ()=> openAddEventModalForDate(dateKey);
 
-      const first = new Date(y, m, 1);
-      const firstWeekday = first.getDay(); // 0(日) - 6(六)
-      const daysInMonth = new Date(y, m+1, 0).getDate();
-      const grid = document.getElementById('calGrid');
-      grid.innerHTML = '';
+    cell.innerHTML = `
+      <div class="text-center mb-4 pb-3 border-b border-white border-opacity-30">
+        <div class="text-sm font-semibold ${isToday?'text-white':'text-gray-600'}">${dayNames[i]}</div>
+        <div class="text-2xl font-bold ${isToday?'text-white':'text-gray-800'} ${isToday?'bg-white bg-opacity-20 rounded-lg px-2 py-1 inline-block mt-1':''}">
+          ${cellDate.getDate()}
+        </div>
+      </div>
+      <div class="space-y-2">
+        ${dayEvents.map(ev=>`
+          <div class="event-item ${ev.color||'bg-blue-500'} text-white text-sm p-3 rounded-xl"
+               title="點擊刪除：${ev.title}${ev.time?' '+ev.time:''}${ev.location?(' · '+ev.location):''}${ev.teacherId?(' · '+(teachers.find(t=>t.id===ev.teacherId)?.name||'')):''}"
+               onclick="event.stopPropagation(); deleteEventById(${ev.id})">
+            <div class="font-semibold">${ev.title}${ev.teacherId?` · ${(teachers.find(t=>t.id===ev.teacherId)?.name||'')}`:''}</div>
+            ${ev.time? `<div class="text-xs opacity-90 mt-1">⏰ ${ev.time}${ev.location?` · ${ev.location}`:''}</div>` : (ev.location?`<div class="text-xs opacity-90 mt-1">${ev.location}</div>`:'')}
+            ${ev.note? `<div class="text-xs opacity-90 mt-1">🗒️ ${ev.note}</div>`:''}
+          </div>`).join('')}
+      </div>
+    `;
+    grid.appendChild(cell);
+  }
+}
 
-      // 補前導空白
-      for(let i=0;i<firstWeekday;i++){
-        const cell = document.createElement('div'); cell.className='p-3 rounded-xl';
-        grid.appendChild(cell);
-      }
+/* —— 提醒（30 分內即將開始） —— */
+function checkTodayReminders(){
+  const tStr = todayStr();
+  const now = new Date();
+  const upcoming = calendarEvents.filter(ev=>{
+    if(ev.date!==tStr || !ev.time) return false;
+    const dt = new Date(`${tStr}T${ev.time}`);
+    const diff = dt - now; // ms
+    return diff>0 && diff<=30*60*1000;
+  }).sort((a,b)=> (a.time||'').localeCompare(b.time||''));
 
-      // 實際日期
-      const todayStr = fmtDate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-      for(let d=1; d<=daysInMonth; d++){
-        const dateStr = fmtDate(y,m,d);
-        const dayBox = document.createElement('div');
-        dayBox.className = 'calendar-cell p-2 bg-white';
-        dayBox.innerHTML = `
-          <div class="flex items-center justify-between mb-1">
-            <div class="text-sm font-medium ${dateStr===todayStr?'text-blue-600':''}">${d}</div>
-            <button class="text-xs px-2 py-1 rounded bg-rose-50 text-rose-600 hover:bg-rose-100">新增</button>
+  const box = document.getElementById('todayReminders');
+  const list = document.getElementById('remindersList');
+  if(upcoming.length){
+    list.innerHTML = upcoming.map(ev=>{
+      const dt = new Date(`${tStr}T${ev.time}`);
+      const mins = Math.ceil((dt-now)/(60*1000));
+      const teacherName = ev.teacherId ? (teachers.find(t=>t.id===ev.teacherId)?.name || '') : '';
+      return `
+        <div class="reminder-item bg-white bg-opacity-20 rounded-lg p-3 flex items-center justify-between">
+          <div>
+            <div class="font-medium">${ev.title}${teacherName?` · ${teacherName}`:''}</div>
+            <div class="text-sm opacity-90">${ev.time} - ${mins}分鐘後開始${ev.location?` · ${ev.location}`:''}</div>
           </div>
-          <div class="space-y-1" data-list></div>
-        `;
-        // 點「新增」直接把右側日期填上
-        dayBox.querySelector('button').onclick = (e)=>{
-          e.stopPropagation();
-          document.getElementById('evtDate').value = dateStr;
-          document.getElementById('evtTitle').focus();
-          selectDay(dateStr);
-        };
-        // 點整格 => 顯示當日事件
-        dayBox.onclick = ()=> selectDay(dateStr);
+          <div class="text-2xl">⚠️</div>
+        </div>`;
+    }).join('');
+    box.classList.remove('hidden');
+  }else{
+    box.classList.add('hidden');
+  }
+}
+function startReminderCheck(){
+  if(reminderInterval) clearInterval(reminderInterval);
+  reminderInterval = setInterval(checkTodayReminders, 60000);
+  checkTodayReminders();
+}
+function stopReminderCheck(){
+  if(reminderInterval) clearInterval(reminderInterval);
+}
 
-        // 塞事件縮條
-        const list = dayBox.querySelector('[data-list]');
-        calendarEvents.filter(ev=>ev.date===dateStr).slice(0,3).forEach(ev=>{
-          const t = teachers.find(t=>t.id==ev.teacherId);
-          const tag = document.createElement('div');
-          tag.className = 'text-xs px-2 py-1 rounded bg-rose-600/10 text-rose-700 truncate';
-          tag.textContent = `${ev.title}${t?` · ${t.name}`:''}`;
-          list.appendChild(tag);
-        });
-        // 超過 3 筆顯示 +n
-        const extra = calendarEvents.filter(ev=>ev.date===dateStr).length - 3;
-        if(extra>0){
-          const more = document.createElement('div');
-          more.className = 'text-xs text-gray-400';
-          more.textContent = `+${extra} 更多...`;
-          list.appendChild(more);
-        }
-
-        grid.appendChild(dayBox);
-      }
-    }
-
-    function selectDay(dateStr){
-      const box = document.getElementById('dayEventList');
-      const items = calendarEvents.filter(ev=>ev.date===dateStr).sort((a,b)=>a.title.localeCompare(b.title));
-      box.innerHTML = items.length? '' : `<div class="text-gray-500 text-center py-6">這天目前沒有事件</div>`;
-      items.forEach(ev=>{
-        const t = teachers.find(t=>t.id==ev.teacherId);
-        const card = document.createElement('div');
-        card.className = 'p-3 bg-white rounded-lg shadow-sm border border-gray-200';
-        card.innerHTML = `
-          <div class="flex items-start justify-between">
-            <div>
-              <div class="font-medium text-gray-800">${ev.title}</div>
-              <div class="text-sm text-gray-500">${dateStr}${t?` · ${t.name}`:''}${ev.location?` · ${ev.location}`:''}</div>
-              ${ev.note?`<div class="text-sm text-gray-600 mt-1">${ev.note}</div>`:''}
-            </div>
-            <div class="flex items-center space-x-2">
-              <button class="text-blue-600 hover:underline text-sm">編輯</button>
-              <button class="text-rose-600 hover:underline text-sm">刪除</button>
-            </div>
-          </div>
-        `;
-        const [editBtn, delBtn] = card.querySelectorAll('button');
-        editBtn.onclick = ()=>{
-          document.getElementById('evtDate').value = ev.date;
-          document.getElementById('evtTitle').value = ev.title;
-          document.getElementById('evtTeacherId').value = ev.teacherId || '';
-          document.getElementById('evtLocation').value = ev.location || '';
-          document.getElementById('evtNote').value = ev.note || '';
-          document.getElementById('evtTitle').focus();
-          card.scrollIntoView({behavior:'smooth', block:'center'});
-          // 用 id 記住要編輯哪一筆
-          document.getElementById('evtMsg').dataset.editingId = ev.id;
-          document.getElementById('evtMsg').textContent = '編輯模式：請修改右側表單後按「建立事件」以儲存';
-        };
-        delBtn.onclick = ()=>{
-          if(!confirm('確定要刪除這筆事件？')) return;
-          calendarEvents = calendarEvents.filter(x=>x.id!==ev.id);
-          saveCalendarLocal();
-          renderCalendar();
-          selectDay(dateStr);
-        };
-        box.appendChild(card);
-      });
-    }
-
-    function createCalendarEvent(){
-      const msg = document.getElementById('evtMsg');
-      const date = (document.getElementById('evtDate').value||'').trim();
-      const title = (document.getElementById('evtTitle').value||'').trim();
-      const teacherId = document.getElementById('evtTeacherId').value || null;
-      const location = (document.getElementById('evtLocation').value||'').trim();
-      const note = (document.getElementById('evtNote').value||'').trim();
-      if(!date){ msg.textContent='請選擇日期'; return; }
-      if(!title){ msg.textContent='請輸入事件標題'; return; }
-
-      const editingId = msg.dataset.editingId;
-      if(editingId){
-        const i = calendarEvents.findIndex(e=>String(e.id)===String(editingId));
-        if(i>=0){
-          calendarEvents[i] = { ...calendarEvents[i], date, title, teacherId: teacherId?Number(teacherId):null, location, note };
-        }
-        delete msg.dataset.editingId;
-        msg.textContent = '已更新事件';
-      }else{
-        calendarEvents.push({
-          id: Date.now(),
-          date,
-          title,
-          teacherId: teacherId?Number(teacherId):null,
-          location, note
-        });
-        msg.textContent = '已建立事件';
-      }
-      saveCalendarLocal();
-      renderCalendar();
-      selectDay(date);
-      setTimeout(()=>{ msg.textContent=''; }, 1500);
-      // 清理標題避免誤觸連續送出
-      document.getElementById('evtTitle').value='';
-      // 其他欄位保留，方便持續新增同一天的事件
-    }
-
-    function exportCalendarJSON(){
-      const data = JSON.stringify(calendarEvents, null, 2);
-      const blob = new Blob([data], {type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `行事曆_${new Date().toISOString().slice(0,10)}.json`;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url), 1500);
-    }
-    function importCalendarJSON(input){
-      if(!(input.files && input.files[0])) return;
-      const file = input.files[0];
-      const fr = new FileReader();
-      fr.onload = ()=> {
-        try{
-          const arr = JSON.parse(fr.result);
-          if(!Array.isArray(arr)) throw new Error('格式錯誤');
-          // 只收合法欄位
-          calendarEvents = arr.map(e=>({
-            id: e.id ?? Date.now()+Math.random(),
-            date: e.date,
-            title: e.title,
-            teacherId: (e.teacherId===null||e.teacherId===undefined||e.teacherId==='')? null : Number(e.teacherId),
-            location: e.location || '',
-            note: e.note || ''
-          })).filter(e=>e.date && e.title);
-          saveCalendarLocal();
-          renderCalendar();
-          // 匯入後跳到該月（若有今天則選今天）
-          const d = new Date();
-          calendarState = { y: d.getFullYear(), m: d.getMonth() };
-          selectDay(fmtDate(d.getFullYear(), d.getMonth(), d.getDate()));
-          alert('匯入完成');
-        }catch(err){
-          alert('匯入失敗：'+err.message);
-        }
-      };
-      fr.readAsText(file);
-    }
-  </script>
+/* —— 初始一些樣式 class（從你給的 CSS 抽出） —— */
+(function injectCalendarCSS(){
+  const css = `
+    .calendar-day{min-height:140px;transition:all .3s ease;}
+    .calendar-day:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.1);}
+    .week-day{min-height:450px;transition:all .3s ease;}
+    .week-day:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.1);}
+    .event-item{font-size:.8rem;padding:8px 12px;margin:4px 0;border-radius:8px;cursor:pointer;transition:all .3s ease;box-shadow:0 2px 8px rgba(0,0,0,.1);backdrop-filter: blur(10px);}
+    .event-item:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 20px rgba(0,0,0,.15);}
+    .glass-effect{background: rgba(255,255,255,0.95);backdrop-filter: blur(20px);border:1px solid rgba(255,255,255,0.2);}
+    .gradient-bg{background: linear-gradient(135deg,#e0f2fe 0%,#f3e5f5 100%);}
+    .btn-primary{background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);transition: all .3s ease;}
+    .btn-primary:hover{transform: translateY(-2px);box-shadow:0 10px 25px rgba(102,126,234,.4);}
+    .today-highlight{background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;}
+  `;
+  const style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
+})();
+</script>
 </body>
 </html>
