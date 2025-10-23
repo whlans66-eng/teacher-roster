@@ -78,7 +78,7 @@
           <!-- 搜尋 + 新增 -->
           <div class="flex flex-col md:flex-row items-stretch md:items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto">
             <div class="relative">
-              <input id="searchInput" type="text" placeholder="搜尋師資姓名、課程、經歷..." class="w-full md:w-80 px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" oninput="searchTeachers()">
+              <input id="searchInput" type="text" placeholder="搜尋所有欄位（支援多個關鍵字，用空格分隔）" class="w-full md:w-80 px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" oninput="searchTeachers()">
               <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</div>
               <button onclick="clearSearch()" id="clearBtn" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">✕</button>
             </div>
@@ -1111,25 +1111,74 @@
 
     function searchTeachers(){
       const searchInput = document.getElementById('searchInput');
-      const kw = searchInput.value.trim().toLowerCase();
+      const searchText = searchInput.value.trim();
       const clearBtn = document.getElementById('clearBtn');
       const searchResults = document.getElementById('searchResults');
-      if(kw){ clearBtn.classList.remove('hidden'); }
-      else { clearBtn.classList.add('hidden'); searchResults.classList.add('hidden'); renderTeacherGrid(); return; }
 
-      filteredTeachers = teachers.filter(t=>{
-        if(String(t.name||'').toLowerCase().includes(kw)) return true;
-        if(t.email && String(t.email).toLowerCase().includes(kw)) return true;
-        if((t.experiences||[]).some(x=>String(x).toLowerCase().includes(kw))) return true;
-        if((t.certificates||[]).some(c=> typeof c==='string' ? String(c).toLowerCase().includes(kw) : String(c.name||'').toLowerCase().includes(kw))) return true;
-        if((t.subjects||[]).some(s=>String(s).toLowerCase().includes(kw))) return true;
-        return false;
+      if(searchText){
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+        searchResults.classList.add('hidden');
+        renderTeacherGrid();
+        return;
+      }
+
+      // 將搜尋字串分割成多個關鍵字（支援空格和逗號分隔）
+      const keywords = searchText
+        .split(/[,\s]+/)
+        .map(kw => kw.trim().toLowerCase())
+        .filter(kw => kw.length > 0);
+
+      if(keywords.length === 0){
+        clearBtn.classList.add('hidden');
+        searchResults.classList.add('hidden');
+        renderTeacherGrid();
+        return;
+      }
+
+      filteredTeachers = teachers.filter(t => {
+        // 每個關鍵字都必須在至少一個欄位中找到
+        return keywords.every(kw => {
+          // 搜尋所有欄位
+
+          // 姓名
+          if(String(t.name||'').toLowerCase().includes(kw)) return true;
+
+          // Email
+          if(String(t.email||'').toLowerCase().includes(kw)) return true;
+
+          // 師資類型（支援中英文）
+          if(t.teacherType === 'internal' && ('internal'.includes(kw) || '內部'.includes(kw) || '內部師資'.includes(kw))) return true;
+          if(t.teacherType === 'external' && ('external'.includes(kw) || '外部'.includes(kw) || '外部師資'.includes(kw))) return true;
+
+          // 工作地點（支援中英文）
+          if(t.workLocation === 'onboard' && ('onboard'.includes(kw) || '在船'.includes(kw) || '海上'.includes(kw))) return true;
+          if(t.workLocation === 'onshore' && ('onshore'.includes(kw) || '在岸'.includes(kw) || '陸地'.includes(kw))) return true;
+
+          // 工作經歷
+          if((t.experiences||[]).some(x => String(x).toLowerCase().includes(kw))) return true;
+
+          // 證書
+          if((t.certificates||[]).some(c => {
+            if(typeof c === 'string') return String(c).toLowerCase().includes(kw);
+            return String(c.name||'').toLowerCase().includes(kw);
+          })) return true;
+
+          // 講授課程
+          if((t.subjects||[]).some(s => String(s).toLowerCase().includes(kw))) return true;
+
+          return false;
+        });
       });
 
-      if(filteredTeachers.length>0){
+      if(filteredTeachers.length > 0){
         searchResults.classList.remove('hidden');
-        searchResults.querySelector('span').textContent = `找到 ${filteredTeachers.length} 位符合「${searchInput.value}」的師資`;
-      }else{ searchResults.classList.add('hidden'); }
+        const kwText = keywords.length > 1 ? `「${keywords.join('」、「')}」` : `「${keywords[0]}」`;
+        searchResults.querySelector('span').textContent = `找到 ${filteredTeachers.length} 位符合 ${kwText} 的師資`;
+      } else {
+        searchResults.classList.add('hidden');
+      }
       renderTeacherGrid(filteredTeachers);
     }
 
