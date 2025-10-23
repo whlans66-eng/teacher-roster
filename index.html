@@ -2084,6 +2084,224 @@ grid.appendChild(cell);
   });
 
   // ========== 派課管理功能結束 ==========
+
+  // ========== URL 路由系統 ==========
+  // 讓瀏覽器前進/後退按鈕可以使用，每個頁面都有獨立網址
+
+  const routes = {
+    '': 'teacherList',              // 主頁
+    'list': 'teacherList',          // 師資列表
+    'statistics': 'executiveView',  // 統計分析
+    'calendar': 'calendarView',     // 行事曆
+    'courses': 'courseManagementView', // 派課管理
+    'teacher': 'teacherDetail',     // 師資詳細（編輯）
+    'teacher-view': 'teacherDetailView' // 師資詳細（呈現）
+  };
+
+  // 獲取當前路由
+  function getCurrentRoute() {
+    const hash = window.location.hash.slice(1); // 移除 #
+    return hash || '';
+  }
+
+  // 設定路由（更新 URL）
+  function setRoute(route) {
+    window.location.hash = route;
+  }
+
+  // 根據路由顯示對應視圖
+  function handleRoute() {
+    const route = getCurrentRoute();
+    const viewId = routes[route] || routes[''];
+
+    // 隱藏所有視圖
+    document.getElementById('teacherList')?.classList.add('hidden');
+    document.getElementById('executiveView')?.classList.add('hidden');
+    document.getElementById('calendarView')?.classList.add('hidden');
+    document.getElementById('courseManagementView')?.classList.add('hidden');
+    document.getElementById('teacherDetail')?.classList.add('hidden');
+    document.getElementById('teacherDetailView')?.classList.add('hidden');
+
+    // 顯示當前視圖
+    const currentView = document.getElementById(viewId);
+    if (currentView) {
+      currentView.classList.remove('hidden');
+
+      // 特殊處理：某些視圖需要重新渲染
+      if (route === 'statistics') {
+        renderStatisticsView();
+      } else if (route === 'calendar') {
+        renderCalendar();
+        startReminderCheck();
+      } else if (route === 'courses') {
+        // 初始化派課管理視圖
+        const teacherSelect = document.getElementById('courseTeacherSelect');
+        if (teacherSelect && teacherSelect.children.length <= 1) {
+          teacherSelect.innerHTML = '<option value="">請選擇師資</option>';
+          teachers.forEach(teacher => {
+            const option = document.createElement('option');
+            option.value = teacher.id;
+            option.textContent = teacher.name;
+            teacherSelect.appendChild(option);
+          });
+          initCourseDates();
+        }
+      }
+    }
+  }
+
+  // 監聽 URL 變化（瀏覽器前進/後退）
+  window.addEventListener('hashchange', handleRoute);
+
+  // 頁面載入時處理路由
+  window.addEventListener('load', handleRoute);
+
+  // 更新所有視圖切換函數，使用路由
+  const originalShowStatisticsView = window.showStatisticsView;
+  window.showStatisticsView = function() {
+    setRoute('statistics');
+  };
+
+  const originalShowCalendarView = window.showCalendarView;
+  window.showCalendarView = function() {
+    setRoute('calendar');
+  };
+
+  const originalShowCourseManagementView = window.showCourseManagementView;
+  window.showCourseManagementView = function() {
+    setRoute('courses');
+  };
+
+  const originalBackToList = window.backToList;
+  window.backToList = function() {
+    if (typeof stopReminderCheck === 'function') stopReminderCheck();
+    setRoute('list');
+  };
+
+  const originalBackToListFromExecutive = window.backToListFromExecutive;
+  window.backToListFromExecutive = function() {
+    setRoute('list');
+  };
+
+  const originalBackToListFromCalendar = window.backToListFromCalendar;
+  window.backToListFromCalendar = function() {
+    if (typeof stopReminderCheck === 'function') stopReminderCheck();
+    setRoute('list');
+  };
+
+  const originalBackToListFromCourseManagement = window.backToListFromCourseManagement;
+  window.backToListFromCourseManagement = function() {
+    setRoute('list');
+  };
+
+  // 更新 editTeacher 函數
+  const originalEditTeacher = window.editTeacher;
+  window.editTeacher = function(teacherId) {
+    currentTeacherId = teacherId;
+    const teacher = teachers.find(t => t.id == teacherId);
+    if (teacher) {
+      document.getElementById('teacherName').value = teacher.name || '';
+      document.getElementById('teacherEmail').value = teacher.email || '';
+
+      const typeRadios = document.querySelectorAll('input[name="teacherType"]');
+      typeRadios.forEach(radio => {
+        radio.checked = (radio.value === teacher.teacherType);
+      });
+
+      const locationRadios = document.querySelectorAll('input[name="workLocation"]');
+      locationRadios.forEach(radio => {
+        radio.checked = (radio.value === teacher.workLocation);
+      });
+
+      document.getElementById('teacherPhoto').value = teacher.photo || '';
+
+      renderExperiencesEdit();
+      renderCertificatesEdit();
+      renderSubjectsEdit();
+
+      setRoute('teacher');
+    }
+  };
+
+  // 更新 viewTeacherDetail 函數
+  const originalViewTeacherDetail = window.viewTeacherDetail;
+  window.viewTeacherDetail = function(teacherId) {
+    const teacher = teachers.find(t => t.id == teacherId);
+    if (!teacher) return;
+
+    const content = document.getElementById('teacherDetailContent');
+    if (!content) return;
+
+    const photoDisplay = teacher.photo
+      ? `<img src="${teacher.photo}" alt="${teacher.name}" class="w-full max-w-md h-auto rounded-lg shadow-lg mx-auto mb-6">`
+      : '<div class="text-center text-gray-400 mb-6">📷 無照片</div>';
+
+    const typeColors = {
+      'internal': 'bg-blue-100 text-blue-800',
+      'external': 'bg-purple-100 text-purple-800'
+    };
+    const locationColors = {
+      'onboard': 'bg-blue-100 text-blue-800',
+      'onshore': 'bg-green-100 text-green-800'
+    };
+
+    content.innerHTML = `
+      <div class="space-y-6">
+        ${photoDisplay}
+        <div class="text-center mb-6">
+          <h2 class="text-3xl font-bold text-gray-800 mb-2">${teacher.name || '未命名'}</h2>
+          <p class="text-gray-600 mb-4">${teacher.email || '無 Email'}</p>
+          <div class="flex justify-center space-x-3">
+            <span class="px-4 py-2 rounded-full text-sm font-medium ${typeColors[teacher.teacherType] || 'bg-gray-100 text-gray-800'}">
+              ${teacher.teacherType === 'internal' ? '👔 內部師資' : '🎓 外部師資'}
+            </span>
+            <span class="px-4 py-2 rounded-full text-sm font-medium ${locationColors[teacher.workLocation] || 'bg-gray-100 text-gray-800'}">
+              ${teacher.workLocation === 'onboard' ? '🚢 船上' : '🏢 陸地'}
+            </span>
+          </div>
+        </div>
+
+        ${teacher.experiences && teacher.experiences.length > 0 ? `
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">💼 工作經歷</h3>
+            <ul class="space-y-2">
+              ${teacher.experiences.map(exp => `<li class="text-gray-700">• ${exp}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
+        ${teacher.certificates && teacher.certificates.length > 0 ? `
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">📜 證書 / 資格</h3>
+            <ul class="space-y-2">
+              ${teacher.certificates.map(cert => {
+                if (typeof cert === 'string') {
+                  return `<li class="text-gray-700">• ${cert}</li>`;
+                } else if (cert.fileUrl) {
+                  return `<li class="text-gray-700">• ${cert.name} <a href="${cert.fileUrl}" target="_blank" class="text-blue-600 hover:underline ml-2">📎 查看檔案</a></li>`;
+                } else {
+                  return `<li class="text-gray-700">• ${cert.name}</li>`;
+                }
+              }).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
+        ${teacher.subjects && teacher.subjects.length > 0 ? `
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">📚 講授課程</h3>
+            <div class="flex flex-wrap gap-2">
+              ${teacher.subjects.map(subj => `<span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">${subj}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    setRoute('teacher-view');
+  };
+
+  // ========== URL 路由系統結束 ==========
   </script>
 </body>
 </html>
