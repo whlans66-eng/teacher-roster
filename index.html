@@ -479,7 +479,7 @@
     </div>
 
     <!-- 新增課程 Modal -->
-    <div id="addCourseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div id="addCourseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
         <h3 class="text-2xl font-bold text-gray-800 mb-6">新增課程</h3>
         <form id="addCourseForm" onsubmit="addCourseSubmit(event)" class="space-y-4">
@@ -1561,8 +1561,8 @@
     document.getElementById('addEventModal').classList.remove('hidden');
   }
   function openAddEventModalForDate(dateKey){
-  openAddEventModal();
-  document.getElementById('eventDate').value = dateKey;
+    openAddEventModal();
+    document.getElementById('eventDate').value = dateKey;
   }
   function closeAddEventModal(){ document.getElementById('addEventModal').classList.add('hidden'); }
   function selectColor(color){ selectedColor = color; }
@@ -1609,10 +1609,10 @@
     for(let w=0; w<6; w++){
       for(let d=0; d<7; d++){
         const cellDate = new Date(start);
-cellDate.setDate(start.getDate() + (w*7) + d);
+        cellDate.setDate(start.getDate() + (w*7) + d);
 
-const isCurrentMonth = (cellDate.getMonth() === month);
-const isToday = (cellDate.toDateString() === today);
+        const isCurrentMonth = (cellDate.getMonth() === month);
+        const isToday = (cellDate.toDateString() === today);
 
 // 用你上面定義的 fmtDate 來得到 YYYY-MM-DD
 const dateKey = fmtDate(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
@@ -1669,10 +1669,10 @@ grid.appendChild(cell);
 
     for(let i=0;i<7;i++){
       const cellDate = new Date(startOfWeek);
-cellDate.setDate(startOfWeek.getDate()+i);
+      cellDate.setDate(startOfWeek.getDate()+i);
 
-const isToday = (cellDate.toDateString()===today);
-const dateKey = fmtDate(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+      const isToday = (cellDate.toDateString()===today);
+      const dateKey = fmtDate(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
 
 const dayEvents = calendarEvents
   .filter(ev => ev.date === dateKey)
@@ -1778,7 +1778,7 @@ grid.appendChild(cell);
     teacherSelect.innerHTML = '<option value="">請選擇師資</option>';
     teachers.forEach(teacher => {
       const option = document.createElement('option');
-      option.value = teacher.id;
+      option.value = String(teacher.id);
       option.textContent = teacher.name;
       teacherSelect.appendChild(option);
     });
@@ -1846,7 +1846,7 @@ grid.appendChild(cell);
   // 更新課程視圖
   function updateCourseView() {
     const teacherId = document.getElementById('courseTeacherSelect').value;
-    currentCourseTeacherId = teacherId ? parseInt(teacherId) : null;
+    currentCourseTeacherId = teacherId ? Number(teacherId) : null;
     currentCourseStartDate = document.getElementById('courseStartDate').value;
     currentCourseEndDate = document.getElementById('courseEndDate').value;
 
@@ -1877,7 +1877,7 @@ grid.appendChild(cell);
   function getFilteredCourses(teacherId) {
     if (!teacherId) return [];
     return courseAssignments.filter(course => {
-      const matchTeacher = course.teacherId === teacherId;
+      const matchTeacher = Number(course.teacherId) === Number(teacherId);
       const inDateRange = (!currentCourseStartDate || !currentCourseEndDate) ||
                          (course.date >= currentCourseStartDate && course.date <= currentCourseEndDate);
       return matchTeacher && inDateRange;
@@ -2073,13 +2073,25 @@ grid.appendChild(cell);
 
   // 儲存到 localStorage
   function saveCourseLocal() {
-    localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+    try {
+      localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+    } catch(err) {
+      console.warn('localStorage 超額，課程數據保存失敗：', err);
+      alert('存儲空間已滿，課程數據可能無法保存，請刪除部分數據');
+    }
   }
 
   // 點擊 Modal 外部關閉
   document.getElementById('addCourseModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
       closeAddCourseModal();
+    }
+  });
+
+  // 點擊 addEventModal 外部關閉
+  document.getElementById('addEventModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeAddEventModal();
     }
   });
 
@@ -2163,39 +2175,32 @@ grid.appendChild(cell);
   window.addEventListener('load', handleRoute);
 
   // 更新所有視圖切換函數，使用路由
-  const originalShowStatisticsView = window.showStatisticsView;
   window.showStatisticsView = function() {
     setRoute('statistics');
   };
 
-  const originalShowCalendarView = window.showCalendarView;
   window.showCalendarView = function() {
     setRoute('calendar');
   };
 
-  const originalShowCourseManagementView = window.showCourseManagementView;
   window.showCourseManagementView = function() {
     setRoute('courses');
   };
 
-  const originalBackToList = window.backToList;
   window.backToList = function() {
     if (typeof stopReminderCheck === 'function') stopReminderCheck();
     setRoute('list');
   };
 
-  const originalBackToListFromExecutive = window.backToListFromExecutive;
   window.backToListFromExecutive = function() {
     setRoute('list');
   };
 
-  const originalBackToListFromCalendar = window.backToListFromCalendar;
   window.backToListFromCalendar = function() {
     if (typeof stopReminderCheck === 'function') stopReminderCheck();
     setRoute('list');
   };
 
-  const originalBackToListFromCourseManagement = window.backToListFromCourseManagement;
   window.backToListFromCourseManagement = function() {
     setRoute('list');
   };
