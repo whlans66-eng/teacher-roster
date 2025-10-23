@@ -63,7 +63,7 @@
                 </button>
               </div>
 
-             <!-- 統計 + 行事曆 -->
+             <!-- 統計 + 行事曆 + 派課管理 -->
               <button onclick="showStatisticsView()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
                 <span>📈</span><span>統計分析</span>
               </button>
@@ -72,6 +72,11 @@
                 class="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
                   <span>📅</span><span>行事曆</span>
                  </button>
+
+              <button onclick="showCourseManagementView()"
+                class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
+                  <span>📚</span><span>派課管理</span>
+              </button>
             </div>
           </div>
 
@@ -349,6 +354,172 @@
     </div>
   </div>
 </div>
+
+    <!-- 派課管理視圖 -->
+    <div id="courseManagementView" class="hidden fade-in">
+      <div class="container mx-auto px-6 py-8 max-w-7xl">
+        <!-- 返回按鈕 + 標題 -->
+        <div class="flex justify-between items-center mb-8">
+          <div>
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">📚 派課管理系統</h1>
+            <p class="text-gray-600">管理師資課程分配與時數統計</p>
+          </div>
+          <button onclick="backToListFromCourseManagement()" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl border border-gray-200">
+            ← 返回師資列表
+          </button>
+        </div>
+
+        <!-- 師資選擇與日期範圍 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">選擇師資</label>
+              <select id="courseTeacherSelect" onchange="updateCourseView()" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                <option value="">請選擇師資</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">開始日期</label>
+              <input type="date" id="courseStartDate" onchange="updateCourseView()" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">結束日期</label>
+              <input type="date" id="courseEndDate" onchange="updateCourseView()" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+            <button onclick="setCourseDateRange('thisMonth')" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">本月</button>
+            <button onclick="setCourseDateRange('lastMonth')" class="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium">上月</button>
+            <button onclick="setCourseDateRange('last3Months')" class="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium">近3月</button>
+            <button onclick="setCourseDateRange('last6Months')" class="px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">近半年</button>
+            <button onclick="setCourseDateRange('thisYear')" class="px-4 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium">今年</button>
+          </div>
+        </div>
+
+        <!-- 統計卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+            </div>
+            <p class="text-sm opacity-90 mb-1">授課時數</p>
+            <p id="courseTotalHours" class="text-4xl font-bold">0</p>
+            <p class="text-xs opacity-75 mt-1">小時</p>
+          </div>
+
+          <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <p class="text-sm opacity-90 mb-1">課程數量</p>
+            <p id="courseTotalCount" class="text-4xl font-bold">0</p>
+            <p class="text-xs opacity-75 mt-1">門課程</p>
+          </div>
+
+          <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <p class="text-sm opacity-90 mb-1">本月時數</p>
+            <p id="courseMonthlyHours" class="text-4xl font-bold">0</p>
+            <p class="text-xs opacity-75 mt-1">小時</p>
+          </div>
+
+          <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+              </div>
+            </div>
+            <p class="text-sm opacity-90 mb-1">今日課程</p>
+            <p id="courseTodayCount" class="text-4xl font-bold">0</p>
+            <p class="text-xs opacity-75 mt-1">門課程</p>
+          </div>
+        </div>
+
+        <!-- 課程類型分析 (純 CSS 卡片，不使用 Canvas) -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <h3 class="text-lg font-semibold text-gray-800 mb-6">課程類型分析</h3>
+          <div id="courseTypeCards" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <!-- 課程類型卡片將由 JS 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 新增課程按鈕與時間軸 -->
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-lg font-semibold text-gray-800">課程時間軸</h3>
+          <button onclick="openAddCourseModal()" class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl flex items-center space-x-2">
+            <span>➕</span><span>新增課程</span>
+          </button>
+        </div>
+
+        <!-- 課程時間軸 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+          <div id="courseTimeline" class="space-y-4 max-h-[600px] overflow-y-auto">
+            <div class="text-center text-gray-500 py-12">
+              請選擇師資以查看課程
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增課程 Modal -->
+    <div id="addCourseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+      <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">新增課程</h3>
+        <form id="addCourseForm" onsubmit="addCourseSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">課程名稱</label>
+            <input type="text" id="addCourseName" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="請輸入課程名稱">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">課程日期</label>
+              <input type="date" id="addCourseDate" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">課程類型</label>
+              <select id="addCourseType" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="正課">正課</option>
+                <option value="補課">補課</option>
+                <option value="實驗課">實驗課</option>
+                <option value="實作課">實作課</option>
+                <option value="專題">專題</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">開始時間</label>
+              <input type="time" id="addCourseStartTime" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">結束時間</label>
+              <input type="time" id="addCourseEndTime" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 pt-4">
+            <button type="button" onclick="closeAddCourseModal()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-medium transition-colors">取消</button>
+            <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-medium transition-all shadow-lg">確認新增</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- 師資詳細（呈現模式） -->
     <div id="teacherDetailView" class="hidden slide-in">
@@ -1590,6 +1761,329 @@ grid.appendChild(cell);
     document.head.appendChild(style);
   }
   injectCalendarCSS();
+
+  // ========== 派課管理功能 ==========
+  let courseAssignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+  let currentCourseTeacherId = null;
+  let currentCourseStartDate = null;
+  let currentCourseEndDate = null;
+
+  // 顯示派課管理視圖
+  function showCourseManagementView() {
+    document.getElementById('teacherList').classList.add('hidden');
+    document.getElementById('courseManagementView').classList.remove('hidden');
+
+    // 初始化師資選擇
+    const teacherSelect = document.getElementById('courseTeacherSelect');
+    teacherSelect.innerHTML = '<option value="">請選擇師資</option>';
+    teachers.forEach(teacher => {
+      const option = document.createElement('option');
+      option.value = teacher.id;
+      option.textContent = teacher.name;
+      teacherSelect.appendChild(option);
+    });
+
+    // 初始化日期
+    initCourseDates();
+  }
+
+  // 返回師資列表
+  function backToListFromCourseManagement() {
+    document.getElementById('courseManagementView').classList.add('hidden');
+    document.getElementById('teacherList').classList.remove('hidden');
+  }
+
+  // 初始化日期
+  function initCourseDates() {
+    const today = new Date();
+    const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    currentCourseStartDate = startDate.toISOString().split('T')[0];
+    currentCourseEndDate = endDate.toISOString().split('T')[0];
+
+    document.getElementById('courseStartDate').value = currentCourseStartDate;
+    document.getElementById('courseEndDate').value = currentCourseEndDate;
+  }
+
+  // 設定日期範圍
+  function setCourseDateRange(range) {
+    const today = new Date();
+    let startDate, endDate;
+
+    switch(range) {
+      case 'thisMonth':
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        break;
+      case 'lastMonth':
+        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+        break;
+      case 'last3Months':
+        startDate = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+        endDate = today;
+        break;
+      case 'last6Months':
+        startDate = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+        endDate = today;
+        break;
+      case 'thisYear':
+        startDate = new Date(today.getFullYear(), 0, 1);
+        endDate = today;
+        break;
+    }
+
+    currentCourseStartDate = startDate.toISOString().split('T')[0];
+    currentCourseEndDate = endDate.toISOString().split('T')[0];
+
+    document.getElementById('courseStartDate').value = currentCourseStartDate;
+    document.getElementById('courseEndDate').value = currentCourseEndDate;
+
+    updateCourseView();
+  }
+
+  // 更新課程視圖
+  function updateCourseView() {
+    const teacherId = document.getElementById('courseTeacherSelect').value;
+    currentCourseTeacherId = teacherId ? parseInt(teacherId) : null;
+    currentCourseStartDate = document.getElementById('courseStartDate').value;
+    currentCourseEndDate = document.getElementById('courseEndDate').value;
+
+    if (!currentCourseTeacherId) {
+      document.getElementById('courseTimeline').innerHTML = '<div class="text-center text-gray-500 py-12">請選擇師資以查看課程</div>';
+      document.getElementById('courseTotalHours').textContent = '0';
+      document.getElementById('courseTotalCount').textContent = '0';
+      document.getElementById('courseMonthlyHours').textContent = '0';
+      document.getElementById('courseTodayCount').textContent = '0';
+      document.getElementById('courseTypeCards').innerHTML = '';
+      return;
+    }
+
+    updateCourseStats();
+    renderCourseTypeCards();
+    renderCourseTimeline();
+  }
+
+  // 計算時數
+  function calculateCourseHours(timeRange) {
+    const [start, end] = timeRange.split('-');
+    const startTime = new Date(`2024-01-01 ${start}`);
+    const endTime = new Date(`2024-01-01 ${end}`);
+    return (endTime - startTime) / (1000 * 60 * 60);
+  }
+
+  // 過濾課程
+  function getFilteredCourses(teacherId) {
+    if (!teacherId) return [];
+    return courseAssignments.filter(course => {
+      const matchTeacher = course.teacherId === teacherId;
+      const inDateRange = (!currentCourseStartDate || !currentCourseEndDate) ||
+                         (course.date >= currentCourseStartDate && course.date <= currentCourseEndDate);
+      return matchTeacher && inDateRange;
+    });
+  }
+
+  // 更新統計
+  function updateCourseStats() {
+    const filteredCourses = getFilteredCourses(currentCourseTeacherId);
+
+    // 總時數
+    const totalHours = filteredCourses.reduce((sum, course) => {
+      return sum + calculateCourseHours(course.time);
+    }, 0);
+
+    // 課程數量
+    const totalCount = filteredCourses.length;
+
+    // 本月時數
+    const today = new Date();
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+
+    const monthCourses = courseAssignments.filter(course => {
+      return course.teacherId === currentCourseTeacherId &&
+             course.date >= monthStart &&
+             course.date <= monthEnd;
+    });
+
+    const monthlyHours = monthCourses.reduce((sum, course) => {
+      return sum + calculateCourseHours(course.time);
+    }, 0);
+
+    // 今日課程
+    const todayStr = today.toISOString().split('T')[0];
+    const todayCourses = courseAssignments.filter(course => {
+      return course.teacherId === currentCourseTeacherId && course.date === todayStr;
+    }).length;
+
+    document.getElementById('courseTotalHours').textContent = Math.round(totalHours);
+    document.getElementById('courseTotalCount').textContent = totalCount;
+    document.getElementById('courseMonthlyHours').textContent = monthlyHours.toFixed(1);
+    document.getElementById('courseTodayCount').textContent = todayCourses;
+  }
+
+  // 渲染課程類型卡片（取代Canvas）
+  function renderCourseTypeCards() {
+    const filteredCourses = getFilteredCourses(currentCourseTeacherId);
+    const typeCount = {};
+
+    filteredCourses.forEach(course => {
+      typeCount[course.type] = (typeCount[course.type] || 0) + 1;
+    });
+
+    const colors = {
+      '正課': { from: 'from-blue-500', to: 'to-blue-600' },
+      '補課': { from: 'from-yellow-500', to: 'to-yellow-600' },
+      '實驗課': { from: 'from-purple-500', to: 'to-purple-600' },
+      '實作課': { from: 'from-green-500', to: 'to-green-600' },
+      '專題': { from: 'from-pink-500', to: 'to-pink-600' }
+    };
+
+    const total = Object.values(typeCount).reduce((a, b) => a + b, 0);
+    const container = document.getElementById('courseTypeCards');
+    container.innerHTML = '';
+
+    Object.entries(typeCount).forEach(([type, count]) => {
+      const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+      const color = colors[type] || { from: 'from-gray-500', to: 'to-gray-600' };
+
+      const card = document.createElement('div');
+      card.className = `bg-gradient-to-br ${color.from} ${color.to} rounded-xl p-4 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer`;
+      card.innerHTML = `
+        <h4 class="text-sm font-semibold mb-2 opacity-90">${type}</h4>
+        <p class="text-3xl font-bold mb-1">${count}</p>
+        <p class="text-xs opacity-80">門課程 · ${percentage}%</p>
+      `;
+      container.appendChild(card);
+    });
+
+    if (total === 0) {
+      container.innerHTML = '<div class="col-span-full text-center text-gray-500 py-8">暫無課程資料</div>';
+    }
+  }
+
+  // 渲染課程時間軸
+  function renderCourseTimeline() {
+    const filteredCourses = getFilteredCourses(currentCourseTeacherId);
+    const sortedCourses = [...filteredCourses].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const timeline = document.getElementById('courseTimeline');
+    timeline.innerHTML = '';
+
+    if (sortedCourses.length === 0) {
+      timeline.innerHTML = '<div class="text-center text-gray-500 py-12">選定時間範圍內無課程資料</div>';
+      return;
+    }
+
+    sortedCourses.forEach((course, index) => {
+      const hours = calculateCourseHours(course.time);
+      const courseDate = new Date(course.date);
+      const today = new Date();
+      const isPast = courseDate < today;
+      const isToday = courseDate.toDateString() === today.toDateString();
+
+      const statusColors = {
+        'completed': { bg: 'bg-green-500', text: '已完成' },
+        'ongoing': { bg: 'bg-orange-500', text: '進行中' },
+        'upcoming': { bg: 'bg-blue-500', text: '未來' }
+      };
+
+      let status = 'upcoming';
+      if (isPast) status = 'completed';
+      if (isToday) status = 'ongoing';
+
+      const statusInfo = statusColors[status];
+
+      const item = document.createElement('div');
+      item.className = 'border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all hover:-translate-y-1';
+      item.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2">
+              <h4 class="text-lg font-semibold text-gray-800">${course.name}</h4>
+              <span class="px-3 py-1 ${statusInfo.bg} text-white text-xs font-medium rounded-full">${statusInfo.text}</span>
+              <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">${course.type}</span>
+            </div>
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+              <span>📅 ${new Date(course.date).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</span>
+              <span>🕐 ${course.time}</span>
+              <span>⏱️ ${hours.toFixed(1)}小時</span>
+            </div>
+          </div>
+          <button onclick="deleteCourseAssignment(${course.id})" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+      `;
+      timeline.appendChild(item);
+    });
+  }
+
+  // 開啟新增課程 Modal
+  function openAddCourseModal() {
+    if (!currentCourseTeacherId) {
+      alert('請先選擇師資');
+      return;
+    }
+    document.getElementById('addCourseModal').classList.remove('hidden');
+    document.getElementById('addCourseModal').style.display = 'flex';
+    document.getElementById('addCourseDate').value = new Date().toISOString().split('T')[0];
+  }
+
+  // 關閉新增課程 Modal
+  function closeAddCourseModal() {
+    document.getElementById('addCourseModal').classList.add('hidden');
+    document.getElementById('addCourseModal').style.display = 'none';
+    document.getElementById('addCourseForm').reset();
+  }
+
+  // 提交新增課程
+  function addCourseSubmit(event) {
+    event.preventDefault();
+
+    const newCourse = {
+      id: Date.now(),
+      teacherId: currentCourseTeacherId,
+      name: document.getElementById('addCourseName').value,
+      date: document.getElementById('addCourseDate').value,
+      time: `${document.getElementById('addCourseStartTime').value}-${document.getElementById('addCourseEndTime').value}`,
+      type: document.getElementById('addCourseType').value
+    };
+
+    courseAssignments.push(newCourse);
+    saveCourseLocal();
+    updateCourseView();
+    closeAddCourseModal();
+
+    // 顯示成功訊息
+    alert('課程新增成功！');
+  }
+
+  // 刪除課程
+  function deleteCourseAssignment(courseId) {
+    if (!confirm('確定要刪除此課程嗎？')) return;
+
+    courseAssignments = courseAssignments.filter(c => c.id !== courseId);
+    saveCourseLocal();
+    updateCourseView();
+  }
+
+  // 儲存到 localStorage
+  function saveCourseLocal() {
+    localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+  }
+
+  // 點擊 Modal 外部關閉
+  document.getElementById('addCourseModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeAddCourseModal();
+    }
+  });
+
+  // ========== 派課管理功能結束 ==========
   </script>
 </body>
 </html>
