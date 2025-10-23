@@ -961,9 +961,6 @@
       });
       document.getElementById('subjectList').innerHTML = '';
       (teacher.subjects||[]).forEach(s=>addSubject(s));
-
-      // 更新 URL 路由
-      if (typeof setRoute === 'function') setRoute('teacher');
     }
 
     function viewTeacherDetail(teacherId){
@@ -1046,9 +1043,6 @@
           <button onclick="editTeacher(${teacher.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl">✏️ 編輯師資資料</button>
         </div>`:''}
       `;
-
-      // 更新 URL 路由
-      if (typeof setRoute === 'function') setRoute('teacher-view');
     }
 
     function viewCertificateFromDetail(fileName,fileUrl){
@@ -2152,7 +2146,13 @@ grid.appendChild(cell);
           });
           initCourseDates();
         }
+      } else if (route === 'list' || route === '') {
+        // 返回列表時重新渲染
+        if (typeof renderTeacherGrid === 'function') {
+          renderTeacherGrid();
+        }
       }
+      // teacher 和 teacher-view 路由不需要特殊處理，內容已由對應函數填充
     }
   }
 
