@@ -28,6 +28,28 @@
     .teacher-type-option.selected.external{border-color:#8b5cf6;background-color:#f3e8ff}
     .calendar-cell{min-height:110px;border:1px dashed rgba(0,0,0,.06);border-radius:0.75rem;transition:all .2s}
     .calendar-cell:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.06)}
+
+    /* 海事課程系統樣式 */
+    .highlight{background-color:#fef3c7;padding:2px 4px;border-radius:3px}
+    .chart-container{position:relative;width:280px;height:280px;margin:0 auto;padding:20px}
+    .pie-chart{width:280px;height:280px;border-radius:50%;background:conic-gradient(from 0deg,#4f46e5 0deg,#4f46e5 var(--angle1,0deg),#06b6d4 var(--angle1,0deg),#06b6d4 var(--angle2,0deg),#10b981 var(--angle2,0deg),#10b981 var(--angle3,0deg),#f59e0b var(--angle3,0deg),#f59e0b var(--angle4,0deg),#ef4444 var(--angle4,0deg),#ef4444 var(--angle5,0deg),#8b5cf6 var(--angle5,0deg),#8b5cf6 var(--angle6,0deg),#f97316 var(--angle6,0deg),#f97316 var(--angle7,0deg),#84cc16 var(--angle7,0deg),#84cc16 var(--angle8,0deg),#ec4899 var(--angle8,0deg),#ec4899 360deg);box-shadow:0 20px 60px rgba(0,0,0,0.15),0 8px 25px rgba(0,0,0,0.1),inset 0 1px 0 rgba(255,255,255,0.1);position:relative;transition:all .3s ease}
+    .pie-chart:hover{transform:scale(1.05);box-shadow:0 25px 80px rgba(0,0,0,0.2),0 12px 35px rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.2)}
+    .pie-chart::before{content:'';position:absolute;top:50%;left:50%;width:120px;height:120px;background:linear-gradient(135deg,#ffffff 0%,#f8fafc 100%);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 8px 32px rgba(0,0,0,0.1),inset 0 2px 8px rgba(0,0,0,0.05);border:3px solid rgba(255,255,255,0.8)}
+    .pie-chart::after{content:'📊\A課程分布';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:bold;color:#374151;z-index:1;text-align:center;white-space:pre;line-height:1.3}
+    .legend-item{transition:all .2s ease;padding:8px;border-radius:8px;cursor:pointer}
+    .legend-item:hover{background-color:#f3f4f6;transform:translateX(5px)}
+    .legend-color{width:16px;height:16px;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.2);border:2px solid rgba(255,255,255,0.8)}
+    .bar-chart{background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:8px;padding:4px}
+    .bar-fill{border-radius:4px;transition:all .3s ease;position:relative;overflow:hidden}
+    .bar-fill::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);animation:shimmer 2s infinite}
+    @keyframes shimmer{0%{left:-100%}100%{left:100%}}
+    .donut-chart{position:relative;width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(from 0deg,var(--color) 0deg,var(--color) var(--angle,0deg),#e5e7eb var(--angle,0deg),#e5e7eb 360deg);box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+    .donut-chart::before{content:'';position:absolute;width:70px;height:70px;background:white;border-radius:50%;box-shadow:inset 0 2px 8px rgba(0,0,0,0.1)}
+    .donut-chart-label{position:absolute;font-size:14px;font-weight:bold;color:#374151;z-index:1}
+    .method-card{background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:12px;padding:20px;text-align:center;transition:all .3s ease;border:1px solid rgba(255,255,255,0.2)}
+    .method-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,0.15)}
+    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+    .pulse-animation{animation:pulse 2s infinite}
   </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
@@ -76,6 +98,11 @@
               <button onclick="showCourseManagementView()"
                 class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
                   <span>📚</span><span>派課管理</span>
+              </button>
+
+              <button onclick="showMaritimeCourseView()"
+                class="bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2">
+                  <span>⚓</span><span>海事課程</span>
               </button>
             </div>
           </div>
@@ -631,6 +658,175 @@
             </div>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 海事專業訓練課程系統 -->
+  <div id="maritimeCourseView" class="hidden fade-in">
+    <div class="container mx-auto px-4 py-8">
+      <!-- 返回按鈕 + 標題區域 -->
+      <div class="flex justify-between items-center mb-8">
+        <header class="text-left">
+          <h1 class="text-4xl font-bold text-blue-900 mb-2">海事專業訓練課程系統</h1>
+          <p class="text-blue-600">Maritime Professional Training Course System</p>
+        </header>
+        <button onclick="backToListFromMaritimeCourse()" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl border border-gray-200">
+          ← 返回師資列表
+        </button>
+      </div>
+
+      <!-- 導航選單 -->
+      <nav class="flex justify-center mb-8">
+        <div class="bg-white rounded-lg shadow-md p-2 flex space-x-2">
+          <button id="viewTab" class="px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors">課程瀏覽</button>
+          <button id="editTab" class="px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors">課程管理</button>
+          <button id="statsTab" class="px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors">統計分析</button>
+        </div>
+      </nav>
+
+      <!-- 課程瀏覽頁面 -->
+      <div id="viewPage" class="fade-in">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">課程搜尋</h2>
+          <div class="flex flex-col md:flex-row gap-4">
+            <input type="text" id="searchInput_maritime" placeholder="輸入關鍵字搜尋課程..."
+                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <select id="categoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="">所有分類</option>
+              <option value="01">01船舶操縱與航行實務訓練</option>
+              <option value="02">02領導統御與檢查應對管理</option>
+              <option value="03">03事故案例分析與應變處置訓練</option>
+              <option value="04">04船舶設備操作與技術知能訓練</option>
+              <option value="05">05國際法規與環境合規知識</option>
+              <option value="06">06船舶貨物裝卸作業實務</option>
+              <option value="07">07船員經驗交流與職能回饋</option>
+              <option value="08">08職級轉換與壓力調適</option>
+              <option value="09">09其他</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="courseResults" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <!-- 課程卡片將在這裡顯示 -->
+        </div>
+      </div>
+
+      <!-- 課程管理頁面 -->
+      <div id="editPage" class="hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">新增/編輯課程</h2>
+          <form id="courseForm" class="space-y-4">
+            <div>
+              <label for="courseName" class="block text-sm font-medium text-gray-700 mb-1">課程名稱</label>
+              <input type="text" id="courseName" required
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label for="courseCategory" class="block text-sm font-medium text-gray-700 mb-1">課程分類</label>
+              <select id="courseCategory" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="">請選擇分類</option>
+                <option value="01">01船舶操縱與航行實務訓練</option>
+                <option value="02">02領導統御與檢查應對管理</option>
+                <option value="03">03事故案例分析與應變處置訓練</option>
+                <option value="04">04船舶設備操作與技術知能訓練</option>
+                <option value="05">05國際法規與環境合規知識</option>
+                <option value="06">06船舶貨物裝卸作業實務</option>
+                <option value="07">07船員經驗交流與職能回饋</option>
+                <option value="08">08職級轉換與壓力調適</option>
+                <option value="09">09其他</option>
+              </select>
+            </div>
+            <div>
+              <label for="courseDescription" class="block text-sm font-medium text-gray-700 mb-1">課程描述</label>
+              <textarea id="courseDescription" rows="4" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+            <div>
+              <label for="courseMethod" class="block text-sm font-medium text-gray-700 mb-1">授課方式</label>
+              <select id="courseMethod" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="">請選擇授課方式</option>
+                <option value="實體課程">實體課程</option>
+                <option value="線上課程">線上課程</option>
+                <option value="混合課程">混合課程</option>
+              </select>
+            </div>
+            <div>
+              <label for="courseKeywords" class="block text-sm font-medium text-gray-700 mb-1">關鍵字（用逗號分隔）</label>
+              <input type="text" id="courseKeywords" placeholder="例如：導航,雷達,GPS,船舶操作"
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex gap-4">
+              <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                儲存課程
+              </button>
+              <button type="button" id="cancelEdit" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">已建立的課程</h3>
+          <div class="mb-4">
+            <input type="text" id="manageSearchInput" placeholder="搜尋課程進行編輯..."
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div id="manageCourseList" class="space-y-3">
+            <!-- 課程管理列表將在這裡顯示 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 統計分析頁面 -->
+      <div id="statsPage" class="hidden">
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">總課程數</h3>
+            <p id="totalCourses" class="text-3xl font-bold text-blue-600">0</p>
+          </div>
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">最熱門分類</h3>
+            <p id="popularCategory" class="text-lg font-semibold text-green-600">-</p>
+          </div>
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">總關鍵字數</h3>
+            <p id="totalKeywords" class="text-3xl font-bold text-purple-600">0</p>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2 mb-6">
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">課程統計</h3>
+            <div id="categoryStats" class="space-y-3">
+              <!-- 分類統計將在這裡顯示 -->
+            </div>
+          </div>
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">分類分布圓餅圖</h3>
+            <div class="chart-container">
+              <div id="pieChart" class="pie-chart"></div>
+            </div>
+            <div id="chartLegend" class="mt-4 space-y-2">
+              <!-- 圖例將在這裡顯示 -->
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">授課方式統計</h3>
+          <div id="methodStats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 授課方式統計將在這裡顯示 -->
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">熱門關鍵字</h3>
+          <div id="keywordCloud" class="flex flex-wrap gap-2">
+            <!-- 關鍵字雲將在這裡顯示 -->
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -2106,6 +2302,7 @@ grid.appendChild(cell);
     'statistics': 'executiveView',  // 統計分析
     'calendar': 'calendarView',     // 行事曆
     'courses': 'courseManagementView', // 派課管理
+    'maritime': 'maritimeCourseView', // 海事課程系統
     'teacher': 'teacherDetail',     // 師資詳細（編輯）
     'teacher-view': 'teacherDetailView' // 師資詳細（呈現）
   };
@@ -2131,6 +2328,7 @@ grid.appendChild(cell);
     document.getElementById('executiveView')?.classList.add('hidden');
     document.getElementById('calendarView')?.classList.add('hidden');
     document.getElementById('courseManagementView')?.classList.add('hidden');
+    document.getElementById('maritimeCourseView')?.classList.add('hidden');
     document.getElementById('teacherDetail')?.classList.add('hidden');
     document.getElementById('teacherDetailView')?.classList.add('hidden');
 
@@ -2157,6 +2355,11 @@ grid.appendChild(cell);
             teacherSelect.appendChild(option);
           });
           initCourseDates();
+        }
+      } else if (route === 'maritime') {
+        // 初始化海事課程系統
+        if (typeof initMaritimeCourseSystem === 'function') {
+          initMaritimeCourseSystem();
         }
       } else if (route === 'list' || route === '') {
         // 返回列表時重新渲染
@@ -2205,7 +2408,513 @@ grid.appendChild(cell);
     setRoute('list');
   };
 
+  window.showMaritimeCourseView = function() {
+    setRoute('maritime');
+  };
+
+  window.backToListFromMaritimeCourse = function() {
+    setRoute('list');
+  };
+
   // ========== URL 路由系統結束 ==========
+
+  // ========== 海事課程系統 JavaScript ==========
+  </script>
+  <script>
+  // 課程資料儲存
+  let maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses')) || [];
+  let editingMaritimeCourseId = null;
+
+  // 分類對應表
+  const maritimeCategoryNames = {
+    '01': '01船舶操縱與航行實務訓練',
+    '02': '02領導統御與檢查應對管理',
+    '03': '03事故案例分析與應變處置訓練',
+    '04': '04船舶設備操作與技術知能訓練',
+    '05': '05國際法規與環境合規知識',
+    '06': '06船舶貨物裝卸作業實務',
+    '07': '07船員經驗交流與職能回饋',
+    '08': '08職級轉換與壓力調適',
+    '09': '09其他'
+  };
+
+  // 初始化示例資料
+  if (maritimeCourses.length === 0) {
+    maritimeCourses = [
+      {
+        id: 1,
+        name: '船舶導航系統操作',
+        category: '01',
+        method: '實體課程',
+        description: '學習現代船舶導航系統的操作，包括GPS、雷達、電子海圖等設備的使用方法和注意事項。',
+        keywords: ['GPS', '雷達', '電子海圖', '導航', '定位', '航行安全']
+      },
+      {
+        id: 2,
+        name: '船員領導力培訓',
+        category: '02',
+        method: '線上課程',
+        description: '提升船員的領導能力和團隊管理技巧，學習有效的溝通方式和衝突解決方法。',
+        keywords: ['領導力', '團隊管理', '溝通技巧', '衝突解決', '人員管理']
+      },
+      {
+        id: 3,
+        name: '海上緊急應變處理',
+        category: '03',
+        method: '混合課程',
+        description: '學習各種海上緊急情況的應變處理程序，包括火災、碰撞、人員落水等事故的處理。',
+        keywords: ['緊急應變', '火災處理', '碰撞事故', '救生', '安全程序', '事故處理']
+      }
+    ];
+    saveMaritimeCourses();
+  }
+
+  // 儲存課程資料
+  function saveMaritimeCourses() {
+    localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+  }
+
+  // 頁面切換功能
+  function switchMaritimeTab(tab) {
+    // 隱藏所有頁面
+    document.getElementById('viewPage').classList.add('hidden');
+    document.getElementById('editPage').classList.add('hidden');
+    document.getElementById('statsPage').classList.add('hidden');
+
+    // 重置所有按鈕樣式
+    document.querySelectorAll('#maritimeCourseView nav button').forEach(btn => {
+      btn.className = 'px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors';
+    });
+
+    // 顯示選中的頁面和更新按鈕樣式
+    if (tab === 'view') {
+      document.getElementById('viewPage').classList.remove('hidden');
+      document.getElementById('viewTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
+      displayMaritimeCourses();
+    } else if (tab === 'edit') {
+      document.getElementById('editPage').classList.remove('hidden');
+      document.getElementById('editTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
+      displayManageMaritimeCourses();
+    } else if (tab === 'stats') {
+      document.getElementById('statsPage').classList.remove('hidden');
+      document.getElementById('statsTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
+      displayMaritimeStats();
+    }
+  }
+
+  // 顯示課程列表
+  function displayMaritimeCourses() {
+    const searchTerm = document.getElementById('searchInput_maritime').value.toLowerCase();
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const resultsContainer = document.getElementById('courseResults');
+
+    let filteredCourses = maritimeCourses.filter(course => {
+      const matchesSearch = !searchTerm ||
+        course.name.toLowerCase().includes(searchTerm) ||
+        course.description.toLowerCase().includes(searchTerm) ||
+        course.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm));
+
+      const matchesCategory = !categoryFilter || course.category === categoryFilter;
+
+      return matchesSearch && matchesCategory;
+    });
+
+    resultsContainer.innerHTML = '';
+
+    if (filteredCourses.length === 0) {
+      resultsContainer.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">找不到符合條件的課程</div>';
+      return;
+    }
+
+    filteredCourses.forEach(course => {
+      const courseCard = document.createElement('div');
+      courseCard.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow fade-in';
+
+      const highlightedName = highlightMaritimeText(course.name, searchTerm);
+      const highlightedDescription = highlightMaritimeText(course.description, searchTerm);
+      const highlightedKeywords = course.keywords.map(keyword => highlightMaritimeText(keyword, searchTerm));
+
+      courseCard.innerHTML = `
+        <div class="mb-3">
+          <div class="flex flex-wrap gap-2 mb-2">
+            <span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+              ${maritimeCategoryNames[course.category]}
+            </span>
+            <span class="inline-block text-xs px-2 py-1 rounded-full ${getMaritimeMethodTagClass(course.method)}">
+              ${course.method || '未設定'}
+            </span>
+          </div>
+          <h3 class="text-lg font-bold text-gray-800">${highlightedName}</h3>
+        </div>
+        <p class="text-gray-600 mb-4">${highlightedDescription}</p>
+        <div class="flex flex-wrap gap-1">
+          ${highlightedKeywords.map(keyword =>
+            `<span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">${keyword}</span>`
+          ).join('')}
+        </div>
+      `;
+
+      resultsContainer.appendChild(courseCard);
+    });
+  }
+
+  // 高亮顯示搜尋關鍵字
+  function highlightMaritimeText(text, searchTerm) {
+    if (!searchTerm) return text;
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
+  }
+
+  // 取得授課方式標籤樣式
+  function getMaritimeMethodTagClass(method) {
+    switch(method) {
+      case '實體課程':
+        return 'bg-blue-100 text-blue-800';
+      case '線上課程':
+        return 'bg-green-100 text-green-800';
+      case '混合課程':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  // 顯示管理課程列表
+  function displayManageMaritimeCourses() {
+    const searchTerm = document.getElementById('manageSearchInput').value.toLowerCase();
+    const container = document.getElementById('manageCourseList');
+
+    let filteredCourses = maritimeCourses.filter(course =>
+      course.name.toLowerCase().includes(searchTerm) ||
+      course.description.toLowerCase().includes(searchTerm) ||
+      course.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm))
+    );
+
+    container.innerHTML = '';
+
+    if (filteredCourses.length === 0) {
+      container.innerHTML = '<div class="text-center py-4 text-gray-500">沒有找到課程</div>';
+      return;
+    }
+
+    filteredCourses.forEach(course => {
+      const courseItem = document.createElement('div');
+      courseItem.className = 'border border-gray-200 rounded-lg p-4 flex justify-between items-center';
+
+      courseItem.innerHTML = `
+        <div class="flex-1">
+          <h4 class="font-semibold text-gray-800">${course.name}</h4>
+          <p class="text-sm text-gray-600">${maritimeCategoryNames[course.category]}</p>
+          <p class="text-xs text-gray-500 mt-1">關鍵字: ${course.keywords.join(', ')}</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="editMaritimeCourse(${course.id})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600 transition-colors">
+            編輯
+          </button>
+          <button onclick="deleteMaritimeCourse(${course.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors">
+            刪除
+          </button>
+        </div>
+      `;
+
+      container.appendChild(courseItem);
+    });
+  }
+
+  // 編輯課程
+  function editMaritimeCourse(courseId) {
+    const course = maritimeCourses.find(c => c.id === courseId);
+    if (!course) return;
+
+    editingMaritimeCourseId = courseId;
+    document.getElementById('courseName').value = course.name;
+    document.getElementById('courseCategory').value = course.category;
+    document.getElementById('courseMethod').value = course.method || '';
+    document.getElementById('courseDescription').value = course.description;
+    document.getElementById('courseKeywords').value = course.keywords.join(', ');
+
+    document.querySelector('#courseForm button[type="submit"]').textContent = '更新課程';
+    document.getElementById('courseName').focus();
+  }
+
+  // 刪除課程
+  function deleteMaritimeCourse(courseId) {
+    if (confirm('確定要刪除這個課程嗎？')) {
+      maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
+      saveMaritimeCourses();
+      displayManageMaritimeCourses();
+      showMaritimeMessage('課程已刪除', 'success');
+    }
+  }
+
+  // 顯示統計資料
+  function displayMaritimeStats() {
+    // 總課程數
+    document.getElementById('totalCourses').textContent = maritimeCourses.length;
+
+    // 總關鍵字數
+    const allKeywords = maritimeCourses.flatMap(course => course.keywords);
+    document.getElementById('totalKeywords').textContent = allKeywords.length;
+
+    // 最熱門分類
+    const categoryCount = {};
+    maritimeCourses.forEach(course => {
+      categoryCount[course.category] = (categoryCount[course.category] || 0) + 1;
+    });
+
+    const popularCategoryCode = Object.keys(categoryCount).reduce((a, b) =>
+      categoryCount[a] > categoryCount[b] ? a : b, '');
+    document.getElementById('popularCategory').textContent =
+      popularCategoryCode ? maritimeCategoryNames[popularCategoryCode] : '-';
+
+    // 各分類統計
+    const categoryStatsContainer = document.getElementById('categoryStats');
+    categoryStatsContainer.innerHTML = '';
+
+    const colors = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#f97316', '#84cc16', '#ec4899'];
+
+    Object.keys(maritimeCategoryNames).forEach((categoryCode, index) => {
+      const count = categoryCount[categoryCode] || 0;
+      const percentage = maritimeCourses.length > 0 ? (count / maritimeCourses.length * 100).toFixed(1) : 0;
+
+      const statItem = document.createElement('div');
+      statItem.className = 'flex justify-between items-center py-2 border-b border-gray-200';
+      statItem.innerHTML = `
+        <span class="text-gray-700 text-sm">${maritimeCategoryNames[categoryCode].substring(0, 15)}...</span>
+        <div class="flex items-center gap-2">
+          <div class="w-20 bg-gray-200 rounded-full h-2">
+            <div class="h-2 rounded-full" style="width: ${percentage}%; background-color: ${colors[index]}"></div>
+          </div>
+          <span class="text-xs font-semibold text-gray-600 w-12">${count}</span>
+        </div>
+      `;
+      categoryStatsContainer.appendChild(statItem);
+    });
+
+    // 圓餅圖
+    displayMaritimePieChart(categoryCount, colors);
+
+    // 授課方式統計
+    const methodCount = {};
+    maritimeCourses.forEach(course => {
+      const method = course.method || '未設定';
+      methodCount[method] = (methodCount[method] || 0) + 1;
+    });
+
+    const methodStatsContainer = document.getElementById('methodStats');
+    methodStatsContainer.innerHTML = '';
+
+    const methodColors = { '實體課程': '#3b82f6', '線上課程': '#10b981', '混合課程': '#f59e0b', '未設定': '#6b7280' };
+    const methodIcons = { '實體課程': '🏫', '線上課程': '💻', '混合課程': '🔄', '未設定': '❓' };
+
+    Object.entries(methodCount).forEach(([method, count]) => {
+      const percentage = maritimeCourses.length > 0 ? (count / maritimeCourses.length * 100).toFixed(1) : 0;
+      const angle = (count / maritimeCourses.length * 360).toFixed(1);
+
+      const methodItem = document.createElement('div');
+      methodItem.className = 'method-card';
+      methodItem.innerHTML = `
+        <div class="donut-chart mx-auto mb-4 ${count > 0 ? 'pulse-animation' : ''}"
+             style="--color: ${methodColors[method]}; --angle: ${angle}deg;">
+          <div class="donut-chart-label">${count}</div>
+        </div>
+        <div class="text-2xl mb-2">${methodIcons[method]}</div>
+        <h4 class="font-bold text-gray-800 mb-1">${method}</h4>
+        <p class="text-sm text-gray-600">${percentage}% 的課程</p>
+        <div class="mt-2 text-xs text-gray-500">
+          共 ${count} 門課程
+        </div>
+      `;
+      methodStatsContainer.appendChild(methodItem);
+    });
+
+    // 關鍵字雲
+    const keywordCount = {};
+    allKeywords.forEach(keyword => {
+      keywordCount[keyword] = (keywordCount[keyword] || 0) + 1;
+    });
+
+    const sortedKeywords = Object.entries(keywordCount)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 20);
+
+    const keywordCloudContainer = document.getElementById('keywordCloud');
+    keywordCloudContainer.innerHTML = '';
+
+    sortedKeywords.forEach(([keyword, count]) => {
+      const keywordTag = document.createElement('span');
+      const fontSize = Math.min(16 + count * 2, 24);
+      keywordTag.className = 'bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium';
+      keywordTag.style.fontSize = `${fontSize}px`;
+      keywordTag.textContent = `${keyword} (${count})`;
+      keywordCloudContainer.appendChild(keywordTag);
+    });
+  }
+
+  // 顯示圓餅圖
+  function displayMaritimePieChart(categoryCount, colors) {
+    const pieChart = document.getElementById('pieChart');
+    const chartLegend = document.getElementById('chartLegend');
+
+    const total = Object.values(categoryCount).reduce((sum, count) => sum + count, 0);
+
+    if (total === 0) {
+      pieChart.style.background = '#e5e7eb';
+      chartLegend.innerHTML = '<p class="text-gray-500 text-center">暫無資料</p>';
+      return;
+    }
+
+    let currentAngle = 0;
+    const angles = [];
+
+    Object.keys(maritimeCategoryNames).forEach((categoryCode, index) => {
+      const count = categoryCount[categoryCode] || 0;
+      const percentage = (count / total) * 360;
+      currentAngle += percentage;
+      angles.push(currentAngle);
+    });
+
+    // 設定CSS變數
+    angles.forEach((angle, index) => {
+      pieChart.style.setProperty(`--angle${index + 1}`, `${angle}deg`);
+    });
+
+    // 圖例
+    chartLegend.innerHTML = '';
+    Object.keys(maritimeCategoryNames).forEach((categoryCode, index) => {
+      const count = categoryCount[categoryCode] || 0;
+      const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+
+      if (count > 0) {
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item flex items-center gap-3 text-sm';
+        legendItem.innerHTML = `
+          <div class="legend-color" style="background-color: ${colors[index]}"></div>
+          <div class="flex-1">
+            <span class="text-gray-800 font-medium">${maritimeCategoryNames[categoryCode].substring(2, 12)}...</span>
+            <div class="text-xs text-gray-500">${count} 門課程 (${percentage}%)</div>
+          </div>
+        `;
+        chartLegend.appendChild(legendItem);
+      }
+    });
+  }
+
+  // 顯示訊息
+  function showMaritimeMessage(message, type = 'info') {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+      type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+    }`;
+    messageDiv.textContent = message;
+
+    document.body.appendChild(messageDiv);
+
+    setTimeout(() => {
+      messageDiv.remove();
+    }, 3000);
+  }
+
+  // 初始化海事課程系統事件監聽器
+  function initMaritimeCourseSystem() {
+    // 頁面切換
+    const viewTab = document.getElementById('viewTab');
+    const editTab = document.getElementById('editTab');
+    const statsTab = document.getElementById('statsTab');
+
+    if (viewTab) viewTab.addEventListener('click', () => switchMaritimeTab('view'));
+    if (editTab) editTab.addEventListener('click', () => switchMaritimeTab('edit'));
+    if (statsTab) statsTab.addEventListener('click', () => switchMaritimeTab('stats'));
+
+    // 搜尋功能
+    const searchInput = document.getElementById('searchInput_maritime');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const manageSearchInput = document.getElementById('manageSearchInput');
+
+    if (searchInput) searchInput.addEventListener('input', displayMaritimeCourses);
+    if (categoryFilter) categoryFilter.addEventListener('change', displayMaritimeCourses);
+    if (manageSearchInput) manageSearchInput.addEventListener('input', displayManageMaritimeCourses);
+
+    // 課程表單處理
+    const courseForm = document.getElementById('courseForm');
+    if (courseForm) {
+      courseForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('courseName').value;
+        const category = document.getElementById('courseCategory').value;
+        const method = document.getElementById('courseMethod').value;
+        const description = document.getElementById('courseDescription').value;
+        const keywords = document.getElementById('courseKeywords').value
+          .split(',')
+          .map(k => k.trim())
+          .filter(k => k.length > 0);
+
+        if (editingMaritimeCourseId) {
+          // 編輯現有課程
+          const courseIndex = maritimeCourses.findIndex(c => c.id === editingMaritimeCourseId);
+          maritimeCourses[courseIndex] = {
+            ...maritimeCourses[courseIndex],
+            name,
+            category,
+            method,
+            description,
+            keywords
+          };
+          editingMaritimeCourseId = null;
+        } else {
+          // 新增課程
+          const newCourse = {
+            id: Date.now(),
+            name,
+            category,
+            method,
+            description,
+            keywords
+          };
+          maritimeCourses.push(newCourse);
+        }
+
+        saveMaritimeCourses();
+        this.reset();
+        displayManageMaritimeCourses();
+
+        showMaritimeMessage('課程已成功儲存！', 'success');
+      });
+    }
+
+    // 取消編輯
+    const cancelEdit = document.getElementById('cancelEdit');
+    if (cancelEdit) {
+      cancelEdit.addEventListener('click', function() {
+        document.getElementById('courseForm').reset();
+        editingMaritimeCourseId = null;
+        document.querySelector('#courseForm button[type="submit"]').textContent = '儲存課程';
+      });
+    }
+
+    // 初始化顯示
+    displayMaritimeCourses();
+  }
+
+  // 確保在頁面加載和路由變化時初始化
+  window.addEventListener('load', function() {
+    if (window.location.hash === '#maritime') {
+      setTimeout(initMaritimeCourseSystem, 100);
+    }
+  });
+
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash === '#maritime') {
+      setTimeout(initMaritimeCourseSystem, 100);
+    }
+  });
+
+  // 將函數暴露到全局作用域
+  window.editMaritimeCourse = editMaritimeCourse;
+  window.deleteMaritimeCourse = deleteMaritimeCourse;
+
+  // ========== 海事課程系統結束 ==========
   </script>
 </body>
 </html>
