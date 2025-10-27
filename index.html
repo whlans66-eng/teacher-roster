@@ -679,20 +679,20 @@
       <!-- 導航選單 -->
       <nav class="flex justify-center mb-8">
         <div class="bg-white rounded-lg shadow-md p-2 flex space-x-2">
-          <button id="viewTab" class="px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors">課程瀏覽</button>
-          <button id="editTab" class="px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors">課程管理</button>
-          <button id="statsTab" class="px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors">統計分析</button>
+          <button id="maritimeViewTab" class="px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors">課程瀏覽</button>
+          <button id="maritimeEditTab" class="px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors">課程管理</button>
+          <button id="maritimeStatsTab" class="px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors">統計分析</button>
         </div>
       </nav>
 
       <!-- 課程瀏覽頁面 -->
-      <div id="viewPage" class="fade-in">
+      <div id="maritimeViewPage" class="fade-in">
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 class="text-2xl font-bold text-gray-800 mb-4">課程搜尋</h2>
           <div class="flex flex-col md:flex-row gap-4">
-            <input type="text" id="searchInput_maritime" placeholder="輸入關鍵字搜尋課程..."
+            <input type="text" id="maritimeSearchInput" placeholder="輸入關鍵字搜尋課程..."
                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <select id="categoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <select id="maritimeCategoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
               <option value="">所有分類</option>
               <option value="01">01船舶操縱與航行實務訓練</option>
               <option value="02">02領導統御與檢查應對管理</option>
@@ -707,24 +707,24 @@
           </div>
         </div>
 
-        <div id="courseResults" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div id="maritimeCourseResults" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <!-- 課程卡片將在這裡顯示 -->
         </div>
       </div>
 
       <!-- 課程管理頁面 -->
-      <div id="editPage" class="hidden">
+      <div id="maritimeEditPage" class="hidden">
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 class="text-2xl font-bold text-gray-800 mb-4">新增/編輯課程</h2>
-          <form id="courseForm" class="space-y-4">
+          <form id="maritimeCourseForm" class="space-y-4">
             <div>
-              <label for="courseName" class="block text-sm font-medium text-gray-700 mb-1">課程名稱</label>
-              <input type="text" id="courseName" required
+              <label for="maritimeCourseName" class="block text-sm font-medium text-gray-700 mb-1">課程名稱</label>
+              <input type="text" id="maritimeCourseName" required
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
-              <label for="courseCategory" class="block text-sm font-medium text-gray-700 mb-1">課程分類</label>
-              <select id="courseCategory" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <label for="maritimeCourseCategory" class="block text-sm font-medium text-gray-700 mb-1">課程分類</label>
+              <select id="maritimeCourseCategory" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                 <option value="">請選擇分類</option>
                 <option value="01">01船舶操縱與航行實務訓練</option>
                 <option value="02">02領導統御與檢查應對管理</option>
@@ -738,13 +738,13 @@
               </select>
             </div>
             <div>
-              <label for="courseDescription" class="block text-sm font-medium text-gray-700 mb-1">課程描述</label>
-              <textarea id="courseDescription" rows="4" required
+              <label for="maritimeCourseDescription" class="block text-sm font-medium text-gray-700 mb-1">課程描述</label>
+              <textarea id="maritimeCourseDescription" rows="4" required
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
             </div>
             <div>
-              <label for="courseMethod" class="block text-sm font-medium text-gray-700 mb-1">授課方式</label>
-              <select id="courseMethod" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <label for="maritimeCourseMethod" class="block text-sm font-medium text-gray-700 mb-1">授課方式</label>
+              <select id="maritimeCourseMethod" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                 <option value="">請選擇授課方式</option>
                 <option value="實體課程">實體課程</option>
                 <option value="線上課程">線上課程</option>
@@ -752,15 +752,15 @@
               </select>
             </div>
             <div>
-              <label for="courseKeywords" class="block text-sm font-medium text-gray-700 mb-1">關鍵字（用逗號分隔）</label>
-              <input type="text" id="courseKeywords" placeholder="例如：導航,雷達,GPS,船舶操作"
+              <label for="maritimeCourseKeywords" class="block text-sm font-medium text-gray-700 mb-1">關鍵字（用逗號分隔）</label>
+              <input type="text" id="maritimeCourseKeywords" placeholder="例如：導航,雷達,GPS,船舶操作"
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="flex gap-4">
               <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                 儲存課程
               </button>
-              <button type="button" id="cancelEdit" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+              <button type="button" id="maritimeCancelEdit" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
                 取消
               </button>
             </div>
@@ -770,45 +770,45 @@
         <div class="bg-white rounded-lg shadow-lg p-6">
           <h3 class="text-xl font-bold text-gray-800 mb-4">已建立的課程</h3>
           <div class="mb-4">
-            <input type="text" id="manageSearchInput" placeholder="搜尋課程進行編輯..."
+            <input type="text" id="maritimeManageSearchInput" placeholder="搜尋課程進行編輯..."
                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
           </div>
-          <div id="manageCourseList" class="space-y-3">
+          <div id="maritimeManageCourseList" class="space-y-3">
             <!-- 課程管理列表將在這裡顯示 -->
           </div>
         </div>
       </div>
 
       <!-- 統計分析頁面 -->
-      <div id="statsPage" class="hidden">
+      <div id="maritimeStatsPage" class="hidden">
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
           <div class="bg-white rounded-lg shadow-lg p-6">
             <h3 class="text-lg font-bold text-gray-800 mb-2">總課程數</h3>
-            <p id="totalCourses" class="text-3xl font-bold text-blue-600">0</p>
+            <p id="maritimeTotalCourses" class="text-3xl font-bold text-blue-600">0</p>
           </div>
           <div class="bg-white rounded-lg shadow-lg p-6">
             <h3 class="text-lg font-bold text-gray-800 mb-2">最熱門分類</h3>
-            <p id="popularCategory" class="text-lg font-semibold text-green-600">-</p>
+            <p id="maritimePopularCategory" class="text-lg font-semibold text-green-600">-</p>
           </div>
           <div class="bg-white rounded-lg shadow-lg p-6">
             <h3 class="text-lg font-bold text-gray-800 mb-2">總關鍵字數</h3>
-            <p id="totalKeywords" class="text-3xl font-bold text-purple-600">0</p>
+            <p id="maritimeTotalKeywords" class="text-3xl font-bold text-purple-600">0</p>
           </div>
         </div>
 
         <div class="grid gap-6 md:grid-cols-2 mb-6">
           <div class="bg-white rounded-lg shadow-lg p-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4">課程統計</h3>
-            <div id="categoryStats" class="space-y-3">
+            <div id="maritimeCategoryStats" class="space-y-3">
               <!-- 分類統計將在這裡顯示 -->
             </div>
           </div>
           <div class="bg-white rounded-lg shadow-lg p-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4">分類分布圓餅圖</h3>
             <div class="chart-container">
-              <div id="pieChart" class="pie-chart"></div>
+              <div id="maritimePieChart" class="pie-chart"></div>
             </div>
-            <div id="chartLegend" class="mt-4 space-y-2">
+            <div id="maritimeChartLegend" class="mt-4 space-y-2">
               <!-- 圖例將在這裡顯示 -->
             </div>
           </div>
@@ -816,14 +816,14 @@
 
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h3 class="text-xl font-bold text-gray-800 mb-4">授課方式統計</h3>
-          <div id="methodStats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div id="maritimeMethodStats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- 授課方式統計將在這裡顯示 -->
           </div>
         </div>
 
         <div class="bg-white rounded-lg shadow-lg p-6">
           <h3 class="text-xl font-bold text-gray-800 mb-4">熱門關鍵字</h3>
-          <div id="keywordCloud" class="flex flex-wrap gap-2">
+          <div id="maritimeKeywordCloud" class="flex flex-wrap gap-2">
             <!-- 關鍵字雲將在這裡顯示 -->
           </div>
         </div>
@@ -2477,9 +2477,9 @@ grid.appendChild(cell);
   // 頁面切換功能
   function switchMaritimeTab(tab) {
     // 隱藏所有頁面
-    document.getElementById('viewPage').classList.add('hidden');
-    document.getElementById('editPage').classList.add('hidden');
-    document.getElementById('statsPage').classList.add('hidden');
+    document.getElementById('maritimeViewPage').classList.add('hidden');
+    document.getElementById('maritimeEditPage').classList.add('hidden');
+    document.getElementById('maritimeStatsPage').classList.add('hidden');
 
     // 重置所有按鈕樣式
     document.querySelectorAll('#maritimeCourseView nav button').forEach(btn => {
@@ -2488,25 +2488,25 @@ grid.appendChild(cell);
 
     // 顯示選中的頁面和更新按鈕樣式
     if (tab === 'view') {
-      document.getElementById('viewPage').classList.remove('hidden');
-      document.getElementById('viewTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
+      document.getElementById('maritimeViewPage').classList.remove('hidden');
+      document.getElementById('maritimeViewTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
       displayMaritimeCourses();
     } else if (tab === 'edit') {
-      document.getElementById('editPage').classList.remove('hidden');
-      document.getElementById('editTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
+      document.getElementById('maritimeEditPage').classList.remove('hidden');
+      document.getElementById('maritimeEditTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
       displayManageMaritimeCourses();
     } else if (tab === 'stats') {
-      document.getElementById('statsPage').classList.remove('hidden');
-      document.getElementById('statsTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
+      document.getElementById('maritimeStatsPage').classList.remove('hidden');
+      document.getElementById('maritimeStatsTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
       displayMaritimeStats();
     }
   }
 
   // 顯示課程列表
   function displayMaritimeCourses() {
-    const searchTerm = document.getElementById('searchInput_maritime').value.toLowerCase();
-    const categoryFilter = document.getElementById('categoryFilter').value;
-    const resultsContainer = document.getElementById('courseResults');
+    const searchTerm = document.getElementById('maritimeSearchInput').value.toLowerCase();
+    const categoryFilter = document.getElementById('maritimeCategoryFilter').value;
+    const resultsContainer = document.getElementById('maritimeCourseResults');
 
     let filteredCourses = maritimeCourses.filter(course => {
       const matchesSearch = !searchTerm ||
@@ -2581,8 +2581,8 @@ grid.appendChild(cell);
 
   // 顯示管理課程列表
   function displayManageMaritimeCourses() {
-    const searchTerm = document.getElementById('manageSearchInput').value.toLowerCase();
-    const container = document.getElementById('manageCourseList');
+    const searchTerm = document.getElementById('maritimeManageSearchInput').value.toLowerCase();
+    const container = document.getElementById('maritimeManageCourseList');
 
     let filteredCourses = maritimeCourses.filter(course =>
       course.name.toLowerCase().includes(searchTerm) ||
@@ -2627,14 +2627,14 @@ grid.appendChild(cell);
     if (!course) return;
 
     editingMaritimeCourseId = courseId;
-    document.getElementById('courseName').value = course.name;
-    document.getElementById('courseCategory').value = course.category;
-    document.getElementById('courseMethod').value = course.method || '';
-    document.getElementById('courseDescription').value = course.description;
-    document.getElementById('courseKeywords').value = course.keywords.join(', ');
+    document.getElementById('maritimeCourseName').value = course.name;
+    document.getElementById('maritimeCourseCategory').value = course.category;
+    document.getElementById('maritimeCourseMethod').value = course.method || '';
+    document.getElementById('maritimeCourseDescription').value = course.description;
+    document.getElementById('maritimeCourseKeywords').value = course.keywords.join(', ');
 
-    document.querySelector('#courseForm button[type="submit"]').textContent = '更新課程';
-    document.getElementById('courseName').focus();
+    document.querySelector('#maritimeCourseForm button[type="submit"]').textContent = '更新課程';
+    document.getElementById('maritimeCourseName').focus();
   }
 
   // 刪除課程
@@ -2650,11 +2650,11 @@ grid.appendChild(cell);
   // 顯示統計資料
   function displayMaritimeStats() {
     // 總課程數
-    document.getElementById('totalCourses').textContent = maritimeCourses.length;
+    document.getElementById('maritimeTotalCourses').textContent = maritimeCourses.length;
 
     // 總關鍵字數
     const allKeywords = maritimeCourses.flatMap(course => course.keywords);
-    document.getElementById('totalKeywords').textContent = allKeywords.length;
+    document.getElementById('maritimeTotalKeywords').textContent = allKeywords.length;
 
     // 最熱門分類
     const categoryCount = {};
@@ -2664,11 +2664,11 @@ grid.appendChild(cell);
 
     const popularCategoryCode = Object.keys(categoryCount).reduce((a, b) =>
       categoryCount[a] > categoryCount[b] ? a : b, '');
-    document.getElementById('popularCategory').textContent =
+    document.getElementById('maritimePopularCategory').textContent =
       popularCategoryCode ? maritimeCategoryNames[popularCategoryCode] : '-';
 
     // 各分類統計
-    const categoryStatsContainer = document.getElementById('categoryStats');
+    const categoryStatsContainer = document.getElementById('maritimeCategoryStats');
     categoryStatsContainer.innerHTML = '';
 
     const colors = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#f97316', '#84cc16', '#ec4899'];
@@ -2701,7 +2701,7 @@ grid.appendChild(cell);
       methodCount[method] = (methodCount[method] || 0) + 1;
     });
 
-    const methodStatsContainer = document.getElementById('methodStats');
+    const methodStatsContainer = document.getElementById('maritimeMethodStats');
     methodStatsContainer.innerHTML = '';
 
     const methodColors = { '實體課程': '#3b82f6', '線上課程': '#10b981', '混合課程': '#f59e0b', '未設定': '#6b7280' };
@@ -2738,7 +2738,7 @@ grid.appendChild(cell);
       .sort(([,a], [,b]) => b - a)
       .slice(0, 20);
 
-    const keywordCloudContainer = document.getElementById('keywordCloud');
+    const keywordCloudContainer = document.getElementById('maritimeKeywordCloud');
     keywordCloudContainer.innerHTML = '';
 
     sortedKeywords.forEach(([keyword, count]) => {
@@ -2753,8 +2753,8 @@ grid.appendChild(cell);
 
   // 顯示圓餅圖
   function displayMaritimePieChart(categoryCount, colors) {
-    const pieChart = document.getElementById('pieChart');
-    const chartLegend = document.getElementById('chartLegend');
+    const pieChart = document.getElementById('maritimePieChart');
+    const chartLegend = document.getElementById('maritimeChartLegend');
 
     const total = Object.values(categoryCount).reduce((sum, count) => sum + count, 0);
 
@@ -2818,34 +2818,34 @@ grid.appendChild(cell);
   // 初始化海事課程系統事件監聽器
   function initMaritimeCourseSystem() {
     // 頁面切換
-    const viewTab = document.getElementById('viewTab');
-    const editTab = document.getElementById('editTab');
-    const statsTab = document.getElementById('statsTab');
+    const viewTab = document.getElementById('maritimeViewTab');
+    const editTab = document.getElementById('maritimeEditTab');
+    const statsTab = document.getElementById('maritimeStatsTab');
 
     if (viewTab) viewTab.addEventListener('click', () => switchMaritimeTab('view'));
     if (editTab) editTab.addEventListener('click', () => switchMaritimeTab('edit'));
     if (statsTab) statsTab.addEventListener('click', () => switchMaritimeTab('stats'));
 
     // 搜尋功能
-    const searchInput = document.getElementById('searchInput_maritime');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const manageSearchInput = document.getElementById('manageSearchInput');
+    const searchInput = document.getElementById('maritimeSearchInput');
+    const categoryFilter = document.getElementById('maritimeCategoryFilter');
+    const manageSearchInput = document.getElementById('maritimeManageSearchInput');
 
     if (searchInput) searchInput.addEventListener('input', displayMaritimeCourses);
     if (categoryFilter) categoryFilter.addEventListener('change', displayMaritimeCourses);
     if (manageSearchInput) manageSearchInput.addEventListener('input', displayManageMaritimeCourses);
 
     // 課程表單處理
-    const courseForm = document.getElementById('courseForm');
+    const courseForm = document.getElementById('maritimeCourseForm');
     if (courseForm) {
       courseForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        const name = document.getElementById('courseName').value;
-        const category = document.getElementById('courseCategory').value;
-        const method = document.getElementById('courseMethod').value;
-        const description = document.getElementById('courseDescription').value;
-        const keywords = document.getElementById('courseKeywords').value
+        const name = document.getElementById('maritimeCourseName').value;
+        const category = document.getElementById('maritimeCourseCategory').value;
+        const method = document.getElementById('maritimeCourseMethod').value;
+        const description = document.getElementById('maritimeCourseDescription').value;
+        const keywords = document.getElementById('maritimeCourseKeywords').value
           .split(',')
           .map(k => k.trim())
           .filter(k => k.length > 0);
@@ -2884,12 +2884,12 @@ grid.appendChild(cell);
     }
 
     // 取消編輯
-    const cancelEdit = document.getElementById('cancelEdit');
+    const cancelEdit = document.getElementById('maritimeCancelEdit');
     if (cancelEdit) {
       cancelEdit.addEventListener('click', function() {
-        document.getElementById('courseForm').reset();
+        document.getElementById('maritimeCourseForm').reset();
         editingMaritimeCourseId = null;
-        document.querySelector('#courseForm button[type="submit"]').textContent = '儲存課程';
+        document.querySelector('#maritimeCourseForm button[type="submit"]').textContent = '儲存課程';
       });
     }
 
