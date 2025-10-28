@@ -486,6 +486,17 @@
           </div>
         </div>
 
+        <!-- 老師本週課表 -->
+        <div id="teacherWeekSchedule" class="bg-white rounded-2xl shadow-lg p-6 mb-8 hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-800">📅 本週課表 - 即時檢視可用時段</h3>
+            <span class="text-sm text-gray-500">綠色：可用 | 紅色：已佔用</span>
+          </div>
+          <div id="teacherWeekScheduleContent" class="space-y-3">
+            <!-- 課表內容將由 JS 動態生成 -->
+          </div>
+        </div>
+
         <!-- 新增課程按鈕與時間軸 -->
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-semibold text-gray-800">課程時間軸</h3>
@@ -2053,12 +2064,14 @@ grid.appendChild(cell);
       document.getElementById('courseMonthlyHours').textContent = '0';
       document.getElementById('courseTodayCount').textContent = '0';
       document.getElementById('courseTypeCards').innerHTML = '';
+      document.getElementById('teacherWeekSchedule').classList.add('hidden');
       return;
     }
 
     updateCourseStats();
     renderCourseTypeCards();
     renderCourseTimeline();
+    renderTeacherWeekSchedule();
   }
 
   // 計算時數
@@ -2240,22 +2253,62 @@ grid.appendChild(cell);
   function addCourseSubmit(event) {
     event.preventDefault();
 
+    const courseName = document.getElementById('addCourseName').value;
+    const courseDate = document.getElementById('addCourseDate').value;
+    const startTime = document.getElementById('addCourseStartTime').value;
+    const endTime = document.getElementById('addCourseEndTime').value;
+    const courseType = document.getElementById('addCourseType').value;
+    const timeRange = `${startTime}-${endTime}`;
+
+    // 檢查是否有衝堂
+    const conflicts = checkTeacherConflict(currentCourseTeacherId, courseDate, startTime, endTime);
+
+    if (conflicts.length > 0) {
+      const conflictMessages = conflicts.map(c =>
+        `- ${c.name} (${c.time}) [${c.type}] 來源：${c.source}`
+      ).join('\n');
+
+      const confirmMessage = `⚠️ 衝堂警告！\n\n該老師在此時段已有以下課程：\n${conflictMessages}\n\n是否仍要繼續派課？`;
+
+      if (!confirm(confirmMessage)) {
+        return; // 取消派課
+      }
+    }
+
     const newCourse = {
       id: Date.now(),
       teacherId: currentCourseTeacherId,
-      name: document.getElementById('addCourseName').value,
-      date: document.getElementById('addCourseDate').value,
-      time: `${document.getElementById('addCourseStartTime').value}-${document.getElementById('addCourseEndTime').value}`,
-      type: document.getElementById('addCourseType').value
+      name: courseName,
+      date: courseDate,
+      time: timeRange,
+      type: courseType
     };
 
     courseAssignments.push(newCourse);
     saveCourseLocal();
+
+    // 同步到行事曆
+    const teacher = teachers.find(t => t.id === currentCourseTeacherId);
+    const teacherName = teacher ? teacher.name : '未知師資';
+
+    calendarEvents.push({
+      id: newCourse.id, // 使用相同 ID 以便同步刪除
+      date: courseDate,
+      title: `${courseName} - ${teacherName}`,
+      time: timeRange,
+      teacherId: currentCourseTeacherId,
+      location: courseType,
+      note: `課程類型：${courseType}`,
+      color: getCourseTypeColor(courseType),
+      courseId: newCourse.id // 標記為派課產生的事件
+    });
+    saveCalendarLocal();
+
     updateCourseView();
     closeAddCourseModal();
 
     // 顯示成功訊息
-    alert('課程新增成功！');
+    alert('✅ 課程新增成功！已同步到行事曆');
   }
 
   // 刪除課程
@@ -2264,7 +2317,14 @@ grid.appendChild(cell);
 
     courseAssignments = courseAssignments.filter(c => c.id !== courseId);
     saveCourseLocal();
+
+    // 同步刪除行事曆中的對應事件
+    calendarEvents = calendarEvents.filter(e => e.courseId !== courseId);
+    saveCalendarLocal();
+
     updateCourseView();
+
+    alert('✅ 課程已刪除，已同步更新行事曆');
   }
 
   // 儲存到 localStorage
@@ -2290,6 +2350,200 @@ grid.appendChild(cell);
       closeAddEventModal();
     }
   });
+
+  // ========== 衝堂檢查與行事曆整合功能 ==========
+
+  // 檢查老師在特定時間是否有衝堂
+  function checkTeacherConflict(teacherId, date, startTime, endTime) {
+    const conflicts = [];
+
+    // 將時間轉換為分鐘數以便比較
+    const timeToMinutes = (timeStr) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const newStart = timeToMinutes(startTime);
+    const newEnd = timeToMinutes(endTime);
+
+    // 檢查派課管理中的課程
+    courseAssignments.forEach(course => {
+      if (course.teacherId === teacherId && course.date === date) {
+        const [courseStart, courseEnd] = course.time.split('-');
+        const existingStart = timeToMinutes(courseStart);
+        const existingEnd = timeToMinutes(courseEnd);
+
+        // 檢查時間是否重疊
+        if (!(newEnd <= existingStart || newStart >= existingEnd)) {
+          conflicts.push({
+            name: course.name,
+            time: course.time,
+            type: course.type,
+            source: '派課管理'
+          });
+        }
+      }
+    });
+
+    // 檢查行事曆中的事件
+    calendarEvents.forEach(event => {
+      if (event.teacherId === teacherId && event.date === date && event.time) {
+        const timeParts = event.time.split('-');
+        if (timeParts.length === 2) {
+          const [eventStart, eventEnd] = timeParts;
+          const existingStart = timeToMinutes(eventStart);
+          const existingEnd = timeToMinutes(eventEnd);
+
+          // 檢查時間是否重疊（排除派課產生的事件，避免重複檢查）
+          if (!event.courseId && !(newEnd <= existingStart || newStart >= existingEnd)) {
+            conflicts.push({
+              name: event.title,
+              time: event.time,
+              type: event.location || '行事曆事件',
+              source: '行事曆'
+            });
+          }
+        }
+      }
+    });
+
+    return conflicts;
+  }
+
+  // 獲取課程類型對應的顏色
+  function getCourseTypeColor(type) {
+    const colorMap = {
+      '正課': '#3b82f6',    // 藍色
+      '補課': '#f59e0b',    // 黃色
+      '實驗課': '#8b5cf6',  // 紫色
+      '實作課': '#10b981',  // 綠色
+      '專題': '#ec4899'     // 粉色
+    };
+    return colorMap[type] || '#6b7280'; // 預設灰色
+  }
+
+  // 獲取老師在指定日期範圍內的課程（用於顯示可用時間）
+  function getTeacherSchedule(teacherId, startDate, endDate) {
+    const schedule = [];
+
+    // 從派課管理獲取
+    courseAssignments.forEach(course => {
+      if (course.teacherId === teacherId &&
+          course.date >= startDate &&
+          course.date <= endDate) {
+        schedule.push({
+          date: course.date,
+          time: course.time,
+          title: course.name,
+          type: course.type,
+          source: '派課'
+        });
+      }
+    });
+
+    // 從行事曆獲取
+    calendarEvents.forEach(event => {
+      if (event.teacherId === teacherId &&
+          event.date >= startDate &&
+          event.date <= endDate &&
+          !event.courseId) { // 排除派課產生的事件
+        schedule.push({
+          date: event.date,
+          time: event.time || '全天',
+          title: event.title,
+          type: event.location || '行事曆',
+          source: '行事曆'
+        });
+      }
+    });
+
+    return schedule.sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+  }
+
+  // 渲染老師本週課表
+  function renderTeacherWeekSchedule() {
+    if (!currentCourseTeacherId) {
+      document.getElementById('teacherWeekSchedule').classList.add('hidden');
+      return;
+    }
+
+    // 獲取本週日期範圍
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const startDate = monday.toISOString().split('T')[0];
+    const endDate = sunday.toISOString().split('T')[0];
+
+    // 獲取課表
+    const schedule = getTeacherSchedule(currentCourseTeacherId, startDate, endDate);
+
+    const container = document.getElementById('teacherWeekScheduleContent');
+    const scheduleDiv = document.getElementById('teacherWeekSchedule');
+
+    if (schedule.length === 0) {
+      scheduleDiv.classList.add('hidden');
+      return;
+    }
+
+    scheduleDiv.classList.remove('hidden');
+
+    // 按日期分組
+    const groupedByDate = {};
+    schedule.forEach(item => {
+      if (!groupedByDate[item.date]) {
+        groupedByDate[item.date] = [];
+      }
+      groupedByDate[item.date].push(item);
+    });
+
+    // 生成 HTML
+    const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+    let html = '<div class="grid grid-cols-1 md:grid-cols-7 gap-3">';
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayEvents = groupedByDate[dateStr] || [];
+      const isToday = dateStr === today.toISOString().split('T')[0];
+
+      html += `
+        <div class="border rounded-lg p-3 ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'}">
+          <div class="font-semibold text-sm mb-2 ${isToday ? 'text-blue-700' : 'text-gray-700'}">
+            週${weekDays[date.getDay()]} ${date.getMonth() + 1}/${date.getDate()}
+            ${isToday ? '<span class="text-xs ml-1">(今天)</span>' : ''}
+          </div>
+          <div class="space-y-2">
+      `;
+
+      if (dayEvents.length === 0) {
+        html += '<div class="text-xs text-green-600 bg-green-50 rounded px-2 py-1">✓ 全天可用</div>';
+      } else {
+        dayEvents.forEach(event => {
+          const bgColor = event.source === '派課' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700';
+          html += `
+            <div class="text-xs ${bgColor} rounded px-2 py-1">
+              <div class="font-semibold">${event.time}</div>
+              <div class="truncate" title="${event.title}">${event.title}</div>
+              <div class="text-xs opacity-75">${event.type}</div>
+            </div>
+          `;
+        });
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+  }
 
   // ========== 派課管理功能結束 ==========
 
