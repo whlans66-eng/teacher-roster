@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>測試功能連動 - 完整可用版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .modern-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+        .modern-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .course-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid #667eea;
+        }
+        .calendar-event {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+        .alert-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        .success-box {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body class="gradient-bg p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- 標題 -->
+        <div class="text-center mb-8 text-white">
+            <h1 class="text-4xl font-bold mb-2">🔄 功能連動測試</h1>
+            <p class="text-lg">直接操作看到所有功能如何自動協同工作</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6">
+            <!-- 左側：派課管理 -->
+            <div class="glass-effect">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">📚 派課管理</h2>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold mb-2">課程名稱</label>
+                    <input type="text" id="courseName" class="w-full px-3 py-2 border rounded" placeholder="例如：高等數學" value="高等數學">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold mb-2">日期</label>
+                    <input type="date" id="courseDate" class="w-full px-3 py-2 border rounded">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">開始時間</label>
+                        <input type="time" id="startTime" class="w-full px-3 py-2 border rounded" value="09:00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">結束時間</label>
+                        <input type="time" id="endTime" class="w-full px-3 py-2 border rounded" value="11:00">
+                    </div>
+                </div>
+
+                <button onclick="addCourse()" class="modern-btn w-full mb-4">
+                    ➕ 新增課程（會自動檢查衝堂）
+                </button>
+
+                <div id="messages"></div>
+
+                <h3 class="font-bold text-lg mb-2 mt-6">已派課程：</h3>
+                <div id="courseList" class="space-y-2 max-h-64 overflow-y-auto">
+                    <p class="text-gray-500 text-sm">尚無課程</p>
+                </div>
+            </div>
+
+            <!-- 中間：行事曆 -->
+            <div class="glass-effect">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">📅 行事曆</h2>
+                <p class="text-sm text-gray-600 mb-4">自動同步顯示所有派課</p>
+
+                <div id="calendarEvents" class="space-y-2 max-h-96 overflow-y-auto">
+                    <p class="text-gray-500 text-sm">行事曆是空的</p>
+                </div>
+            </div>
+
+            <!-- 右側：本週課表 -->
+            <div class="glass-effect">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">📋 本週課表</h2>
+                <p class="text-sm text-gray-600 mb-4">即時更新顯示</p>
+
+                <div id="weekSchedule" class="space-y-2 max-h-96 overflow-y-auto">
+                    <p class="text-gray-500 text-sm">本週無課程</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作說明 -->
+        <div class="glass-effect mt-6">
+            <h3 class="text-lg font-bold mb-3 text-gray-800">💡 測試步驟：</h3>
+            <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                <li>點擊「新增課程」- 看到課程出現在三個區塊</li>
+                <li>嘗試新增同一時段的課程 - 看到衝堂警告</li>
+                <li>觀察右側本週課表自動更新</li>
+                <li>點擊課程的刪除按鈕 - 看到三個區塊同時更新</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // 數據存儲
+        let courses = [];
+        let calendarEvents = [];
+
+        // 設定今天的日期
+        document.getElementById('courseDate').value = new Date().toISOString().split('T')[0];
+
+        // 新增課程
+        function addCourse() {
+            const name = document.getElementById('courseName').value;
+            const date = document.getElementById('courseDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+
+            if (!name || !date || !startTime || !endTime) {
+                showMessage('請填寫所有欄位！', 'error');
+                return;
+            }
+
+            // ✨ 步驟1：檢查衝堂
+            const conflicts = checkConflict(date, startTime, endTime);
+            if (conflicts.length > 0) {
+                const msg = `⚠️ 衝堂警告！\n\n在 ${date} ${startTime}-${endTime} 已有課程：\n${conflicts.map(c => `- ${c.name}`).join('\n')}\n\n是否仍要新增？`;
+                if (!confirm(msg)) {
+                    showMessage('已取消新增', 'info');
+                    return;
+                }
+            }
+
+            // ✨ 步驟2：新增到派課管理
+            const course = {
+                id: Date.now(),
+                name,
+                date,
+                time: `${startTime}-${endTime}`,
+                startTime,
+                endTime
+            };
+            courses.push(course);
+
+            // ✨ 步驟3：自動同步到行事曆
+            const event = {
+                id: course.id,
+                title: `${name}`,
+                date,
+                time: course.time,
+                courseId: course.id
+            };
+            calendarEvents.push(event);
+
+            // ✨ 步驟4：更新所有視圖
+            updateCourseList();
+            updateCalendar();
+            updateWeekSchedule();
+
+            showMessage('✅ 課程新增成功！已自動同步到行事曆和本週課表', 'success');
+        }
+
+        // 衝堂檢查
+        function checkConflict(date, startTime, endTime) {
+            const timeToMinutes = (time) => {
+                const [h, m] = time.split(':').map(Number);
+                return h * 60 + m;
+            };
+
+            const newStart = timeToMinutes(startTime);
+            const newEnd = timeToMinutes(endTime);
+
+            return courses.filter(c => {
+                if (c.date !== date) return false;
+                const existStart = timeToMinutes(c.startTime);
+                const existEnd = timeToMinutes(c.endTime);
+                return !(newEnd <= existStart || newStart >= existEnd);
+            });
+        }
+
+        // 刪除課程
+        function deleteCourse(id) {
+            if (!confirm('確定要刪除嗎？')) return;
+
+            // ✨ 同步刪除：派課 + 行事曆
+            courses = courses.filter(c => c.id !== id);
+            calendarEvents = calendarEvents.filter(e => e.courseId !== id);
+
+            updateCourseList();
+            updateCalendar();
+            updateWeekSchedule();
+
+            showMessage('✅ 已刪除課程，並同步更新行事曆', 'success');
+        }
+
+        // 更新派課列表
+        function updateCourseList() {
+            const container = document.getElementById('courseList');
+            if (courses.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">尚無課程</p>';
+                return;
+            }
+
+            container.innerHTML = courses.map(c => `
+                <div class="course-item">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-bold text-gray-800">${c.name}</div>
+                            <div class="text-sm text-gray-600">
+                                📅 ${c.date}<br>
+                                🕐 ${c.time}
+                            </div>
+                        </div>
+                        <button onclick="deleteCourse(${c.id})" class="text-red-500 hover:text-red-700">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 更新行事曆
+        function updateCalendar() {
+            const container = document.getElementById('calendarEvents');
+            if (calendarEvents.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">行事曆是空的</p>';
+                return;
+            }
+
+            const grouped = {};
+            calendarEvents.forEach(e => {
+                if (!grouped[e.date]) grouped[e.date] = [];
+                grouped[e.date].push(e);
+            });
+
+            container.innerHTML = Object.entries(grouped)
+                .sort(([a], [b]) => b.localeCompare(a))
+                .map(([date, events]) => `
+                    <div class="bg-white p-3 rounded-lg">
+                        <div class="font-bold text-gray-700 mb-2">
+                            📅 ${new Date(date).toLocaleDateString('zh-TW')}
+                        </div>
+                        ${events.map(e => `
+                            <div class="calendar-event">
+                                ${e.time} ${e.title}
+                            </div>
+                        `).join('')}
+                    </div>
+                `).join('');
+        }
+
+        // 更新本週課表
+        function updateWeekSchedule() {
+            const container = document.getElementById('weekSchedule');
+
+            // 獲取本週課程
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            const weekCourses = courses.filter(c => {
+                const d = new Date(c.date);
+                return d >= monday && d <= sunday;
+            });
+
+            if (weekCourses.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">本週無課程</p>';
+                return;
+            }
+
+            // 按日期分組
+            const grouped = {};
+            weekCourses.forEach(c => {
+                if (!grouped[c.date]) grouped[c.date] = [];
+                grouped[c.date].push(c);
+            });
+
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+
+            container.innerHTML = Object.entries(grouped)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([date, courses]) => {
+                    const d = new Date(date);
+                    const dayName = weekDays[d.getDay()];
+                    return `
+                        <div class="bg-blue-50 p-2 rounded-lg">
+                            <div class="text-xs font-bold text-blue-800 mb-1">
+                                週${dayName} ${d.getDate()}日
+                            </div>
+                            ${courses.map(c => `
+                                <div class="text-xs bg-white p-1 rounded mb-1">
+                                    ${c.time} ${c.name}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        // 顯示訊息
+        function showMessage(msg, type) {
+            const container = document.getElementById('messages');
+            const className = type === 'error' ? 'alert-box' : 'success-box';
+            container.innerHTML = `<div class="${className}">${msg}</div>`;
+            setTimeout(() => container.innerHTML = '', 5000);
+        }
+
+        // 頁面載入時的說明
+        window.addEventListener('load', () => {
+            showMessage('👋 歡迎！點擊「新增課程」開始測試功能連動', 'success');
+        });
+    </script>
+</body>
+</html>
