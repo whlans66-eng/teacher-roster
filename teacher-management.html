@@ -1116,8 +1116,6 @@
 
     function addNewTeacher(){
       currentTeacherId = null;
-      document.getElementById('teacherList').classList.add('hidden');
-      document.getElementById('teacherDetail').classList.remove('hidden');
       document.getElementById('deleteBtn').classList.add('hidden');
       document.getElementById('teacherForm').reset();
       const photoBox = document.getElementById('photoPreview');
@@ -1128,13 +1126,12 @@
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
       document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
       addExperience(); addCertificate(); addSubject();
+      setRoute('teacher');
     }
 
     function editTeacher(teacherId){
       const teacher = teachers.find(t=>t.id===teacherId); if(!teacher) return;
       currentTeacherId = teacherId;
-      document.getElementById('teacherList').classList.add('hidden');
-      document.getElementById('teacherDetail').classList.remove('hidden');
       document.getElementById('deleteBtn').classList.remove('hidden');
       document.getElementById('teacherName').value = teacher.name;
       document.getElementById('teacherEmail').value = teacher.email || '';
@@ -1165,12 +1162,11 @@
       });
       document.getElementById('subjectList').innerHTML = '';
       (teacher.subjects||[]).forEach(s=>addSubject(s));
+      setRoute('teacher');
     }
 
     function viewTeacherDetail(teacherId){
       const teacher = teachers.find(t=>t.id===teacherId); if(!teacher) return;
-      document.getElementById('teacherList').classList.add('hidden');
-      document.getElementById('teacherDetailView').classList.remove('hidden');
       const isInternal = teacher.teacherType==='internal';
       const bgGradient = isInternal?'from-blue-50 to-indigo-50':'from-purple-50 to-pink-50';
       const titleColor = isInternal?'text-blue-800':'text-purple-800';
@@ -1247,6 +1243,7 @@
           <button onclick="editTeacher(${teacher.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl">✏️ 編輯師資資料</button>
         </div>`:''}
       `;
+      setRoute('teacher-view');
     }
 
     function viewCertificateFromDetail(fileName,fileUrl){
@@ -1563,7 +1560,7 @@
       renderTeacherGrid();
     }
 
-    function showStatisticsView(){ document.getElementById('teacherList').classList.add('hidden'); document.getElementById('executiveView').classList.remove('hidden'); renderStatisticsView(); }
+    function showStatisticsView(){ setRoute('statistics'); }
     function backToListFromExecutive(){ setRoute('list'); }
 
     function renderStatisticsView(){
@@ -1710,20 +1707,13 @@
   function todayStr(){ const d=new Date(); return fmtDate(d.getFullYear(), d.getMonth(), d.getDate()); }
 
   function showCalendarView(){
-    document.getElementById('teacherList').classList.add('hidden');
-    document.getElementById('executiveView').classList.add('hidden');
-    document.getElementById('teacherDetail').classList.add('hidden');
-    document.getElementById('teacherDetailView').classList.add('hidden');
-    document.getElementById('calendarView').classList.remove('hidden');
-
     const sel = document.getElementById('eventTeacherId');
     sel.innerHTML = `<option value="">（未指派）</option>` + (teachers||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
 
     currentDate = new Date();
     document.getElementById('eventDate').value = todayStr();
 
-    renderCalendar();
-    startReminderCheck();
+    setRoute('calendar');
   }
   function backToListFromCalendar(){
     stopReminderCheck();
@@ -1970,21 +1960,7 @@ grid.appendChild(cell);
 
   // 顯示派課管理視圖
   function showCourseManagementView() {
-    document.getElementById('teacherList').classList.add('hidden');
-    document.getElementById('courseManagementView').classList.remove('hidden');
-
-    // 初始化師資選擇
-    const teacherSelect = document.getElementById('courseTeacherSelect');
-    teacherSelect.innerHTML = '<option value="">請選擇師資</option>';
-    teachers.forEach(teacher => {
-      const option = document.createElement('option');
-      option.value = String(teacher.id);
-      option.textContent = teacher.name;
-      teacherSelect.appendChild(option);
-    });
-
-    // 初始化日期
-    initCourseDates();
+    setRoute('courses');
   }
 
   // 返回師資列表
