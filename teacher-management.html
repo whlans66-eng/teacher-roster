@@ -1261,10 +1261,7 @@
     }
 
     function backToList(){
-      document.getElementById('teacherDetail').classList.add('hidden');
-      document.getElementById('teacherDetailView').classList.add('hidden');
-      document.getElementById('teacherList').classList.remove('hidden');
-      renderTeacherGrid();
+      setRoute('list');
     }
 
     function addExperience(value=''){
@@ -1567,7 +1564,7 @@
     }
 
     function showStatisticsView(){ document.getElementById('teacherList').classList.add('hidden'); document.getElementById('executiveView').classList.remove('hidden'); renderStatisticsView(); }
-    function backToListFromExecutive(){ document.getElementById('executiveView').classList.add('hidden'); document.getElementById('teacherList').classList.remove('hidden'); }
+    function backToListFromExecutive(){ setRoute('list'); }
 
     function renderStatisticsView(){
       const total = teachers.length;
@@ -1730,8 +1727,7 @@
   }
   function backToListFromCalendar(){
     stopReminderCheck();
-    document.getElementById('calendarView').classList.add('hidden');
-    document.getElementById('teacherList').classList.remove('hidden');
+    setRoute('list');
   }
 
   function setViewMode(mode){
@@ -1993,8 +1989,7 @@ grid.appendChild(cell);
 
   // 返回師資列表
   function backToListFromCourseManagement() {
-    document.getElementById('courseManagementView').classList.add('hidden');
-    document.getElementById('teacherList').classList.remove('hidden');
+    setRoute('list');
   }
 
   // 初始化日期
