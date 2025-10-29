@@ -2569,8 +2569,10 @@ grid.appendChild(cell);
           initMaritimeCourseSystem();
         }
       } else if (route === 'list' || route === '') {
-        // 返回列表時重新渲染
-        if (typeof renderTeacherGrid === 'function') {
+        // 返回列表時重新渲染並確保模式狀態正確同步
+        if (typeof switchMode === 'function' && typeof currentMode !== 'undefined') {
+          switchMode(currentMode);
+        } else if (typeof renderTeacherGrid === 'function') {
           renderTeacherGrid();
         }
       }
