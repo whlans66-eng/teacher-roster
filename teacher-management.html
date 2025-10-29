@@ -880,7 +880,7 @@
     let currentTeacherId = null;
     let draggedElement = null;
     let filteredTeachers = [];
-    let currentMode = 'edit';
+    window.currentMode = 'edit';
 
     /* ---------- 靜默同步（0.1秒） ---------- */
     const SYNC_DEBOUNCE_MS = 100;
@@ -969,8 +969,8 @@
       });
     }
 
-    function switchMode(mode){
-      currentMode = mode;
+    window.switchMode = function switchMode(mode){
+      window.currentMode = mode;
       const editBtn = document.getElementById('editModeBtn');
       const displayBtn = document.getElementById('displayModeBtn');
       const addBtn = document.getElementById('addTeacherBtn');
@@ -1245,19 +1245,7 @@
       }
     }
 
-    function backToList(){
-      // 隱藏所有詳細視圖
-      document.getElementById('teacherDetail')?.classList.add('hidden');
-      document.getElementById('teacherDetailView')?.classList.add('hidden');
-      // 顯示師資列表
-      document.getElementById('teacherList')?.classList.remove('hidden');
-      // 重新渲染以確保模式狀態正確
-      if (typeof switchMode === 'function' && typeof currentMode !== 'undefined') {
-        switchMode(currentMode);
-      }
-      // 更新路由
-      setRoute('list');
-    }
+    // backToList 已移至全局 window 對象，見文件底部
 
     function addExperience(value=''){
       const c = document.getElementById('experienceList');
@@ -2610,7 +2598,18 @@ grid.appendChild(cell);
   };
 
   window.backToList = function() {
+    // 停止提醒檢查（如果從行事曆返回）
     if (typeof stopReminderCheck === 'function') stopReminderCheck();
+    // 隱藏所有詳細視圖
+    document.getElementById('teacherDetail')?.classList.add('hidden');
+    document.getElementById('teacherDetailView')?.classList.add('hidden');
+    // 顯示師資列表
+    document.getElementById('teacherList')?.classList.remove('hidden');
+    // 重新渲染以確保模式狀態正確
+    if (typeof window.switchMode === 'function' && typeof window.currentMode !== 'undefined') {
+      window.switchMode(window.currentMode);
+    }
+    // 更新路由
     setRoute('list');
   };
 
