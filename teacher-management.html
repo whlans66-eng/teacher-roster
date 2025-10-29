@@ -647,6 +647,16 @@
             <div id="subjectList" class="space-y-3"></div>
           </div>
 
+          <!-- Tags 標籤 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800">🏷️ 標籤 Tags</h3>
+              <button type="button" onclick="addTag()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增標籤</button>
+            </div>
+            <div id="tagList" class="space-y-3"></div>
+            <p class="text-sm text-gray-500 mt-2">標籤可用於分類或標記師資特色，例如：專業領域、語言能力、特殊技能等</p>
+          </div>
+
           <div class="flex justify-between pt-6">
             <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors hidden">🗑️ 刪除師資</button>
             <div class="flex space-x-4 ml-auto">
@@ -1110,9 +1120,10 @@
       document.getElementById('experienceList').innerHTML = '';
       document.getElementById('certificateList').innerHTML = '';
       document.getElementById('subjectList').innerHTML = '';
+      document.getElementById('tagList').innerHTML = '';
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
       document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
-      addExperience(); addCertificate(); addSubject();
+      addExperience(); addCertificate(); addSubject(); addTag();
     }
 
     function editTeacher(teacherId){
@@ -1150,6 +1161,8 @@
       });
       document.getElementById('subjectList').innerHTML = '';
       (teacher.subjects||[]).forEach(s=>addSubject(s));
+      document.getElementById('tagList').innerHTML = '';
+      (teacher.tags||[]).forEach(t=>addTag(t));
     }
 
     function viewTeacherDetail(teacherId){
@@ -1345,6 +1358,20 @@
       c.appendChild(div);
     }
 
+    function addTag(value=''){
+      const c = document.getElementById('tagList');
+      const div = document.createElement('div');
+      div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
+      div.innerHTML = `
+        <div class="flex flex-col space-y-1">
+          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+        </div>
+        <input type="text" value="${value}" placeholder="請輸入標籤..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" maxlength="20">
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+      c.appendChild(div);
+    }
+
     function moveUp(button){
       const item = button.closest('.bg-white') || button.closest('.flex.items-center');
       const prev = item.previousElementSibling;
@@ -1398,11 +1425,12 @@
         return fileUrl ? { name:nm, fileName, fileUrl } : nm;
       }).filter(Boolean);
       const subjects = Array.from(document.querySelectorAll('#subjectList input')).map(i=>i.value.trim()).filter(Boolean);
+      const tags = Array.from(document.querySelectorAll('#tagList input')).map(i=>i.value.trim()).filter(Boolean);
 
       const photoBox = document.getElementById('photoPreview');
       const photoUrl = photoBox.getAttribute('data-url') || '';
 
-      const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, photo: photoUrl, experiences, certificates, subjects };
+      const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, photo: photoUrl, experiences, certificates, subjects, tags };
 
       if(currentTeacherId){
         const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData;
@@ -1436,7 +1464,8 @@
         photo: t.photo,
         experiences: [...(t.experiences||[])],
         certificates: (t.certificates||[]).map(c=> typeof c==='string'? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
-        subjects: [...(t.subjects||[])]
+        subjects: [...(t.subjects||[])],
+        tags: [...(t.tags||[])]
       };
       const i = teachers.findIndex(x=>x.id===teacherId);
       teachers.splice(i+1,0,copy);
