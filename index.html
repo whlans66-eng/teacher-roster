@@ -55,7 +55,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 28px;
       margin-bottom: 40px;
     }
@@ -63,14 +63,13 @@
     .card {
       background: #ffffff;
       border-radius: 20px;
-      padding: 40px;
+      padding: 56px 40px;
+      text-align: center;
       cursor: pointer;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid rgba(0, 0, 0, 0.04);
       text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 32px;
+      display: block;
       position: relative;
       overflow: hidden;
     }
@@ -102,13 +101,9 @@
     }
 
     .card-icon {
-      font-size: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      width: 80px;
-      height: 80px;
+      font-size: 80px;
+      margin-bottom: 28px;
+      display: block;
       position: relative;
       z-index: 1;
       filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.08));
@@ -119,26 +114,21 @@
       transform: scale(1.1);
     }
 
-    .card-content {
-      flex: 1;
-      text-align: left;
-    }
-
     .card-title {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 600;
       color: #1d1d1f;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
       letter-spacing: -0.015em;
       position: relative;
       z-index: 1;
     }
 
     .card-description {
-      font-size: 16px;
+      font-size: 17px;
       color: #6e6e73;
       font-weight: 400;
-      line-height: 1.5;
+      line-height: 1.6;
       position: relative;
       z-index: 1;
     }
@@ -171,22 +161,19 @@
       }
 
       .card {
-        padding: 28px 24px;
-        gap: 20px;
+        padding: 44px 32px;
       }
 
       .card-icon {
-        font-size: 48px;
-        width: 64px;
-        height: 64px;
+        font-size: 68px;
       }
 
       .card-title {
-        font-size: 22px;
+        font-size: 26px;
       }
 
       .card-description {
-        font-size: 15px;
+        font-size: 16px;
       }
     }
 
@@ -246,26 +233,20 @@
     <div class="grid">
       <a href="teacher-management.html" class="card">
         <span class="card-icon">👥</span>
-        <div class="card-content">
-          <h2 class="card-title">師資陣容管理</h2>
-          <p class="card-description">管理教師資訊、統計分析與行事曆</p>
-        </div>
+        <h2 class="card-title">師資陣容管理</h2>
+        <p class="card-description">管理教師資訊、統計分析與行事曆</p>
       </a>
 
       <a href="course-management.html" class="card">
         <span class="card-icon">🎓</span>
-        <div class="card-content">
-          <h2 class="card-title">派課管理</h2>
-          <p class="card-description">課程安排與教師派課系統</p>
-        </div>
+        <h2 class="card-title">派課管理</h2>
+        <p class="card-description">課程安排與教師派課系統</p>
       </a>
 
       <a href="maritime-courses.html" class="card">
         <span class="card-icon">⚓</span>
-        <div class="card-content">
-          <h2 class="card-title">海事課程</h2>
-          <p class="card-description">海事專業課程管理與分析</p>
-        </div>
+        <h2 class="card-title">海事課程</h2>
+        <p class="card-description">海事專業課程管理與分析</p>
       </a>
     </div>
 
