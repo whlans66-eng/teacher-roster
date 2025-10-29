@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>師資陣容管理系統</title>
 
-  <!-- Tailwind 與 XLSX（CDN） -->
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <!-- 字體 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -82,16 +81,6 @@
             </div>
 
             <div class="flex space-x-3">
-              <!-- 匯出 -->
-              <div class="flex space-x-2">
-                <button type="button" onclick="exportToCSV_API()" id="exportCSVBtn" class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm border border-gray-200 flex items-center space-x-2">
-                  <span>📊</span><span>CSV</span>
-                </button>
-                <button type="button" onclick="exportToXLSX_API()" id="exportXLSXBtn" class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm border border-gray-200 flex items-center space-x-2">
-                  <span>📋</span><span>XLSX</span>
-                </button>
-              </div>
-
              <!-- 統計 + 行事曆 -->
               <button onclick="showStatisticsView()" class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm border border-gray-200 flex items-center space-x-2">
                 <span>📈</span><span>統計分析</span>
@@ -991,8 +980,6 @@
         editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white';
         displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
         addBtn.classList.remove('hidden');
-        document.getElementById('exportCSVBtn')?.classList.remove('hidden');
-        document.getElementById('exportXLSXBtn')?.classList.remove('hidden');
         modeDescription.innerHTML = `
           <div class="flex items-center space-x-2">
             <span class="text-blue-600">ℹ️</span>
@@ -1003,8 +990,6 @@
         editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
         displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-green-600 text-white';
         addBtn.classList.add('hidden');
-        document.getElementById('exportCSVBtn')?.classList.add('hidden');
-        document.getElementById('exportXLSXBtn')?.classList.add('hidden');
         modeDescription.innerHTML = `
           <div class="flex items-center space-x-2">
             <span class="text-green-600">👁️</span>
@@ -1666,30 +1651,6 @@
             + txt.replace(/[<>&]/g, s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s])) + '</pre>');
         }else{ alert('無法另開視窗，請允許彈出視窗'); }
       });
-    }
-    function csvCell(s){ s=(s??'').toString().replace(/\r\n|\r/g,'\n').replace(/"/g,'""'); return `"${s}"`; }
-    function _fn(prefix,ext){ const d=new Date(); return `${prefix}_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}.${ext}`; }
-
-    function exportToCSV_API(){
-      const rows = _collectRows(); if(!rows) return;
-      const headers = ['序號','姓名','Email','師資類型','工作地點','工作經歷','證書與資格','講授課程'];
-      let csv = headers.join(',') + '\n';
-      rows.forEach(r=>{
-        csv += [r.idx,csvCell(r.name),csvCell(r.email),csvCell(r.teacherType),csvCell(r.workLocation),csvCell(r.experiences),csvCell(r.certificates),csvCell(r.subjects)].join(',') + '\n';
-      });
-      const BOM = '\uFEFF';
-      const blob = new Blob([BOM + csv], { type:'text/csv;charset=utf-8' });
-      forceDownload(blob, _fn('師資陣容','csv'), 'text/csv;charset=utf-8');
-    }
-     function exportToXLSX_API(){
-      const rows = _collectRows(); if(!rows) return;
-      const aoa = [['序號','姓名','Email','師資類型','工作地點','工作經歷','證書與資格','講授課程'], ...rows.map(r=>[r.idx,r.name,r.email,r.teacherType,r.workLocation,r.experiences,r.certificates,r.subjects])];
-      const ws = XLSX.utils.aoa_to_sheet(aoa);
-      ws['!cols'] = aoa[0].map((_,c)=>({wch: Math.min(40, Math.max(...aoa.map(r=> (r[c]? String(r[c]).length : 0)))+2)}));
-      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '師資陣容');
-      const ab = XLSX.write(wb, { bookType:'xlsx', type:'array' });
-      const blob = new Blob([ab], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      forceDownload(blob, _fn('師資陣容','xlsx'), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
   </script>
