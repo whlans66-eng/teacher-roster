@@ -374,7 +374,7 @@
         <!-- 返回按鈕 + 標題 -->
         <div class="flex justify-between items-center mb-8">
           <div>
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">📚 派課管理系統</h1>
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">📋 派課管理系統</h1>
             <p class="text-gray-600">管理師資課程分配與時數統計</p>
           </div>
           <button onclick="backToListFromCourseManagement()" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl border border-gray-200">
@@ -665,8 +665,8 @@
       <!-- 返回按鈕 + 標題區域 -->
       <div class="flex justify-between items-center mb-8">
         <header class="text-left">
-          <h1 class="text-4xl font-bold text-blue-900 mb-2">海事專業訓練課程系統</h1>
-          <p class="text-blue-600">Maritime Professional Training Course System</p>
+          <h1 class="text-4xl font-bold text-purple-900 mb-2">海事專業訓練課程系統</h1>
+          <p class="text-purple-600">Maritime Professional Training Course System</p>
         </header>
         <button onclick="backToListFromMaritimeCourse()" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl border border-gray-200">
           ← 返回師資列表
@@ -1246,6 +1246,16 @@
     }
 
     function backToList(){
+      // 隱藏所有詳細視圖
+      document.getElementById('teacherDetail')?.classList.add('hidden');
+      document.getElementById('teacherDetailView')?.classList.add('hidden');
+      // 顯示師資列表
+      document.getElementById('teacherList')?.classList.remove('hidden');
+      // 重新渲染以確保模式狀態正確
+      if (typeof switchMode === 'function' && typeof currentMode !== 'undefined') {
+        switchMode(currentMode);
+      }
+      // 更新路由
       setRoute('list');
     }
 
@@ -2569,8 +2579,10 @@ grid.appendChild(cell);
           initMaritimeCourseSystem();
         }
       } else if (route === 'list' || route === '') {
-        // 返回列表時重新渲染
-        if (typeof renderTeacherGrid === 'function') {
+        // 返回列表時重新渲染並確保模式狀態正確同步
+        if (typeof switchMode === 'function' && typeof currentMode !== 'undefined') {
+          switchMode(currentMode);
+        } else if (typeof renderTeacherGrid === 'function') {
           renderTeacherGrid();
         }
       }

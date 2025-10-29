@@ -63,13 +63,14 @@
     .card {
       background: #ffffff;
       border-radius: 20px;
-      padding: 56px 40px;
-      text-align: center;
+      padding: 40px;
       cursor: pointer;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid rgba(0, 0, 0, 0.04);
       text-decoration: none;
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 32px;
       position: relative;
       overflow: hidden;
     }
@@ -101,9 +102,13 @@
     }
 
     .card-icon {
-      font-size: 80px;
-      margin-bottom: 28px;
-      display: block;
+      font-size: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 80px;
+      height: 80px;
       position: relative;
       z-index: 1;
       filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.08));
@@ -114,21 +119,26 @@
       transform: scale(1.1);
     }
 
+    .card-content {
+      flex: 1;
+      text-align: left;
+    }
+
     .card-title {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 600;
       color: #1d1d1f;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       letter-spacing: -0.015em;
       position: relative;
       z-index: 1;
     }
 
     .card-description {
-      font-size: 17px;
+      font-size: 16px;
       color: #6e6e73;
       font-weight: 400;
-      line-height: 1.6;
+      line-height: 1.5;
       position: relative;
       z-index: 1;
     }
@@ -161,19 +171,22 @@
       }
 
       .card {
-        padding: 44px 32px;
+        padding: 28px 24px;
+        gap: 20px;
       }
 
       .card-icon {
-        font-size: 68px;
+        font-size: 48px;
+        width: 64px;
+        height: 64px;
       }
 
       .card-title {
-        font-size: 26px;
+        font-size: 22px;
       }
 
       .card-description {
-        font-size: 16px;
+        font-size: 15px;
       }
     }
 
@@ -233,20 +246,26 @@
     <div class="grid">
       <a href="teacher-management.html" class="card">
         <span class="card-icon">👥</span>
-        <h2 class="card-title">師資陣容管理</h2>
-        <p class="card-description">管理教師資訊、統計分析與行事曆</p>
+        <div class="card-content">
+          <h2 class="card-title">師資陣容管理</h2>
+          <p class="card-description">管理教師資訊、統計分析與行事曆</p>
+        </div>
       </a>
 
       <a href="course-management.html" class="card">
         <span class="card-icon">🎓</span>
-        <h2 class="card-title">派課管理</h2>
-        <p class="card-description">課程安排與教師派課系統</p>
+        <div class="card-content">
+          <h2 class="card-title">派課管理</h2>
+          <p class="card-description">課程安排與教師派課系統</p>
+        </div>
       </a>
 
       <a href="maritime-courses.html" class="card">
         <span class="card-icon">⚓</span>
-        <h2 class="card-title">海事課程</h2>
-        <p class="card-description">海事專業課程管理與分析</p>
+        <div class="card-content">
+          <h2 class="card-title">海事課程</h2>
+          <p class="card-description">海事專業課程管理與分析</p>
+        </div>
       </a>
     </div>
 
