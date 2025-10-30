@@ -1367,10 +1367,10 @@
 
       div.innerHTML = `
         <input type="text" value="${value}" placeholder="標籤..."
-          class="bg-transparent border-none outline-none text-gray-800 text-sm font-medium transition-all duration-200 min-w-[40px] max-w-[200px]"
+          class="bg-transparent border-none outline-none text-gray-800 text-sm font-medium transition-all duration-200"
           maxlength="20"
-          style="width: ${Math.max(40, Math.min(200, (value.length || 4) * 9))}px"
-          oninput="this.style.width = Math.max(40, Math.min(200, (this.value.length || 4) * 9)) + 'px'">
+          style="width: ${Math.max(20, Math.min(240, (value.length || 1) * 15))}px"
+          oninput="this.style.width = Math.max(20, Math.min(240, (this.value.length || 1) * 15)) + 'px'">
         <button type="button" onclick="this.parentElement.remove()" class="ml-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
