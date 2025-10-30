@@ -1432,7 +1432,10 @@
         return fileUrl ? { name:nm, fileName, fileUrl } : nm;
       }).filter(Boolean);
       const subjects = Array.from(document.querySelectorAll('#subjectList input')).map(i=>i.value.trim()).filter(Boolean);
-      const tags = Array.from(document.querySelectorAll('#tagList input')).map(i=>i.value.trim()).filter(Boolean);
+      const tags = Array.from(document.querySelectorAll('#tagList input[type="text"]')).map(i=>i.value.trim()).filter(Boolean);
+
+      // 調試：確認 tags 有被收集
+      console.log('收集到的 tags:', tags);
 
       const photoBox = document.getElementById('photoPreview');
       const photoUrl = photoBox.getAttribute('data-url') || '';
