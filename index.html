@@ -431,6 +431,75 @@
 
     // 初始化按鈕狀態
     updateScrollButtons();
+
+    // 觸控滑動支援
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let touchStartTime = 0;
+    let isDragging = false;
+    let startScrollLeft = 0;
+
+    gridWrapper.addEventListener('touchstart', function(e) {
+      touchStartX = e.touches[0].clientX;
+      touchStartTime = Date.now();
+      startScrollLeft = gridWrapper.scrollLeft;
+      isDragging = true;
+    }, { passive: true });
+
+    gridWrapper.addEventListener('touchmove', function(e) {
+      if (!isDragging) return;
+
+      touchEndX = e.touches[0].clientX;
+      const diff = touchStartX - touchEndX;
+
+      // 實時跟隨手指移動
+      gridWrapper.scrollLeft = startScrollLeft + diff;
+    }, { passive: true });
+
+    gridWrapper.addEventListener('touchend', function(e) {
+      if (!isDragging) return;
+
+      const touchDuration = Date.now() - touchStartTime;
+      const touchDistance = touchStartX - touchEndX;
+      const velocity = Math.abs(touchDistance) / touchDuration;
+
+      // 如果滑動速度夠快，做慣性滾動
+      if (velocity > 0.5) {
+        const momentum = touchDistance * 2;
+        gridWrapper.scrollBy({
+          left: momentum,
+          behavior: 'smooth'
+        });
+      }
+
+      isDragging = false;
+      touchStartX = 0;
+      touchEndX = 0;
+    }, { passive: true });
+
+    // 防止點擊卡片時觸發滑動
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+      let cardTouchStartX = 0;
+      let cardTouchEndX = 0;
+
+      card.addEventListener('touchstart', function(e) {
+        cardTouchStartX = e.touches[0].clientX;
+      }, { passive: true });
+
+      card.addEventListener('touchend', function(e) {
+        cardTouchEndX = e.changedTouches[0].clientX;
+        const distance = Math.abs(cardTouchStartX - cardTouchEndX);
+
+        // 如果滑動距離小於 10px，視為點擊
+        if (distance < 10) {
+          // 正常點擊，讓連結正常工作
+        } else {
+          // 滑動距離大，取消導航
+          e.preventDefault();
+        }
+      });
+    });
   </script>
 </body>
 </html>
