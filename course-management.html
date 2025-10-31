@@ -33,10 +33,10 @@
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .sidebar {
+    .top-nav {
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(20px);
-      border-right: 1px solid rgba(255, 255, 255, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .modern-input {
@@ -119,49 +119,16 @@
 
     /* 手機版響應式設計 */
     @media (max-width: 768px) {
-      body {
-        min-height: 100vh;
+      .top-nav {
+        flex-direction: column;
+        align-items: stretch !important;
       }
 
-      .min-h-screen {
-        display: block;
+      .nav-controls {
+        flex-direction: column;
+        gap: 12px;
       }
 
-      .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 80%;
-        max-width: 320px;
-        height: 100vh;
-        z-index: 50;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-      }
-
-      .sidebar.active {
-        transform: translateX(0);
-      }
-
-      .mobile-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 40;
-        display: none;
-      }
-
-      .mobile-overlay.active {
-        display: block;
-      }
-
-      /* 主要內容區域 */
-      .flex-1 {
-        width: 100%;
-        padding: 80px 16px 20px 16px !important;
-      }
-
-      /* 行事曆網格在手機上隱藏 */
       .calendar-grid-container {
         display: none;
       }
@@ -170,56 +137,29 @@
         display: block !important;
       }
 
-      /* 調整卡片大小 */
       .calendar-day {
         min-height: 80px;
         font-size: 0.875rem;
       }
 
-      /* 隱藏週/月切換按鈕在手機版 */
       #monthViewBtn,
       #weekViewBtn {
         padding: 8px 12px;
         font-size: 0.75rem;
       }
 
-      /* 調整標題大小 */
       .glass-effect h2 {
         font-size: 1.5rem;
       }
 
-      .glass-effect h3 {
-        font-size: 1rem;
-      }
-
-      /* 調整按鈕大小 */
       .modern-btn {
         padding: 8px 16px;
         font-size: 0.875rem;
       }
 
-      /* 行事曆控制按鈕 */
       #prevLabel,
       #nextLabel {
         display: none;
-      }
-    }
-
-    .mobile-menu-btn {
-      display: none;
-    }
-
-    @media (max-width: 768px) {
-      .mobile-menu-btn {
-        display: block;
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 60;
-        background: white;
-        padding: 12px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
     }
 
@@ -229,107 +169,95 @@
   </style>
 </head>
 <body>
-  <!-- 手機版選單按鈕 -->
-  <button class="mobile-menu-btn" onclick="toggleSidebar()">
-    <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-    </svg>
-  </button>
-
-  <!-- 手機版遮罩 -->
-  <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
-
-  <div class="min-h-screen flex">
-    <!-- 側邊欄 -->
-    <div class="sidebar w-80 p-6 slide-in overflow-y-auto" id="sidebar">
-      <!-- 手機版關閉按鈕 -->
-      <button onclick="toggleSidebar()" class="md:hidden absolute top-4 right-4 text-white hover:text-white/80">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-
-      <!-- 返回首頁 -->
-      <div class="mb-6">
-        <a href="index.html" class="inline-flex items-center text-white hover:text-white/80 transition-colors">
-          <span class="mr-2">←</span> 返回首頁
-        </a>
-      </div>
-
-      <!-- Logo -->
-      <div class="text-center mb-8">
-        <div class="floating">
-          <div class="w-16 h-16 mx-auto mb-4 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-lg">
-            📚
-          </div>
-          <h1 class="text-2xl font-bold text-white mb-2">派課管理系統</h1>
-          <p class="text-white/70 text-sm">智能管理平台</p>
-        </div>
-      </div>
-
-      <!-- 師資選擇 -->
-      <div class="mb-6">
-        <label class="block text-white/90 text-sm font-medium mb-3">當前師資</label>
-        <select id="teacherSelect" class="modern-input w-full px-4 py-3 rounded-xl text-gray-800">
-          <option value="">請選擇師資</option>
-        </select>
-      </div>
-
-      <!-- 日期範圍 -->
-      <div class="glass-effect rounded-2xl p-4 mb-4">
-        <h4 class="font-semibold text-gray-800 mb-3 text-sm">📅 查詢範圍</h4>
-        <div class="space-y-3">
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-xs text-gray-600 mb-1">開始日期</label>
-              <input type="date" id="startDate" class="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400">
-            </div>
-            <div>
-              <label class="block text-xs text-gray-600 mb-1">結束日期</label>
-              <input type="date" id="endDate" class="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400">
+  <div class="min-h-screen">
+    <!-- 頂部導航欄 -->
+    <div class="top-nav p-4 md:p-6 slide-in">
+      <div class="max-w-7xl mx-auto">
+        <!-- 標題與返回 -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <a href="index.html" class="text-white hover:text-white/80 transition-colors">
+              <span class="text-xl">←</span>
+            </a>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-2xl shadow-lg">
+                📚
+              </div>
+              <div>
+                <h1 class="text-xl md:text-2xl font-bold text-white">派課管理系統</h1>
+                <p class="text-white/70 text-xs md:text-sm">智能管理平台</p>
+              </div>
             </div>
           </div>
-          <div class="grid grid-cols-3 gap-1">
-            <button onclick="setDateRange('thisMonth')" class="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200">本月</button>
-            <button onclick="setDateRange('lastMonth')" class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">上月</button>
-            <button onclick="setDateRange('last3Months')" class="px-2 py-1 text-xs bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200">近3月</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 當前師資狀態 -->
-      <div class="glass-effect rounded-2xl p-4 mb-6">
-        <div class="flex items-center space-x-3 mb-3">
-          <div id="currentTeacherAvatar" class="text-2xl">👨</div>
-          <div>
-            <h3 id="currentTeacherName" class="font-semibold text-gray-800">請選擇師資</h3>
-            <p id="currentTeacherSpecialty" class="text-sm text-gray-600">-</p>
-          </div>
         </div>
 
-        <!-- 時數進度條 -->
-        <div class="mt-3">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-medium text-gray-600">本月時數</span>
-            <span id="monthlyHoursText" class="text-xs text-gray-600">0/12 小時</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div id="monthlyHoursBar" class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
+        <!-- 控制面板 -->
+        <div class="glass-effect rounded-2xl p-4">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <!-- 師資選擇 -->
+            <div class="md:col-span-3">
+              <label class="block text-gray-700 text-sm font-medium mb-2">👨‍🏫 當前師資</label>
+              <select id="teacherSelect" class="modern-input w-full px-3 py-2 rounded-lg text-gray-800 text-sm">
+                <option value="">請選擇師資</option>
+              </select>
+            </div>
 
-      <!-- 今日課程 -->
-      <div class="glass-effect rounded-2xl p-4">
-        <h4 class="font-semibold text-gray-800 mb-3 text-sm">📅 今日課程</h4>
-        <div id="todayCourses" class="space-y-2 max-h-40 overflow-y-auto">
-          <p class="text-gray-500 text-xs">請選擇師資</p>
+            <!-- 日期範圍 -->
+            <div class="md:col-span-4">
+              <label class="block text-gray-700 text-sm font-medium mb-2">📅 查詢範圍</label>
+              <div class="flex gap-2">
+                <input type="date" id="startDate" class="modern-input flex-1 px-3 py-2 rounded-lg text-sm">
+                <input type="date" id="endDate" class="modern-input flex-1 px-3 py-2 rounded-lg text-sm">
+              </div>
+            </div>
+
+            <!-- 快速選擇 -->
+            <div class="md:col-span-3">
+              <label class="block text-gray-700 text-sm font-medium mb-2">⚡ 快速選擇</label>
+              <div class="flex gap-2">
+                <button onclick="setDateRange('thisMonth')" class="flex-1 px-3 py-2 text-xs bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200">本月</button>
+                <button onclick="setDateRange('lastMonth')" class="flex-1 px-3 py-2 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">上月</button>
+                <button onclick="setDateRange('last3Months')" class="flex-1 px-3 py-2 text-xs bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200">近3月</button>
+              </div>
+            </div>
+
+            <!-- 今日課程 -->
+            <div class="md:col-span-2">
+              <label class="block text-gray-700 text-sm font-medium mb-2">📅 今日課程</label>
+              <div id="todayCoursesCount" class="modern-input px-3 py-2 rounded-lg text-center">
+                <span class="text-2xl font-bold text-gray-800">0</span>
+                <span class="text-xs text-gray-600 ml-1">堂</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 師資狀態 (選擇師資後顯示) -->
+          <div id="teacherStatusBar" class="mt-4 p-3 bg-white/50 rounded-xl hidden">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div id="currentTeacherAvatar" class="text-2xl">👨</div>
+                <div>
+                  <h3 id="currentTeacherName" class="font-semibold text-gray-800 text-sm">-</h3>
+                  <p id="currentTeacherSpecialty" class="text-xs text-gray-600">-</p>
+                </div>
+              </div>
+              <div class="flex-1 max-w-md mx-4">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-medium text-gray-600">本月時數</span>
+                  <span id="monthlyHoursText" class="text-xs text-gray-600">0/12 小時</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div id="monthlyHoursBar" class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 主要內容區域 -->
-    <div class="flex-1 p-6 overflow-y-auto">
+    <div class="max-w-7xl mx-auto p-4 md:p-6">
       <!-- 完整行事曆 -->
       <div class="glass-effect rounded-2xl p-6 mb-6 card-hover">
         <div class="flex justify-between items-center mb-6">
@@ -420,12 +348,6 @@
         </div>
       </div>
 
-      <!-- 本週課表 -->
-      <div id="weekScheduleSection" class="glass-effect rounded-2xl p-6 mb-6 card-hover">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">📊 本週課表</h3>
-        <div id="weekScheduleContent"></div>
-      </div>
-
       <!-- 課程時間軸 -->
       <div class="glass-effect rounded-2xl p-6 card-hover">
         <div class="flex justify-between items-center mb-6">
@@ -485,6 +407,22 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 查看/編輯事件 Modal -->
+  <div id="viewEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="glass-effect rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+      <h3 class="text-2xl font-bold text-gray-800 mb-6">📅 課程詳情</h3>
+      <div id="eventDetails" class="space-y-4"></div>
+      <div class="flex justify-end space-x-4 pt-6">
+        <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium">
+          關閉
+        </button>
+        <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium">
+          🗑️ 刪除
+        </button>
+      </div>
     </div>
   </div>
 
@@ -642,62 +580,41 @@
       currentTeacherId = selectValue ? Number(selectValue) : null;
       currentStartDate = document.getElementById('startDate').value;
       currentEndDate = document.getElementById('endDate').value;
-      
+
       if (!currentTeacherId) {
         clearView();
         return;
       }
-      
-      updateSidebar();
+
+      updateTeacherStatus();
       updateStats();
       updateChart();
-      updateWeekSchedule();
       updateTimeline();
+      renderCalendar();
     }
 
     function clearView() {
-      document.getElementById('currentTeacherName').textContent = '請選擇師資';
-      document.getElementById('currentTeacherSpecialty').textContent = '-';
-      document.getElementById('todayCourses').innerHTML = '<p class="text-gray-500 text-xs">請選擇師資</p>';
+      document.getElementById('teacherStatusBar').classList.add('hidden');
       document.getElementById('timeline').innerHTML = '<p class="text-center text-gray-500 py-8">請選擇師資以查看課程</p>';
+      document.getElementById('todayCoursesCount').innerHTML = '<span class="text-2xl font-bold text-gray-800">0</span><span class="text-xs text-gray-600 ml-1">堂</span>';
     }
 
-    function updateSidebar() {
+    function updateTeacherStatus() {
       const teacher = teachers.find(t => t.id === currentTeacherId);
       if (!teacher) return;
-      
+
+      // 顯示師資狀態欄
+      document.getElementById('teacherStatusBar').classList.remove('hidden');
+
       document.getElementById('currentTeacherName').textContent = teacher.name;
       document.getElementById('currentTeacherSpecialty').textContent = teacher.specialty || '專業師資';
-      
+
       // 更新月度時數
       const monthlyHours = calculateMonthlyHours(currentTeacherId);
       const percentage = Math.min((monthlyHours / 12) * 100, 100);
-      
+
       document.getElementById('monthlyHoursBar').style.width = `${percentage}%`;
       document.getElementById('monthlyHoursText').textContent = `${monthlyHours.toFixed(1)}/12 小時`;
-      
-      // 更新今日課程
-      updateTodayCourses();
-    }
-
-    function updateTodayCourses() {
-      const today = new Date().toISOString().split('T')[0];
-      const todayCourses = courseAssignments.filter(c => 
-        c.teacherId === currentTeacherId && c.date === today
-      );
-      
-      const container = document.getElementById('todayCourses');
-      if (todayCourses.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-xs">今日無課程</p>';
-        return;
-      }
-      
-      container.innerHTML = todayCourses.map(c => `
-        <div class="bg-white/50 rounded-lg p-2">
-          <p class="font-medium text-gray-800 text-xs">${c.name}</p>
-          <p class="text-xs text-gray-600">${c.time}</p>
-        </div>
-      `).join('');
     }
 
     function updateStats() {
@@ -705,10 +622,10 @@
       const totalHours = filtered.reduce((sum, c) => sum + calculateHours(c.time), 0);
       const today = new Date().toISOString().split('T')[0];
       const todayCount = courseAssignments.filter(c => c.teacherId === currentTeacherId && c.date === today).length;
-      
+
       document.getElementById('totalHours').textContent = `${totalHours.toFixed(1)} 小時`;
       document.getElementById('totalCourses').textContent = `${filtered.length} 堂`;
-      document.getElementById('todayCoursesCount').textContent = `${todayCount} 堂`;
+      document.getElementById('todayCoursesCount').innerHTML = `<span class="text-2xl font-bold text-gray-800">${todayCount}</span><span class="text-xs text-gray-600 ml-1">堂</span>`;
     }
 
     function updateChart() {
@@ -747,39 +664,6 @@
       });
     }
 
-    function updateWeekSchedule() {
-      const today = new Date();
-      const dayOfWeek = today.getDay();
-      const monday = new Date(today);
-      monday.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
-      
-      const container = document.getElementById('weekScheduleContent');
-      let html = '<div class="grid grid-cols-7 gap-2">';
-      
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(monday);
-        date.setDate(monday.getDate() + i);
-        const dateStr = date.toISOString().split('T')[0];
-        const isToday = dateStr === today.toISOString().split('T')[0];
-        
-        const dayCourses = courseAssignments.filter(c => 
-          c.teacherId === currentTeacherId && c.date === dateStr
-        );
-        
-        html += `
-          <div class="border rounded-lg p-2 ${isToday ? 'bg-blue-50 border-blue-500' : 'bg-white'}">
-            <div class="text-xs font-semibold text-center mb-2">${['日','一','二','三','四','五','六'][date.getDay()]} ${date.getDate()}</div>
-            ${dayCourses.length === 0 ? 
-              '<div class="text-xs text-green-600 bg-green-50 rounded p-1">✓ 可用</div>' :
-              dayCourses.map(c => `<div class="text-xs text-red-600 bg-red-50 rounded p-1 mb-1">${c.time}</div>`).join('')
-            }
-          </div>
-        `;
-      }
-      
-      html += '</div>';
-      container.innerHTML = html;
-    }
 
     function updateTimeline() {
       const filtered = getFilteredCourses();
@@ -892,7 +776,7 @@
               ${dayEvents.length === 0 ?
                 '<p class="text-sm text-gray-500">無事件</p>' :
                 dayEvents.map(e => `
-                  <div class="mt-2 p-2 ${e.color || 'bg-blue-500'} text-white rounded-lg" onclick="deleteEvent(${e.id})">
+                  <div class="mt-2 p-2 ${e.color || 'bg-blue-500'} text-white rounded-lg cursor-pointer hover:opacity-90" onclick="viewEvent(${e.id})">
                     <div class="font-semibold text-sm">${e.title}</div>
                     ${e.time ? `<div class="text-xs mt-1">⏰ ${e.time}</div>` : ''}
                     ${e.location ? `<div class="text-xs">📍 ${e.location}</div>` : ''}
@@ -911,12 +795,6 @@
       container.innerHTML = html;
     }
 
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('mobileOverlay');
-      sidebar.classList.toggle('active');
-      overlay.classList.toggle('active');
-    }
 
     function renderMonthView() {
       const year = currentDate.getFullYear();
@@ -959,7 +837,7 @@
             <div class="space-y-1">
               ${dayEvents.map(e => `
                 <div class="event-item ${e.color || 'bg-blue-500'} text-white text-xs p-1 rounded"
-                     onclick="event.stopPropagation(); deleteEvent(${e.id})">
+                     onclick="event.stopPropagation(); viewEvent(${e.id})">
                   ${e.time ? e.time + ' ' : ''}${e.title}
                 </div>
               `).join('')}
@@ -1008,7 +886,7 @@
           <div class="space-y-2">
             ${dayEvents.map(e => `
               <div class="event-item ${e.color || 'bg-blue-500'} text-white text-sm p-3 rounded-xl"
-                   onclick="event.stopPropagation(); deleteEvent(${e.id})">
+                   onclick="event.stopPropagation(); viewEvent(${e.id})">
                 <div class="font-semibold">${e.title}</div>
                 ${e.time ? `<div class="text-xs mt-1">⏰ ${e.time}</div>` : ''}
               </div>
@@ -1172,12 +1050,71 @@
       alert('✅ 課程已刪除！');
     }
 
+    function viewEvent(id) {
+      const event = calendarEvents.find(e => e.id === id);
+      if (!event) return;
+
+      const teacher = event.teacherId ? teachers.find(t => t.id === event.teacherId) : null;
+
+      document.getElementById('eventDetails').innerHTML = `
+        <div class="bg-white/50 rounded-xl p-4 space-y-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600">事件標題</label>
+            <p class="text-lg font-semibold text-gray-800">${event.title}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-medium text-gray-600">日期</label>
+              <p class="text-sm text-gray-800">📅 ${event.date}</p>
+            </div>
+            ${event.time ? `
+            <div>
+              <label class="text-xs font-medium text-gray-600">時間</label>
+              <p class="text-sm text-gray-800">⏰ ${event.time}</p>
+            </div>
+            ` : ''}
+          </div>
+          ${teacher ? `
+          <div>
+            <label class="text-xs font-medium text-gray-600">師資</label>
+            <p class="text-sm text-gray-800">👨‍🏫 ${teacher.name}</p>
+          </div>
+          ` : ''}
+          ${event.location ? `
+          <div>
+            <label class="text-xs font-medium text-gray-600">地點</label>
+            <p class="text-sm text-gray-800">📍 ${event.location}</p>
+          </div>
+          ` : ''}
+          ${event.note ? `
+          <div>
+            <label class="text-xs font-medium text-gray-600">備註</label>
+            <p class="text-sm text-gray-800">${event.note}</p>
+          </div>
+          ` : ''}
+        </div>
+      `;
+
+      document.getElementById('deleteEventBtn').onclick = () => {
+        if (confirm('確定要刪除此事件嗎？')) {
+          deleteEvent(id);
+          closeViewEventModal();
+        }
+      };
+
+      document.getElementById('viewEventModal').classList.remove('hidden');
+    }
+
+    function closeViewEventModal() {
+      document.getElementById('viewEventModal').classList.add('hidden');
+    }
+
     function deleteEvent(id) {
-      if (!confirm('確定要刪除此事件嗎？')) return;
-      
       calendarEvents = calendarEvents.filter(e => e.id !== id);
+      courseAssignments = courseAssignments.filter(c => c.id !== id);
       saveData();
       renderCalendar();
+      updateView();
       alert('✅ 事件已刪除！');
     }
 
