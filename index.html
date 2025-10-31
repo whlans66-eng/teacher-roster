@@ -54,10 +54,19 @@
     }
 
     .grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      display: flex;
       gap: 28px;
       margin-bottom: 40px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+      padding-bottom: 20px;
+    }
+
+    .grid::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
     }
 
     .card {
@@ -72,6 +81,8 @@
       display: block;
       position: relative;
       overflow: hidden;
+      min-width: 340px;
+      flex-shrink: 0;
     }
 
     .card::before {
@@ -112,6 +123,12 @@
 
     .card:hover .card-icon {
       transform: scale(1.1);
+    }
+
+    .card-icon img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
     }
 
     .card-title {
@@ -156,16 +173,21 @@
       }
 
       .grid {
-        grid-template-columns: 1fr;
         gap: 20px;
       }
 
       .card {
         padding: 44px 32px;
+        min-width: 300px;
       }
 
       .card-icon {
         font-size: 68px;
+      }
+
+      .card-icon img {
+        width: 68px;
+        height: 68px;
       }
 
       .card-title {
@@ -251,8 +273,10 @@
         <p class="card-description">海事專業課程管理與分析</p>
       </a>
 
-      <a href="#" class="card">
-        <span class="card-icon">📁</span>
+      <a href="#" class="card" id="teaching-materials-card">
+        <span class="card-icon">
+          <img src="teaching-materials-icon.png" alt="教材管理">
+        </span>
         <h2 class="card-title">教材管理</h2>
         <p class="card-description">書籍、影片與數位資源</p>
       </a>
@@ -262,5 +286,13 @@
       <p>&copy; 2025 萬海智慧航安訓練管理系統 (WHL MARITRAIN)</p>
     </div>
   </div>
+
+  <script>
+    // 教材管理卡片點擊事件
+    document.getElementById('teaching-materials-card').addEventListener('click', function(e) {
+      e.preventDefault();
+      alert('📚 教材管理功能開發中\n\n此功能即將推出，敬請期待！');
+    });
+  </script>
 </body>
 </html>
