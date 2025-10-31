@@ -28,18 +28,30 @@
     }
 
     .container {
-      max-width: 1200px;
+      width: 100%;
       margin: 0 auto;
       padding: 60px 0;
     }
 
     .content-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
       padding: 0 20px;
     }
 
     .grid-wrapper {
-      overflow: hidden;
-      margin: 0 -20px;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      margin-bottom: 40px;
+    }
+
+    .grid-wrapper::-webkit-scrollbar {
+      display: none;
     }
 
     .header {
@@ -63,20 +75,10 @@
     }
 
     .grid {
-      display: flex;
+      display: inline-flex;
       gap: 28px;
-      margin-bottom: 40px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scroll-behavior: smooth;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE/Edge */
       padding: 0 20px 20px 20px;
-    }
-
-    .grid::-webkit-scrollbar {
-      display: none; /* Chrome, Safari, Opera */
+      min-width: min-content;
     }
 
     .card {
@@ -179,6 +181,10 @@
         padding: 40px 0;
       }
 
+      .content-wrapper {
+        padding: 0 16px;
+      }
+
       .header h1 {
         font-size: 40px;
       }
@@ -188,12 +194,12 @@
       }
 
       .grid {
-        gap: 20px;
+        gap: 16px;
         padding: 0 16px 20px 16px;
       }
 
       .card {
-        padding: 44px 32px;
+        padding: 40px 28px;
         min-width: 280px;
         width: 280px;
       }
@@ -208,11 +214,11 @@
       }
 
       .card-title {
-        font-size: 26px;
+        font-size: 24px;
       }
 
       .card-description {
-        font-size: 16px;
+        font-size: 15px;
       }
     }
 
