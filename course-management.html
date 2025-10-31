@@ -181,8 +181,13 @@
       </div>
 
       <!-- 師資時數分析 -->
-      <div class="card p-6 fade-in" style="animation-delay: 0.3s">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">👨‍🏫 師資時數分析 (本月目標：12 小時)</h2>
+      <div id="teacherHoursAnalysisCard" class="card p-6 fade-in" style="animation-delay: 0.3s">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-900">👨‍🏫 師資時數分析 (本月目標：12 小時)</h2>
+          <button onclick="toggleTeacherHoursAnalysis()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+            <span id="toggleAnalysisIcon">👁️</span> <span id="toggleAnalysisText">隱藏</span>
+          </button>
+        </div>
         <div id="teacherHoursAnalysis" class="space-y-4">
           <!-- 師資時數條將在這裡顯示 -->
         </div>
@@ -386,6 +391,7 @@
       renderTodayCourses();
       renderCalendar();
       updateTodayDate();
+      loadTeacherHoursAnalysisVisibility();
       document.getElementById('courseForm').addEventListener('submit', handleAddCourse);
     }
 
@@ -474,6 +480,41 @@
           </div>
         `;
       }).join('');
+    }
+
+    // ==================== 師資時數分析顯示/隱藏 ====================
+    function toggleTeacherHoursAnalysis() {
+      const analysisContent = document.getElementById('teacherHoursAnalysis');
+      const toggleIcon = document.getElementById('toggleAnalysisIcon');
+      const toggleText = document.getElementById('toggleAnalysisText');
+
+      const isVisible = analysisContent.style.display !== 'none';
+
+      if (isVisible) {
+        analysisContent.style.display = 'none';
+        toggleIcon.textContent = '👁️‍🗨️';
+        toggleText.textContent = '顯示';
+        localStorage.setItem('teacherHoursAnalysisVisible', 'false');
+      } else {
+        analysisContent.style.display = 'block';
+        toggleIcon.textContent = '👁️';
+        toggleText.textContent = '隱藏';
+        localStorage.setItem('teacherHoursAnalysisVisible', 'true');
+      }
+    }
+
+    function loadTeacherHoursAnalysisVisibility() {
+      const isVisible = localStorage.getItem('teacherHoursAnalysisVisible');
+
+      if (isVisible === 'false') {
+        const analysisContent = document.getElementById('teacherHoursAnalysis');
+        const toggleIcon = document.getElementById('toggleAnalysisIcon');
+        const toggleText = document.getElementById('toggleAnalysisText');
+
+        analysisContent.style.display = 'none';
+        toggleIcon.textContent = '👁️‍🗨️';
+        toggleText.textContent = '顯示';
+      }
     }
 
     function renderCharts() {
