@@ -30,7 +30,16 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 60px 20px;
+      padding: 60px 0;
+    }
+
+    .content-wrapper {
+      padding: 0 20px;
+    }
+
+    .grid-wrapper {
+      overflow: hidden;
+      margin: 0 -20px;
     }
 
     .header {
@@ -58,11 +67,12 @@
       gap: 28px;
       margin-bottom: 40px;
       overflow-x: auto;
+      overflow-y: hidden;
       scroll-behavior: smooth;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none; /* Firefox */
       -ms-overflow-style: none; /* IE/Edge */
-      padding-bottom: 20px;
+      padding: 0 20px 20px 20px;
     }
 
     .grid::-webkit-scrollbar {
@@ -81,7 +91,8 @@
       display: block;
       position: relative;
       overflow: hidden;
-      min-width: 340px;
+      min-width: 360px;
+      width: 360px;
       flex-shrink: 0;
     }
 
@@ -164,6 +175,10 @@
     }
 
     @media (max-width: 768px) {
+      .container {
+        padding: 40px 0;
+      }
+
       .header h1 {
         font-size: 40px;
       }
@@ -174,11 +189,13 @@
 
       .grid {
         gap: 20px;
+        padding: 0 16px 20px 16px;
       }
 
       .card {
         padding: 44px 32px;
-        min-width: 300px;
+        min-width: 280px;
+        width: 280px;
       }
 
       .card-icon {
@@ -249,12 +266,15 @@
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>萬海智慧航安訓練管理系統</h1>
-      <p style="font-size: 18px; color: #86868b; margin-top: 8px; font-weight: 500;">WHL MARITRAIN</p>
+    <div class="content-wrapper">
+      <div class="header">
+        <h1>萬海智慧航安訓練管理系統</h1>
+        <p style="font-size: 18px; color: #86868b; margin-top: 8px; font-weight: 500;">WHL MARITRAIN</p>
+      </div>
     </div>
 
-    <div class="grid">
+    <div class="grid-wrapper">
+      <div class="grid">
       <a href="teacher-management.html" class="card">
         <span class="card-icon">🎓</span>
         <h2 class="card-title">師資陣容管理</h2>
@@ -280,10 +300,13 @@
         <h2 class="card-title">教材管理</h2>
         <p class="card-description">書籍、影片與數位資源</p>
       </a>
+      </div>
     </div>
 
-    <div class="footer">
-      <p>&copy; 2025 萬海智慧航安訓練管理系統 (WHL MARITRAIN)</p>
+    <div class="content-wrapper">
+      <div class="footer">
+        <p>&copy; 2025 萬海智慧航安訓練管理系統 (WHL MARITRAIN)</p>
+      </div>
     </div>
   </div>
 
