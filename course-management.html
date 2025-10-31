@@ -22,53 +22,65 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    .glass-effect {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+    .card {
+      background: #ffffff;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     }
 
     .calendar-day {
       min-height: 120px;
       transition: all 0.3s ease;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 12px;
     }
 
     .calendar-day:hover {
-      background: rgba(255, 255, 255, 0.95) !important;
-      transform: scale(1.02);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
 
     .today-highlight {
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2)) !important;
-      border: 2px solid #667eea !important;
+      background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(88, 86, 214, 0.1)) !important;
+      border: 2px solid #007aff !important;
     }
 
     .event-item {
-      padding: 6px;
-      border-radius: 6px;
+      padding: 8px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s ease;
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .event-item:hover {
-      opacity: 0.8;
-      transform: scale(1.05);
+      opacity: 0.85;
+      transform: translateY(-1px);
     }
 
     .modern-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #007aff;
+      color: white;
       transition: all 0.3s ease;
     }
 
     .modern-btn:hover {
+      background: #0051d5;
       transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 8px 16px rgba(0, 122, 255, 0.3);
     }
 
     @media (max-width: 768px) {
@@ -84,28 +96,124 @@
     .mobile-calendar-view {
       display: none;
     }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 微妙的背景紋理 */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(0, 122, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(88, 86, 214, 0.03) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+    }
   </style>
 </head>
 <body>
-  <div class="min-h-screen p-4 md:p-6">
+  <div class="container mx-auto px-4 py-8">
     <!-- 返回首頁 -->
     <div class="mb-6">
-      <a href="index.html" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/30 transition-colors">
+      <a href="index.html" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
         <span class="mr-2">←</span> 返回首頁
       </a>
     </div>
 
-    <!-- 標題 -->
-    <div class="text-center mb-8">
-      <h1 class="text-5xl font-bold text-white mb-2" style="letter-spacing: -0.02em">派課管理系統</h1>
-      <p class="text-xl text-white/80">智能管理平台</p>
+    <!-- 標題區域 -->
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-gray-900 mb-2" style="letter-spacing: -0.02em">派課管理系統</h1>
+      <p class="text-xl text-gray-600">智能管理平台</p>
     </div>
 
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-7xl mx-auto space-y-6">
+      <!-- 統計分析區 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- 總課程數 -->
+        <div class="card p-6 card-hover fade-in">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">總課程數</p>
+              <p id="totalCoursesCount" class="text-3xl font-bold text-gray-900">0</p>
+            </div>
+            <div class="text-4xl">📚</div>
+          </div>
+        </div>
+
+        <!-- 總時數 -->
+        <div class="card p-6 card-hover fade-in" style="animation-delay: 0.1s">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">總授課時數</p>
+              <p id="totalHoursCount" class="text-3xl font-bold text-gray-900">0</p>
+            </div>
+            <div class="text-4xl">⏱️</div>
+          </div>
+        </div>
+
+        <!-- 本月時數 -->
+        <div class="card p-6 card-hover fade-in" style="animation-delay: 0.2s">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">本月總時數</p>
+              <p id="monthlyHoursCount" class="text-3xl font-bold text-blue-600">0</p>
+            </div>
+            <div class="text-4xl">📊</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 師資時數分析 -->
+      <div class="card p-6 fade-in" style="animation-delay: 0.3s">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">👨‍🏫 師資時數分析 (本月目標：12 小時)</h2>
+        <div id="teacherHoursAnalysis" class="space-y-4">
+          <!-- 師資時數條將在這裡顯示 -->
+        </div>
+      </div>
+
+      <!-- 師資狀態分析 -->
+      <div class="card p-6 fade-in" style="animation-delay: 0.4s">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">📈 師資狀態分析</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- 狀態分佈圓餅圖 -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">狀態分佈</h3>
+            <div style="position: relative; height: 300px;">
+              <canvas id="statusChart"></canvas>
+            </div>
+          </div>
+
+          <!-- 課程類型分佈 -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">課程類型分佈</h3>
+            <div style="position: relative; height: 300px;">
+              <canvas id="courseTypeChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 今日課程總覽 -->
-      <div class="glass-effect rounded-2xl p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-bold text-gray-800">📅 今日課程總覽</h2>
+      <div class="card p-6 fade-in" style="animation-delay: 0.5s">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-900">📅 今日課程總覽</h2>
           <div class="text-sm text-gray-600" id="todayDate"></div>
         </div>
         <div id="todayCoursesContainer" class="space-y-3">
@@ -113,19 +221,19 @@
         </div>
       </div>
 
-      <!-- 行事曆 -->
-      <div class="glass-effect rounded-2xl p-6 mb-6">
+      <!-- 課程行事曆 -->
+      <div class="card p-6 fade-in" style="animation-delay: 0.6s">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h2 class="text-2xl font-bold text-gray-800">📅 課程行事曆</h2>
+          <h2 class="text-2xl font-bold text-gray-900">📅 課程行事曆</h2>
           <div class="flex items-center gap-3">
-            <button onclick="openAddCourseModal()" class="modern-btn text-white px-6 py-2 rounded-xl font-medium">
+            <button onclick="openAddCourseModal()" class="modern-btn px-6 py-2 rounded-xl font-medium">
               ✨ 新增課程
             </button>
-            <div class="flex bg-white rounded-xl p-1 shadow">
-              <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-purple-500 to-blue-500 text-white">
+            <div class="flex bg-gray-100 rounded-xl p-1">
+              <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white">
                 📅 月
               </button>
-              <button id="weekViewBtn" onclick="setViewMode('week')" class="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">
+              <button id="weekViewBtn" onclick="setViewMode('week')" class="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-200">
                 📊 週
               </button>
             </div>
@@ -134,23 +242,23 @@
 
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center space-x-4">
-            <button onclick="previousPeriod()" class="bg-white hover:bg-gray-100 px-4 py-2 rounded-xl font-medium">
+            <button onclick="previousPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200">
               ← <span id="prevLabel">上個月</span>
             </button>
             <h3 id="currentMonth" class="text-xl font-bold text-gray-800 min-w-[200px] text-center"></h3>
-            <button onclick="nextPeriod()" class="bg-white hover:bg-gray-100 px-4 py-2 rounded-xl font-medium">
+            <button onclick="nextPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200">
               <span id="nextLabel">下個月</span> →
             </button>
           </div>
-          <button onclick="goToToday()" class="modern-btn text-white px-4 py-2 rounded-xl font-medium">
+          <button onclick="goToToday()" class="modern-btn px-4 py-2 rounded-xl font-medium">
             🎯 今天
           </button>
         </div>
 
         <!-- 行事曆網格 (桌面版) -->
-        <div class="calendar-grid-container bg-white rounded-xl overflow-hidden shadow-lg">
+        <div class="calendar-grid-container bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
           <!-- 星期標題 -->
-          <div class="grid grid-cols-7 bg-gradient-to-r from-purple-500 to-blue-500">
+          <div class="grid grid-cols-7 bg-gradient-to-r from-blue-500 to-blue-600">
             <div class="p-4 text-center font-bold text-white border-r border-white/20">日</div>
             <div class="p-4 text-center font-bold text-white border-r border-white/20">一</div>
             <div class="p-4 text-center font-bold text-white border-r border-white/20">二</div>
@@ -164,7 +272,7 @@
         </div>
 
         <!-- 手機版行事曆列表 -->
-        <div class="mobile-calendar-view bg-white rounded-xl overflow-hidden shadow-lg p-4">
+        <div class="mobile-calendar-view bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 p-4">
           <div id="mobileEventsList" class="space-y-3"></div>
         </div>
       </div>
@@ -172,9 +280,9 @@
   </div>
 
   <!-- 新增課程 Modal -->
-  <div id="addCourseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="glass-effect rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-      <h3 class="text-2xl font-bold text-gray-800 mb-6">📚 新增課程</h3>
+  <div id="addCourseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+    <div class="card p-8 max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <h3 class="text-2xl font-bold text-gray-900 mb-6">📚 新增課程</h3>
       <form id="courseForm" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">選擇師資</label>
@@ -182,10 +290,12 @@
             <option value="">請選擇師資</option>
           </select>
         </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">課程名稱</label>
           <input type="text" id="courseName" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
         </div>
+
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">課程日期</label>
@@ -202,6 +312,7 @@
             </select>
           </div>
         </div>
+
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">開始時間</label>
@@ -212,11 +323,26 @@
             <input type="time" id="endTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
           </div>
         </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">狀態</label>
+          <select id="courseStatus" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+            <option value="上班">上班</option>
+            <option value="休假">休假</option>
+            <option value="出差">出差</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">備註</label>
+          <textarea id="courseNote" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="選填：課程相關備註..."></textarea>
+        </div>
+
         <div class="flex justify-end space-x-4 pt-4">
           <button type="button" onclick="closeAddCourseModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors">
             取消
           </button>
-          <button type="submit" class="modern-btn px-6 py-3 text-white rounded-xl font-medium">
+          <button type="submit" class="modern-btn px-6 py-3 rounded-xl font-medium">
             確認新增
           </button>
         </div>
@@ -225,15 +351,15 @@
   </div>
 
   <!-- 查看課程詳情 Modal -->
-  <div id="viewEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="glass-effect rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-      <h3 class="text-2xl font-bold text-gray-800 mb-6">📅 課程詳情</h3>
+  <div id="viewEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+    <div class="card p-8 max-w-md w-full mx-4 shadow-2xl">
+      <h3 class="text-2xl font-bold text-gray-900 mb-6">📅 課程詳情</h3>
       <div id="eventDetails" class="space-y-4"></div>
       <div class="flex justify-end space-x-4 pt-6">
         <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium">
           關閉
         </button>
-        <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium">
+        <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600">
           🗑️ 刪除
         </button>
       </div>
@@ -248,10 +374,15 @@
 
     let currentDate = new Date();
     let viewMode = 'month';
+    let statusChart = null;
+    let courseTypeChart = null;
 
     // ==================== 初始化 ====================
     function init() {
       loadTeachers();
+      updateStatistics();
+      renderTeacherHoursAnalysis();
+      renderCharts();
       renderTodayCourses();
       renderCalendar();
       updateTodayDate();
@@ -275,6 +406,153 @@
         weekday: 'long'
       });
       document.getElementById('todayDate').textContent = dateStr;
+    }
+
+    // ==================== 統計分析 ====================
+    function updateStatistics() {
+      // 總課程數
+      document.getElementById('totalCoursesCount').textContent = courseAssignments.length;
+
+      // 總時數
+      const totalHours = courseAssignments.reduce((sum, c) => sum + calculateHours(c.time), 0);
+      document.getElementById('totalHoursCount').textContent = `${totalHours.toFixed(1)} 小時`;
+
+      // 本月時數
+      const thisMonth = new Date().toISOString().slice(0, 7);
+      const monthlyHours = courseAssignments
+        .filter(c => c.date.startsWith(thisMonth))
+        .reduce((sum, c) => sum + calculateHours(c.time), 0);
+      document.getElementById('monthlyHoursCount').textContent = `${monthlyHours.toFixed(1)} 小時`;
+    }
+
+    function renderTeacherHoursAnalysis() {
+      const thisMonth = new Date().toISOString().slice(0, 7);
+      const container = document.getElementById('teacherHoursAnalysis');
+
+      if (teachers.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 py-8">尚無師資資料</p>';
+        return;
+      }
+
+      container.innerHTML = teachers.map(teacher => {
+        const courses = courseAssignments.filter(c =>
+          c.teacherId === teacher.id && c.date.startsWith(thisMonth)
+        );
+        const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
+        const percentage = Math.min((hours / 12) * 100, 100);
+
+        let statusClass = 'bg-red-500';
+        let statusText = '未達標';
+        if (hours >= 12) {
+          statusClass = 'bg-green-500';
+          statusText = '已達標';
+        } else if (hours >= 8) {
+          statusClass = 'bg-yellow-500';
+          statusText = '接近達標';
+        }
+
+        return `
+          <div class="border border-gray-200 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                  ${(teacher.name || '?')[0]}
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900">${teacher.name}</h4>
+                  <p class="text-xs text-gray-500">${courses.length} 堂課</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="text-sm font-bold text-gray-900">${hours.toFixed(1)} / 12 小時</p>
+                <span class="text-xs ${statusClass} text-white px-2 py-1 rounded-full">${statusText}</span>
+              </div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+              <div class="${statusClass} h-3 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCharts() {
+      // 狀態分佈圖
+      const statusCount = {
+        '上班': 0,
+        '休假': 0,
+        '出差': 0
+      };
+
+      courseAssignments.forEach(c => {
+        if (c.status && statusCount.hasOwnProperty(c.status)) {
+          statusCount[c.status]++;
+        } else {
+          statusCount['上班']++; // 舊資料沒有狀態，預設為上班
+        }
+      });
+
+      const statusCtx = document.getElementById('statusChart').getContext('2d');
+      if (statusChart) statusChart.destroy();
+
+      statusChart = new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['上班', '休假', '出差'],
+          datasets: [{
+            data: [statusCount['上班'], statusCount['休假'], statusCount['出差']],
+            backgroundColor: ['#007aff', '#34c759', '#ff9500'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { size: 14 },
+                padding: 15
+              }
+            }
+          }
+        }
+      });
+
+      // 課程類型分佈圖
+      const typeCount = {};
+      courseAssignments.forEach(c => {
+        typeCount[c.type] = (typeCount[c.type] || 0) + 1;
+      });
+
+      const typeCtx = document.getElementById('courseTypeChart').getContext('2d');
+      if (courseTypeChart) courseTypeChart.destroy();
+
+      courseTypeChart = new Chart(typeCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(typeCount),
+          datasets: [{
+            data: Object.values(typeCount),
+            backgroundColor: ['#007aff', '#34c759', '#ff9500', '#ff3b30', '#5856d6'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { size: 14 },
+                padding: 15
+              }
+            }
+          }
+        }
+      });
     }
 
     // ==================== 今日課程總覽 ====================
@@ -311,7 +589,7 @@
           <div class="bg-white rounded-xl p-4 border border-gray-200">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 p-0.5">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 p-0.5">
                   <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
                     ${teacher.photo ?
                       `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` :
@@ -326,19 +604,29 @@
               </div>
             </div>
             <div class="space-y-2">
-              ${courses.sort((a, b) => a.time.localeCompare(b.time)).map(c => `
-                <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors" onclick="viewEvent(${c.id})">
-                  <div class="flex justify-between items-center">
-                    <div class="flex-1">
-                      <p class="font-medium text-gray-800">${c.name}</p>
-                      <div class="flex items-center space-x-3 text-xs text-gray-600 mt-1">
-                        <span>🕐 ${c.time}</span>
-                        <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">${c.type}</span>
+              ${courses.sort((a, b) => a.time.localeCompare(b.time)).map(c => {
+                const statusColors = {
+                  '上班': 'bg-blue-50 text-blue-700 border-blue-200',
+                  '休假': 'bg-green-50 text-green-700 border-green-200',
+                  '出差': 'bg-orange-50 text-orange-700 border-orange-200'
+                };
+                const statusClass = statusColors[c.status] || statusColors['上班'];
+
+                return `
+                  <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200" onclick="viewEvent(${c.id})">
+                    <div class="flex justify-between items-start">
+                      <div class="flex-1">
+                        <p class="font-medium text-gray-800">${c.name}</p>
+                        <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
+                          <span>🕐 ${c.time}</span>
+                          <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
+                          <span class="px-2 py-0.5 ${statusClass} rounded border">${c.status || '上班'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              `).join('')}
+                `;
+              }).join('')}
             </div>
           </div>
         `;
@@ -352,13 +640,13 @@
       const weekBtn = document.getElementById('weekViewBtn');
 
       if (mode === 'month') {
-        monthBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-purple-500 to-blue-500 text-white';
-        weekBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100';
+        monthBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white';
+        weekBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-200';
         document.getElementById('prevLabel').textContent = '上個月';
         document.getElementById('nextLabel').textContent = '下個月';
       } else {
-        weekBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-purple-500 to-blue-500 text-white';
-        monthBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100';
+        weekBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white';
+        monthBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-200';
         document.getElementById('prevLabel').textContent = '上週';
         document.getElementById('nextLabel').textContent = '下週';
       }
@@ -422,21 +710,20 @@
           const isToday = (cellDate.toDateString() === today);
           const dateKey = cellDate.toISOString().split('T')[0];
 
-          // 顯示所有課程（不限師資）
           const dayEvents = courseAssignments.filter(c => c.date === dateKey);
 
           const cell = document.createElement('div');
-          cell.className = `calendar-day border-r border-b border-gray-200 p-2 ${
-            isCurrentMonth ? 'bg-white/60' : 'bg-gray-100/40'
+          cell.className = `calendar-day p-2 ${
+            isCurrentMonth ? 'bg-white' : 'bg-gray-50'
           } ${isToday ? 'today-highlight' : ''}`;
 
           cell.innerHTML = `
             <div class="flex justify-between items-start mb-1">
-              <span class="text-lg font-bold ${isCurrentMonth ? (isToday ? 'text-purple-600' : 'text-gray-800') : 'text-gray-400'}">
+              <span class="text-base font-semibold ${isCurrentMonth ? (isToday ? 'text-blue-600' : 'text-gray-800') : 'text-gray-400'}">
                 ${cellDate.getDate()}
               </span>
             </div>
-            <div class="space-y-1 overflow-y-auto max-h-24">
+            <div class="space-y-1 overflow-y-auto max-h-20">
               ${dayEvents.map(e => {
                 const teacher = teachers.find(t => t.id === e.teacherId);
                 const teacherName = teacher ? teacher.name : '未知';
@@ -480,12 +767,12 @@
         const dayEvents = courseAssignments.filter(c => c.date === dateKey);
 
         const cell = document.createElement('div');
-        cell.className = `calendar-day border-r border-b border-gray-200 p-4 bg-white/60 ${isToday ? 'today-highlight' : ''}`;
+        cell.className = `calendar-day p-4 bg-white ${isToday ? 'today-highlight' : ''}`;
 
         cell.innerHTML = `
           <div class="text-center mb-4 pb-3 border-b border-gray-200">
-            <div class="text-sm font-semibold ${isToday ? 'text-purple-600' : 'text-gray-600'}">${dayNames[i]}</div>
-            <div class="text-2xl font-bold ${isToday ? 'text-purple-600' : 'text-gray-800'}">
+            <div class="text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-600'}">${dayNames[i]}</div>
+            <div class="text-2xl font-bold ${isToday ? 'text-blue-600' : 'text-gray-800'}">
               ${cellDate.getDate()}
             </div>
           </div>
@@ -527,7 +814,7 @@
         if (dayEvents.length > 0 || isToday) {
           const dayNames = ['日','一','二','三','四','五','六'];
           html += `
-            <div class="border rounded-lg p-3 ${isToday ? 'bg-blue-50 border-blue-500' : 'bg-gray-50'}">
+            <div class="border border-gray-200 rounded-lg p-3 ${isToday ? 'bg-blue-50 border-blue-500' : 'bg-white'}">
               <div class="flex items-center justify-between mb-2">
                 <span class="font-bold text-gray-800">${month + 1}月${day}日 (${dayNames[date.getDay()]})</span>
                 ${isToday ? '<span class="text-xs bg-blue-500 text-white px-2 py-1 rounded">今天</span>' : ''}
@@ -575,14 +862,14 @@
       const teacher = teachers.find(t => t.id === course.teacherId);
 
       document.getElementById('eventDetails').innerHTML = `
-        <div class="bg-white/50 rounded-xl p-4 space-y-3">
+        <div class="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
           <div>
             <label class="text-xs font-medium text-gray-600">師資</label>
-            <p class="text-lg font-semibold text-gray-800">👨‍🏫 ${teacher ? teacher.name : '未知'}</p>
+            <p class="text-lg font-semibold text-gray-900">👨‍🏫 ${teacher ? teacher.name : '未知'}</p>
           </div>
           <div>
             <label class="text-xs font-medium text-gray-600">課程名稱</label>
-            <p class="text-lg font-semibold text-gray-800">${course.name}</p>
+            <p class="text-lg font-semibold text-gray-900">${course.name}</p>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -594,10 +881,22 @@
               <p class="text-sm text-gray-800">⏰ ${course.time}</p>
             </div>
           </div>
-          <div>
-            <label class="text-xs font-medium text-gray-600">課程類型</label>
-            <p class="text-sm text-gray-800">📚 ${course.type}</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-medium text-gray-600">課程類型</label>
+              <p class="text-sm text-gray-800">📚 ${course.type}</p>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-600">狀態</label>
+              <p class="text-sm text-gray-800">💼 ${course.status || '上班'}</p>
+            </div>
           </div>
+          ${course.note ? `
+          <div>
+            <label class="text-xs font-medium text-gray-600">備註</label>
+            <p class="text-sm text-gray-800">${course.note}</p>
+          </div>
+          ` : ''}
         </div>
       `;
 
@@ -631,7 +930,9 @@
         name: document.getElementById('courseName').value,
         date: document.getElementById('courseDate').value,
         time: `${document.getElementById('startTime').value}-${document.getElementById('endTime').value}`,
-        type: document.getElementById('courseType').value
+        type: document.getElementById('courseType').value,
+        status: document.getElementById('courseStatus').value,
+        note: document.getElementById('courseNote').value.trim()
       };
 
       // 衝堂檢查
@@ -659,6 +960,9 @@
 
       saveData();
       closeAddCourseModal();
+      updateStatistics();
+      renderTeacherHoursAnalysis();
+      renderCharts();
       renderTodayCourses();
       renderCalendar();
       alert('✅ 課程新增成功！');
@@ -668,12 +972,22 @@
       courseAssignments = courseAssignments.filter(c => c.id !== id);
       calendarEvents = calendarEvents.filter(e => e.courseId !== id);
       saveData();
+      updateStatistics();
+      renderTeacherHoursAnalysis();
+      renderCharts();
       renderTodayCourses();
       renderCalendar();
       alert('✅ 課程已刪除！');
     }
 
     // ==================== 工具函數 ====================
+    function calculateHours(timeRange) {
+      const [start, end] = timeRange.split('-');
+      const startTime = new Date(`2024-01-01 ${start}`);
+      const endTime = new Date(`2024-01-01 ${end}`);
+      return (endTime - startTime) / (1000 * 60 * 60);
+    }
+
     function checkConflict(newCourse) {
       const conflicts = [];
       const timeToMinutes = (time) => {
