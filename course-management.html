@@ -144,90 +144,8 @@
     </div>
 
     <div class="max-w-7xl mx-auto space-y-6">
-      <!-- 統計分析區 -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- 總課程數 -->
-        <div class="card p-6 card-hover fade-in">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-600 mb-1">總課程數</p>
-              <p id="totalCoursesCount" class="text-3xl font-bold text-gray-900">0</p>
-            </div>
-            <div class="text-4xl">📚</div>
-          </div>
-        </div>
-
-        <!-- 總時數 -->
-        <div class="card p-6 card-hover fade-in" style="animation-delay: 0.1s">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-600 mb-1">總授課時數</p>
-              <p id="totalHoursCount" class="text-3xl font-bold text-gray-900">0</p>
-            </div>
-            <div class="text-4xl">⏱️</div>
-          </div>
-        </div>
-
-        <!-- 本月時數 -->
-        <div class="card p-6 card-hover fade-in" style="animation-delay: 0.2s">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-600 mb-1">本月總時數</p>
-              <p id="monthlyHoursCount" class="text-3xl font-bold text-blue-600">0</p>
-            </div>
-            <div class="text-4xl">📊</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 師資時數分析 -->
-      <div id="teacherHoursAnalysisCard" class="card p-6 fade-in" style="animation-delay: 0.3s">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">👨‍🏫 師資時數分析 (本月目標：12 小時)</h2>
-          <button onclick="toggleTeacherHoursAnalysis()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-            <span id="toggleAnalysisIcon">👁️</span> <span id="toggleAnalysisText">隱藏</span>
-          </button>
-        </div>
-        <div id="teacherHoursAnalysis" class="space-y-4">
-          <!-- 師資時數條將在這裡顯示 -->
-        </div>
-      </div>
-
-      <!-- 師資狀態分析 -->
-      <div class="card p-6 fade-in" style="animation-delay: 0.4s">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">📈 師資狀態分析</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- 狀態分佈圓餅圖 -->
-          <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">狀態分佈</h3>
-            <div style="position: relative; height: 300px;">
-              <canvas id="statusChart"></canvas>
-            </div>
-          </div>
-
-          <!-- 課程類型分佈 -->
-          <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">課程類型分佈</h3>
-            <div style="position: relative; height: 300px;">
-              <canvas id="courseTypeChart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 今日課程總覽 -->
-      <div class="card p-6 fade-in" style="animation-delay: 0.5s">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">📅 今日課程總覽</h2>
-          <div class="text-sm text-gray-600" id="todayDate"></div>
-        </div>
-        <div id="todayCoursesContainer" class="space-y-3">
-          <!-- 今日課程將在這裡顯示 -->
-        </div>
-      </div>
-
       <!-- 課程行事曆 -->
-      <div class="card p-6 fade-in" style="animation-delay: 0.6s">
+      <div class="card p-6 fade-in" style="animation-delay: 0.1s">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h2 class="text-2xl font-bold text-gray-900">📅 課程行事曆</h2>
           <div class="flex items-center gap-3">
@@ -279,6 +197,104 @@
         <!-- 手機版行事曆列表 -->
         <div class="mobile-calendar-view bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 p-4">
           <div id="mobileEventsList" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- 統計分析區 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- 總課程數 -->
+        <div class="card p-6 card-hover fade-in">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">總課程數</p>
+              <p id="totalCoursesCount" class="text-3xl font-bold text-gray-900">0</p>
+            </div>
+            <div class="text-4xl">📚</div>
+          </div>
+        </div>
+
+        <!-- 總時數 -->
+        <div class="card p-6 card-hover fade-in" style="animation-delay: 0.1s">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">總授課時數</p>
+              <p id="totalHoursCount" class="text-3xl font-bold text-gray-900">0</p>
+            </div>
+            <div class="text-4xl">⏱️</div>
+          </div>
+        </div>
+
+        <!-- 本月時數 -->
+        <div class="card p-6 card-hover fade-in" style="animation-delay: 0.2s">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 mb-1">本月總時數</p>
+              <p id="monthlyHoursCount" class="text-3xl font-bold text-blue-600">0</p>
+            </div>
+            <div class="text-4xl">📊</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 師資時數分析 -->
+      <div id="teacherHoursAnalysisCard" class="card p-6 fade-in" style="animation-delay: 0.3s">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-900">👨‍🏫 師資時數分析 (本月目標：12 小時)</h2>
+          <button onclick="toggleTeacherHoursAnalysis()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+            <span id="toggleAnalysisIcon">👁️</span> <span id="toggleAnalysisText">隱藏</span>
+          </button>
+        </div>
+        <div id="teacherHoursAnalysis">
+          <!-- 搜尋框 -->
+          <div class="mb-4">
+            <input type="text" id="teacherSearchInput"
+                   placeholder="🔍 搜尋師資姓名..."
+                   oninput="filterTeachers()"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+          <!-- 師資列表 -->
+          <div id="teacherHoursList" class="space-y-4">
+            <!-- 師資時數條將在這裡顯示 -->
+          </div>
+          <!-- 顯示更多按鈕 -->
+          <div id="showMoreContainer" class="mt-4 text-center" style="display: none;">
+            <button onclick="toggleShowAllTeachers()" class="px-6 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
+              <span id="showMoreText">顯示更多</span> <span id="showMoreIcon">▼</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 師資狀態分析 -->
+      <div class="card p-6 fade-in" style="animation-delay: 0.4s">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">📈 師資狀態分析</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- 狀態分佈圓餅圖 -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">狀態分佈</h3>
+            <div style="position: relative; height: 300px;">
+              <canvas id="statusChart"></canvas>
+            </div>
+          </div>
+
+          <!-- 課程類型分佈 -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">課程類型分佈</h3>
+            <div style="position: relative; height: 300px;">
+              <canvas id="courseTypeChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 今日課程總覽 -->
+      <div class="card p-6 fade-in" style="animation-delay: 0.5s">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-900">📅 今日課程總覽</h2>
+          <div class="text-sm text-gray-600" id="todayDate"></div>
+        </div>
+        <div id="todayCoursesContainer" class="space-y-3">
+          <!-- 今日課程將在這裡顯示 -->
         </div>
       </div>
     </div>
@@ -381,6 +397,8 @@
     let viewMode = 'month';
     let statusChart = null;
     let courseTypeChart = null;
+    let showAllTeachers = false;
+    let teacherSearchQuery = '';
 
     // ==================== 初始化 ====================
     function init() {
@@ -433,14 +451,47 @@
 
     function renderTeacherHoursAnalysis() {
       const thisMonth = new Date().toISOString().slice(0, 7);
-      const container = document.getElementById('teacherHoursAnalysis');
+      const listContainer = document.getElementById('teacherHoursList');
+      const showMoreContainer = document.getElementById('showMoreContainer');
 
       if (teachers.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-500 py-8">尚無師資資料</p>';
+        listContainer.innerHTML = '<p class="text-center text-gray-500 py-8">尚無師資資料</p>';
+        showMoreContainer.style.display = 'none';
         return;
       }
 
-      container.innerHTML = teachers.map(teacher => {
+      // 過濾師資（根據搜尋條件）
+      let filteredTeachers = teachers;
+      if (teacherSearchQuery.trim() !== '') {
+        filteredTeachers = teachers.filter(teacher =>
+          teacher.name.toLowerCase().includes(teacherSearchQuery.toLowerCase())
+        );
+      }
+
+      if (filteredTeachers.length === 0) {
+        listContainer.innerHTML = '<p class="text-center text-gray-500 py-8">找不到符合的師資</p>';
+        showMoreContainer.style.display = 'none';
+        return;
+      }
+
+      // 決定顯示的師資數量
+      const displayLimit = 4;
+      const shouldShowMore = filteredTeachers.length > displayLimit && teacherSearchQuery === '';
+      const displayTeachers = (shouldShowMore && !showAllTeachers)
+        ? filteredTeachers.slice(0, displayLimit)
+        : filteredTeachers;
+
+      // 顯示/隱藏「顯示更多」按鈕
+      if (shouldShowMore) {
+        showMoreContainer.style.display = 'block';
+        document.getElementById('showMoreText').textContent = showAllTeachers ? '收合' : '顯示更多';
+        document.getElementById('showMoreIcon').textContent = showAllTeachers ? '▲' : '▼';
+      } else {
+        showMoreContainer.style.display = 'none';
+      }
+
+      // 渲染師資列表
+      listContainer.innerHTML = displayTeachers.map(teacher => {
         const courses = courseAssignments.filter(c =>
           c.teacherId === teacher.id && c.date.startsWith(thisMonth)
         );
@@ -480,6 +531,17 @@
           </div>
         `;
       }).join('');
+    }
+
+    function filterTeachers() {
+      teacherSearchQuery = document.getElementById('teacherSearchInput').value;
+      showAllTeachers = false; // 重置展開狀態
+      renderTeacherHoursAnalysis();
+    }
+
+    function toggleShowAllTeachers() {
+      showAllTeachers = !showAllTeachers;
+      renderTeacherHoursAnalysis();
     }
 
     // ==================== 師資時數分析顯示/隱藏 ====================
