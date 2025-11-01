@@ -372,17 +372,90 @@
     </div>
   </div>
 
-  <!-- 查看課程詳情 Modal -->
+  <!-- 查看/編輯課程詳情 Modal -->
   <div id="viewEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-    <div class="card p-8 max-w-md w-full mx-4 shadow-2xl">
-      <h3 class="text-2xl font-bold text-gray-900 mb-6">📅 課程詳情</h3>
-      <div id="eventDetails" class="space-y-4"></div>
-      <div class="flex justify-end space-x-4 pt-6">
-        <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium">
+    <div class="card p-8 max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <h3 id="modalTitle" class="text-2xl font-bold text-gray-900 mb-6">📅 課程詳情</h3>
+
+      <!-- 查看模式 -->
+      <div id="viewMode" class="space-y-4"></div>
+
+      <!-- 編輯模式 -->
+      <form id="editCourseForm" class="space-y-4" style="display: none;">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">選擇師資</label>
+          <select id="editTeacherId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+            <option value="">請選擇師資</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">課程名稱</label>
+          <input type="text" id="editCourseName" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">課程日期</label>
+            <input type="date" id="editCourseDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">課程類型</label>
+            <select id="editCourseType" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="正課">正課</option>
+              <option value="補課">補課</option>
+              <option value="實驗課">實驗課</option>
+              <option value="實作課">實作課</option>
+              <option value="專題">專題</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">開始時間</label>
+            <input type="time" id="editStartTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">結束時間</label>
+            <input type="time" id="editEndTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">狀態</label>
+          <select id="editCourseStatus" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+            <option value="上班">上班</option>
+            <option value="休假">休假</option>
+            <option value="出差">出差</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">備註</label>
+          <textarea id="editCourseNote" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="選填：課程相關備註..."></textarea>
+        </div>
+      </form>
+
+      <!-- 按鈕區 -->
+      <div id="viewModeButtons" class="flex justify-end space-x-4 pt-6">
+        <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors">
           關閉
         </button>
-        <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600">
+        <button onclick="enterEditMode()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors">
+          ✏️ 編輯
+        </button>
+        <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors">
           🗑️ 刪除
+        </button>
+      </div>
+
+      <div id="editModeButtons" class="flex justify-end space-x-4 pt-6" style="display: none;">
+        <button onclick="cancelEditMode()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors">
+          取消
+        </button>
+        <button onclick="saveEditedCourse()" class="modern-btn px-6 py-3 rounded-xl font-medium">
+          💾 儲存變更
         </button>
       </div>
     </div>
@@ -400,6 +473,7 @@
     let showAllTeachers = false;
     let teacherSearchQuery = '';
     let selectedTeacherId = null;
+    let editingCourseId = null;
 
     // ==================== 工具函數 - 獲取本地日期字串 ====================
     function getLocalDateString(date) {
@@ -986,9 +1060,17 @@
       const course = courseAssignments.find(c => c.id === courseId);
       if (!course) return;
 
+      editingCourseId = courseId;
       const teacher = teachers.find(t => t.id === course.teacherId);
 
-      document.getElementById('eventDetails').innerHTML = `
+      // 顯示查看模式
+      document.getElementById('modalTitle').textContent = '📅 課程詳情';
+      document.getElementById('viewMode').style.display = 'block';
+      document.getElementById('editCourseForm').style.display = 'none';
+      document.getElementById('viewModeButtons').style.display = 'flex';
+      document.getElementById('editModeButtons').style.display = 'none';
+
+      document.getElementById('viewMode').innerHTML = `
         <div class="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
           <div>
             <label class="text-xs font-medium text-gray-600">師資</label>
@@ -1021,9 +1103,9 @@
           ${course.note ? `
           <div>
             <label class="text-xs font-medium text-gray-600">備註</label>
-            <p class="text-sm text-gray-800">${course.note}</p>
+            <p class="text-sm text-gray-800 whitespace-pre-wrap">${course.note}</p>
           </div>
-          ` : ''}
+          ` : '<div class="text-center text-gray-400 text-sm py-2">無備註</div>'}
         </div>
       `;
 
@@ -1037,8 +1119,140 @@
       document.getElementById('viewEventModal').classList.remove('hidden');
     }
 
+    function enterEditMode() {
+      const course = courseAssignments.find(c => c.id === editingCourseId);
+      if (!course) return;
+
+      // 載入師資列表到編輯表單
+      const editTeacherSelect = document.getElementById('editTeacherId');
+      editTeacherSelect.innerHTML = '<option value="">請選擇師資</option>';
+      teachers.forEach(t => {
+        editTeacherSelect.innerHTML += `<option value="${t.id}" ${t.id === course.teacherId ? 'selected' : ''}>${t.name}</option>`;
+      });
+
+      // 填入課程資料
+      document.getElementById('editCourseName').value = course.name;
+      document.getElementById('editCourseDate').value = course.date;
+      document.getElementById('editCourseType').value = course.type;
+
+      const [startTime, endTime] = course.time.split('-');
+      document.getElementById('editStartTime').value = startTime;
+      document.getElementById('editEndTime').value = endTime;
+
+      document.getElementById('editCourseStatus').value = course.status || '上班';
+      document.getElementById('editCourseNote').value = course.note || '';
+
+      // 切換到編輯模式
+      document.getElementById('modalTitle').textContent = '✏️ 編輯課程';
+      document.getElementById('viewMode').style.display = 'none';
+      document.getElementById('editCourseForm').style.display = 'block';
+      document.getElementById('viewModeButtons').style.display = 'none';
+      document.getElementById('editModeButtons').style.display = 'flex';
+    }
+
+    function cancelEditMode() {
+      // 返回查看模式
+      viewEvent(editingCourseId);
+    }
+
+    function saveEditedCourse() {
+      const teacherId = Number(document.getElementById('editTeacherId').value);
+      if (!teacherId) {
+        alert('請選擇師資！');
+        return;
+      }
+
+      const startTime = document.getElementById('editStartTime').value;
+      const endTime = document.getElementById('editEndTime').value;
+      const courseDate = document.getElementById('editCourseDate').value;
+
+      // 找到要編輯的課程
+      const courseIndex = courseAssignments.findIndex(c => c.id === editingCourseId);
+      if (courseIndex === -1) return;
+
+      const oldCourse = courseAssignments[courseIndex];
+
+      // 檢查時間衝突（排除自己）
+      const newTime = `${startTime}-${endTime}`;
+      const conflicts = checkConflictExcludingSelf(
+        editingCourseId,
+        teacherId,
+        courseDate,
+        newTime
+      );
+
+      if (conflicts.length > 0) {
+        if (!confirm(`⚠️ 衝堂警告！\n\n${conflicts.join('\n')}\n\n是否仍要繼續？`)) {
+          return;
+        }
+      }
+
+      // 更新課程資料
+      courseAssignments[courseIndex] = {
+        ...oldCourse,
+        teacherId: teacherId,
+        name: document.getElementById('editCourseName').value,
+        date: courseDate,
+        time: newTime,
+        type: document.getElementById('editCourseType').value,
+        status: document.getElementById('editCourseStatus').value,
+        note: document.getElementById('editCourseNote').value.trim()
+      };
+
+      // 同步更新行事曆事件
+      const eventIndex = calendarEvents.findIndex(e => e.courseId === editingCourseId);
+      if (eventIndex !== -1) {
+        const teacher = teachers.find(t => t.id === teacherId);
+        calendarEvents[eventIndex] = {
+          ...calendarEvents[eventIndex],
+          date: courseDate,
+          title: `${courseAssignments[courseIndex].name} - ${teacher.name}`,
+          time: newTime,
+          teacherId: teacherId,
+          location: courseAssignments[courseIndex].type,
+          color: getCourseTypeColor(courseAssignments[courseIndex].type)
+        };
+      }
+
+      saveData();
+      updateStatistics();
+      renderTeacherHoursAnalysis();
+      renderCourseTypeChart();
+      renderTodayCourses();
+      renderCalendar();
+      closeViewEventModal();
+      alert('✅ 課程已更新！');
+    }
+
+    function checkConflictExcludingSelf(excludeId, teacherId, date, time) {
+      const conflicts = [];
+      const timeToMinutes = (t) => {
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+      };
+
+      const [newStart, newEnd] = time.split('-');
+      const newStartMin = timeToMinutes(newStart);
+      const newEndMin = timeToMinutes(newEnd);
+
+      courseAssignments.forEach(c => {
+        if (c.id !== excludeId && c.teacherId === teacherId && c.date === date) {
+          const [start, end] = c.time.split('-');
+          const startMin = timeToMinutes(start);
+          const endMin = timeToMinutes(end);
+
+          if (!(newEndMin <= startMin || newStartMin >= endMin)) {
+            conflicts.push(`- ${c.name} (${c.time})`);
+          }
+        }
+      });
+
+      return conflicts;
+    }
+
     function closeViewEventModal() {
       document.getElementById('viewEventModal').classList.add('hidden');
+      editingCourseId = null;
     }
 
     // ==================== 課程管理 ====================
