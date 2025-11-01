@@ -400,6 +400,14 @@
     let showAllTeachers = false;
     let teacherSearchQuery = '';
 
+    // ==================== 工具函數 - 獲取本地日期字串 ====================
+    function getLocalDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     // ==================== 初始化 ====================
     function init() {
       loadTeachers();
@@ -660,8 +668,8 @@
 
     // ==================== 今日課程總覽 ====================
     function renderTodayCourses() {
-      const today = new Date().toISOString().split('T')[0];
-      const todayCourses = courseAssignments.filter(c => c.date === today);
+      const todayStr = getLocalDateString(new Date());
+      const todayCourses = courseAssignments.filter(c => c.date === todayStr);
 
       const container = document.getElementById('todayCoursesContainer');
 
@@ -802,7 +810,7 @@
 
       const grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
-      const today = new Date().toDateString();
+      const todayStr = getLocalDateString(new Date());
 
       for (let w = 0; w < 6; w++) {
         for (let d = 0; d < 7; d++) {
@@ -810,8 +818,8 @@
           cellDate.setDate(start.getDate() + (w * 7) + d);
 
           const isCurrentMonth = (cellDate.getMonth() === month);
-          const isToday = (cellDate.toDateString() === today);
-          const dateKey = cellDate.toISOString().split('T')[0];
+          const dateKey = getLocalDateString(cellDate);
+          const isToday = (dateKey === todayStr);
 
           const dayEvents = courseAssignments.filter(c => c.date === dateKey);
 
@@ -859,14 +867,14 @@
       const grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
       const dayNames = ['日','一','二','三','四','五','六'];
-      const today = new Date().toDateString();
+      const todayStr = getLocalDateString(new Date());
 
       for (let i = 0; i < 7; i++) {
         const cellDate = new Date(startOfWeek);
         cellDate.setDate(startOfWeek.getDate() + i);
 
-        const isToday = (cellDate.toDateString() === today);
-        const dateKey = cellDate.toISOString().split('T')[0];
+        const dateKey = getLocalDateString(cellDate);
+        const isToday = (dateKey === todayStr);
         const dayEvents = courseAssignments.filter(c => c.date === dateKey);
 
         const cell = document.createElement('div');
@@ -903,16 +911,16 @@
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const today = new Date().toISOString().split('T')[0];
+      const todayStr = getLocalDateString(new Date());
 
       const container = document.getElementById('mobileEventsList');
       let html = '';
 
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
-        const dateKey = date.toISOString().split('T')[0];
+        const dateKey = getLocalDateString(date);
         const dayEvents = courseAssignments.filter(c => c.date === dateKey);
-        const isToday = dateKey === today;
+        const isToday = dateKey === todayStr;
 
         if (dayEvents.length > 0 || isToday) {
           const dayNames = ['日','一','二','三','四','五','六'];
@@ -949,7 +957,7 @@
 
     // ==================== Modal 管理 ====================
     function openAddCourseModal() {
-      document.getElementById('courseDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('courseDate').value = getLocalDateString(new Date());
       document.getElementById('addCourseModal').classList.remove('hidden');
     }
 
