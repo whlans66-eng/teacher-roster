@@ -201,6 +201,21 @@
       </div>
 
       <!-- 統計分析區 -->
+      <div id="selectedTeacherBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl">👨‍🏫</div>
+            <div class="text-white">
+              <p class="text-sm opacity-90">目前檢視師資</p>
+              <p id="selectedTeacherName" class="text-xl font-bold"></p>
+            </div>
+          </div>
+          <button onclick="clearTeacherSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
+            ✕ 查看全部
+          </button>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- 總課程數 -->
         <div class="card p-6 card-hover fade-in">
@@ -384,6 +399,7 @@
     let courseTypeChart = null;
     let showAllTeachers = false;
     let teacherSearchQuery = '';
+    let selectedTeacherId = null;
 
     // ==================== 工具函數 - 獲取本地日期字串 ====================
     function getLocalDateString(date) {
@@ -427,16 +443,22 @@
 
     // ==================== 統計分析 ====================
     function updateStatistics() {
+      // 根據選擇的師資過濾課程
+      let filteredCourses = courseAssignments;
+      if (selectedTeacherId !== null) {
+        filteredCourses = courseAssignments.filter(c => c.teacherId === selectedTeacherId);
+      }
+
       // 總課程數
-      document.getElementById('totalCoursesCount').textContent = courseAssignments.length;
+      document.getElementById('totalCoursesCount').textContent = filteredCourses.length;
 
       // 總時數
-      const totalHours = courseAssignments.reduce((sum, c) => sum + calculateHours(c.time), 0);
+      const totalHours = filteredCourses.reduce((sum, c) => sum + calculateHours(c.time), 0);
       document.getElementById('totalHoursCount').textContent = `${totalHours.toFixed(1)} 小時`;
 
       // 本月時數
       const thisMonth = new Date().toISOString().slice(0, 7);
-      const monthlyHours = courseAssignments
+      const monthlyHours = filteredCourses
         .filter(c => c.date.startsWith(thisMonth))
         .reduce((sum, c) => sum + calculateHours(c.time), 0);
       document.getElementById('monthlyHoursCount').textContent = `${monthlyHours.toFixed(1)} 小時`;
@@ -501,8 +523,14 @@
           statusText = '接近達標';
         }
 
+        const isSelected = selectedTeacherId === teacher.id;
+        const selectedStyle = isSelected
+          ? 'border-2 border-blue-500 bg-blue-50 shadow-lg'
+          : 'border border-gray-200 hover:border-blue-300 hover:shadow-md';
+
         return `
-          <div class="border border-gray-200 rounded-xl p-4">
+          <div onclick="selectTeacher(${teacher.id})"
+               class="${selectedStyle} rounded-xl p-4 cursor-pointer transition-all duration-300">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
@@ -521,6 +549,7 @@
             <div class="w-full bg-gray-200 rounded-full h-3">
               <div class="${statusClass} h-3 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
             </div>
+            ${isSelected ? '<p class="text-xs text-blue-600 font-semibold mt-2 text-center">✓ 已選擇</p>' : ''}
           </div>
         `;
       }).join('');
@@ -539,8 +568,14 @@
 
     // ==================== 課程類型分佈圖 ====================
     function renderCourseTypeChart() {
+      // 根據選擇的師資過濾課程
+      let filteredCourses = courseAssignments;
+      if (selectedTeacherId !== null) {
+        filteredCourses = courseAssignments.filter(c => c.teacherId === selectedTeacherId);
+      }
+
       const typeCount = {};
-      courseAssignments.forEach(c => {
+      filteredCourses.forEach(c => {
         typeCount[c.type] = (typeCount[c.type] || 0) + 1;
       });
 
@@ -571,6 +606,40 @@
           }
         }
       });
+    }
+
+    // ==================== 師資選擇功能 ====================
+    function selectTeacher(teacherId) {
+      selectedTeacherId = teacherId;
+      const teacher = teachers.find(t => t.id === teacherId);
+
+      // 顯示選擇的師資橫幅
+      const banner = document.getElementById('selectedTeacherBanner');
+      const nameElement = document.getElementById('selectedTeacherName');
+      if (teacher) {
+        nameElement.textContent = teacher.name;
+        banner.style.display = 'block';
+      }
+
+      // 更新所有相關數據
+      updateStatistics();
+      renderTeacherHoursAnalysis();
+      renderCourseTypeChart();
+      renderTodayCourses();
+    }
+
+    function clearTeacherSelection() {
+      selectedTeacherId = null;
+
+      // 隱藏選擇的師資橫幅
+      const banner = document.getElementById('selectedTeacherBanner');
+      banner.style.display = 'none';
+
+      // 更新所有相關數據
+      updateStatistics();
+      renderTeacherHoursAnalysis();
+      renderCourseTypeChart();
+      renderTodayCourses();
     }
 
     // ==================== 師資時數分析顯示/隱藏 ====================
@@ -611,7 +680,12 @@
     // ==================== 今日課程總覽 ====================
     function renderTodayCourses() {
       const todayStr = getLocalDateString(new Date());
-      const todayCourses = courseAssignments.filter(c => c.date === todayStr);
+      let todayCourses = courseAssignments.filter(c => c.date === todayStr);
+
+      // 根據選擇的師資過濾
+      if (selectedTeacherId !== null) {
+        todayCourses = todayCourses.filter(c => c.teacherId === selectedTeacherId);
+      }
 
       const container = document.getElementById('todayCoursesContainer');
 
