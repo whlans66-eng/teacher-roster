@@ -265,28 +265,6 @@
         </div>
       </div>
 
-      <!-- 師資狀態分析 -->
-      <div class="card p-6 fade-in" style="animation-delay: 0.4s">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">📈 師資狀態分析</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- 狀態分佈圓餅圖 -->
-          <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">狀態分佈</h3>
-            <div style="position: relative; height: 300px;">
-              <canvas id="statusChart"></canvas>
-            </div>
-          </div>
-
-          <!-- 課程類型分佈 -->
-          <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">課程類型分佈</h3>
-            <div style="position: relative; height: 300px;">
-              <canvas id="courseTypeChart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- 今日課程總覽 -->
       <div class="card p-6 fade-in" style="animation-delay: 0.5s">
         <div class="flex items-center justify-between mb-6">
@@ -395,8 +373,6 @@
 
     let currentDate = new Date();
     let viewMode = 'month';
-    let statusChart = null;
-    let courseTypeChart = null;
     let showAllTeachers = false;
     let teacherSearchQuery = '';
 
@@ -413,7 +389,6 @@
       loadTeachers();
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCharts();
       renderTodayCourses();
       renderCalendar();
       updateTodayDate();
@@ -585,85 +560,6 @@
         toggleIcon.textContent = '👁️‍🗨️';
         toggleText.textContent = '顯示';
       }
-    }
-
-    function renderCharts() {
-      // 狀態分佈圖
-      const statusCount = {
-        '上班': 0,
-        '休假': 0,
-        '出差': 0
-      };
-
-      courseAssignments.forEach(c => {
-        if (c.status && statusCount.hasOwnProperty(c.status)) {
-          statusCount[c.status]++;
-        } else {
-          statusCount['上班']++; // 舊資料沒有狀態，預設為上班
-        }
-      });
-
-      const statusCtx = document.getElementById('statusChart').getContext('2d');
-      if (statusChart) statusChart.destroy();
-
-      statusChart = new Chart(statusCtx, {
-        type: 'doughnut',
-        data: {
-          labels: ['上班', '休假', '出差'],
-          datasets: [{
-            data: [statusCount['上班'], statusCount['休假'], statusCount['出差']],
-            backgroundColor: ['#007aff', '#34c759', '#ff9500'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: { size: 14 },
-                padding: 15
-              }
-            }
-          }
-        }
-      });
-
-      // 課程類型分佈圖
-      const typeCount = {};
-      courseAssignments.forEach(c => {
-        typeCount[c.type] = (typeCount[c.type] || 0) + 1;
-      });
-
-      const typeCtx = document.getElementById('courseTypeChart').getContext('2d');
-      if (courseTypeChart) courseTypeChart.destroy();
-
-      courseTypeChart = new Chart(typeCtx, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(typeCount),
-          datasets: [{
-            data: Object.values(typeCount),
-            backgroundColor: ['#007aff', '#34c759', '#ff9500', '#ff3b30', '#5856d6'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: { size: 14 },
-                padding: 15
-              }
-            }
-          }
-        }
-      });
     }
 
     // ==================== 今日課程總覽 ====================
@@ -1073,7 +969,6 @@
       closeAddCourseModal();
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCharts();
       renderTodayCourses();
       renderCalendar();
       alert('✅ 課程新增成功！');
@@ -1085,7 +980,6 @@
       saveData();
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCharts();
       renderTodayCourses();
       renderCalendar();
       alert('✅ 課程已刪除！');
