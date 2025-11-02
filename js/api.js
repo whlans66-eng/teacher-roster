@@ -1,0 +1,372 @@
+// ==================== API 層：與 Google Apps Script 後端通訊 ====================
+
+/**
+ * 設定區
+ * 部署完 Google Apps Script 後，將取得的 Web App URL 填入下方
+ */
+const API_CONFIG = {
+  // 將此 URL 替換為你部署後的 Google Apps Script Web App URL
+  baseUrl: 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec',
+  token: 'tr_demo_12345',  // 與後端 TOKEN 一致
+  timeout: 30000  // 30 秒超時
+};
+
+/**
+ * API 類別：統一管理所有後端呼叫
+ */
+class TeacherRosterAPI {
+  constructor(config) {
+    this.baseUrl = config.baseUrl;
+    this.token = config.token;
+    this.timeout = config.timeout;
+  }
+
+  /**
+   * 測試連線
+   */
+  async ping() {
+    try {
+      const response = await this._get({ action: 'ping' });
+      return response;
+    } catch (error) {
+      console.error('Ping 失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 讀取特定表格的所有資料
+   * @param {string} table - 表格名稱: 'teachers', 'courseAssignments', 'maritimeCourses'
+   */
+  async list(table) {
+    try {
+      const response = await this._get({ action: 'list', table });
+      return response.data || [];
+    } catch (error) {
+      console.error(`讀取 ${table} 失敗:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 讀取所有表格的資料
+   * @returns {Object} { teachers: [], courseAssignments: [], maritimeCourses: [] }
+   */
+  async listAll() {
+    try {
+      const response = await this._get({ action: 'listall' });
+      return response.data || {};
+    } catch (error) {
+      console.error('讀取所有資料失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 儲存特定表格的資料
+   * @param {string} table - 表格名稱
+   * @param {Array} data - 資料陣列
+   */
+  async save(table, data) {
+    try {
+      const response = await this._post({
+        action: 'save',
+        table,
+        data
+      });
+      return response;
+    } catch (error) {
+      console.error(`儲存 ${table} 失敗:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 上傳檔案到 Google Drive
+   * @param {File|Blob} file - 檔案物件
+   * @param {string} fileName - 檔案名稱（可選）
+   */
+  async uploadFile(file, fileName = null) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file, fileName || file.name);
+      formData.append('token', this.token);
+      formData.append('action', 'uploadfile');
+
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      if (!result.ok) throw new Error(result.error || '上傳失敗');
+      return result;
+    } catch (error) {
+      console.error('上傳檔案失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 上傳 Base64 DataURL
+   * @param {string} dataUrl - Base64 編碼的資料 URL
+   * @param {string} fileName - 檔案名稱
+   */
+  async uploadDataUrl(dataUrl, fileName) {
+    try {
+      const response = await this._post({
+        action: 'uploadfile',
+        dataUrl,
+        fileName
+      });
+      return response;
+    } catch (error) {
+      console.error('上傳 DataURL 失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * GET 請求
+   */
+  async _get(params) {
+    const url = new URL(this.baseUrl);
+    url.searchParams.append('token', this.token);
+    Object.keys(params).forEach(key => {
+      url.searchParams.append(key, params[key]);
+    });
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      const result = await response.json();
+
+      if (!result.ok) {
+        throw new Error(result.error || '請求失敗');
+      }
+
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('請求超時');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * POST 請求
+   */
+  async _post(data) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          token: this.token,
+          ...data
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      const result = await response.json();
+
+      if (!result.ok) {
+        throw new Error(result.error || '請求失敗');
+      }
+
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('請求超時');
+      }
+      throw error;
+    }
+  }
+}
+
+// 建立全域 API 實例
+const api = new TeacherRosterAPI(API_CONFIG);
+
+/**
+ * 資料同步管理器
+ * 負責 localStorage 與後端的雙向同步
+ */
+class DataSyncManager {
+  constructor(apiInstance) {
+    this.api = apiInstance;
+    this.syncInterval = null;
+    this.autoSyncEnabled = false;
+  }
+
+  /**
+   * 從後端載入所有資料到 localStorage
+   */
+  async loadFromBackend() {
+    try {
+      console.log('📥 從後端載入資料...');
+      const allData = await this.api.listAll();
+
+      // 儲存到 localStorage
+      if (allData.teachers) {
+        localStorage.setItem('teachers', JSON.stringify(allData.teachers));
+      }
+      if (allData.courseAssignments) {
+        localStorage.setItem('courseAssignments', JSON.stringify(allData.courseAssignments));
+      }
+      if (allData.maritimeCourses) {
+        localStorage.setItem('maritimeCourses', JSON.stringify(allData.maritimeCourses));
+      }
+
+      // 更新最後同步時間
+      localStorage.setItem('lastSyncTime', new Date().toISOString());
+
+      console.log('✅ 資料載入完成');
+      return allData;
+    } catch (error) {
+      console.error('❌ 載入資料失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 將 localStorage 資料上傳到後端
+   */
+  async saveToBackend() {
+    try {
+      console.log('📤 儲存資料到後端...');
+
+      const teachers = JSON.parse(localStorage.getItem('teachers') || '[]');
+      const courseAssignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+      const maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+
+      // 依序儲存三個表格
+      await this.api.save('teachers', teachers);
+      await this.api.save('courseAssignments', courseAssignments);
+      await this.api.save('maritimeCourses', maritimeCourses);
+
+      // 更新最後同步時間
+      localStorage.setItem('lastSyncTime', new Date().toISOString());
+
+      console.log('✅ 資料儲存完成');
+      return true;
+    } catch (error) {
+      console.error('❌ 儲存資料失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 儲存特定表格
+   */
+  async saveTable(tableName) {
+    try {
+      const data = JSON.parse(localStorage.getItem(tableName) || '[]');
+      await this.api.save(tableName, data);
+      localStorage.setItem('lastSyncTime', new Date().toISOString());
+      console.log(`✅ ${tableName} 儲存完成`);
+      return true;
+    } catch (error) {
+      console.error(`❌ 儲存 ${tableName} 失敗:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 啟用自動同步（每 N 分鐘）
+   */
+  enableAutoSync(intervalMinutes = 5) {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+    }
+
+    this.autoSyncEnabled = true;
+    this.syncInterval = setInterval(async () => {
+      try {
+        await this.saveToBackend();
+        console.log('🔄 自動同步完成');
+      } catch (error) {
+        console.error('🔄 自動同步失敗:', error);
+      }
+    }, intervalMinutes * 60 * 1000);
+
+    console.log(`🔄 已啟用自動同步（每 ${intervalMinutes} 分鐘）`);
+  }
+
+  /**
+   * 停用自動同步
+   */
+  disableAutoSync() {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
+    }
+    this.autoSyncEnabled = false;
+    console.log('🔄 已停用自動同步');
+  }
+
+  /**
+   * 取得最後同步時間
+   */
+  getLastSyncTime() {
+    const time = localStorage.getItem('lastSyncTime');
+    return time ? new Date(time) : null;
+  }
+}
+
+// 建立全域同步管理器實例
+const syncManager = new DataSyncManager(api);
+
+/**
+ * 便利函數：顯示同步狀態訊息
+ */
+function showSyncStatus(message, type = 'info') {
+  // 如果頁面有 showMessage 函數就使用它
+  if (typeof showMessage === 'function') {
+    showMessage(message, type);
+  } else {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+  }
+}
+
+/**
+ * 頁面載入時自動從後端同步資料
+ */
+async function initializeDataSync() {
+  try {
+    // 測試連線
+    await api.ping();
+    console.log('✅ 後端連線成功');
+
+    // 載入資料
+    await syncManager.loadFromBackend();
+    showSyncStatus('資料已從雲端載入', 'success');
+
+    // 可選：啟用自動同步（每 5 分鐘）
+    // syncManager.enableAutoSync(5);
+
+  } catch (error) {
+    console.warn('⚠️ 無法連線到後端，使用本地資料:', error);
+    showSyncStatus('使用離線模式', 'warning');
+  }
+}
+
+// 匯出給其他模組使用
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { api, syncManager, initializeDataSync };
+}

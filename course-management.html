@@ -127,6 +127,9 @@
       z-index: -1;
     }
   </style>
+
+  <!-- API 層：與後端通訊 -->
+  <script src="js/api.js"></script>
 </head>
 <body>
   <div class="container mx-auto px-4 py-8">
@@ -515,7 +518,21 @@
     }
 
     // ==================== 初始化 ====================
-    function init() {
+    async function init() {
+      // 從後端同步資料
+      if (typeof initializeDataSync !== 'undefined') {
+        try {
+          await initializeDataSync();
+          // 重新載入同步後的資料
+          teachers = JSON.parse(localStorage.getItem('teachers') || '[]');
+          courseAssignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+          calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
+        } catch (err) {
+          console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
+        }
+      }
+
+      // 原有的初始化邏輯
       loadTeachers();
       updateStatistics();
       renderTeacherHoursAnalysis();
@@ -1511,9 +1528,17 @@
 
     function saveData() {
       try {
+        // 儲存到 localStorage
         localStorage.setItem('teachers', JSON.stringify(teachers));
         localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
         localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+
+        // 非同步同步到後端（不阻塞 UI）
+        if (typeof syncManager !== 'undefined') {
+          syncManager.saveToBackend().catch(err => {
+            console.warn('⚠️ 後端同步失敗，資料已保存在本地:', err.message);
+          });
+        }
       } catch (err) {
         console.error('儲存失敗:', err);
       }

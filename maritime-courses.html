@@ -510,6 +510,9 @@
       display: none !important;
     }
   </style>
+
+  <!-- API 層：與後端通訊 -->
+  <script src="js/api.js"></script>
 </head>
 <body>
   <div class="container">
@@ -783,7 +786,15 @@
 
     // 儲存課程資料
     function saveMaritimeCourses() {
+      // 儲存到 localStorage
       localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+
+      // 非同步同步到後端（不阻塞 UI）
+      if (typeof syncManager !== 'undefined') {
+        syncManager.saveTable('maritimeCourses').catch(err => {
+          console.warn('⚠️ 後端同步失敗，資料已保存在本地:', err.message);
+        });
+      }
     }
 
     // 頁面切換功能
@@ -1182,7 +1193,18 @@
     }
 
     // 初始化海事課程系統事件監聽器
-    function initMaritimeCourseSystem() {
+    async function initMaritimeCourseSystem() {
+      // 從後端同步資料
+      if (typeof initializeDataSync !== 'undefined') {
+        try {
+          await initializeDataSync();
+          // 重新載入同步後的資料
+          maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+        } catch (err) {
+          console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
+        }
+      }
+
       // 課程表單處理
       const courseForm = document.getElementById('maritimeCourseForm');
       if (courseForm) {
