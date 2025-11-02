@@ -918,7 +918,7 @@
     }
 
     function scheduleCloudSave(){
-      if(!hasAPI()) return;
+      if(!api) return;
       if(syncTimer) clearTimeout(syncTimer);
       syncTimer = setTimeout(doCloudSave, SYNC_DEBOUNCE_MS);
     }
@@ -926,11 +926,8 @@
       if(syncing){ syncAgain=true; return; }
       syncing = true;
       try{
-        const body = new URLSearchParams();
-        body.append('action','saveAll');
-        body.append('token', API_TOKEN);
-        body.append('teachers', JSON.stringify(teachers));
-        await fetch(API_BASE, { method:'POST', body });
+        await api.save('teachers', teachers);
+        console.log('✅ 師資資料已同步到雲端');
       }catch(e){
         console.warn('雲端靜默上傳失敗：', e);
       }finally{
@@ -940,12 +937,10 @@
     }
 
     async function cloudLoadSilent(){
-      if(!hasAPI()) return null;
+      if(!api) return null;
       try{
-        const url = `${API_BASE}?action=list&token=${encodeURIComponent(API_TOKEN)}`;
-        const res = await fetch(url, { method:'GET' });
-        const data = await res.json();
-        if(data && data.ok && Array.isArray(data.data)) return data.data;
+        const data = await api.list('teachers');
+        return Array.isArray(data) ? data : null;
       }catch(e){
         console.warn('雲端靜默載入失敗：', e);
       }
