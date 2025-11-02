@@ -211,7 +211,22 @@
             </div>
           </div>
           <button onclick="clearTeacherSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
-            ✕ 查看全部
+            ✕ 取消篩選
+          </button>
+        </div>
+      </div>
+
+      <div id="selectedDateBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl">📅</div>
+            <div class="text-white">
+              <p class="text-sm opacity-90">目前檢視日期</p>
+              <p id="selectedDateText" class="text-xl font-bold"></p>
+            </div>
+          </div>
+          <button onclick="clearDateSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
+            ✕ 取消篩選
           </button>
         </div>
       </div>
@@ -288,14 +303,14 @@
         </div>
       </div>
 
-      <!-- 今日課程總覽 -->
+      <!-- 課程總覽 -->
       <div class="card p-6 fade-in" style="animation-delay: 0.5s">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">📅 今日課程總覽</h2>
+          <h2 id="courseOverviewTitle" class="text-2xl font-bold text-gray-900">📅 今日課程總覽</h2>
           <div class="text-sm text-gray-600" id="todayDate"></div>
         </div>
         <div id="todayCoursesContainer" class="space-y-3">
-          <!-- 今日課程將在這裡顯示 -->
+          <!-- 課程將在這裡顯示 -->
         </div>
       </div>
     </div>
@@ -474,6 +489,7 @@
     let teacherSearchQuery = '';
     let selectedTeacherId = null;
     let editingCourseId = null;
+    let selectedDate = null;
 
     // ==================== 工具函數 - 獲取本地日期字串 ====================
     function getLocalDateString(date) {
@@ -517,10 +533,15 @@
 
     // ==================== 統計分析 ====================
     function updateStatistics() {
-      // 根據選擇的師資過濾課程
+      // 根據選擇的師資和日期過濾課程
       let filteredCourses = courseAssignments;
+
       if (selectedTeacherId !== null) {
-        filteredCourses = courseAssignments.filter(c => c.teacherId === selectedTeacherId);
+        filteredCourses = filteredCourses.filter(c => c.teacherId === selectedTeacherId);
+      }
+
+      if (selectedDate !== null) {
+        filteredCourses = filteredCourses.filter(c => c.date === selectedDate);
       }
 
       // 總課程數
@@ -642,10 +663,15 @@
 
     // ==================== 課程類型分佈圖 ====================
     function renderCourseTypeChart() {
-      // 根據選擇的師資過濾課程
+      // 根據選擇的師資和日期過濾課程
       let filteredCourses = courseAssignments;
+
       if (selectedTeacherId !== null) {
-        filteredCourses = courseAssignments.filter(c => c.teacherId === selectedTeacherId);
+        filteredCourses = filteredCourses.filter(c => c.teacherId === selectedTeacherId);
+      }
+
+      if (selectedDate !== null) {
+        filteredCourses = filteredCourses.filter(c => c.date === selectedDate);
       }
 
       const typeCount = {};
@@ -716,6 +742,46 @@
       renderTodayCourses();
     }
 
+    // ==================== 日期選擇功能 ====================
+    function selectDate(dateStr) {
+      selectedDate = dateStr;
+
+      // 顯示選擇的日期橫幅
+      const banner = document.getElementById('selectedDateBanner');
+      const textElement = document.getElementById('selectedDateText');
+
+      const date = new Date(dateStr + 'T00:00:00');
+      const formattedDate = date.toLocaleDateString('zh-TW', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long'
+      });
+
+      textElement.textContent = formattedDate;
+      banner.style.display = 'block';
+
+      // 更新所有相關數據
+      updateStatistics();
+      renderTeacherHoursAnalysis();
+      renderCourseTypeChart();
+      renderTodayCourses();
+    }
+
+    function clearDateSelection() {
+      selectedDate = null;
+
+      // 隱藏選擇的日期橫幅
+      const banner = document.getElementById('selectedDateBanner');
+      banner.style.display = 'none';
+
+      // 更新所有相關數據
+      updateStatistics();
+      renderTeacherHoursAnalysis();
+      renderCourseTypeChart();
+      renderTodayCourses();
+    }
+
     // ==================== 師資時數分析顯示/隱藏 ====================
     function toggleTeacherHoursAnalysis() {
       const analysisContent = document.getElementById('teacherHoursAnalysis');
@@ -753,25 +819,41 @@
 
     // ==================== 今日課程總覽 ====================
     function renderTodayCourses() {
-      const todayStr = getLocalDateString(new Date());
-      let todayCourses = courseAssignments.filter(c => c.date === todayStr);
+      // 決定顯示的日期
+      let displayDate;
+      let titleText;
+
+      if (selectedDate !== null) {
+        displayDate = selectedDate;
+        const date = new Date(selectedDate + 'T00:00:00');
+        titleText = `📅 ${date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} 課程總覽`;
+      } else {
+        displayDate = getLocalDateString(new Date());
+        titleText = '📅 今日課程總覽';
+      }
+
+      document.getElementById('courseOverviewTitle').textContent = titleText;
+
+      let displayCourses = courseAssignments.filter(c => c.date === displayDate);
 
       // 根據選擇的師資過濾
       if (selectedTeacherId !== null) {
-        todayCourses = todayCourses.filter(c => c.teacherId === selectedTeacherId);
+        displayCourses = displayCourses.filter(c => c.teacherId === selectedTeacherId);
       }
 
       const container = document.getElementById('todayCoursesContainer');
 
-      if (todayCourses.length === 0) {
+      if (displayCourses.length === 0) {
         container.innerHTML = `
           <div class="text-center py-8 text-gray-500">
             <div class="text-4xl mb-2">✨</div>
-            <p>今天沒有排課</p>
+            <p>${selectedDate ? '該日期沒有排課' : '今天沒有排課'}</p>
           </div>
         `;
         return;
       }
+
+      const todayCourses = displayCourses;
 
       // 按師資分組
       const grouped = {};
@@ -913,14 +995,19 @@
 
           const dayEvents = courseAssignments.filter(c => c.date === dateKey);
 
+          const isSelectedDate = (dateKey === selectedDate);
+
           const cell = document.createElement('div');
           cell.className = `calendar-day p-2 ${
             isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-          } ${isToday ? 'today-highlight' : ''}`;
+          } ${isToday ? 'today-highlight' : ''} ${isSelectedDate ? 'ring-2 ring-pink-500 ring-inset' : ''}`;
 
           cell.innerHTML = `
             <div class="flex justify-between items-start mb-1">
-              <span class="text-base font-semibold ${isCurrentMonth ? (isToday ? 'text-blue-600' : 'text-gray-800') : 'text-gray-400'}">
+              <span onclick="selectDate('${dateKey}')"
+                    class="text-base font-semibold cursor-pointer hover:bg-blue-100 px-2 py-1 rounded transition-colors ${
+                isCurrentMonth ? (isToday ? 'text-blue-600' : 'text-gray-800') : 'text-gray-400'
+              } ${isSelectedDate ? 'bg-pink-100 text-pink-700' : ''}">
                 ${cellDate.getDate()}
               </span>
             </div>
@@ -930,7 +1017,7 @@
                 const teacherName = teacher ? teacher.name : '未知';
                 return `
                   <div class="event-item bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600"
-                       onclick="viewEvent(${e.id})">
+                       onclick="viewEvent(${e.id}); event.stopPropagation();">
                     <div class="font-medium truncate">${teacherName}</div>
                     <div class="text-[10px] truncate">${e.time} ${e.name}</div>
                   </div>
@@ -965,15 +1052,16 @@
 
         const dateKey = getLocalDateString(cellDate);
         const isToday = (dateKey === todayStr);
+        const isSelectedDate = (dateKey === selectedDate);
         const dayEvents = courseAssignments.filter(c => c.date === dateKey);
 
         const cell = document.createElement('div');
-        cell.className = `calendar-day p-4 bg-white ${isToday ? 'today-highlight' : ''}`;
+        cell.className = `calendar-day p-4 bg-white ${isToday ? 'today-highlight' : ''} ${isSelectedDate ? 'ring-2 ring-pink-500 ring-inset' : ''}`;
 
         cell.innerHTML = `
-          <div class="text-center mb-4 pb-3 border-b border-gray-200">
-            <div class="text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-600'}">${dayNames[i]}</div>
-            <div class="text-2xl font-bold ${isToday ? 'text-blue-600' : 'text-gray-800'}">
+          <div onclick="selectDate('${dateKey}')" class="text-center mb-4 pb-3 border-b border-gray-200 cursor-pointer hover:bg-blue-50 rounded-lg transition-colors ${isSelectedDate ? 'bg-pink-50' : ''}">
+            <div class="text-sm font-semibold ${isToday ? 'text-blue-600' : (isSelectedDate ? 'text-pink-600' : 'text-gray-600')}">${dayNames[i]}</div>
+            <div class="text-2xl font-bold ${isToday ? 'text-blue-600' : (isSelectedDate ? 'text-pink-600' : 'text-gray-800')}">
               ${cellDate.getDate()}
             </div>
           </div>
@@ -983,7 +1071,7 @@
               const teacherName = teacher ? teacher.name : '未知';
               return `
                 <div class="event-item bg-blue-500 text-white p-3 rounded-xl cursor-pointer hover:bg-blue-600"
-                     onclick="viewEvent(${e.id})">
+                     onclick="viewEvent(${e.id}); event.stopPropagation();">
                   <div class="font-semibold">${teacherName}</div>
                   <div class="text-xs mt-1">⏰ ${e.time}</div>
                   <div class="text-xs">${e.name}</div>
