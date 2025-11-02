@@ -269,12 +269,27 @@
       <!-- 師資時數分析 -->
       <div id="teacherHoursAnalysisCard" class="card p-6 fade-in" style="animation-delay: 0.3s">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-bold text-gray-900">👨‍🏫 師資時數分析 (本月目標：12 小時)</h2>
+          <h2 class="text-2xl font-bold text-gray-900">👨‍🏫 師資時數分析</h2>
           <button onclick="toggleTeacherHoursAnalysis()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
             <span id="toggleAnalysisIcon">👁️</span> <span id="toggleAnalysisText">隱藏</span>
           </button>
         </div>
         <div id="teacherHoursAnalysis">
+          <!-- 達標提醒 -->
+          <div id="targetAchievedAlert" class="mb-4" style="display: none;">
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <span class="text-2xl">🎉</span>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium text-green-800">
+                    恭喜！本月有 <span id="targetAchievedCount" class="font-bold text-green-900"></span> 位師資已達標 12 小時
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- 搜尋框 -->
           <div class="mb-4">
             <input type="text" id="teacherSearchInput"
@@ -581,15 +596,44 @@
       if (filteredTeachers.length === 0) {
         listContainer.innerHTML = '<p class="text-center text-gray-500 py-8">找不到符合的師資</p>';
         showMoreContainer.style.display = 'none';
+        document.getElementById('targetAchievedAlert').style.display = 'none';
         return;
+      }
+
+      // 計算每位師資的時數並排序
+      const teachersWithHours = filteredTeachers.map(teacher => {
+        const courses = courseAssignments.filter(c =>
+          c.teacherId === teacher.id && c.date.startsWith(thisMonth)
+        );
+        const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
+        return { teacher, hours, courses };
+      });
+
+      // 排序：已達標(>=12小時)排在前面，按時數降序
+      teachersWithHours.sort((a, b) => {
+        const aAchieved = a.hours >= 12;
+        const bAchieved = b.hours >= 12;
+        if (aAchieved && !bAchieved) return -1;
+        if (!aAchieved && bAchieved) return 1;
+        return b.hours - a.hours; // 同等級內按時數降序
+      });
+
+      // 計算達標人數並更新提醒
+      const achievedCount = teachersWithHours.filter(t => t.hours >= 12).length;
+      const alertElement = document.getElementById('targetAchievedAlert');
+      if (achievedCount > 0) {
+        document.getElementById('targetAchievedCount').textContent = achievedCount;
+        alertElement.style.display = 'block';
+      } else {
+        alertElement.style.display = 'none';
       }
 
       // 決定顯示的師資數量
       const displayLimit = 4;
-      const shouldShowMore = filteredTeachers.length > displayLimit && teacherSearchQuery === '';
+      const shouldShowMore = teachersWithHours.length > displayLimit && teacherSearchQuery === '';
       const displayTeachers = (shouldShowMore && !showAllTeachers)
-        ? filteredTeachers.slice(0, displayLimit)
-        : filteredTeachers;
+        ? teachersWithHours.slice(0, displayLimit)
+        : teachersWithHours;
 
       // 顯示/隱藏「顯示更多」按鈕
       if (shouldShowMore) {
@@ -601,11 +645,8 @@
       }
 
       // 渲染師資列表
-      listContainer.innerHTML = displayTeachers.map(teacher => {
-        const courses = courseAssignments.filter(c =>
-          c.teacherId === teacher.id && c.date.startsWith(thisMonth)
-        );
-        const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
+      listContainer.innerHTML = displayTeachers.map(item => {
+        const { teacher, hours, courses } = item;
         const percentage = Math.min((hours / 12) * 100, 100);
 
         let statusClass = 'bg-red-500';
