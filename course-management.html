@@ -206,12 +206,12 @@
           <div class="flex items-center space-x-3">
             <div class="text-2xl">👨‍🏫</div>
             <div class="text-white">
-              <p class="text-sm opacity-90">目前檢視師資</p>
+              <p class="text-sm opacity-90">目前檢視師資（再次點選師資可取消）</p>
               <p id="selectedTeacherName" class="text-xl font-bold"></p>
             </div>
           </div>
           <button onclick="clearTeacherSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
-            ✕ 取消篩選
+            ✕ 清除
           </button>
         </div>
       </div>
@@ -221,12 +221,12 @@
           <div class="flex items-center space-x-3">
             <div class="text-2xl">📅</div>
             <div class="text-white">
-              <p class="text-sm opacity-90">目前檢視日期</p>
+              <p class="text-sm opacity-90">目前檢視日期（再次點選日期可取消）</p>
               <p id="selectedDateText" class="text-xl font-bold"></p>
             </div>
           </div>
           <button onclick="clearDateSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
-            ✕ 取消篩選
+            ✕ 清除
           </button>
         </div>
       </div>
@@ -710,6 +710,13 @@
 
     // ==================== 師資選擇功能 ====================
     function selectTeacher(teacherId) {
+      // Toggle 功能：如果點選已選擇的師資，則取消選擇
+      if (selectedTeacherId === teacherId) {
+        clearTeacherSelection();
+        return;
+      }
+
+      // 切換到新師資
       selectedTeacherId = teacherId;
       const teacher = teachers.find(t => t.id === teacherId);
 
@@ -744,6 +751,13 @@
 
     // ==================== 日期選擇功能 ====================
     function selectDate(dateStr) {
+      // Toggle 功能：如果點選已選擇的日期，則取消選擇
+      if (selectedDate === dateStr) {
+        clearDateSelection();
+        return;
+      }
+
+      // 切換到新日期
       selectedDate = dateStr;
 
       // 顯示選擇的日期橫幅
