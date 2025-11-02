@@ -327,6 +327,69 @@ class DataSyncManager {
     const time = localStorage.getItem('lastSyncTime');
     return time ? new Date(time) : null;
   }
+
+  /**
+   * 安全儲存：檢查是否有衝突再儲存
+   * 防止舊資料覆蓋新資料
+   */
+  async saveToBackendSafe() {
+    try {
+      console.log('📤 安全儲存模式：檢查資料衝突...');
+
+      // 先從後端載入最新資料
+      const backendData = await this.api.listAll();
+
+      // 取得本地資料
+      const localTeachers = JSON.parse(localStorage.getItem('teachers') || '[]');
+      const localCourses = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+      const localMaritime = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+
+      // 檢查是否有修改標記
+      const hasLocalChanges = localStorage.getItem('hasLocalChanges') === 'true';
+
+      if (!hasLocalChanges) {
+        console.log('⏭️ 本地無修改，跳過儲存');
+        return { skipped: true, reason: 'no_local_changes' };
+      }
+
+      // 比對資料長度，如果後端資料比本地新，警告用戶
+      const backendHasMore =
+        (backendData.teachers?.length || 0) > localTeachers.length ||
+        (backendData.courseAssignments?.length || 0) > localCourses.length ||
+        (backendData.maritimeCourses?.length || 0) > localMaritime.length;
+
+      if (backendHasMore) {
+        console.warn('⚠️ 警告：後端有更新的資料！');
+        return {
+          conflict: true,
+          message: '後端有其他人的更新，請重新整理頁面後再儲存'
+        };
+      }
+
+      // 沒有衝突，安全儲存
+      await this.api.save('teachers', localTeachers);
+      await this.api.save('courseAssignments', localCourses);
+      await this.api.save('maritimeCourses', localMaritime);
+
+      // 清除修改標記
+      localStorage.removeItem('hasLocalChanges');
+      localStorage.setItem('lastSyncTime', new Date().toISOString());
+
+      console.log('✅ 安全儲存完成');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ 安全儲存失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 標記本地資料已修改
+   */
+  markAsChanged() {
+    localStorage.setItem('hasLocalChanges', 'true');
+    console.log('🔖 標記資料已修改');
+  }
 }
 
 // 建立全域同步管理器實例

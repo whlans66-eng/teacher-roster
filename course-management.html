@@ -1533,9 +1533,19 @@
         localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
         localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
 
-        // 非同步同步到後端（不阻塞 UI）
+        // 標記本地資料已修改
         if (typeof syncManager !== 'undefined') {
-          syncManager.saveToBackend().catch(err => {
+          syncManager.markAsChanged();
+
+          // 使用安全儲存模式（檢查衝突）
+          syncManager.saveToBackendSafe().then(result => {
+            if (result.conflict) {
+              alert('⚠️ ' + result.message);
+              console.warn('發現資料衝突，請重新整理頁面');
+            } else if (result.success) {
+              console.log('✅ 資料已安全儲存到雲端');
+            }
+          }).catch(err => {
             console.warn('⚠️ 後端同步失敗，資料已保存在本地:', err.message);
           });
         }
