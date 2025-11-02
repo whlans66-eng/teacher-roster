@@ -50,6 +50,9 @@
     @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
     .pulse-animation{animation:pulse 2s infinite}
   </style>
+
+  <!-- API 層：與後端通訊 -->
+  <script src="js/api.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
   <div class="container mx-auto px-4 py-8">
@@ -842,25 +845,19 @@
 
   <!-- ====== 後端 API 設定 / 工具 ====== -->
   <script>
-    /* === 你的 Web App URL（請保持 Execute as: Me、Who has access: Anyone） === */
-    const API_BASE  = 'https://script.google.com/macros/s/AKfycbxSkjKO6PyzywaJCgBjxZ3eWaA5EVGcEL1uOwb_WP6tCI9vr9G6Znu6ldQqZCrlSfnGmA/exec';
-    const API_TOKEN = 'tr_demo_12345';
-    const hasAPI = () => typeof API_BASE === 'string' && API_BASE.startsWith('https://script.google.com/macros/s/');
+    /* === 使用新的 API 層（js/api.js） === */
 
-    /* ---------- 直傳 Drive（FormData，避免 CORS；≤30MB） ---------- */
+    /* ---------- 檔案上傳（使用新的 API） ---------- */
     async function apiUploadToDrive(file){
-      if(!hasAPI()) throw new Error('尚未設定 API');
+      if(!api || !api.uploadFile) throw new Error('API 未初始化');
       if(file.size > 30*1024*1024) throw new Error('檔案大小不能超過 30MB');
 
-      const fd = new FormData();
-      fd.append('action', 'uploadfile');
-      fd.append('token',  API_TOKEN);
-      fd.append('file',   file, file.name);
-
-      const res = await fetch(API_BASE, { method:'POST', body: fd });
-      const j = await res.json();
-      if(!j.ok) throw new Error(j.error || '上傳失敗');
-      return j; // {ok,id,url,name,size,mime}
+      try {
+        const result = await api.uploadFile(file, file.name);
+        return result; // {ok,id,url,name,size,mime}
+      } catch (error) {
+        throw new Error(error.message || '上傳失敗');
+      }
     }
 
     /* ---------- 正常化 ---------- */
@@ -1300,7 +1297,7 @@
           <div class="flex-1 space-y-3">
             <input type="text" value="${value}" placeholder="請輸入證書或資格名稱..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <div class="flex items-center space-x-2">
-              <input type="file" id="certFile_${uid}" accept=".jpg,.jpeg,.pdf" class="hidden" onchange="handleCertificateFile(this)">
+              <input type="file" id="certFile_${uid}" accept=".jpg,.jpeg,.png,.pdf,.txt,.doc,.docx" class="hidden" onchange="handleCertificateFile(this)">
               <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">📎 上傳檔案</button>
               <div class="file-info text-sm text-gray-600" data-filename="${fileName}" data-fileurl="${fileUrl}">${fileName?`已上傳: ${fileName}`:'未上傳檔案'}</div>
               ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">👁️ 檢視</button>`:''}
@@ -1315,8 +1312,8 @@
       if(!(input.files && input.files[0])) return;
       const file = input.files[0];
       const info = input.parentElement.querySelector('.file-info');
-      const okTypes = ['image/jpeg','image/jpg','application/pdf'];
-      if(!okTypes.includes(file.type)){ alert('只支援 JPG 和 PDF 檔案格式'); return; }
+      const okTypes = ['image/jpeg','image/jpg','image/png','application/pdf','text/plain','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if(!okTypes.includes(file.type)){ alert('支援格式：JPG, PNG, PDF, TXT, DOC, DOCX'); return; }
       if(file.size > 30*1024*1024){ alert('檔案大小不能超過 30MB'); return; }
 
       const old = info.textContent;
