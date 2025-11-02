@@ -19,6 +19,7 @@ const FOLDER_ID  = '1coJ2wsBu7I4qvM5eyViIu16POgEQL71n';  // Google Drive 資料�
 const SHEETS_CONFIG = {
   teachers: {
     name: 'teachers',
+    // 注意：photoUrl 欄位在前端會自動對應到 photo 欄位
     header: ['id','name','email','teacherType','workLocation','photoUrl','experiences','certificates','subjects','tags']
   },
   courseAssignments: {
@@ -99,6 +100,8 @@ function doPost(e) {
       if (table === 'teachers') {
         data = data.map(t => ({
           ...t,
+          // 統一欄位名稱：前端用 photo，後端用 photoUrl
+          photoUrl: t.photoUrl || t.photo || '',
           experiences: _asArray(t?.experiences),
           certificates: _asArray(t?.certificates),
           subjects: _asArray(t?.subjects),
@@ -225,6 +228,12 @@ function _readTable(tableName) {
         obj[key] = val;
       }
     });
+
+    // 為了前端相容性，同時提供 photo 和 photoUrl
+    if (tableName === 'teachers' && obj.photoUrl) {
+      obj.photo = obj.photoUrl;
+    }
+
     return obj;
   });
 }
