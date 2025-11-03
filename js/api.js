@@ -429,12 +429,15 @@ const syncManager = new DataSyncManager(api);
 /**
  * 便利函數：顯示同步狀態訊息
  */
-function showSyncStatus(message, type = 'info') {
+function showSyncStatus(message, type = 'info', options = {}) {
   // 如果頁面有 showMessage 函數就使用它
   if (typeof showMessage === 'function') {
-    showMessage(message, type);
+    showMessage(message, type, options.hint || '');
   } else {
     console.log(`[${type.toUpperCase()}] ${message}`);
+    if (options.hint) {
+      console.log('↳', options.hint);
+    }
   }
 }
 
@@ -456,7 +459,9 @@ async function initializeDataSync() {
 
   } catch (error) {
     console.warn('⚠️ 無法連線到後端，使用本地資料:', error);
-    showSyncStatus('使用離線模式', 'warning');
+    showSyncStatus('使用離線模式', 'warning', {
+      hint: '請確認 API URL 與 TOKEN 設定是否正確，或檢查網路連線狀態。'
+    });
   }
 }
 
