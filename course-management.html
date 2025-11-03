@@ -53,6 +53,19 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
 
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      border-width: 1px;
+      border-style: solid;
+    }
+
     .today-highlight {
       background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(88, 86, 214, 0.1)) !important;
       border: 2px solid #007aff !important;
@@ -130,6 +143,8 @@
 
   <!-- API 層：與後端通訊 -->
   <script src="js/api.js"></script>
+  <!-- API 連線狀態共用工具 -->
+  <script src="js/api-status.js"></script>
 </head>
 <body>
   <div class="container mx-auto px-4 py-8">
@@ -147,6 +162,24 @@
     </div>
 
     <div class="max-w-7xl mx-auto space-y-6">
+      <!-- API 連線狀態 -->
+      <div class="card p-4 fade-in" style="animation-delay: 0s">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-3" aria-live="polite">
+              <span id="apiStatusBadge" class="status-badge bg-gray-100 text-gray-600 border-gray-200">尚未檢查</span>
+              <span id="apiStatusMessage" class="text-sm font-medium text-gray-700">尚未檢查 API 連線狀態</span>
+            </div>
+            <p id="apiStatusDetail" class="text-xs text-gray-500">請先完成 Google Apps Script 部署並設定允許此網域存取。</p>
+          </div>
+          <div>
+            <button id="apiStatusButton" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+              <span class="mr-2">🩺</span>測試 API 連線
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- 課程行事曆 -->
       <div class="card p-6 fade-in" style="animation-delay: 0.1s">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -508,6 +541,7 @@
     let selectedTeacherId = null;
     let editingCourseId = null;
     let selectedDate = null;
+    let apiStatusController = null;
 
     // ==================== 工具函數 - 獲取本地日期字串 ====================
     function getLocalDateString(date) {
@@ -519,6 +553,19 @@
 
     // ==================== 初始化 ====================
     async function init() {
+      if (typeof initializeApiStatusCard === 'function' && !apiStatusController) {
+        apiStatusController = initializeApiStatusCard({
+          autoCheckOnInit: false,
+          onManualSuccess() {
+            showSyncStatus('✅ API 連線正常', 'success');
+          },
+          onManualError(message) {
+            showSyncStatus(`❌ API 連線失敗：${message}`, 'error');
+          }
+        });
+        apiStatusController.check(false);
+      }
+
       // 從後端同步資料
       if (typeof initializeDataSync !== 'undefined') {
         try {
