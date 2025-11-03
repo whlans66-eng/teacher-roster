@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>儲存功能測試</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+  <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-6">📝 師資儲存功能測試</h1>
+
+    <div id="status" class="mb-4 p-4 rounded-lg bg-gray-100">
+      <p class="text-gray-600">等待測試...</p>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-2">師資姓名</label>
+        <input type="text" id="teacherName" class="w-full border rounded-lg px-4 py-2" placeholder="輸入姓名" value="測試老師">
+      </div>
+
+      <button onclick="testSave()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700">
+        💾 測試儲存
+      </button>
+
+      <button onclick="testLoad()" class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">
+        📥 測試讀取
+      </button>
+
+      <button onclick="testConnection()" class="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700">
+        🔌 測試連線
+      </button>
+    </div>
+
+    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+      <h3 class="font-medium mb-2">📋 操作記錄</h3>
+      <div id="log" class="text-sm space-y-1 font-mono"></div>
+    </div>
+  </div>
+
+  <script>
+    // API 配置
+    const API_CONFIG = {
+      baseUrl: 'https://script.google.com/macros/s/AKfycbyvyGaNUa7hBc3RRk923DinKuS53SKgfjwQZcfvXlClo3EB2zgaOksj0-re8iKMOT0mew/exec',
+      token: 'tr_demo_12345',
+      timeout: 30000
+    };
+
+    class TestAPI {
+      constructor(config) {
+        this.baseUrl = config.baseUrl;
+        this.token = config.token;
+        this.timeout = config.timeout;
+      }
+
+      async _get(params) {
+        const url = new URL(this.baseUrl);
+        url.searchParams.append('token', this.token);
+        Object.keys(params).forEach(key => {
+          url.searchParams.append(key, params[key]);
+        });
+
+        addLog(`🔄 GET ${url.toString()}`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        try {
+          const response = await fetch(url.toString(), {
+            method: 'GET',
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          addLog(`✅ 回應: ${JSON.stringify(data).substring(0, 100)}...`);
+          return data;
+        } catch (error) {
+          clearTimeout(timeoutId);
+          addLog(`❌ 錯誤: ${error.message}`);
+          throw error;
+        }
+      }
+
+      async _post(data) {
+        addLog(`🔄 POST ${this.baseUrl}`);
+        addLog(`📦 資料: ${JSON.stringify(data).substring(0, 100)}...`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        try {
+          const response = await fetch(this.baseUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              token: this.token,
+              action: data.action,
+              table: data.table || '',
+              data: JSON.stringify(data.data || {})
+            }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          addLog(`✅ 回應: ${JSON.stringify(result)}`);
+          return result;
+        } catch (error) {
+          clearTimeout(timeoutId);
+          addLog(`❌ 錯誤: ${error.message}`);
+          throw error;
+        }
+      }
+
+      async ping() {
+        return await this._get({ action: 'ping' });
+      }
+
+      async list(table) {
+        const response = await this._get({ action: 'list', table });
+        return response.data || [];
+      }
+
+      async save(table, data) {
+        return await this._post({ action: 'save', table, data });
+      }
+    }
+
+    const api = new TestAPI(API_CONFIG);
+
+    function addLog(message) {
+      const log = document.getElementById('log');
+      const entry = document.createElement('div');
+      const time = new Date().toLocaleTimeString();
+      entry.textContent = `[${time}] ${message}`;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function updateStatus(message, type = 'info') {
+      const status = document.getElementById('status');
+      const colors = {
+        info: 'bg-blue-100 text-blue-800',
+        success: 'bg-green-100 text-green-800',
+        error: 'bg-red-100 text-red-800',
+        warning: 'bg-yellow-100 text-yellow-800'
+      };
+      status.className = `mb-4 p-4 rounded-lg ${colors[type]}`;
+      status.innerHTML = `<p class="font-medium">${message}</p>`;
+    }
+
+    async function testConnection() {
+      addLog('=== 開始測試連線 ===');
+      updateStatus('🔌 測試連線中...', 'info');
+
+      try {
+        const result = await api.ping();
+        updateStatus('✅ 連線成功！後端正常運作', 'success');
+        addLog(`連線測試結果: ${JSON.stringify(result)}`);
+      } catch (error) {
+        updateStatus(`❌ 連線失敗: ${error.message}`, 'error');
+        addLog(`連線測試失敗: ${error.message}`);
+      }
+    }
+
+    async function testSave() {
+      const name = document.getElementById('teacherName').value;
+      if (!name) {
+        alert('請輸入師資姓名');
+        return;
+      }
+
+      addLog('=== 開始測試儲存 ===');
+      updateStatus('💾 儲存中...', 'info');
+
+      const testData = [{
+        id: Date.now(),
+        name: name,
+        email: 'test@example.com',
+        teacherType: 'internal',
+        workLocation: 'onshore',
+        photo: '',
+        experiences: ['測試經歷'],
+        certificates: ['測試證書'],
+        subjects: ['測試科目'],
+        tags: ['測試標籤']
+      }];
+
+      try {
+        const result = await api.save('teachers', testData);
+        updateStatus('✅ 儲存成功！', 'success');
+        addLog(`儲存成功: ${JSON.stringify(result)}`);
+      } catch (error) {
+        updateStatus(`❌ 儲存失敗: ${error.message}`, 'error');
+        addLog(`儲存失敗: ${error.message}`);
+      }
+    }
+
+    async function testLoad() {
+      addLog('=== 開始測試讀取 ===');
+      updateStatus('📥 讀取中...', 'info');
+
+      try {
+        const teachers = await api.list('teachers');
+        updateStatus(`✅ 讀取成功！找到 ${teachers.length} 位師資`, 'success');
+        addLog(`讀取成功: 共 ${teachers.length} 筆資料`);
+        if (teachers.length > 0) {
+          addLog(`最新資料: ${JSON.stringify(teachers[teachers.length - 1])}`);
+        }
+      } catch (error) {
+        updateStatus(`❌ 讀取失敗: ${error.message}`, 'error');
+        addLog(`讀取失敗: ${error.message}`);
+      }
+    }
+
+    // 頁面載入時自動測試連線
+    window.addEventListener('DOMContentLoaded', () => {
+      addLog('📱 測試頁面已載入');
+      addLog(`🔧 API URL: ${API_CONFIG.baseUrl}`);
+      addLog(`🔑 Token: ${API_CONFIG.token}`);
+      addLog('');
+      addLog('👆 請點選上方按鈕開始測試');
+    });
+  </script>
+</body>
+</html>
