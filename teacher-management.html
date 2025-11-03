@@ -28,6 +28,8 @@
     .calendar-cell{min-height:110px;border:1px solid rgba(0,0,0,.06);border-radius:12px;transition:all .3s cubic-bezier(0.4,0,0.2,1)}
     .calendar-cell:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.08)}
 
+    .status-badge{display:inline-flex;align-items:center;justify-content:center;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.875rem;font-weight:600;transition:all .2s ease;border-width:1px;border-style:solid}
+
     /* 海事課程系統樣式 */
     .highlight{background-color:#fef3c7;padding:2px 4px;border-radius:3px}
     .chart-container{position:relative;width:280px;height:280px;margin:0 auto;padding:20px}
@@ -114,6 +116,22 @@
           <div class="flex items-center space-x-2">
             <span style="color:#007aff">ℹ️</span>
             <span class="text-sm font-medium" style="color:#007aff">編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
+          </div>
+        </div>
+
+        <!-- API 連線狀態 -->
+        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-3" aria-live="polite">
+              <span id="apiStatusBadge" class="status-badge bg-gray-100 text-gray-600 border-gray-200">尚未檢查</span>
+              <span id="apiStatusMessage" class="text-sm font-medium text-gray-700">尚未檢查 API 連線狀態</span>
+            </div>
+            <p id="apiStatusDetail" class="text-xs text-gray-500">請先完成 Google Apps Script 部署並設定允許此網域存取。</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="apiStatusButton" onclick="checkApiStatus(true)" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+              <span class="mr-2">🩺</span>測試 API 連線
+            </button>
           </div>
         </div>
       </div>
@@ -860,6 +878,140 @@
       }
     }
 
+    /* ---------- API 連線檢查 ---------- */
+    const API_STATUS_CLASSES = {
+      idle: 'status-badge bg-gray-100 text-gray-600 border-gray-200',
+      checking: 'status-badge bg-amber-100 text-amber-700 border-amber-200',
+      success: 'status-badge bg-green-100 text-green-700 border-green-200',
+      error: 'status-badge bg-red-100 text-red-700 border-red-200'
+    };
+
+    const API_STATUS_TEXT = {
+      idle: '尚未檢查',
+      checking: '檢測中',
+      success: '正常',
+      error: '失敗'
+    };
+
+    let apiStatusLastChecked = null;
+
+    function formatDateTimeForStatus(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+      return date.toLocaleString('zh-TW', { hour12: false });
+    }
+
+    function updateApiStatusUI(state, message, detail = '') {
+      const badge = document.getElementById('apiStatusBadge');
+      const messageEl = document.getElementById('apiStatusMessage');
+      const detailEl = document.getElementById('apiStatusDetail');
+      if (!badge || !messageEl || !detailEl) return;
+
+      const badgeClass = API_STATUS_CLASSES[state] || API_STATUS_CLASSES.idle;
+      badge.className = badgeClass;
+      badge.textContent = API_STATUS_TEXT[state] || API_STATUS_TEXT.idle;
+
+      messageEl.textContent = message;
+
+      if (detail) {
+        detailEl.textContent = detail;
+        detailEl.classList.remove('hidden');
+      } else {
+        detailEl.textContent = '';
+        detailEl.classList.add('hidden');
+      }
+    }
+
+    function setApiStatusButtonLoading(isLoading) {
+      const button = document.getElementById('apiStatusButton');
+      if (!button) return;
+
+      if (isLoading) {
+        button.disabled = true;
+        button.classList.add('opacity-60', 'cursor-not-allowed');
+        button.innerHTML = '<span class="mr-2">⏳</span>檢測中...';
+      } else {
+        button.disabled = false;
+        button.classList.remove('opacity-60', 'cursor-not-allowed');
+        button.innerHTML = '<span class="mr-2">🩺</span>測試 API 連線';
+      }
+    }
+
+    function buildBaseDetailMessage() {
+      if (typeof API_CONFIG !== 'undefined' && API_CONFIG?.baseUrl) {
+        return `目前設定的 API URL：${API_CONFIG.baseUrl}`;
+      }
+      return '請先完成 Google Apps Script 部署並設定允許此網域存取。';
+    }
+
+    function setupApiStatusUI() {
+      updateApiStatusUI('idle', '尚未檢查 API 連線狀態', buildBaseDetailMessage());
+    }
+
+    async function handleApiStatusCheck(manual = false) {
+      if (typeof api === 'undefined' || !api?.ping) {
+        updateApiStatusUI('error', 'API 尚未初始化', '請確認 js/api.js 已正確載入。');
+        if (manual) {
+          showSyncStatus('❌ API 尚未初始化，請檢查 js/api.js 是否載入成功', 'error');
+        }
+        return;
+      }
+
+      setApiStatusButtonLoading(true);
+      updateApiStatusUI('checking', '正在測試 API 連線...', '請稍候，通常會在 1 秒內完成檢查。');
+
+      const startedAt = performance.now();
+
+      try {
+        const result = await api.ping();
+
+        if (!result?.ok) {
+          throw new Error(result?.error || 'API 回應未標示 ok');
+        }
+
+        const elapsed = Math.round(performance.now() - startedAt);
+        apiStatusLastChecked = new Date();
+
+        const detailParts = [
+          `最後檢查時間：${formatDateTimeForStatus(apiStatusLastChecked)}`,
+          `延遲：約 ${elapsed} ms`
+        ];
+
+        if (result?.timestamp) {
+          const serverTime = formatDateTimeForStatus(new Date(result.timestamp));
+          if (serverTime) {
+            detailParts.push(`伺服器時間：${serverTime}`);
+          }
+        }
+
+        if (typeof API_CONFIG !== 'undefined' && API_CONFIG?.baseUrl) {
+          detailParts.push(`目前 API URL：${API_CONFIG.baseUrl}`);
+        }
+
+        updateApiStatusUI('success', 'API 連線正常', detailParts.join('｜'));
+
+        if (manual) {
+          showSyncStatus('✅ API 連線正常', 'success');
+        }
+      } catch (error) {
+        const errorMessage = error?.message || String(error);
+        const detailParts = [`原因：${errorMessage}`];
+
+        if (typeof API_CONFIG !== 'undefined' && API_CONFIG?.baseUrl) {
+          detailParts.push(`目前 API URL：${API_CONFIG.baseUrl}`);
+        }
+
+        updateApiStatusUI('error', 'API 連線失敗', detailParts.join('｜'));
+
+        if (manual) {
+          showSyncStatus(`❌ API 連線失敗：${errorMessage}`, 'error');
+        }
+      } finally {
+        setApiStatusButtonLoading(false);
+      }
+    }
+
+    window.checkApiStatus = handleApiStatusCheck;
+
     /* ---------- 正常化 ---------- */
     function normalize(list){
       if (!Array.isArray(list)) return [];
@@ -949,6 +1101,9 @@
 
     /* ---------- 啟動 ---------- */
     document.addEventListener('DOMContentLoaded', async () => {
+      setupApiStatusUI();
+      handleApiStatusCheck(false);
+
       renderTeacherGrid();
       setupLocationSelection();
 

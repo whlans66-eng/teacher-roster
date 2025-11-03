@@ -146,7 +146,17 @@ class TeacherRosterAPI {
       });
 
       clearTimeout(timeoutId);
-      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`後端回傳狀態碼 ${response.status}`);
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('後端回應不是 JSON 格式，請確認 Apps Script 是否有回傳 JSON');
+      }
 
       if (!result.ok) {
         throw new Error(result.error || '請求失敗');
@@ -157,6 +167,9 @@ class TeacherRosterAPI {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
         throw new Error('請求超時');
+      }
+      if (error instanceof TypeError) {
+        throw new Error('無法連線到 API，可能是 CORS 或網路連線問題：' + error.message);
       }
       throw error;
     }
@@ -188,7 +201,17 @@ class TeacherRosterAPI {
       });
 
       clearTimeout(timeoutId);
-      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`後端回傳狀態碼 ${response.status}`);
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('後端回應不是 JSON 格式，請確認 Apps Script 是否有回傳 JSON');
+      }
 
       if (!result.ok) {
         throw new Error(result.error || '請求失敗');
@@ -199,6 +222,9 @@ class TeacherRosterAPI {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
         throw new Error('請求超時');
+      }
+      if (error instanceof TypeError) {
+        throw new Error('無法連線到 API，可能是 CORS 或網路連線問題：' + error.message);
       }
       throw error;
     }
