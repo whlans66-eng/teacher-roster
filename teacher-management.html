@@ -2137,21 +2137,29 @@ grid.appendChild(cell);
     if (!api) return;
     try {
       const data = await api.list('courseAssignments');
-      if (Array.isArray(data) && data.length > 0) {
-        courseAssignments = data;
-        localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
-        console.log('✅ 派課數據已從後端載入，共', data.length, '筆');
+      if (Array.isArray(data)) {
+        if (data.length > 0) {
+          courseAssignments = data;
+          localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+          console.log('✅ 派課數據已從後端載入，共', data.length, '筆');
 
-        // 同步到行事曆
-        syncCourseAssignmentsToCalendar();
+          // 同步到行事曆
+          syncCourseAssignmentsToCalendar();
 
-        // 如果正在顯示派課視圖，則更新顯示
-        if (currentMode === 'courses') {
-          updateCourseView();
+          // 如果正在顯示派課視圖，則更新顯示
+          if (currentMode === 'courses') {
+            updateCourseView();
+          }
+        } else {
+          console.log('📝 後端派課數據為空');
         }
       }
     } catch (error) {
       console.warn('⚠️ 無法從後端載入派課數據，使用本地數據:', error);
+      // 使用本地數據
+      if (courseAssignments.length > 0) {
+        console.log('📌 使用本地派課數據，共', courseAssignments.length, '筆');
+      }
     }
   }
 
@@ -2199,6 +2207,11 @@ grid.appendChild(cell);
 
     // 初始化日期
     initCourseDates();
+
+    // 更新課程視圖（如果已選擇師資）
+    if (currentCourseTeacherId) {
+      updateCourseView();
+    }
   }
 
   // 返回師資列表
@@ -2263,6 +2276,9 @@ grid.appendChild(cell);
     currentCourseStartDate = document.getElementById('courseStartDate').value;
     currentCourseEndDate = document.getElementById('courseEndDate').value;
 
+    console.log('🔄 更新課程視圖 - 師資ID:', currentCourseTeacherId, '日期範圍:', currentCourseStartDate, '~', currentCourseEndDate);
+    console.log('📦 當前 courseAssignments 總數:', courseAssignments.length);
+
     if (!currentCourseTeacherId) {
       document.getElementById('courseTimeline').innerHTML = '<div class="text-center text-gray-500 py-12">請選擇師資以查看課程</div>';
       document.getElementById('courseTotalHours').textContent = '0';
@@ -2303,6 +2319,8 @@ grid.appendChild(cell);
   function updateCourseStats() {
     const filteredCourses = getFilteredCourses(currentCourseTeacherId);
 
+    console.log('🔍 更新統計 - 師資ID:', currentCourseTeacherId, '過濾後課程數:', filteredCourses.length);
+
     // 總時數
     const totalHours = filteredCourses.reduce((sum, course) => {
       return sum + calculateCourseHours(course.time);
@@ -2317,7 +2335,7 @@ grid.appendChild(cell);
     const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
 
     const monthCourses = courseAssignments.filter(course => {
-      return course.teacherId === currentCourseTeacherId &&
+      return Number(course.teacherId) === Number(currentCourseTeacherId) &&
              course.date >= monthStart &&
              course.date <= monthEnd;
     });
@@ -2329,8 +2347,10 @@ grid.appendChild(cell);
     // 今日課程
     const todayStr = today.toISOString().split('T')[0];
     const todayCourses = courseAssignments.filter(course => {
-      return course.teacherId === currentCourseTeacherId && course.date === todayStr;
+      return Number(course.teacherId) === Number(currentCourseTeacherId) && course.date === todayStr;
     }).length;
+
+    console.log('📊 統計結果 - 總時數:', totalHours, '總課程數:', totalCount, '本月時數:', monthlyHours, '今日課程:', todayCourses);
 
     document.getElementById('courseTotalHours').textContent = Math.round(totalHours);
     document.getElementById('courseTotalCount').textContent = totalCount;
@@ -2343,9 +2363,13 @@ grid.appendChild(cell);
     const filteredCourses = getFilteredCourses(currentCourseTeacherId);
     const typeCount = {};
 
+    console.log('🎨 渲染課程類型卡片 - 課程數:', filteredCourses.length);
+
     filteredCourses.forEach(course => {
       typeCount[course.type] = (typeCount[course.type] || 0) + 1;
     });
+
+    console.log('📈 課程類型統計:', typeCount);
 
     const colors = {
       '正課': { from: 'from-blue-500', to: 'to-blue-600' },
@@ -2357,6 +2381,12 @@ grid.appendChild(cell);
 
     const total = Object.values(typeCount).reduce((a, b) => a + b, 0);
     const container = document.getElementById('courseTypeCards');
+
+    if (!container) {
+      console.error('❌ 找不到 courseTypeCards 容器');
+      return;
+    }
+
     container.innerHTML = '';
 
     Object.entries(typeCount).forEach(([type, count]) => {
