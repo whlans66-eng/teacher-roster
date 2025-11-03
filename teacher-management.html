@@ -2362,14 +2362,20 @@ grid.appendChild(cell);
 
     const filtered = courseAssignments.filter(course => {
       const matchTeacher = Number(course.teacherId) === Number(teacherId);
-      const inDateRange = (!currentCourseStartDate || !currentCourseEndDate) ||
-                         (course.date >= currentCourseStartDate && course.date <= currentCourseEndDate);
+
+      // ✨ 修復：如果沒有設定日期範圍，顯示所有日期
+      let inDateRange = true;
+      if (currentCourseStartDate && currentCourseEndDate) {
+        inDateRange = (course.date >= currentCourseStartDate && course.date <= currentCourseEndDate);
+      }
 
       // 詳細記錄不匹配的原因
       if (!matchTeacher) {
         console.log(`  ✗ 課程 ${course.name} - 師資不匹配 (${course.teacherId} !== ${teacherId})`);
       } else if (!inDateRange) {
-        console.log(`  ✗ 課程 ${course.name} - 日期超出範圍 (${course.date})`);
+        console.log(`  ✗ 課程 ${course.name} (${course.date}) - 日期超出範圍 [${currentCourseStartDate} ~ ${currentCourseEndDate}]`);
+      } else {
+        console.log(`  ✓ 課程 ${course.name} (${course.date}) - 匹配成功`);
       }
 
       return matchTeacher && inDateRange;
