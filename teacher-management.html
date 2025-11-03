@@ -961,19 +961,51 @@
       }
     }
 
+    function markLocalChanges() {
+      if (typeof syncManager !== 'undefined' && typeof syncManager.markAsChanged === 'function') {
+        syncManager.markAsChanged();
+      } else {
+        localStorage.setItem('hasLocalChanges', 'true');
+      }
+    }
+
     function scheduleCloudSave(){
+      markLocalChanges();
       if(!api) return;
       if(syncTimer) clearTimeout(syncTimer);
       syncTimer = setTimeout(doCloudSave, SYNC_DEBOUNCE_MS);
     }
     async function doCloudSave(){
       if(syncing){ syncAgain=true; return; }
+      if(!api){ return; }
+      syncTimer = null;
       syncing = true;
       try{
-        await api.save('teachers', teachers);
-        console.log('✅ 師資資料已同步到雲端');
+        if (typeof syncManager !== 'undefined' && typeof syncManager.saveToBackendSafe === 'function') {
+          const result = await syncManager.saveToBackendSafe();
+          if (result?.conflict) {
+            const warningMessage = `⚠️ ${result.message}`;
+            console.warn('雲端靜默上傳偵測到衝突：', result.message);
+            if (typeof showSyncStatus === 'function') {
+              showSyncStatus(warningMessage, 'warning');
+            }
+          } else if (result?.success) {
+            console.log('✅ 師資資料已安全儲存到雲端');
+            if (typeof showSyncStatus === 'function') {
+              showSyncStatus('✅ 師資資料已安全儲存到雲端', 'success');
+            }
+          } else if (result?.skipped) {
+            console.log('⏭️ 本地無修改，略過雲端儲存');
+          }
+        } else {
+          await api.save('teachers', teachers);
+          console.log('✅ 師資資料已同步到雲端');
+        }
       }catch(e){
         console.warn('雲端靜默上傳失敗：', e);
+        if (typeof showSyncStatus === 'function') {
+          showSyncStatus('❌ 雲端靜默上傳失敗：' + e.message, 'error');
+        }
       }finally{
         syncing=false;
         if(syncAgain){ syncAgain=false; scheduleCloudSave(); }
