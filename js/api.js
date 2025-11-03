@@ -170,15 +170,20 @@ class TeacherRosterAPI {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
+      const body = new URLSearchParams();
+      body.append('token', this.token);
+      Object.entries(data).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+        const serialized = (typeof value === 'object') ? JSON.stringify(value) : value;
+        body.append(key, serialized);
+      });
+
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
         },
-        body: JSON.stringify({
-          token: this.token,
-          ...data
-        }),
+        body: body.toString(),
         signal: controller.signal
       });
 
