@@ -183,32 +183,30 @@ class TeacherRosterAPI {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      const formData = new FormData();
-      formData.append('token', this.token);
+      const body = new URLSearchParams();
+      body.append('token', this.token);
 
       Object.entries(data || {}).forEach(([key, value]) => {
-        if (value === undefined) return;
+        if (value === undefined || value === null) return;
+        const serialized = (value instanceof Blob || value instanceof File)
+          ? value
+          : (typeof value === 'object' ? JSON.stringify(value) : value);
 
         if (value instanceof Blob || value instanceof File) {
-          formData.append(key, value);
-          return;
+          // URLSearchParams 不支援二進位資料，因此跳過，交由後端透過其他流程處理
+          throw new Error('POST 請求不支援 Blob/File 型別，請改用 uploadFile');
         }
 
-        if (value !== null && typeof value === 'object') {
-          formData.append(key, JSON.stringify(value));
-          return;
-        }
-
-        formData.append(key, value == null ? '' : String(value));
+        body.append(key, typeof serialized === 'string' ? serialized : String(serialized));
       });
 
-      // NOTE: Apps Script Web App 必須回傳 Access-Control-Allow-Origin 標頭，
-      // 否則瀏覽器仍會在這裡拋出 CORS 錯誤；請依部署指南重新發布 Web App。
       const response = await fetch(this.baseUrl, {
         method: 'POST',
-        body: formData,
-        signal: controller.signal,
-        mode: 'cors'
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+        },
+        body: body.toString(),
+        signal: controller.signal
       });
 
       clearTimeout(timeoutId);
