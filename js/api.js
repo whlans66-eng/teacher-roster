@@ -183,19 +183,19 @@ class TeacherRosterAPI {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      const body = new URLSearchParams();
-      body.append('token', this.token);
-      Object.entries(data).forEach(([key, value]) => {
-        if (value === undefined || value === null) return;
-        const serialized = (typeof value === 'object') ? JSON.stringify(value) : value;
-        body.append(key, serialized);
+      const payload = JSON.stringify({
+        token: this.token,
+        ...data
       });
 
-      // 直接傳遞 URLSearchParams，讓瀏覽器自動套用 application/x-www-form-urlencoded
-      // 這樣可避免額外自訂標頭而觸發 CORS Preflight 檢查。
+      // 使用 text/plain 讓瀏覽器視為「簡單請求」，避免觸發 CORS Preflight，
+      // 同時仍以 JSON 格式傳遞資料，與 Apps Script 端的解析邏輯相容。
       const response = await fetch(this.baseUrl, {
         method: 'POST',
-        body,
+        headers: {
+          'Content-Type': 'text/plain;charset=UTF-8'
+        },
+        body: payload,
         signal: controller.signal
       });
 
