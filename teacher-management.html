@@ -1113,6 +1113,10 @@
         saveLocalSilently();
         renderTeacherGrid();
       }
+
+      // 載入派課數據和海事課程數據
+      await loadCourseAssignmentsFromBackend();
+      await loadMaritimeCoursesFromBackend();
     });
 
     /* ---------- 互動 ---------- */
@@ -2123,6 +2127,25 @@ grid.appendChild(cell);
   let currentCourseStartDate = null;
   let currentCourseEndDate = null;
 
+  // 從後端載入派課數據
+  async function loadCourseAssignmentsFromBackend() {
+    if (!api) return;
+    try {
+      const data = await api.list('courseAssignments');
+      if (Array.isArray(data) && data.length > 0) {
+        courseAssignments = data;
+        localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+        console.log('✅ 派課數據已從後端載入，共', data.length, '筆');
+        // 如果正在顯示派課視圖，則更新顯示
+        if (currentMode === 'courses') {
+          updateCourseView();
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ 無法從後端載入派課數據，使用本地數據:', error);
+    }
+  }
+
   // 顯示派課管理視圖
   function showCourseManagementView() {
     document.getElementById('teacherList').classList.add('hidden');
@@ -2474,13 +2497,26 @@ grid.appendChild(cell);
     alert('✅ 課程已刪除，已同步更新行事曆');
   }
 
-  // 儲存到 localStorage
+  // 儲存到 localStorage 和後端
   function saveCourseLocal() {
     try {
       localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+      // 同步到後端
+      saveCourseToBackend();
     } catch(err) {
       console.warn('localStorage 超額，課程數據保存失敗：', err);
       alert('存儲空間已滿，課程數據可能無法保存，請刪除部分數據');
+    }
+  }
+
+  // 儲存派課數據到後端
+  async function saveCourseToBackend() {
+    if (!api || !syncManager) return;
+    try {
+      await syncManager.saveTable('courseAssignments');
+      console.log('✅ 派課數據已同步到後端');
+    } catch (error) {
+      console.warn('⚠️ 派課數據後端同步失敗:', error);
     }
   }
 
@@ -2883,9 +2919,42 @@ grid.appendChild(cell);
     saveMaritimeCourses();
   }
 
-  // 儲存課程資料
+  // 儲存課程資料到 localStorage 和後端
   function saveMaritimeCourses() {
     localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+    // 同步到後端
+    saveMaritimeCoursesToBackend();
+  }
+
+  // 儲存海事課程數據到後端
+  async function saveMaritimeCoursesToBackend() {
+    if (!api || !syncManager) return;
+    try {
+      await syncManager.saveTable('maritimeCourses');
+      console.log('✅ 海事課程數據已同步到後端');
+    } catch (error) {
+      console.warn('⚠️ 海事課程數據後端同步失敗:', error);
+    }
+  }
+
+  // 從後端載入海事課程數據
+  async function loadMaritimeCoursesFromBackend() {
+    if (!api) return;
+    try {
+      const data = await api.list('maritimeCourses');
+      if (Array.isArray(data) && data.length > 0) {
+        maritimeCourses = data;
+        localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+        console.log('✅ 海事課程數據已從後端載入，共', data.length, '筆');
+        // 更新顯示（如果正在海事課程頁面）
+        if (window.location.hash === '#maritime') {
+          displayMaritimeCourses();
+          displayManageMaritimeCourses();
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ 無法從後端載入海事課程數據，使用本地數據:', error);
+    }
   }
 
   // 頁面切換功能
