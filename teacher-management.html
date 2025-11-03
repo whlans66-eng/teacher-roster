@@ -1114,12 +1114,29 @@
         renderTeacherGrid();
       }
 
-      // 載入派課數據和海事課程數據
+      // ✨ 重要：從 localStorage 重新載入派課和海事課程數據
+      // 因為 cloudLoadSilent() 可能已經通過 syncManager 更新了 localStorage
+      console.log('🔄 重新載入派課和海事課程數據...');
+      const localCourses = localStorage.getItem('courseAssignments');
+      const localMaritime = localStorage.getItem('maritimeCourses');
+
+      if (localCourses) {
+        courseAssignments = JSON.parse(localCourses);
+        console.log('📦 從 localStorage 載入派課數據，共', courseAssignments.length, '筆');
+      }
+
+      if (localMaritime) {
+        maritimeCourses = JSON.parse(localMaritime);
+        console.log('📦 從 localStorage 載入海事課程數據，共', maritimeCourses.length, '筆');
+      }
+
+      // 再次嘗試從後端載入（如果有更新的數據）
       await loadCourseAssignmentsFromBackend();
       await loadMaritimeCoursesFromBackend();
 
-      // 如果從後端沒載入到數據，但本地有數據，也要同步到行事曆
+      // 同步到行事曆
       if (courseAssignments.length > 0) {
+        console.log('📅 同步派課數據到行事曆...');
         syncCourseAssignmentsToCalendar();
       }
     });
@@ -2134,14 +2151,20 @@ grid.appendChild(cell);
 
   // 從後端載入派課數據
   async function loadCourseAssignmentsFromBackend() {
-    if (!api) return;
+    if (!api) {
+      console.log('⚠️ API 未初始化，跳過從後端載入');
+      return;
+    }
+
     try {
+      console.log('🌐 嘗試從後端 API 載入派課數據...');
       const data = await api.list('courseAssignments');
+
       if (Array.isArray(data)) {
         if (data.length > 0) {
+          console.log('✅ 從後端 API 載入派課數據成功，共', data.length, '筆');
           courseAssignments = data;
           localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
-          console.log('✅ 派課數據已從後端載入，共', data.length, '筆');
 
           // 同步到行事曆
           syncCourseAssignmentsToCalendar();
@@ -2151,14 +2174,20 @@ grid.appendChild(cell);
             updateCourseView();
           }
         } else {
-          console.log('📝 後端派課數據為空');
+          console.log('📝 後端 API 返回空的派課數據');
+          // 不要清空本地數據，保持現有的 courseAssignments
+          if (courseAssignments.length > 0) {
+            console.log('📌 保留本地派課數據，共', courseAssignments.length, '筆');
+          }
         }
       }
     } catch (error) {
-      console.warn('⚠️ 無法從後端載入派課數據，使用本地數據:', error);
+      console.warn('⚠️ 從後端 API 載入派課數據失敗:', error.message);
       // 使用本地數據
       if (courseAssignments.length > 0) {
         console.log('📌 使用本地派課數據，共', courseAssignments.length, '筆');
+      } else {
+        console.warn('❌ 沒有本地數據可用');
       }
     }
   }
@@ -3108,21 +3137,41 @@ grid.appendChild(cell);
 
   // 從後端載入海事課程數據
   async function loadMaritimeCoursesFromBackend() {
-    if (!api) return;
+    if (!api) {
+      console.log('⚠️ API 未初始化，跳過從後端載入海事課程');
+      return;
+    }
+
     try {
+      console.log('🌐 嘗試從後端 API 載入海事課程數據...');
       const data = await api.list('maritimeCourses');
-      if (Array.isArray(data) && data.length > 0) {
-        maritimeCourses = data;
-        localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
-        console.log('✅ 海事課程數據已從後端載入，共', data.length, '筆');
-        // 更新顯示（如果正在海事課程頁面）
-        if (window.location.hash === '#maritime') {
-          displayMaritimeCourses();
-          displayManageMaritimeCourses();
+
+      if (Array.isArray(data)) {
+        if (data.length > 0) {
+          console.log('✅ 從後端 API 載入海事課程數據成功，共', data.length, '筆');
+          maritimeCourses = data;
+          localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+
+          // 更新顯示（如果正在海事課程頁面）
+          if (window.location.hash === '#maritime') {
+            displayMaritimeCourses();
+            displayManageMaritimeCourses();
+          }
+        } else {
+          console.log('📝 後端 API 返回空的海事課程數據');
+          // 不要清空本地數據
+          if (maritimeCourses.length > 0) {
+            console.log('📌 保留本地海事課程數據，共', maritimeCourses.length, '筆');
+          }
         }
       }
     } catch (error) {
-      console.warn('⚠️ 無法從後端載入海事課程數據，使用本地數據:', error);
+      console.warn('⚠️ 從後端 API 載入海事課程數據失敗:', error.message);
+      if (maritimeCourses.length > 0) {
+        console.log('📌 使用本地海事課程數據，共', maritimeCourses.length, '筆');
+      } else {
+        console.warn('❌ 沒有本地海事課程數據可用');
+      }
     }
   }
 
