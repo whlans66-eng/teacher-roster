@@ -146,7 +146,17 @@ class TeacherRosterAPI {
       });
 
       clearTimeout(timeoutId);
-      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`後端回傳狀態碼 ${response.status}`);
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('後端回應不是 JSON 格式，請確認 Apps Script 是否有回傳 JSON');
+      }
 
       if (!result.ok) {
         throw new Error(result.error || '請求失敗');
@@ -157,6 +167,9 @@ class TeacherRosterAPI {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
         throw new Error('請求超時');
+      }
+      if (error instanceof TypeError) {
+        throw new Error('無法連線到 API，可能是 CORS 或網路連線問題：' + error.message);
       }
       throw error;
     }
@@ -170,20 +183,46 @@ class TeacherRosterAPI {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
+      const formData = new FormData();
+      formData.append('token', this.token);
+
+      Object.entries(data || {}).forEach(([key, value]) => {
+        if (value === undefined) return;
+
+        if (value instanceof Blob || value instanceof File) {
+          formData.append(key, value);
+          return;
+        }
+
+        if (value !== null && typeof value === 'object') {
+          formData.append(key, JSON.stringify(value));
+          return;
+        }
+
+        formData.append(key, value == null ? '' : String(value));
+      });
+
+      // NOTE: Apps Script Web App 必須回傳 Access-Control-Allow-Origin 標頭，
+      // 否則瀏覽器仍會在這裡拋出 CORS 錯誤；請依部署指南重新發布 Web App。
       const response = await fetch(this.baseUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          token: this.token,
-          ...data
-        }),
-        signal: controller.signal
+        body: formData,
+        signal: controller.signal,
+        mode: 'cors'
       });
 
       clearTimeout(timeoutId);
-      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`後端回傳狀態碼 ${response.status}`);
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('後端回應不是 JSON 格式，請確認 Apps Script 是否有回傳 JSON');
+      }
 
       if (!result.ok) {
         throw new Error(result.error || '請求失敗');
@@ -194,6 +233,9 @@ class TeacherRosterAPI {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
         throw new Error('請求超時');
+      }
+      if (error instanceof TypeError) {
+        throw new Error('無法連線到 API，可能是 CORS 或網路連線問題：' + error.message);
       }
       throw error;
     }

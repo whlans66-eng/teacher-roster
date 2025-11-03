@@ -28,6 +28,8 @@
     .calendar-cell{min-height:110px;border:1px solid rgba(0,0,0,.06);border-radius:12px;transition:all .3s cubic-bezier(0.4,0,0.2,1)}
     .calendar-cell:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.08)}
 
+    .status-badge{display:inline-flex;align-items:center;justify-content:center;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.875rem;font-weight:600;transition:all .2s ease;border-width:1px;border-style:solid}
+
     /* 海事課程系統樣式 */
     .highlight{background-color:#fef3c7;padding:2px 4px;border-radius:3px}
     .chart-container{position:relative;width:280px;height:280px;margin:0 auto;padding:20px}
@@ -53,6 +55,8 @@
 
   <!-- API 層：與後端通訊 -->
   <script src="js/api.js"></script>
+  <!-- API 連線狀態共用工具 -->
+  <script src="js/api-status.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
   <div class="container mx-auto px-4 py-8">
@@ -114,6 +118,22 @@
           <div class="flex items-center space-x-2">
             <span style="color:#007aff">ℹ️</span>
             <span class="text-sm font-medium" style="color:#007aff">編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
+          </div>
+        </div>
+
+        <!-- API 連線狀態 -->
+        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-3" aria-live="polite">
+              <span id="apiStatusBadge" class="status-badge bg-gray-100 text-gray-600 border-gray-200">尚未檢查</span>
+              <span id="apiStatusMessage" class="text-sm font-medium text-gray-700">尚未檢查 API 連線狀態</span>
+            </div>
+            <p id="apiStatusDetail" class="text-xs text-gray-500">請先完成 Google Apps Script 部署並設定允許此網域存取。</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="apiStatusButton" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+              <span class="mr-2">🩺</span>測試 API 連線
+            </button>
           </div>
         </div>
       </div>
@@ -860,6 +880,30 @@
       }
     }
 
+    /* ---------- API 連線檢查 ---------- */
+    let apiStatusController = null;
+
+    function initApiStatusCard() {
+      if (typeof initializeApiStatusCard !== 'function') {
+        console.warn('initializeApiStatusCard 未載入，無法顯示 API 連線狀態卡片');
+        return;
+      }
+
+      if (!apiStatusController) {
+        apiStatusController = initializeApiStatusCard({
+          autoCheckOnInit: false,
+          onManualSuccess() {
+            showSyncStatus('✅ API 連線正常', 'success');
+          },
+          onManualError(message) {
+            showSyncStatus(`❌ API 連線失敗：${message}`, 'error');
+          }
+        });
+      }
+
+      apiStatusController.check(false);
+    }
+
     /* ---------- 正常化 ---------- */
     function normalize(list){
       if (!Array.isArray(list)) return [];
@@ -949,6 +993,9 @@
 
     /* ---------- 啟動 ---------- */
     document.addEventListener('DOMContentLoaded', async () => {
+      // 初始化 API 連線檢測，提示使用者需要的 CORS 設定
+      initApiStatusCard();
+
       renderTeacherGrid();
       setupLocationSelection();
 
