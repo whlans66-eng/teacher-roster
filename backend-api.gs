@@ -11,15 +11,13 @@
  *****/
 
 /***** 設定區 *****/
-const TOKEN      = 'tr_demo_12345';  // 要與前端一致，建議改成你自己的密碼
-const SHEET_ID   = '1CPhI67yZt1W6FLV9Q02gjyJsdTP79pgUAc27ZZw3nJ4';  // 你的試算表 ID
-const FOLDER_ID  = '1coJ2wsBu7I4qvM5eyViIu16POgEQL71n';  // Google Drive 資料夾 ID（用於上傳檔案）
+const TOKEN      = 'tr_demo_12345';
+const SHEET_ID   = '1CPhI67yZt1W6FLV9Q02gjyJsdTP79pgUAc27ZZw3nJ4';
+const FOLDER_ID  = '1coJ2wsBu7I4qvM5eyViIu16POgEQL71n';
 
-// 三個資料表的名稱和標頭
 const SHEETS_CONFIG = {
   teachers: {
     name: 'teachers',
-    // 注意：photoUrl 欄位在前端會自動對應到 photo 欄位
     header: ['id','name','email','teacherType','workLocation','photoUrl','experiences','certificates','subjects','tags']
   },
   courseAssignments: {
@@ -32,7 +30,6 @@ const SHEETS_CONFIG = {
   }
 };
 
-/***** 入口：GET（讀取/連線測試） *****/
 function doGet(e) {
   try {
     const p = e?.parameter || {};
@@ -40,17 +37,14 @@ function doGet(e) {
     const action = String(p.action || '').toLowerCase();
     const table = String(p.table || '').toLowerCase();
 
-    // 測試連線
     if (action === 'ping') {
       return _json({ ok: true, timestamp: new Date().toISOString(), server: 'Google Apps Script' });
     }
 
-    // 讀取特定表格
     if (action === 'list' && table && SHEETS_CONFIG[table]) {
       return _json({ ok: true, table: table, data: _readTable(table) });
     }
 
-    // 讀取所有表格
     if (action === 'listall') {
       const allData = {};
       Object.keys(SHEETS_CONFIG).forEach(tableName => {
@@ -65,7 +59,6 @@ function doGet(e) {
   }
 }
 
-/***** 入口：POST（儲存/上傳） *****/
 function doPost(e) {
   try {
     const p = e?.parameter || {};
@@ -73,7 +66,6 @@ function doPost(e) {
     let action = String(p.action || '').toLowerCase();
     let bodyObj = null;
 
-    // 解析 JSON body
     if (/json|text\/plain/i.test(postType)) {
       try {
         bodyObj = JSON.parse(e.postData.contents || e.postData.getDataAsString() || '{}');
@@ -84,7 +76,6 @@ function doPost(e) {
 
     _checkToken(p.token);
 
-    // 儲存特定表格的所有資料
     if (action === 'save') {
       const table = p.table || (bodyObj && bodyObj.table);
       const dataRaw = p.data || (bodyObj && bodyObj.data);
@@ -96,11 +87,9 @@ function doPost(e) {
       let data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
       data = _asArray(data);
 
-      // 針對不同表格做資料驗證和轉換
       if (table === 'teachers') {
         data = data.map(t => ({
           ...t,
-          // 統一欄位名稱：前端用 photo，後端用 photoUrl
           photoUrl: t.photoUrl || t.photo || '',
           experiences: _asArray(t?.experiences),
           certificates: _asArray(t?.certificates),
@@ -118,13 +107,11 @@ function doPost(e) {
       return _json({ ok: true, table: table, count: data.length });
     }
 
-    // 上傳檔案
     if (action === 'uploadfile') {
       const result = _handleUpload(e, bodyObj);
       return _json({ ok: true, ...result });
     }
 
-    // 除錯資訊
     if (action === 'debug') {
       const info = {
         hasPostData: !!e.postData,
@@ -141,16 +128,20 @@ function doPost(e) {
   }
 }
 
-/***** 入口：OPTIONS（CORS Preflight） *****/
+/**
+ * 處理 CORS Preflight (預檢) 請求
+ * 必須正確回傳 Access-Control-Allow-* 標頭
+ */
 function doOptions(e) {
-  return _json({ ok: true, message: 'CORS preflight OK' });
+  return ContentService.createTextOutput()
+    .addHeader("Access-Control-Allow-Origin", "*")
+    .addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    .addHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
-/***** 檔案上傳處理 *****/
 function _handleUpload(e, bodyObj) {
   let blob = null;
 
-  // A) 解析 multipart/form-data
   if (e && e.postData) {
     const raw   = e.postData.contents || e.postData.getDataAsString();
     const ctype = e.postData.type || 'multipart/form-data';
@@ -171,7 +162,6 @@ function _handleUpload(e, bodyObj) {
     } catch (_) {}
   }
 
-  // B) 後備：dataUrl (Base64)
   if (!blob && bodyObj && bodyObj.dataUrl) {
     const fname = String(bodyObj.fileName || 'upload_' + Date.now());
     blob = _dataUrlToBlob(bodyObj.dataUrl, fname);
@@ -179,7 +169,6 @@ function _handleUpload(e, bodyObj) {
 
   if (!blob) throw new Error('No file found');
 
-  // 上傳到 Google Drive
   const folder = DriveApp.getFolderById(FOLDER_ID);
   const file   = folder.createFile(blob);
   try {
@@ -196,7 +185,6 @@ function _handleUpload(e, bodyObj) {
   };
 }
 
-/***** Base64 DataURL 轉 Blob *****/
 function _dataUrlToBlob(dataUrl, fileName) {
   const i = dataUrl.indexOf(',');
   if (i < 0) throw new Error('Invalid dataUrl');
@@ -208,7 +196,6 @@ function _dataUrlToBlob(dataUrl, fileName) {
   return Utilities.newBlob(bytes, mime, fileName);
 }
 
-/***** 試算表操作 - 通用讀取 *****/
 function _readTable(tableName) {
   const config = SHEETS_CONFIG[tableName];
   if (!config) throw new Error('Unknown table: ' + tableName);
@@ -226,7 +213,6 @@ function _readTable(tableName) {
     const obj = {};
     header.forEach((key, i) => {
       const val = row[idx[key]];
-      // 自動解析 JSON 陣列欄位
       if (['experiences', 'certificates', 'subjects', 'tags', 'keywords'].includes(key)) {
         obj[key] = _asArray(val);
       } else {
@@ -234,7 +220,6 @@ function _readTable(tableName) {
       }
     });
 
-    // 為了前端相容性，同時提供 photo 和 photoUrl
     if (tableName === 'teachers' && obj.photoUrl) {
       obj.photo = obj.photoUrl;
     }
@@ -243,7 +228,6 @@ function _readTable(tableName) {
   });
 }
 
-/***** 試算表操作 - 通用寫入 *****/
 function _writeTable(tableName, dataArray) {
   const config = SHEETS_CONFIG[tableName];
   if (!config) throw new Error('Unknown table: ' + tableName);
@@ -252,7 +236,6 @@ function _writeTable(tableName, dataArray) {
   const idx = _headerIndex(sh, config.header);
   const header = config.header;
 
-  // 清空舊資料（保留表頭）
   const lastRow = sh.getLastRow();
   if (lastRow > 1) {
     sh.getRange(2, 1, lastRow - 1, idx._len).clearContent();
@@ -260,12 +243,10 @@ function _writeTable(tableName, dataArray) {
 
   if (!dataArray || dataArray.length === 0) return;
 
-  // 組裝 rows
   const rows = dataArray.map(item => {
     const row = new Array(idx._len).fill('');
     header.forEach((key, i) => {
       const val = item[key];
-      // 陣列欄位轉 JSON 字串
       if (['experiences', 'certificates', 'subjects', 'tags', 'keywords'].includes(key)) {
         row[idx[key]] = JSON.stringify(_asArray(val));
       } else {
@@ -278,20 +259,17 @@ function _writeTable(tableName, dataArray) {
   sh.getRange(2, 1, rows.length, idx._len).setValues(rows);
 }
 
-/***** 取得或建立 Sheet *****/
 function _getOrCreateSheet(sheetName, header) {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let sh = ss.getSheetByName(sheetName);
 
   if (!sh) {
-    // 建立新 Sheet
     sh = ss.insertSheet(sheetName);
     sh.getRange(1, 1, 1, header.length).setValues([header]);
     sh.getRange(1, 1, 1, header.length).setFontWeight('bold').setBackground('#4285f4').setFontColor('#ffffff');
     return sh;
   }
 
-  // 檢查並補齊缺少的欄位
   const lastCol = sh.getLastColumn();
   const currentHeader = lastCol > 0 ? sh.getRange(1, 1, 1, lastCol).getValues()[0] : [];
 
@@ -301,7 +279,6 @@ function _getOrCreateSheet(sheetName, header) {
     sh.getRange(1, currentHeader.length + 1, 1, missing.length).setFontWeight('bold').setBackground('#4285f4').setFontColor('#ffffff');
   }
 
-  // 修正已存在欄位的名稱
   const minLen = Math.min(currentHeader.length, header.length);
   for (let i = 0; i < minLen; i++) {
     if (String(currentHeader[i] || '') !== header[i]) {
@@ -312,7 +289,6 @@ function _getOrCreateSheet(sheetName, header) {
   return sh;
 }
 
-/***** 建立欄位索引對照表 *****/
 function _headerIndex(sh, header) {
   const lastCol = Math.max(sh.getLastColumn(), header.length);
   const currentHeader = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(v => String(v || ''));
@@ -326,16 +302,19 @@ function _headerIndex(sh, header) {
   return idx;
 }
 
-/***** 小工具 *****/
 function _checkToken(tok) {
   if (TOKEN && String(tok).trim() !== TOKEN) {
     throw new Error('Invalid token');
   }
 }
 
+/**
+ * 建立 JSON 回應，並自動加上 CORS 標頭
+ */
 function _json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON)
+    .addHeader("Access-Control-Allow-Origin", "*"); // <-- 修正
 }
 
 function _asArray(v) {
