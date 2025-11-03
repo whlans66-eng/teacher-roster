@@ -298,6 +298,11 @@ function normalizeDateValue(value) {
     return trimmed;
   }
 
+  const fallback = new Date(value);
+  if (!Number.isNaN(fallback.getTime())) {
+    return fallback.toISOString().slice(0, 10);
+  }
+
   return value;
 }
 
@@ -325,15 +330,29 @@ function normalizeTimeRange(value) {
   }
 
   const formatSegment = (segment) => {
-    const [hours, minutes] = segment.split(':').map(Number);
-    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
-      return segment;
+    if (/^\d{1,2}:\d{2}$/.test(segment)) {
+      const [hours, minutes] = segment.split(':').map(Number);
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
+    if (/^\d{3,4}$/.test(segment)) {
+      const padded = segment.padStart(4, '0');
+      const hours = Number(padded.slice(0, 2));
+      const minutes = Number(padded.slice(2));
+      if (Number.isFinite(hours) && Number.isFinite(minutes)) {
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      }
+    }
+
+    return segment;
   };
 
   const start = formatSegment(segments[0]);
   const end = formatSegment(segments[1]);
+
+  if (/^\d{2}:\d{2}$/.test(start) && /^\d{2}:\d{2}$/.test(end)) {
+    return `${start}-${end}`;
+  }
 
   return `${start}-${end}`;
 }

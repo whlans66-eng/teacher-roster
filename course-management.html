@@ -1598,17 +1598,18 @@
 
       const syncedEvents = courseAssignments.map(course => {
         const teacher = teachers.find(t => t.id === course.teacherId);
-        const teacherName = teacher ? teacher.name : '未知';
+        const teacherName = teacher ? teacher.name : '未知師資';
         return {
           id: course.id,
+          courseId: course.id,
           date: course.date,
+          name: course.name,
           title: `${course.name} - ${teacherName}`,
           time: course.time,
           teacherId: course.teacherId,
           location: course.type,
           note: course.note || '',
-          color: getCourseTypeColor(course.type),
-          courseId: course.id
+          color: getCourseTypeColor(course.type)
         };
       });
 
