@@ -88,6 +88,19 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
     }
 
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      border-width: 1px;
+      border-style: solid;
+    }
+
     .stat-card {
       background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
       border-radius: 18px;
@@ -513,6 +526,8 @@
 
   <!-- API 層：與後端通訊 -->
   <script src="js/api.js"></script>
+  <!-- API 連線狀態共用工具 -->
+  <script src="js/api-status.js"></script>
 </head>
 <body>
   <div class="container">
@@ -527,6 +542,24 @@
     <div class="header">
       <h1>海事專業訓練課程系統</h1>
       <p>Maritime Professional Training Course System</p>
+    </div>
+
+    <!-- API 連線狀態 -->
+    <div class="card" style="animation: fadeIn 0.6s ease;">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="space-y-1">
+          <div class="flex items-center space-x-3" aria-live="polite">
+            <span id="apiStatusBadge" class="status-badge bg-gray-100 text-gray-600 border-gray-200">尚未檢查</span>
+            <span id="apiStatusMessage" class="text-sm font-medium text-gray-700">尚未檢查 API 連線狀態</span>
+          </div>
+          <p id="apiStatusDetail" class="text-xs text-gray-500">請先完成 Google Apps Script 部署並設定允許此網域存取。</p>
+        </div>
+        <div>
+          <button id="apiStatusButton" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+            <span class="mr-2">🩺</span>測試 API 連線
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- 導航選單 -->
@@ -738,6 +771,7 @@
 
     // 課程資料儲存
     let maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses')) || [];
+    let apiStatusController = null;
     let editingMaritimeCourseId = null;
 
     // 分類對應表
@@ -1204,6 +1238,19 @@
 
     // 初始化海事課程系統事件監聽器
     async function initMaritimeCourseSystem() {
+      if (typeof initializeApiStatusCard === 'function' && !apiStatusController) {
+        apiStatusController = initializeApiStatusCard({
+          autoCheckOnInit: false,
+          onManualSuccess() {
+            showSyncStatus('✅ API 連線正常', 'success');
+          },
+          onManualError(message) {
+            showSyncStatus(`❌ API 連線失敗：${message}`, 'error');
+          }
+        });
+        apiStatusController.check(false);
+      }
+
       // 從後端同步資料
       if (typeof initializeDataSync !== 'undefined') {
         try {
