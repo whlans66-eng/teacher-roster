@@ -141,6 +141,11 @@ function doPost(e) {
   }
 }
 
+/***** 入口：OPTIONS（CORS Preflight） *****/
+function doOptions(e) {
+  return _json({ ok: true, message: 'CORS preflight OK' });
+}
+
 /***** 檔案上傳處理 *****/
 function _handleUpload(e, bodyObj) {
   let blob = null;
@@ -330,7 +335,10 @@ function _checkToken(tok) {
 
 function _json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 function _asArray(v) {
