@@ -1117,6 +1117,11 @@
       // 載入派課數據和海事課程數據
       await loadCourseAssignmentsFromBackend();
       await loadMaritimeCoursesFromBackend();
+
+      // 如果從後端沒載入到數據，但本地有數據，也要同步到行事曆
+      if (courseAssignments.length > 0) {
+        syncCourseAssignmentsToCalendar();
+      }
     });
 
     /* ---------- 互動 ---------- */
@@ -2136,6 +2141,10 @@ grid.appendChild(cell);
         courseAssignments = data;
         localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
         console.log('✅ 派課數據已從後端載入，共', data.length, '筆');
+
+        // 同步到行事曆
+        syncCourseAssignmentsToCalendar();
+
         // 如果正在顯示派課視圖，則更新顯示
         if (currentMode === 'courses') {
           updateCourseView();
@@ -2144,6 +2153,33 @@ grid.appendChild(cell);
     } catch (error) {
       console.warn('⚠️ 無法從後端載入派課數據，使用本地數據:', error);
     }
+  }
+
+  // 將派課數據同步到行事曆
+  function syncCourseAssignmentsToCalendar() {
+    // 先移除所有由派課產生的行事曆事件
+    calendarEvents = calendarEvents.filter(e => !e.courseId);
+
+    // 將所有派課轉換為行事曆事件
+    courseAssignments.forEach(course => {
+      const teacher = teachers.find(t => t.id === course.teacherId);
+      const teacherName = teacher ? teacher.name : '未知師資';
+
+      calendarEvents.push({
+        id: course.id,
+        date: course.date,
+        title: `${course.name} - ${teacherName}`,
+        time: course.time,
+        teacherId: course.teacherId,
+        location: course.type,
+        note: `課程類型：${course.type}${course.note ? '\n' + course.note : ''}`,
+        color: getCourseTypeColor(course.type),
+        courseId: course.id // 標記為派課產生的事件
+      });
+    });
+
+    saveCalendarLocal();
+    console.log('✅ 派課數據已同步到行事曆，共', courseAssignments.length, '筆');
   }
 
   // 顯示派課管理視圖
