@@ -2192,6 +2192,9 @@ grid.appendChild(cell);
 
   // 顯示派課管理視圖
   function showCourseManagementView() {
+    console.log('📋 顯示派課管理視圖');
+    console.log('  - courseAssignments 總數:', courseAssignments.length);
+
     document.getElementById('teacherList').classList.add('hidden');
     document.getElementById('courseManagementView').classList.remove('hidden');
 
@@ -2205,12 +2208,19 @@ grid.appendChild(cell);
       teacherSelect.appendChild(option);
     });
 
+    console.log('  - 師資選單已建立，共', teachers.length, '位師資');
+
     // 初始化日期
     initCourseDates();
 
+    console.log('  - 日期已初始化:', currentCourseStartDate, '~', currentCourseEndDate);
+
     // 更新課程視圖（如果已選擇師資）
     if (currentCourseTeacherId) {
+      console.log('  - 已選擇師資，更新視圖');
       updateCourseView();
+    } else {
+      console.log('  - 尚未選擇師資，等待用戶選擇');
     }
   }
 
@@ -2306,13 +2316,42 @@ grid.appendChild(cell);
 
   // 過濾課程
   function getFilteredCourses(teacherId) {
-    if (!teacherId) return [];
-    return courseAssignments.filter(course => {
+    if (!teacherId) {
+      console.log('⚠️ getFilteredCourses - 沒有選擇師資');
+      return [];
+    }
+
+    console.log('🔎 開始過濾課程');
+    console.log('  - 師資ID:', teacherId);
+    console.log('  - 日期範圍:', currentCourseStartDate, '~', currentCourseEndDate);
+    console.log('  - courseAssignments 總數:', courseAssignments.length);
+
+    // 打印前 3 筆數據供檢查
+    if (courseAssignments.length > 0) {
+      console.log('  - 前 3 筆數據:', courseAssignments.slice(0, 3));
+    }
+
+    const filtered = courseAssignments.filter(course => {
       const matchTeacher = Number(course.teacherId) === Number(teacherId);
       const inDateRange = (!currentCourseStartDate || !currentCourseEndDate) ||
                          (course.date >= currentCourseStartDate && course.date <= currentCourseEndDate);
+
+      // 詳細記錄不匹配的原因
+      if (!matchTeacher) {
+        console.log(`  ✗ 課程 ${course.name} - 師資不匹配 (${course.teacherId} !== ${teacherId})`);
+      } else if (!inDateRange) {
+        console.log(`  ✗ 課程 ${course.name} - 日期超出範圍 (${course.date})`);
+      }
+
       return matchTeacher && inDateRange;
     });
+
+    console.log('  ✅ 過濾結果:', filtered.length, '筆課程');
+    if (filtered.length > 0) {
+      console.log('  - 過濾後的課程:', filtered);
+    }
+
+    return filtered;
   }
 
   // 更新統計
@@ -2658,6 +2697,70 @@ grid.appendChild(cell);
 
     return conflicts;
   }
+
+  // 診斷工具：檢查派課管理數據狀態
+  function diagnoseCourseManagement() {
+    console.log('🔧 === 派課管理診斷報告 ===');
+    console.log('');
+    console.log('📊 基本狀態：');
+    console.log('  - courseAssignments 總數:', courseAssignments.length);
+    console.log('  - 當前選擇師資ID:', currentCourseTeacherId);
+    console.log('  - 日期範圍:', currentCourseStartDate, '~', currentCourseEndDate);
+    console.log('  - 師資總數:', teachers.length);
+    console.log('');
+
+    if (courseAssignments.length === 0) {
+      console.warn('⚠️ courseAssignments 是空的！');
+      console.log('嘗試從 localStorage 讀取...');
+      const localData = localStorage.getItem('courseAssignments');
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        console.log('localStorage 中有', parsed.length, '筆數據');
+        console.log('數據樣本:', parsed.slice(0, 2));
+      } else {
+        console.error('❌ localStorage 也沒有數據');
+      }
+    } else {
+      console.log('✅ courseAssignments 有數據');
+      console.log('前 3 筆數據:', courseAssignments.slice(0, 3));
+      console.log('');
+
+      // 統計師資分佈
+      const teacherCounts = {};
+      courseAssignments.forEach(c => {
+        teacherCounts[c.teacherId] = (teacherCounts[c.teacherId] || 0) + 1;
+      });
+      console.log('📈 各師資課程數量:', teacherCounts);
+      console.log('');
+
+      // 統計日期分佈
+      const dates = courseAssignments.map(c => c.date).sort();
+      console.log('📅 日期範圍:', dates[0], '~', dates[dates.length - 1]);
+      console.log('');
+    }
+
+    if (currentCourseTeacherId) {
+      console.log('🔍 當前過濾結果：');
+      const filtered = getFilteredCourses(currentCourseTeacherId);
+      console.log('  - 過濾後課程數:', filtered.length);
+    } else {
+      console.log('⚠️ 尚未選擇師資');
+    }
+
+    console.log('');
+    console.log('💡 建議：');
+    if (courseAssignments.length === 0) {
+      console.log('  1. 檢查後端 API 是否正常');
+      console.log('  2. 檢查 Google Sheets 是否有數據');
+      console.log('  3. 嘗試手動新增一筆派課測試');
+    }
+    console.log('  - 手動重新載入數據: await loadCourseAssignmentsFromBackend()');
+    console.log('  - 手動更新視圖: updateCourseView()');
+    console.log('');
+  }
+
+  // 將診斷函數暴露到全局
+  window.diagnoseCourseManagement = diagnoseCourseManagement;
 
   // 獲取課程類型對應的顏色
   function getCourseTypeColor(type) {
