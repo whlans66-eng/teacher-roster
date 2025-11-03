@@ -234,6 +234,64 @@ class TeacherRosterAPI {
 // 建立全域 API 實例
 const api = new TeacherRosterAPI(API_CONFIG);
 
+function normalizeNumeric(value) {
+  if (value === undefined || value === null || value === '') {
+    return value;
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : value;
+}
+
+function normalizeTeacherRecord(record) {
+  if (!record || typeof record !== 'object') {
+    return record;
+  }
+
+  const normalized = { ...record };
+  normalized.id = normalizeNumeric(normalized.id);
+  return normalized;
+}
+
+function normalizeCourseAssignment(record) {
+  if (!record || typeof record !== 'object') {
+    return record;
+  }
+
+  const normalized = { ...record };
+  normalized.id = normalizeNumeric(normalized.id);
+  normalized.teacherId = normalizeNumeric(normalized.teacherId);
+
+  if (typeof normalized.date === 'string') {
+    normalized.date = normalized.date.trim();
+  }
+
+  if (typeof normalized.time === 'string') {
+    normalized.time = normalized.time.trim();
+  }
+
+  return normalized;
+}
+
+function loadArrayFromStorage(key, normalizer) {
+  const raw = localStorage.getItem(key);
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return typeof normalizer === 'function' ? parsed.map(normalizer) : parsed;
+  } catch (error) {
+    console.warn(`⚠️ 無法解析 ${key}:`, error);
+    return [];
+  }
+}
+
 /**
  * 資料同步管理器
  * 負責 localStorage 與後端的雙向同步
@@ -253,22 +311,31 @@ class DataSyncManager {
       console.log('📥 從後端載入資料...');
       const allData = await this.api.listAll();
 
+      const normalizedTeachers = Array.isArray(allData.teachers)
+        ? allData.teachers.map(normalizeTeacherRecord)
+        : [];
+      const normalizedCourses = Array.isArray(allData.courseAssignments)
+        ? allData.courseAssignments.map(normalizeCourseAssignment)
+        : [];
+      const maritimeCourses = Array.isArray(allData.maritimeCourses)
+        ? allData.maritimeCourses
+        : [];
+
       // 儲存到 localStorage
-      if (allData.teachers) {
-        localStorage.setItem('teachers', JSON.stringify(allData.teachers));
-      }
-      if (allData.courseAssignments) {
-        localStorage.setItem('courseAssignments', JSON.stringify(allData.courseAssignments));
-      }
-      if (allData.maritimeCourses) {
-        localStorage.setItem('maritimeCourses', JSON.stringify(allData.maritimeCourses));
-      }
+      localStorage.setItem('teachers', JSON.stringify(normalizedTeachers));
+      localStorage.setItem('courseAssignments', JSON.stringify(normalizedCourses));
+      localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
 
       // 更新最後同步時間
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
       console.log('✅ 資料載入完成');
-      return allData;
+      return {
+        ...allData,
+        teachers: normalizedTeachers,
+        courseAssignments: normalizedCourses,
+        maritimeCourses
+      };
     } catch (error) {
       console.error('❌ 載入資料失敗:', error);
       throw error;
@@ -282,9 +349,9 @@ class DataSyncManager {
     try {
       console.log('📤 儲存資料到後端...');
 
-      const teachers = JSON.parse(localStorage.getItem('teachers') || '[]');
-      const courseAssignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
-      const maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+      const teachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
+      const courseAssignments = loadArrayFromStorage('courseAssignments', normalizeCourseAssignment);
+      const maritimeCourses = loadArrayFromStorage('maritimeCourses');
 
       // 依序儲存三個表格
       await this.api.save('teachers', teachers);
@@ -307,7 +374,12 @@ class DataSyncManager {
    */
   async saveTable(tableName) {
     try {
-      const data = JSON.parse(localStorage.getItem(tableName) || '[]');
+      const normalizer = tableName === 'teachers'
+        ? normalizeTeacherRecord
+        : tableName === 'courseAssignments'
+          ? normalizeCourseAssignment
+          : undefined;
+      const data = loadArrayFromStorage(tableName, normalizer);
       await this.api.save(tableName, data);
       localStorage.setItem('lastSyncTime', new Date().toISOString());
       console.log(`✅ ${tableName} 儲存完成`);
@@ -371,9 +443,9 @@ class DataSyncManager {
       const backendData = await this.api.listAll();
 
       // 取得本地資料
-      const localTeachers = JSON.parse(localStorage.getItem('teachers') || '[]');
-      const localCourses = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
-      const localMaritime = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+      const localTeachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
+      const localCourses = loadArrayFromStorage('courseAssignments', normalizeCourseAssignment);
+      const localMaritime = loadArrayFromStorage('maritimeCourses');
 
       // 檢查是否有修改標記
       const hasLocalChanges = localStorage.getItem('hasLocalChanges') === 'true';
@@ -429,12 +501,15 @@ const syncManager = new DataSyncManager(api);
 /**
  * 便利函數：顯示同步狀態訊息
  */
-function showSyncStatus(message, type = 'info') {
+function showSyncStatus(message, type = 'info', options = {}) {
   // 如果頁面有 showMessage 函數就使用它
   if (typeof showMessage === 'function') {
-    showMessage(message, type);
+    showMessage(message, type, options.hint || '');
   } else {
     console.log(`[${type.toUpperCase()}] ${message}`);
+    if (options.hint) {
+      console.log('↳', options.hint);
+    }
   }
 }
 
@@ -456,11 +531,20 @@ async function initializeDataSync() {
 
   } catch (error) {
     console.warn('⚠️ 無法連線到後端，使用本地資料:', error);
-    showSyncStatus('使用離線模式', 'warning');
+    showSyncStatus('使用離線模式', 'warning', {
+      hint: '請確認 API URL 與 TOKEN 設定是否正確，或檢查網路連線狀態。'
+    });
   }
 }
 
 // 匯出給其他模組使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { api, syncManager, initializeDataSync };
+  module.exports = {
+    api,
+    syncManager,
+    initializeDataSync,
+    normalizeTeacherRecord,
+    normalizeCourseAssignment,
+    loadArrayFromStorage
+  };
 }
