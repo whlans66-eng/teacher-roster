@@ -3262,7 +3262,7 @@ grid.appendChild(cell);
               </span>
             </div>
             <div class="flex gap-1">
-              <button onclick="editMaritimeCourse(${course.id}); document.getElementById('maritimeManageTab').click();"
+              <button onclick="editMaritimeCourse(${course.id}); document.getElementById('maritimeEditTab').click();"
                       class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
                       title="編輯課程">
                 編輯
@@ -3372,7 +3372,8 @@ grid.appendChild(cell);
     if (confirm('確定要刪除這個課程嗎？')) {
       maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
       saveMaritimeCourses();
-      displayManageMaritimeCourses();
+      displayMaritimeCourses(); // 更新搜尋頁面
+      displayManageMaritimeCourses(); // 更新管理頁面
       showMaritimeMessage('課程已刪除', 'success');
     }
   }
