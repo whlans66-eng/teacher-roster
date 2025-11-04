@@ -215,6 +215,13 @@ function _readTable(tableName) {
       } else if (val instanceof Date) {
         // 將 Date 物件轉換為 YYYY-MM-DD 格式
         obj[key] = _formatDate(val);
+      } else if (key === 'category' && tableName === 'maritimeCourses') {
+        // 處理 category：如果是數字，轉換為兩位數字串（1 -> '01'）
+        if (typeof val === 'number') {
+          obj[key] = String(val).padStart(2, '0');
+        } else {
+          obj[key] = String(val || '').replace(/^'/, ''); // 移除前綴單引號
+        }
       } else {
         obj[key] = val;
       }
@@ -249,6 +256,9 @@ function _writeTable(tableName, dataArray) {
       const val = item[key];
       if (['experiences', 'certificates', 'subjects', 'tags', 'keywords'].includes(key)) {
         row[idx[key]] = JSON.stringify(_asArray(val));
+      } else if (key === 'category' && tableName === 'maritimeCourses') {
+        // 強制將 category 儲存為文字格式（在前面加 ' 符號）
+        row[idx[key]] = val !== undefined && val !== null ? "'" + String(val) : '';
       } else {
         row[idx[key]] = val !== undefined && val !== null ? String(val) : '';
       }
