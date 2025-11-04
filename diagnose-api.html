@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API 诊断工具</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/api.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">📡 API 连接诊断工具</h1>
+
+    <div id="results" class="space-y-4"></div>
+
+    <button onclick="runDiagnostics()" class="mt-6 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
+      🔍 开始诊断
+    </button>
+  </div>
+
+  <script>
+    async function runDiagnostics() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+
+      // 测试 1: 检查 API 配置
+      addResult('info', '测试 1: 检查 API 配置');
+      addResult('info', `API URL: ${API_CONFIG.baseUrl}`);
+      addResult('info', `Token: ${API_CONFIG.token ? '已设置' : '未设置'}`);
+
+      // 测试 2: Ping 测试
+      addResult('info', '测试 2: Ping 后端...');
+      try {
+        const pingResult = await api.ping();
+        addResult('success', `✅ Ping 成功: ${JSON.stringify(pingResult)}`);
+      } catch (error) {
+        addResult('error', `❌ Ping 失败: ${error.message}`);
+        addResult('error', '可能原因: API URL 不正确、网络问题、CORS 问题、或后端未部署');
+        return;
+      }
+
+      // 测试 3: 读取所有数据
+      addResult('info', '测试 3: 读取所有数据 (listAll)...');
+      try {
+        const allData = await api.listAll();
+        addResult('success', '✅ 读取成功！');
+        addResult('info', `Teachers: ${allData.teachers?.length || 0} 笔`);
+        addResult('info', `Course Assignments: ${allData.courseAssignments?.length || 0} 笔`);
+        addResult('info', `Maritime Courses: ${allData.maritimeCourses?.length || 0} 笔`);
+
+        // 显示课程数据详情
+        if (allData.courseAssignments && allData.courseAssignments.length > 0) {
+          addResult('success', '📚 课程数据示例:');
+          allData.courseAssignments.slice(0, 3).forEach((course, idx) => {
+            addResult('info', `课程 ${idx + 1}: ${JSON.stringify(course, null, 2)}`);
+          });
+        } else {
+          addResult('warning', '⚠️ 后端没有课程数据 (courseAssignments 表为空)');
+          addResult('info', '请在 Google Sheets 中检查 courseAssignments 表是否有数据');
+        }
+
+      } catch (error) {
+        addResult('error', `❌ 读取失败: ${error.message}`);
+        return;
+      }
+
+      // 测试 4: 读取特定表格
+      addResult('info', '测试 4: 读取 courseAssignments 表...');
+      try {
+        const courses = await api.list('courseAssignments');
+        addResult('success', `✅ 读取成功: ${courses.length} 笔课程数据`);
+
+        if (courses.length > 0) {
+          addResult('info', '数据结构检查:');
+          const firstCourse = courses[0];
+          const requiredFields = ['id', 'teacherId', 'name', 'date', 'time', 'type', 'status'];
+          requiredFields.forEach(field => {
+            if (firstCourse.hasOwnProperty(field)) {
+              addResult('success', `  ✓ ${field}: ${firstCourse[field]}`);
+            } else {
+              addResult('error', `  ✗ 缺少字段: ${field}`);
+            }
+          });
+        }
+      } catch (error) {
+        addResult('error', `❌ 读取 courseAssignments 失败: ${error.message}`);
+        return;
+      }
+
+      // 测试 5: localStorage 检查
+      addResult('info', '测试 5: 检查 localStorage...');
+      const localCourses = localStorage.getItem('courseAssignments');
+      if (localCourses) {
+        try {
+          const parsed = JSON.parse(localCourses);
+          addResult('success', `✅ localStorage 有数据: ${parsed.length} 笔`);
+        } catch (e) {
+          addResult('error', '❌ localStorage 数据格式错误');
+        }
+      } else {
+        addResult('warning', '⚠️ localStorage 中没有 courseAssignments 数据');
+      }
+
+      // 最终建议
+      addResult('info', '\n=== 诊断完成 ===');
+      addResult('success', '如果所有测试都通过，数据应该能正常显示。');
+      addResult('info', '如果前端仍然看不到数据，请检查:');
+      addResult('info', '1. 浏览器控制台是否有错误');
+      addResult('info', '2. 是否需要刷新页面');
+      addResult('info', '3. initializeDataSync() 是否被正确调用');
+    }
+
+    function addResult(type, message) {
+      const resultsDiv = document.getElementById('results');
+      const colors = {
+        info: 'bg-blue-50 border-blue-200 text-blue-800',
+        success: 'bg-green-50 border-green-200 text-green-800',
+        warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+        error: 'bg-red-50 border-red-200 text-red-800'
+      };
+
+      const div = document.createElement('div');
+      div.className = `p-3 rounded border ${colors[type]} whitespace-pre-wrap font-mono text-sm`;
+      div.textContent = message;
+      resultsDiv.appendChild(div);
+    }
+  </script>
+</body>
+</html>
