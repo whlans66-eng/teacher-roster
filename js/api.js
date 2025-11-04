@@ -136,6 +136,9 @@ class TeacherRosterAPI {
       url.searchParams.append(key, params[key]);
     });
 
+    console.log('🌐 發送 GET 請求:', url.toString());
+    console.log('🌐 請求參數:', params);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -147,16 +150,23 @@ class TeacherRosterAPI {
 
       clearTimeout(timeoutId);
 
+      console.log('📡 收到響應，狀態碼:', response.status);
+
       if (!response.ok) {
         throw new Error(`後端回傳狀態碼 ${response.status}`);
       }
 
       let result;
       try {
-        result = await response.json();
+        const responseText = await response.text();
+        console.log('📄 響應內容 (前500字):', responseText.substring(0, 500));
+        result = JSON.parse(responseText);
       } catch (parseError) {
+        console.error('❌ JSON 解析失敗:', parseError);
         throw new Error('後端回應不是 JSON 格式，請確認 Apps Script 是否有回傳 JSON');
       }
+
+      console.log('✅ JSON 解析成功:', result);
 
       if (!result.ok) {
         throw new Error(result.error || '請求失敗');
@@ -165,6 +175,7 @@ class TeacherRosterAPI {
       return result;
     } catch (error) {
       clearTimeout(timeoutId);
+      console.error('❌ GET 請求失敗:', error);
       if (error.name === 'AbortError') {
         throw new Error('請求超時');
       }
@@ -309,7 +320,16 @@ class DataSyncManager {
   async loadFromBackend() {
     try {
       console.log('📥 從後端載入資料...');
+      console.log('🔍 API URL:', this.api.baseUrl);
+      console.log('🔍 Token:', this.api.token ? '已設置' : '未設置');
+
       const allData = await this.api.listAll();
+
+      // 詳細日誌
+      console.log('🔍 後端返回的原始資料:', allData);
+      console.log('🔍 teachers 數量:', allData.teachers?.length || 0);
+      console.log('🔍 courseAssignments 數量:', allData.courseAssignments?.length || 0);
+      console.log('🔍 maritimeCourses 數量:', allData.maritimeCourses?.length || 0);
 
       const normalizedTeachers = Array.isArray(allData.teachers)
         ? allData.teachers.map(normalizeTeacherRecord)
@@ -321,6 +341,8 @@ class DataSyncManager {
         ? allData.maritimeCourses
         : [];
 
+      console.log('🔍 歸一化後的課程數據:', normalizedCourses);
+
       // 儲存到 localStorage
       localStorage.setItem('teachers', JSON.stringify(normalizedTeachers));
       localStorage.setItem('courseAssignments', JSON.stringify(normalizedCourses));
@@ -330,6 +352,10 @@ class DataSyncManager {
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
       console.log('✅ 資料載入完成');
+      console.log('✅ teachers:', normalizedTeachers.length, '筆');
+      console.log('✅ courseAssignments:', normalizedCourses.length, '筆');
+      console.log('✅ maritimeCourses:', maritimeCourses.length, '筆');
+
       return {
         ...allData,
         teachers: normalizedTeachers,
@@ -338,6 +364,8 @@ class DataSyncManager {
       };
     } catch (error) {
       console.error('❌ 載入資料失敗:', error);
+      console.error('❌ 錯誤詳情:', error.message);
+      console.error('❌ 錯誤堆疊:', error.stack);
       throw error;
     }
   }
