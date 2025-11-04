@@ -2163,7 +2163,54 @@ grid.appendChild(cell);
       if (Array.isArray(data)) {
         if (data.length > 0) {
           console.log('✅ 從後端 API 載入派課數據成功，共', data.length, '筆');
-          courseAssignments = data;
+
+          // ✨ 正規化派課數據（處理日期格式問題）
+          courseAssignments = data.map(course => {
+            const normalized = { ...course };
+
+            // 正規化日期（處理 Excel 序列日期、時間戳等）
+            if (normalized.date) {
+              const dateValue = normalized.date;
+
+              // 如果是數字（Excel 序列日期或時間戳）
+              if (typeof dateValue === 'number') {
+                if (dateValue > 10000000000) {
+                  // 時間戳（毫秒）
+                  normalized.date = new Date(dateValue).toISOString().split('T')[0];
+                } else if (dateValue > 0) {
+                  // Excel 序列日期
+                  const excelEpoch = new Date(1899, 11, 30);
+                  const days = Math.floor(dateValue);
+                  const date = new Date(excelEpoch.getTime() + days * 86400000);
+                  normalized.date = date.toISOString().split('T')[0];
+                }
+              }
+              // 如果是字串但不是 YYYY-MM-DD 格式
+              else if (typeof dateValue === 'string' && !/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+                try {
+                  const cleanDate = dateValue.replace(/[\/\.]/g, '-');
+                  const date = new Date(cleanDate);
+                  if (!isNaN(date.getTime())) {
+                    normalized.date = date.toISOString().split('T')[0];
+                  }
+                } catch (e) {
+                  console.warn('無法解析日期:', dateValue);
+                }
+              }
+            }
+
+            // 確保 ID 和 teacherId 是數字
+            if (normalized.id !== undefined) {
+              normalized.id = Number(normalized.id);
+            }
+            if (normalized.teacherId !== undefined) {
+              normalized.teacherId = Number(normalized.teacherId);
+            }
+
+            return normalized;
+          });
+
+          console.log('📋 正規化後的派課數據範例:', courseAssignments.slice(0, 3));
           localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
 
           // 同步到行事曆
@@ -3155,7 +3202,46 @@ grid.appendChild(cell);
       if (Array.isArray(data)) {
         if (data.length > 0) {
           console.log('✅ 從後端 API 載入海事課程數據成功，共', data.length, '筆');
-          maritimeCourses = data;
+
+          // ✨ 正規化海事課程數據（處理日期格式問題）
+          maritimeCourses = data.map(course => {
+            const normalized = { ...course };
+
+            // 正規化日期
+            if (normalized.date) {
+              const dateValue = normalized.date;
+
+              if (typeof dateValue === 'number') {
+                if (dateValue > 10000000000) {
+                  normalized.date = new Date(dateValue).toISOString().split('T')[0];
+                } else if (dateValue > 0) {
+                  const excelEpoch = new Date(1899, 11, 30);
+                  const days = Math.floor(dateValue);
+                  const date = new Date(excelEpoch.getTime() + days * 86400000);
+                  normalized.date = date.toISOString().split('T')[0];
+                }
+              } else if (typeof dateValue === 'string' && !/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+                try {
+                  const cleanDate = dateValue.replace(/[\/\.]/g, '-');
+                  const date = new Date(cleanDate);
+                  if (!isNaN(date.getTime())) {
+                    normalized.date = date.toISOString().split('T')[0];
+                  }
+                } catch (e) {
+                  console.warn('無法解析海事課程日期:', dateValue);
+                }
+              }
+            }
+
+            // 確保 ID 是數字
+            if (normalized.id !== undefined) {
+              normalized.id = Number(normalized.id);
+            }
+
+            return normalized;
+          });
+
+          console.log('📋 正規化後的海事課程數據範例:', maritimeCourses.slice(0, 3));
           localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
 
           // 更新顯示（如果正在海事課程頁面）

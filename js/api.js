@@ -231,6 +231,190 @@ class TeacherRosterAPI {
   }
 }
 
+/**
+ * 數據正規化工具函數
+ * 用於處理從後端載入的數據格式不一致問題
+ */
+
+/**
+ * 正規化日期值 - 將各種日期格式統一為 YYYY-MM-DD
+ * @param {*} value - 日期值（可能是字串、Date物件、時間戳、Excel序列日期）
+ * @returns {string} YYYY-MM-DD 格式的日期字串
+ */
+function normalizeDateValue(value) {
+  if (!value) return '';
+
+  // 如果已經是 YYYY-MM-DD 格式，直接返回
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  // 處理 Date 物件
+  if (value instanceof Date) {
+    return value.toISOString().split('T')[0];
+  }
+
+  // 處理時間戳（毫秒）
+  if (typeof value === 'number' && value > 10000000000) {
+    return new Date(value).toISOString().split('T')[0];
+  }
+
+  // 處理 Excel 序列日期（數字）
+  // Excel 從 1900-01-01 開始計算，但有閏年 bug
+  if (typeof value === 'number' && value > 0 && value < 100000) {
+    // Excel 序列日期轉換
+    const excelEpoch = new Date(1899, 11, 30); // Excel 的起始日期
+    const days = Math.floor(value);
+    const date = new Date(excelEpoch.getTime() + days * 86400000);
+    return date.toISOString().split('T')[0];
+  }
+
+  // 處理其他字串格式（例如 "2025/11/03" 或 "2025.11.03"）
+  if (typeof value === 'string') {
+    try {
+      const normalized = value.replace(/[\/\.]/g, '-');
+      const date = new Date(normalized);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+    } catch (e) {
+      console.warn('無法解析日期:', value);
+    }
+  }
+
+  // 無法識別的格式，返回原值
+  console.warn('未知的日期格式:', value, typeof value);
+  return String(value);
+}
+
+/**
+ * 正規化時間範圍 - 統一為 HH:MM-HH:MM 格式
+ * @param {string} value - 時間範圍（例如 "0900-1000" 或 "09:00-10:00"）
+ * @returns {string} HH:MM-HH:MM 格式的時間範圍
+ */
+function normalizeTimeRange(value) {
+  if (!value || typeof value !== 'string') return value;
+
+  // 已經是 HH:MM-HH:MM 格式
+  if (/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(value)) {
+    return value;
+  }
+
+  // 處理無冒號格式 "0900-1000"
+  if (/^\d{4}-\d{4}$/.test(value)) {
+    const parts = value.split('-');
+    const start = parts[0].substring(0, 2) + ':' + parts[0].substring(2);
+    const end = parts[1].substring(0, 2) + ':' + parts[1].substring(2);
+    return `${start}-${end}`;
+  }
+
+  // 處理單一時間 "0900" 或 "09:00"
+  if (/^\d{4}$/.test(value)) {
+    return value.substring(0, 2) + ':' + value.substring(2);
+  }
+  if (/^\d{2}:\d{2}$/.test(value)) {
+    return value;
+  }
+
+  return value;
+}
+
+/**
+ * 正規化數值
+ * @param {*} value - 數值
+ * @returns {number} 數字
+ */
+function normalizeNumeric(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const num = Number(value);
+  return isNaN(num) ? null : num;
+}
+
+/**
+ * 正規化派課記錄
+ * @param {Object} record - 派課記錄
+ * @returns {Object} 正規化後的派課記錄
+ */
+function normalizeCourseAssignment(record) {
+  if (!record) return record;
+
+  const normalized = { ...record };
+
+  // 正規化 ID 和 teacherId
+  if (normalized.id !== undefined) {
+    normalized.id = normalizeNumeric(normalized.id);
+  }
+  if (normalized.teacherId !== undefined) {
+    normalized.teacherId = normalizeNumeric(normalized.teacherId);
+  }
+
+  // 正規化日期
+  if (normalized.date) {
+    normalized.date = normalizeDateValue(normalized.date);
+  }
+
+  // 正規化時間範圍
+  if (normalized.time) {
+    normalized.time = normalizeTimeRange(normalized.time);
+  }
+
+  return normalized;
+}
+
+/**
+ * 正規化海事課程記錄
+ * @param {Object} record - 海事課程記錄
+ * @returns {Object} 正規化後的海事課程記錄
+ */
+function normalizeMaritimeCourse(record) {
+  if (!record) return record;
+
+  const normalized = { ...record };
+
+  // 正規化 ID
+  if (normalized.id !== undefined) {
+    normalized.id = normalizeNumeric(normalized.id);
+  }
+
+  // 正規化日期
+  if (normalized.date) {
+    normalized.date = normalizeDateValue(normalized.date);
+  }
+
+  // 正規化時間範圍
+  if (normalized.time) {
+    normalized.time = normalizeTimeRange(normalized.time);
+  }
+
+  return normalized;
+}
+
+/**
+ * 從 localStorage 載入並正規化陣列數據
+ * @param {string} key - localStorage 鍵名
+ * @param {Function} normalizer - 正規化函數
+ * @returns {Array} 正規化後的陣列
+ */
+function loadArrayFromStorage(key, normalizer = null) {
+  try {
+    const data = localStorage.getItem(key);
+    if (!data) return [];
+
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed)) return [];
+
+    // 如果有提供正規化函數，應用它
+    if (normalizer && typeof normalizer === 'function') {
+      return parsed.map(normalizer);
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error(`載入 ${key} 失敗:`, error);
+    return [];
+  }
+}
+
 // 建立全域 API 實例
 const api = new TeacherRosterAPI(API_CONFIG);
 
@@ -253,15 +437,33 @@ class DataSyncManager {
       console.log('📥 從後端載入資料...');
       const allData = await this.api.listAll();
 
-      // 儲存到 localStorage
+      // 儲存到 localStorage（套用正規化）
       if (allData.teachers) {
         localStorage.setItem('teachers', JSON.stringify(allData.teachers));
+        console.log('✅ 載入師資數據:', allData.teachers.length, '筆');
       }
+
       if (allData.courseAssignments) {
-        localStorage.setItem('courseAssignments', JSON.stringify(allData.courseAssignments));
+        // ✨ 正規化派課數據
+        const normalizedCourses = Array.isArray(allData.courseAssignments)
+          ? allData.courseAssignments.map(normalizeCourseAssignment)
+          : [];
+        localStorage.setItem('courseAssignments', JSON.stringify(normalizedCourses));
+        console.log('✅ 載入並正規化派課數據:', normalizedCourses.length, '筆');
+
+        // 顯示前 3 筆數據供檢查
+        if (normalizedCourses.length > 0) {
+          console.log('📋 派課數據範例（正規化後）:', normalizedCourses.slice(0, 3));
+        }
       }
+
       if (allData.maritimeCourses) {
-        localStorage.setItem('maritimeCourses', JSON.stringify(allData.maritimeCourses));
+        // ✨ 正規化海事課程數據
+        const normalizedMaritime = Array.isArray(allData.maritimeCourses)
+          ? allData.maritimeCourses.map(normalizeMaritimeCourse)
+          : [];
+        localStorage.setItem('maritimeCourses', JSON.stringify(normalizedMaritime));
+        console.log('✅ 載入並正規化海事課程數據:', normalizedMaritime.length, '筆');
       }
 
       // 更新最後同步時間
