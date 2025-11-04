@@ -130,13 +130,10 @@ function doPost(e) {
 
 /**
  * 處理 CORS Preflight (預檢) 請求
- * 必須正確回傳 Access-Control-Allow-* 標頭
+ * Google Apps Script Web App 部署為"任何人都可以存取"時會自動處理 CORS
  */
 function doOptions(e) {
-  return ContentService.createTextOutput()
-    .addHeader("Access-Control-Allow-Origin", "*")
-    .addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-    .addHeader("Access-Control-Allow-Headers", "Content-Type");
+  return ContentService.createTextOutput("");
 }
 
 function _handleUpload(e, bodyObj) {
@@ -309,12 +306,12 @@ function _checkToken(tok) {
 }
 
 /**
- * 建立 JSON 回應，並自動加上 CORS 標頭
+ * 建立 JSON 回應
+ * CORS 由 Google Apps Script Web App 部署設定自動處理
  */
 function _json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON)
-    .addHeader("Access-Control-Allow-Origin", "*"); // <-- 修正
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function _asArray(v) {
