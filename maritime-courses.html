@@ -795,18 +795,29 @@
                  onblur="this.style.borderColor='#e5e5ea'; this.style.boxShadow='none'">
         </div>
 
+        <!-- 刪除按鈕（僅編輯時顯示）-->
+        <div id="maritimeDeleteButtonContainer" style="display: none; margin-bottom: 16px;">
+          <button type="button" onclick="deleteMaritimeCourseFromModal()"
+                  style="width: 100%; background: #ff3b30; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
+                  onmouseover="this.style.background='#ff2d1f'"
+                  onmouseout="this.style.background='#ff3b30'">
+            刪除課程
+          </button>
+        </div>
+
+        <!-- 取消和儲存按鈕 -->
         <div style="display: flex; gap: 16px;">
           <button type="button" onclick="closeMaritimeCourseModal()"
                   style="flex: 1; background: #f5f5f7; color: #1d1d1f; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
                   onmouseover="this.style.background='#e5e5ea'"
                   onmouseout="this.style.background='#f5f5f7'">
-            ❌ 取消
+            取消
           </button>
           <button type="submit"
-                  style="flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);"
-                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.5)'"
-                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(102, 126, 234, 0.4)'">
-            ✅ 儲存
+                  style="flex: 1; background: #007aff; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
+                  onmouseover="this.style.background='#0051d5'"
+                  onmouseout="this.style.background='#007aff'">
+            儲存
           </button>
         </div>
       </form>
@@ -948,8 +959,6 @@
 
         // 點擊字卡開啟編輯彈跳視窗
         courseCard.onclick = function(e) {
-          // 如果點擊的是刪除按鈕，不觸發編輯
-          if (e.target.closest('.delete-btn')) return;
           editMaritimeCourse(course.id);
         };
 
@@ -960,28 +969,9 @@
         const methodClass = getMaritimeMethodClass(course.method);
 
         courseCard.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-              <span class="tag tag-category">${maritimeCategoryNames[course.category]}</span>
-              <span class="tag ${methodClass}">${course.method || '未設定'}</span>
-            </div>
-            <button onclick="event.stopPropagation(); deleteMaritimeCourse(${course.id})"
-                    class="delete-btn"
-                    style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-                           color: white;
-                           border: none;
-                           padding: 6px 16px;
-                           border-radius: 20px;
-                           font-size: 12px;
-                           font-weight: 600;
-                           cursor: pointer;
-                           transition: all 0.3s ease;
-                           box-shadow: 0 2px 8px rgba(238, 90, 111, 0.3);"
-                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(238, 90, 111, 0.4)'"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(238, 90, 111, 0.3)'"
-                    title="刪除課程">
-              🗑️ 刪除
-            </button>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+            <span class="tag tag-category">${maritimeCategoryNames[course.category]}</span>
+            <span class="tag ${methodClass}">${course.method || '未設定'}</span>
           </div>
           <h3 style="font-size: 18px; font-weight: 600; color: #1d1d1f; margin-bottom: 12px;">${highlightedName}</h3>
           <p style="color: #6e6e73; font-size: 14px; margin-bottom: 16px; line-height: 1.5;">${highlightedDescription}</p>
@@ -1071,12 +1061,15 @@
       if (!course) return;
 
       editingMaritimeCourseId = courseId;
-      document.getElementById('maritimeModalTitle').textContent = '✏️ 編輯課程';
+      document.getElementById('maritimeModalTitle').textContent = '編輯課程';
       document.getElementById('maritimeCourseNameModal').value = course.name;
       document.getElementById('maritimeCourseCategoryModal').value = course.category;
       document.getElementById('maritimeCourseMethodModal').value = course.method || '';
       document.getElementById('maritimeCourseDescriptionModal').value = course.description;
       document.getElementById('maritimeCourseKeywordsModal').value = course.keywords.join(', ');
+
+      // 顯示刪除按鈕（僅編輯時）
+      document.getElementById('maritimeDeleteButtonContainer').style.display = 'block';
 
       // 顯示彈跳視窗
       const modal = document.getElementById('maritimeCourseModal');
@@ -1089,7 +1082,26 @@
       modal.style.display = 'none';
       editingMaritimeCourseId = null;
       document.getElementById('maritimeCourseModalForm').reset();
-      document.getElementById('maritimeModalTitle').textContent = '✨ 新增課程';
+      document.getElementById('maritimeModalTitle').textContent = '新增課程';
+      document.getElementById('maritimeDeleteButtonContainer').style.display = 'none';
+    }
+
+    // 從彈跳視窗刪除課程
+    function deleteMaritimeCourseFromModal() {
+      if (!editingMaritimeCourseId) return;
+
+      if (confirm('確定要刪除這個課程嗎？此操作無法復原。')) {
+        maritimeCourses = maritimeCourses.filter(c => c.id !== editingMaritimeCourseId);
+        saveMaritimeCourses();
+        displayMaritimeCourses();
+        displayManageMaritimeCourses();
+        displayMaritimeStats();
+        displayMaritimeCategoryChart();
+        displayMaritimeMethodStats();
+        displayMaritimeKeywordCloud();
+        closeMaritimeCourseModal();
+        showMaritimeMessage('課程已刪除', 'success');
+      }
     }
 
     // 從彈跳視窗儲存課程
