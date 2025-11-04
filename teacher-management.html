@@ -3267,13 +3267,27 @@ grid.appendChild(cell);
 
       courseCard.innerHTML = `
         <div class="mb-3">
-          <div class="flex flex-wrap gap-2 mb-2">
-            <span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-              ${maritimeCategoryNames[course.category]}
-            </span>
-            <span class="inline-block text-xs px-2 py-1 rounded-full ${getMaritimeMethodTagClass(course.method)}">
-              ${course.method || '未設定'}
-            </span>
+          <div class="flex justify-between items-start mb-2">
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                ${maritimeCategoryNames[course.category]}
+              </span>
+              <span class="inline-block text-xs px-2 py-1 rounded-full ${getMaritimeMethodTagClass(course.method)}">
+                ${course.method || '未設定'}
+              </span>
+            </div>
+            <div class="flex gap-1">
+              <button onclick="editMaritimeCourse(${course.id}); document.getElementById('maritimeManageTab').click();"
+                      class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
+                      title="編輯課程">
+                編輯
+              </button>
+              <button onclick="deleteMaritimeCourse(${course.id})"
+                      class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors"
+                      title="刪除課程">
+                刪除
+              </button>
+            </div>
           </div>
           <h3 class="text-lg font-bold text-gray-800">${highlightedName}</h3>
         </div>
