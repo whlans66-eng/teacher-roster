@@ -119,21 +119,6 @@
           </div>
         </div>
 
-        <!-- API 連線狀態 -->
-        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
-          <div class="space-y-1">
-            <div class="flex items-center space-x-3" aria-live="polite">
-              <span id="apiStatusBadge" class="status-badge bg-gray-100 text-gray-600 border-gray-200">尚未檢查</span>
-              <span id="apiStatusMessage" class="text-sm font-medium text-gray-700">尚未檢查 API 連線狀態</span>
-            </div>
-            <p id="apiStatusDetail" class="text-xs text-gray-500">請先完成 Google Apps Script 部署並設定允許此網域存取。</p>
-          </div>
-          <div class="flex items-center space-x-2">
-            <button id="apiStatusButton" onclick="checkApiStatus(true)" class="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
-              <span class="mr-2">🩺</span>測試 API 連線
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- 搜尋提示 -->
