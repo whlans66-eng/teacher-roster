@@ -146,6 +146,22 @@
       <p class="text-xl text-gray-600">智能管理平台</p>
     </div>
 
+    <!-- 同步狀態提示 -->
+    <div id="syncStatusBanner" class="card p-4 mb-6 hidden border border-transparent" role="alert" aria-live="polite">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <span id="syncStatusIcon" class="text-2xl">ℹ️</span>
+          <div>
+            <p id="syncStatusText" class="font-semibold text-gray-800"></p>
+            <p id="syncStatusHint" class="text-sm text-gray-600 mt-1" style="display: none;"></p>
+          </div>
+        </div>
+        <button type="button" onclick="dismissSyncStatus()" class="text-gray-400 hover:text-gray-600 transition" aria-label="關閉提醒">
+          ✕
+        </button>
+      </div>
+    </div>
+
     <div class="max-w-7xl mx-auto space-y-6">
       <!-- 課程行事曆 -->
       <div class="card p-6 fade-in" style="animation-delay: 0.1s">
@@ -496,9 +512,25 @@
 
   <script>
     // ==================== 資料管理 ====================
-    let teachers = JSON.parse(localStorage.getItem('teachers') || '[]');
-    let courseAssignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
-    let calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
+    const loadArray = typeof loadArrayFromStorage === 'function'
+      ? loadArrayFromStorage
+      : function fallbackLoadArray(key, normalizer) {
+          const raw = localStorage.getItem(key);
+          if (!raw) return [];
+
+          try {
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return typeof normalizer === 'function' ? parsed.map(normalizer) : parsed;
+          } catch (error) {
+            console.warn(`⚠️ 無法解析 ${key}：`, error);
+            return [];
+          }
+        };
+
+    let teachers = loadArray('teachers', typeof normalizeTeacherRecord === 'function' ? normalizeTeacherRecord : undefined);
+    let courseAssignments = loadArray('courseAssignments', typeof normalizeCourseAssignment === 'function' ? normalizeCourseAssignment : undefined);
+    let calendarEvents = loadArray('calendarEvents');
 
     let currentDate = new Date();
     let viewMode = 'month';
@@ -508,6 +540,64 @@
     let selectedTeacherId = null;
     let editingCourseId = null;
     let selectedDate = null;
+
+    // ==================== 通用訊息顯示 ====================
+    function showMessage(message, type = 'info', hint = '') {
+      const banner = document.getElementById('syncStatusBanner');
+      const textElement = document.getElementById('syncStatusText');
+      const hintElement = document.getElementById('syncStatusHint');
+      const iconElement = document.getElementById('syncStatusIcon');
+
+      if (!banner || !textElement || !iconElement) {
+        console.log(`[${type.toUpperCase()}] ${message}`);
+        if (hint) {
+          console.log('↳', hint);
+        }
+        return;
+      }
+
+      const typeStyles = {
+        info: {
+          wrapper: 'bg-blue-50 border-blue-200 text-blue-800',
+          icon: 'ℹ️'
+        },
+        success: {
+          wrapper: 'bg-green-50 border-green-200 text-green-700',
+          icon: '✅'
+        },
+        warning: {
+          wrapper: 'bg-amber-50 border-amber-200 text-amber-700',
+          icon: '⚠️'
+        },
+        error: {
+          wrapper: 'bg-red-50 border-red-200 text-red-700',
+          icon: '❌'
+        }
+      };
+
+      const style = typeStyles[type] || typeStyles.info;
+
+      banner.className = `card p-4 mb-6 border border-transparent ${style.wrapper}`;
+      textElement.textContent = message;
+      iconElement.textContent = style.icon;
+
+      if (hint) {
+        hintElement.textContent = hint;
+        hintElement.style.display = 'block';
+      } else {
+        hintElement.textContent = '';
+        hintElement.style.display = 'none';
+      }
+
+      banner.classList.remove('hidden');
+    }
+
+    function dismissSyncStatus() {
+      const banner = document.getElementById('syncStatusBanner');
+      if (banner) {
+        banner.classList.add('hidden');
+      }
+    }
 
     // ==================== 工具函數 - 獲取本地日期字串 ====================
     function getLocalDateString(date) {
@@ -524,11 +614,19 @@
         try {
           await initializeDataSync();
           // 重新載入同步後的資料
-          teachers = JSON.parse(localStorage.getItem('teachers') || '[]');
-          courseAssignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
-          calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
+          teachers = loadArray('teachers', typeof normalizeTeacherRecord === 'function' ? normalizeTeacherRecord : undefined);
+          courseAssignments = loadArray('courseAssignments', typeof normalizeCourseAssignment === 'function' ? normalizeCourseAssignment : undefined);
+          calendarEvents = loadArray('calendarEvents');
         } catch (err) {
           console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
+          showMessage('目前使用離線資料', 'warning', '請確認 Google Apps Script API 設定是否正確，或稍後再試。');
+        }
+      }
+
+      if (typeof syncCourseAssignmentsToCalendar === 'function') {
+        const syncedEvents = syncCourseAssignmentsToCalendar({ persist: true });
+        if (Array.isArray(syncedEvents)) {
+          calendarEvents = syncedEvents;
         }
       }
 
@@ -542,6 +640,10 @@
       updateTodayDate();
       loadTeacherHoursAnalysisVisibility();
       document.getElementById('courseForm').addEventListener('submit', handleAddCourse);
+
+      if (courseAssignments.length === 0) {
+        showMessage('目前尚無課程資料可供顯示', 'info', '請先設定後端同步或使用「新增課程」建立資料。');
+      }
     }
 
     function loadTeachers() {
@@ -682,7 +784,7 @@
           : 'border border-gray-200 hover:border-blue-300 hover:shadow-md';
 
         return `
-          <div onclick="selectTeacher(${teacher.id})"
+          <div onclick='selectTeacher(${JSON.stringify(teacher.id)})'
                class="${selectedStyle} rounded-xl p-4 cursor-pointer transition-all duration-300">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center space-x-3">
@@ -968,7 +1070,7 @@
                 const statusClass = statusColors[c.status] || statusColors['上班'];
 
                 return `
-                  <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200" onclick="viewEvent(${c.id})">
+                  <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200" onclick='viewEvent(${JSON.stringify(c.id)})'>
                     <div class="flex justify-between items-start">
                       <div class="flex-1">
                         <p class="font-medium text-gray-800">${c.name}</p>
@@ -1089,7 +1191,7 @@
                 const teacherName = teacher ? teacher.name : '未知';
                 return `
                   <div class="event-item bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600"
-                       onclick="viewEvent(${e.id}); event.stopPropagation();">
+                       onclick='viewEvent(${JSON.stringify(e.id)}); event.stopPropagation();'>
                     <div class="font-medium truncate">${teacherName}</div>
                     <div class="text-[10px] truncate">${e.time} ${e.name}</div>
                   </div>
@@ -1143,7 +1245,7 @@
               const teacherName = teacher ? teacher.name : '未知';
               return `
                 <div class="event-item bg-blue-500 text-white p-3 rounded-xl cursor-pointer hover:bg-blue-600"
-                     onclick="viewEvent(${e.id}); event.stopPropagation();">
+                     onclick='viewEvent(${JSON.stringify(e.id)}); event.stopPropagation();'>
                   <div class="font-semibold">${teacherName}</div>
                   <div class="text-xs mt-1">⏰ ${e.time}</div>
                   <div class="text-xs">${e.name}</div>
@@ -1186,7 +1288,7 @@
                   const teacher = teachers.find(t => t.id === e.teacherId);
                   const teacherName = teacher ? teacher.name : '未知';
                   return `
-                    <div class="mt-2 p-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600" onclick="viewEvent(${e.id})">
+                    <div class="mt-2 p-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600" onclick='viewEvent(${JSON.stringify(e.id)})'>
                       <div class="font-semibold text-sm">${teacherName} - ${e.name}</div>
                       <div class="text-xs mt-1">⏰ ${e.time} | 📚 ${e.type}</div>
                     </div>
@@ -1295,9 +1397,11 @@
       document.getElementById('editCourseDate').value = course.date;
       document.getElementById('editCourseType').value = course.type;
 
-      const [startTime, endTime] = course.time.split('-');
-      document.getElementById('editStartTime').value = startTime;
-      document.getElementById('editEndTime').value = endTime;
+      const [startTime, endTime] = (typeof course.time === 'string'
+        ? course.time
+        : '').split('-').map(part => part.trim());
+      document.getElementById('editStartTime').value = startTime || '';
+      document.getElementById('editEndTime').value = endTime || '';
 
       document.getElementById('editCourseStatus').value = course.status || '上班';
       document.getElementById('editCourseNote').value = course.note || '';
@@ -1333,7 +1437,10 @@
       const oldCourse = courseAssignments[courseIndex];
 
       // 檢查時間衝突（排除自己）
-      const newTime = `${startTime}-${endTime}`;
+      const rawTime = `${startTime}-${endTime}`;
+      const newTime = typeof normalizeTimeRange === 'function'
+        ? normalizeTimeRange(rawTime)
+        : rawTime;
       const conflicts = checkConflictExcludingSelf(
         editingCourseId,
         teacherId,
@@ -1348,7 +1455,7 @@
       }
 
       // 更新課程資料
-      courseAssignments[courseIndex] = {
+      const updatedCourse = {
         ...oldCourse,
         teacherId: teacherId,
         name: document.getElementById('editCourseName').value,
@@ -1359,20 +1466,11 @@
         note: document.getElementById('editCourseNote').value.trim()
       };
 
-      // 同步更新行事曆事件
-      const eventIndex = calendarEvents.findIndex(e => e.courseId === editingCourseId);
-      if (eventIndex !== -1) {
-        const teacher = teachers.find(t => t.id === teacherId);
-        calendarEvents[eventIndex] = {
-          ...calendarEvents[eventIndex],
-          date: courseDate,
-          title: `${courseAssignments[courseIndex].name} - ${teacher.name}`,
-          time: newTime,
-          teacherId: teacherId,
-          location: courseAssignments[courseIndex].type,
-          color: getCourseTypeColor(courseAssignments[courseIndex].type)
-        };
-      }
+      const normalizedCourse = typeof normalizeCourseAssignment === 'function'
+        ? normalizeCourseAssignment(updatedCourse)
+        : updatedCourse;
+
+      courseAssignments[courseIndex] = normalizedCourse;
 
       saveData();
       updateStatistics();
@@ -1387,19 +1485,33 @@
     function checkConflictExcludingSelf(excludeId, teacherId, date, time) {
       const conflicts = [];
       const timeToMinutes = (t) => {
+        if (typeof t !== 'string') {
+          return NaN;
+        }
         const [h, m] = t.split(':').map(Number);
+        if (!Number.isFinite(h) || !Number.isFinite(m)) {
+          return NaN;
+        }
         return h * 60 + m;
       };
 
-      const [newStart, newEnd] = time.split('-');
+      const [newStart, newEnd] = (typeof time === 'string' ? time : '').split('-').map(part => part.trim());
       const newStartMin = timeToMinutes(newStart);
       const newEndMin = timeToMinutes(newEnd);
 
+      if (!Number.isFinite(newStartMin) || !Number.isFinite(newEndMin)) {
+        return conflicts;
+      }
+
       courseAssignments.forEach(c => {
         if (c.id !== excludeId && c.teacherId === teacherId && c.date === date) {
-          const [start, end] = c.time.split('-');
+          const [start, end] = (typeof c.time === 'string' ? c.time : '').split('-').map(part => part.trim());
           const startMin = timeToMinutes(start);
           const endMin = timeToMinutes(end);
+
+          if (!Number.isFinite(startMin) || !Number.isFinite(endMin)) {
+            return;
+          }
 
           if (!(newEndMin <= startMin || newStartMin >= endMin)) {
             conflicts.push(`- ${c.name} (${c.time})`);
@@ -1425,7 +1537,7 @@
         return;
       }
 
-      const courseData = {
+      const rawCourseData = {
         id: Date.now(),
         teacherId: teacherId,
         name: document.getElementById('courseName').value,
@@ -1436,6 +1548,10 @@
         note: document.getElementById('courseNote').value.trim()
       };
 
+      const courseData = typeof normalizeCourseAssignment === 'function'
+        ? normalizeCourseAssignment(rawCourseData)
+        : rawCourseData;
+
       // 衝堂檢查
       const conflicts = checkConflict(courseData);
       if (conflicts.length > 0) {
@@ -1445,19 +1561,6 @@
       }
 
       courseAssignments.push(courseData);
-
-      // 同步到行事曆
-      const teacher = teachers.find(t => t.id === teacherId);
-      calendarEvents.push({
-        id: courseData.id,
-        date: courseData.date,
-        title: `${courseData.name} - ${teacher.name}`,
-        time: courseData.time,
-        teacherId: teacherId,
-        location: courseData.type,
-        color: getCourseTypeColor(courseData.type),
-        courseId: courseData.id
-      });
 
       saveData();
       closeAddCourseModal();
@@ -1471,7 +1574,6 @@
 
     function deleteCourse(id) {
       courseAssignments = courseAssignments.filter(c => c.id !== id);
-      calendarEvents = calendarEvents.filter(e => e.courseId !== id);
       saveData();
       updateStatistics();
       renderTeacherHoursAnalysis();
@@ -1481,30 +1583,107 @@
       alert('✅ 課程已刪除！');
     }
 
+    function syncCourseAssignmentsToCalendar(options = {}) {
+      const { persist = false } = options;
+
+      courseAssignments = courseAssignments.map(course => (
+        typeof normalizeCourseAssignment === 'function'
+          ? normalizeCourseAssignment(course)
+          : course
+      ));
+
+      const manualEvents = Array.isArray(calendarEvents)
+        ? calendarEvents.filter(event => !event.courseId)
+        : [];
+
+      const syncedEvents = courseAssignments.map(course => {
+        const teacher = teachers.find(t => t.id === course.teacherId);
+        const teacherName = teacher ? teacher.name : '未知師資';
+        return {
+          id: course.id,
+          courseId: course.id,
+          date: course.date,
+          name: course.name,
+          title: `${course.name} - ${teacherName}`,
+          time: course.time,
+          teacherId: course.teacherId,
+          location: course.type,
+          note: course.note || '',
+          color: getCourseTypeColor(course.type)
+        };
+      });
+
+      calendarEvents = [...manualEvents, ...syncedEvents];
+
+      if (persist) {
+        localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+        localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+      }
+
+      return calendarEvents;
+    }
+
     // ==================== 工具函數 ====================
     function calculateHours(timeRange) {
-      const [start, end] = timeRange.split('-');
-      const startTime = new Date(`2024-01-01 ${start}`);
-      const endTime = new Date(`2024-01-01 ${end}`);
-      return (endTime - startTime) / (1000 * 60 * 60);
+      if (typeof timeRange !== 'string') {
+        return 0;
+      }
+
+      const [startRaw, endRaw] = timeRange.split('-').map(part => part.trim());
+      if (!startRaw || !endRaw) {
+        return 0;
+      }
+
+      const toMinutes = (value) => {
+        const [hours, minutes] = value.split(':').map(Number);
+        if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+          return NaN;
+        }
+        return hours * 60 + minutes;
+      };
+
+      const startMinutes = toMinutes(startRaw);
+      const endMinutes = toMinutes(endRaw);
+
+      if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
+        return 0;
+      }
+
+      return (endMinutes - startMinutes) / 60;
     }
 
     function checkConflict(newCourse) {
       const conflicts = [];
       const timeToMinutes = (time) => {
+        if (typeof time !== 'string') {
+          return NaN;
+        }
         const [h, m] = time.split(':').map(Number);
+        if (!Number.isFinite(h) || !Number.isFinite(m)) {
+          return NaN;
+        }
         return h * 60 + m;
       };
 
-      const [newStart, newEnd] = newCourse.time.split('-');
+      const [newStart, newEnd] = (typeof newCourse.time === 'string'
+        ? newCourse.time
+        : '').split('-').map(part => part.trim());
       const newStartMin = timeToMinutes(newStart);
       const newEndMin = timeToMinutes(newEnd);
 
+      if (!Number.isFinite(newStartMin) || !Number.isFinite(newEndMin)) {
+        return conflicts;
+      }
+
       courseAssignments.forEach(c => {
         if (c.teacherId === newCourse.teacherId && c.date === newCourse.date) {
-          const [start, end] = c.time.split('-');
+          const [start, end] = (typeof c.time === 'string' ? c.time : '').split('-').map(part => part.trim());
           const startMin = timeToMinutes(start);
           const endMin = timeToMinutes(end);
+
+          if (!Number.isFinite(startMin) || !Number.isFinite(endMin)) {
+            return;
+          }
 
           if (!(newEndMin <= startMin || newStartMin >= endMin)) {
             conflicts.push(`- ${c.name} (${c.time})`);
@@ -1528,6 +1707,13 @@
 
     function saveData() {
       try {
+        if (typeof syncCourseAssignmentsToCalendar === 'function') {
+          const syncedEvents = syncCourseAssignmentsToCalendar({ persist: false });
+          if (Array.isArray(syncedEvents)) {
+            calendarEvents = syncedEvents;
+          }
+        }
+
         // 儲存到 localStorage
         localStorage.setItem('teachers', JSON.stringify(teachers));
         localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
