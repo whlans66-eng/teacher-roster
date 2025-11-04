@@ -552,16 +552,16 @@ async function initializeDataSync() {
 
     // 載入資料
     await syncManager.loadFromBackend();
-    showSyncStatus('資料已從雲端載入', 'success');
+    // showSyncStatus('資料已從雲端載入', 'success');
 
     // 可選：啟用自動同步（每 5 分鐘）
     // syncManager.enableAutoSync(5);
 
   } catch (error) {
     console.warn('⚠️ 無法連線到後端，使用本地資料:', error);
-    showSyncStatus('使用離線模式', 'warning', {
-      hint: '請確認 API URL 與 TOKEN 設定是否正確，或檢查網路連線狀態。'
-    });
+    // showSyncStatus('使用離線模式', 'warning', {
+    //   hint: '請確認 API URL 與 TOKEN 設定是否正確，或檢查網路連線狀態。'
+    // });
   }
 }
 
