@@ -844,6 +844,68 @@
         </div>
       </div>
     </div>
+
+    <!-- 海事課程編輯彈跳視窗 -->
+    <div id="maritimeCourseModal" class="fixed inset-0 bg-black bg-opacity-60 modal-backdrop hidden flex items-center justify-center z-50">
+      <div class="glass-effect rounded-2xl p-8 w-[600px] mx-4 shadow-2xl border border-white border-opacity-20 max-h-[90vh] overflow-y-auto">
+        <h3 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
+          <span id="maritimeModalTitle">✨ 編輯課程</span>
+        </h3>
+        <form id="maritimeCourseModalForm" onsubmit="saveMaritimeCourseFromModal(event)">
+          <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">📝 課程名稱</label>
+            <input type="text" id="maritimeCourseNameModal" required
+                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">📚 課程分類</label>
+            <select id="maritimeCourseCategoryModal" required
+                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+              <option value="">請選擇分類</option>
+              <option value="01">01船舶操縱與航行實務訓練</option>
+              <option value="02">02領導統御與檢查應對管理</option>
+              <option value="03">03事故案例分析與應變處置訓練</option>
+              <option value="04">04船舶設備操作與技術知能訓練</option>
+              <option value="05">05國際法規與環境合規知識</option>
+              <option value="06">06船舶貨物裝卸作業實務</option>
+              <option value="07">07船員經驗交流與職能回饋</option>
+              <option value="08">08職級轉換與壓力調適</option>
+              <option value="09">09其他</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">📖 課程描述</label>
+            <textarea id="maritimeCourseDescriptionModal" rows="4" required
+                      class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80"></textarea>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">💻 授課方式</label>
+            <select id="maritimeCourseMethodModal" required
+                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+              <option value="">請選擇授課方式</option>
+              <option value="實體課程">實體課程</option>
+              <option value="線上課程">線上課程</option>
+              <option value="混合課程">混合課程</option>
+            </select>
+          </div>
+          <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">🏷️ 關鍵字（用逗號分隔）</label>
+            <input type="text" id="maritimeCourseKeywordsModal" placeholder="例如：導航,雷達,GPS,船舶操作"
+                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+          </div>
+          <div class="flex space-x-4">
+            <button type="button" onclick="closeMaritimeCourseModal()"
+                    class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-semibold transition-all shadow-md">
+              ❌ 取消
+            </button>
+            <button type="submit"
+                    class="flex-1 btn-primary text-white py-3 rounded-xl font-semibold shadow-lg">
+              ✅ 儲存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <!-- ====== 後端 API 設定 / 工具 ====== -->
@@ -2683,6 +2745,13 @@ grid.appendChild(cell);
     }
   });
 
+  // 點擊 maritimeCourseModal 外部關閉
+  document.getElementById('maritimeCourseModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeMaritimeCourseModal();
+    }
+  });
+
   // ========== 衝堂檢查與行事曆整合功能 ==========
 
   // 檢查老師在特定時間是否有衝堂
@@ -3246,12 +3315,11 @@ grid.appendChild(cell);
       const courseCard = document.createElement('div');
       courseCard.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow fade-in cursor-pointer';
 
-      // 點擊字卡進入編輯
+      // 點擊字卡進入編輯（使用彈跳視窗）
       courseCard.onclick = function(e) {
         // 如果點擊的是刪除按鈕，不觸發編輯
         if (e.target.closest('.delete-btn')) return;
         editMaritimeCourse(course.id);
-        document.getElementById('maritimeEditTab').click();
       };
 
       const highlightedName = highlightMaritimeText(course.name, searchTerm);
@@ -3269,13 +3337,23 @@ grid.appendChild(cell);
                 ${course.method || '未設定'}
               </span>
             </div>
-            <div class="flex gap-1">
-              <button onclick="event.stopPropagation(); deleteMaritimeCourse(${course.id})"
-                      class="delete-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors"
-                      title="刪除課程">
-                刪除
-              </button>
-            </div>
+            <button onclick="event.stopPropagation(); deleteMaritimeCourse(${course.id})"
+                    class="delete-btn"
+                    style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+                           color: white;
+                           border: none;
+                           padding: 6px 16px;
+                           border-radius: 20px;
+                           font-size: 12px;
+                           font-weight: 600;
+                           cursor: pointer;
+                           transition: all 0.3s ease;
+                           box-shadow: 0 2px 8px rgba(238, 90, 111, 0.3);"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(238, 90, 111, 0.4)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(238, 90, 111, 0.3)'"
+                    title="刪除課程">
+              🗑️ 刪除
+            </button>
           </div>
           <h3 class="text-lg font-bold text-gray-800">${highlightedName}</h3>
         </div>
@@ -3354,20 +3432,71 @@ grid.appendChild(cell);
     });
   }
 
-  // 編輯課程
+  // 編輯課程（使用彈跳視窗）
   function editMaritimeCourse(courseId) {
     const course = maritimeCourses.find(c => c.id === courseId);
     if (!course) return;
 
     editingMaritimeCourseId = courseId;
-    document.getElementById('maritimeCourseName').value = course.name;
-    document.getElementById('maritimeCourseCategory').value = course.category;
-    document.getElementById('maritimeCourseMethod').value = course.method || '';
-    document.getElementById('maritimeCourseDescription').value = course.description;
-    document.getElementById('maritimeCourseKeywords').value = course.keywords.join(', ');
+    document.getElementById('maritimeModalTitle').textContent = '✏️ 編輯課程';
+    document.getElementById('maritimeCourseNameModal').value = course.name;
+    document.getElementById('maritimeCourseCategoryModal').value = course.category;
+    document.getElementById('maritimeCourseMethodModal').value = course.method || '';
+    document.getElementById('maritimeCourseDescriptionModal').value = course.description;
+    document.getElementById('maritimeCourseKeywordsModal').value = course.keywords.join(', ');
 
-    document.querySelector('#maritimeCourseForm button[type="submit"]').textContent = '更新課程';
-    document.getElementById('maritimeCourseName').focus();
+    // 打開彈跳視窗
+    document.getElementById('maritimeCourseModal').classList.remove('hidden');
+  }
+
+  // 關閉彈跳視窗
+  function closeMaritimeCourseModal() {
+    document.getElementById('maritimeCourseModal').classList.add('hidden');
+    editingMaritimeCourseId = null;
+    document.getElementById('maritimeCourseModalForm').reset();
+    document.getElementById('maritimeModalTitle').textContent = '✨ 新增課程';
+  }
+
+  // 從彈跳視窗儲存課程
+  function saveMaritimeCourseFromModal(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('maritimeCourseNameModal').value.trim();
+    const category = document.getElementById('maritimeCourseCategoryModal').value;
+    const method = document.getElementById('maritimeCourseMethodModal').value;
+    const description = document.getElementById('maritimeCourseDescriptionModal').value.trim();
+    const keywordsInput = document.getElementById('maritimeCourseKeywordsModal').value.trim();
+    const keywords = keywordsInput ? keywordsInput.split(',').map(k => k.trim()).filter(k => k) : [];
+
+    if (editingMaritimeCourseId) {
+      // 更新現有課程
+      const courseIndex = maritimeCourses.findIndex(c => c.id === editingMaritimeCourseId);
+      maritimeCourses[courseIndex] = {
+        ...maritimeCourses[courseIndex],
+        name,
+        category,
+        method,
+        description,
+        keywords
+      };
+    } else {
+      // 新增課程
+      const newCourse = {
+        id: Date.now(),
+        name,
+        category,
+        method,
+        description,
+        keywords
+      };
+      maritimeCourses.push(newCourse);
+    }
+
+    saveMaritimeCourses();
+    displayMaritimeCourses();
+    displayManageMaritimeCourses();
+    closeMaritimeCourseModal();
+    showMaritimeMessage(editingMaritimeCourseId ? '課程已更新' : '課程已新增', 'success');
   }
 
   // 刪除課程
