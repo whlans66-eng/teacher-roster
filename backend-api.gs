@@ -35,7 +35,7 @@ function doGet(e) {
     const p = e?.parameter || {};
     _checkToken(p.token);
     const action = String(p.action || '').toLowerCase();
-    const table = String(p.table || '').toLowerCase();
+    const table = String(p.table || '');
 
     if (action === 'ping') {
       return _json({ ok: true, timestamp: new Date().toISOString(), server: 'Google Apps Script' });
