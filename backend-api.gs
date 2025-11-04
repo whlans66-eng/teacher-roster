@@ -212,6 +212,9 @@ function _readTable(tableName) {
       const val = row[idx[key]];
       if (['experiences', 'certificates', 'subjects', 'tags', 'keywords'].includes(key)) {
         obj[key] = _asArray(val);
+      } else if (val instanceof Date) {
+        // 將 Date 物件轉換為 YYYY-MM-DD 格式
+        obj[key] = _formatDate(val);
       } else {
         obj[key] = val;
       }
@@ -322,4 +325,15 @@ function _asArray(v) {
   } catch (e) {
     return [];
   }
+}
+
+/**
+ * 將 Date 物件格式化為 YYYY-MM-DD
+ */
+function _formatDate(date) {
+  if (!(date instanceof Date)) return date;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
