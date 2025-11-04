@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;background-color:#f0ebd8;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
     .fade-in{animation:fadeIn .3s ease-in}
     @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     .slide-in{animation:slideIn .3s ease-out}
@@ -56,7 +56,7 @@
   <!-- API 層：與後端通訊 -->
   <script src="js/api.js"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="min-h-screen">
   <div class="container mx-auto px-4 py-8">
     <!-- 返回首頁按鈕 -->
     <div class="mb-6">
@@ -1779,7 +1779,10 @@
       filteredTeachers = teachers.filter(t => {
         // 每個關鍵字都必須在至少一個欄位中找到
         return keywords.every(kw => {
-          // 搜尋所有欄位
+          // 搜尋所有欄位（優先檢查標籤）
+
+          // 標籤
+          if ((t.tags || []).some(tag => String(tag).toLowerCase().includes(kw))) return true;
 
           // 姓名
           if(String(t.name||'').toLowerCase().includes(kw)) return true;
