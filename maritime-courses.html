@@ -864,6 +864,15 @@
       filteredCourses.forEach(course => {
         const courseCard = document.createElement('div');
         courseCard.className = 'course-card fade-in';
+        courseCard.style.cursor = 'pointer';
+
+        // 點擊字卡進入編輯
+        courseCard.onclick = function(e) {
+          // 如果點擊的是刪除按鈕，不觸發編輯
+          if (e.target.closest('.delete-btn')) return;
+          editMaritimeCourse(course.id);
+          document.getElementById('maritimeEditTab').click();
+        };
 
         const highlightedName = highlightMaritimeText(course.name, searchTerm);
         const highlightedDescription = highlightMaritimeText(course.description, searchTerm);
@@ -872,9 +881,19 @@
         const methodClass = getMaritimeMethodClass(course.method);
 
         courseCard.innerHTML = `
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-            <span class="tag tag-category">${maritimeCategoryNames[course.category]}</span>
-            <span class="tag ${methodClass}">${course.method || '未設定'}</span>
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <span class="tag tag-category">${maritimeCategoryNames[course.category]}</span>
+              <span class="tag ${methodClass}">${course.method || '未設定'}</span>
+            </div>
+            <button onclick="event.stopPropagation(); deleteMaritimeCourse(${course.id})"
+                    class="delete-btn"
+                    style="background: #ff3b30; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: background 0.2s;"
+                    onmouseover="this.style.background='#e6342a'"
+                    onmouseout="this.style.background='#ff3b30'"
+                    title="刪除課程">
+              刪除
+            </button>
           </div>
           <h3 style="font-size: 18px; font-weight: 600; color: #1d1d1f; margin-bottom: 12px;">${highlightedName}</h3>
           <p style="color: #6e6e73; font-size: 14px; margin-bottom: 16px; line-height: 1.5;">${highlightedDescription}</p>
@@ -980,7 +999,8 @@
       if (confirm('確定要刪除這個課程嗎？')) {
         maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
         saveMaritimeCourses();
-        displayManageMaritimeCourses();
+        displayMaritimeCourses(); // 更新搜尋頁面
+        displayManageMaritimeCourses(); // 更新管理頁面
         showMaritimeMessage('課程已刪除', 'success');
       }
     }
