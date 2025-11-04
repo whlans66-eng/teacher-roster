@@ -3244,7 +3244,15 @@ grid.appendChild(cell);
 
     filteredCourses.forEach(course => {
       const courseCard = document.createElement('div');
-      courseCard.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow fade-in';
+      courseCard.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow fade-in cursor-pointer';
+
+      // 點擊字卡進入編輯
+      courseCard.onclick = function(e) {
+        // 如果點擊的是刪除按鈕，不觸發編輯
+        if (e.target.closest('.delete-btn')) return;
+        editMaritimeCourse(course.id);
+        document.getElementById('maritimeEditTab').click();
+      };
 
       const highlightedName = highlightMaritimeText(course.name, searchTerm);
       const highlightedDescription = highlightMaritimeText(course.description, searchTerm);
@@ -3262,13 +3270,8 @@ grid.appendChild(cell);
               </span>
             </div>
             <div class="flex gap-1">
-              <button onclick="editMaritimeCourse(${course.id}); document.getElementById('maritimeEditTab').click();"
-                      class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
-                      title="編輯課程">
-                編輯
-              </button>
-              <button onclick="deleteMaritimeCourse(${course.id})"
-                      class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors"
+              <button onclick="event.stopPropagation(); deleteMaritimeCourse(${course.id})"
+                      class="delete-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors"
                       title="刪除課程">
                 刪除
               </button>
