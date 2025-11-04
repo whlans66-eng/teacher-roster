@@ -2197,10 +2197,18 @@ grid.appendChild(cell);
     // 先移除所有由派課產生的行事曆事件
     calendarEvents = calendarEvents.filter(e => !e.courseId);
 
+    console.log('🔄 開始同步派課到行事曆...');
+    console.log('  - courseAssignments 數量:', courseAssignments.length);
+
     // 將所有派課轉換為行事曆事件
-    courseAssignments.forEach(course => {
+    courseAssignments.forEach((course, index) => {
       const teacher = teachers.find(t => t.id === course.teacherId);
       const teacherName = teacher ? teacher.name : '未知師資';
+
+      // 調試：顯示前幾筆資料的日期格式
+      if (index < 3) {
+        console.log(`  - 派課 ${index + 1}: ${course.name}, 日期: "${course.date}", 時間: "${course.time}"`);
+      }
 
       calendarEvents.push({
         id: course.id,
@@ -2217,6 +2225,13 @@ grid.appendChild(cell);
 
     saveCalendarLocal();
     console.log('✅ 派課數據已同步到行事曆，共', courseAssignments.length, '筆');
+    console.log('  - calendarEvents 總數:', calendarEvents.length, '筆');
+
+    // 如果目前正在行事曆視圖，重新渲染以顯示更新
+    if (currentMode === 'calendar') {
+      renderCalendar();
+      console.log('🔄 行事曆視圖已更新');
+    }
   }
 
   // 顯示派課管理視圖
