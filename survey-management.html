@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>課程問卷管理系統 - WHL MARITRAIN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    body {
+      background: #f5f5f7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 122, 255, 0.3);
+    }
+
+    .tab-active {
+      border-bottom: 3px solid #007AFF;
+      color: #007AFF;
+      font-weight: 600;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 50;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .question-item {
+      border-left: 4px solid #007AFF;
+      transition: all 0.2s ease;
+    }
+
+    .question-item:hover {
+      background: #f9fafb;
+      border-left-color: #5856D6;
+    }
+
+    .delete-btn {
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .question-item:hover .delete-btn {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- 返回按鈕 -->
+  <div class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <a href="index.html" class="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        返回主頁
+      </a>
+    </div>
+  </div>
+
+  <!-- 標題區域 -->
+  <div class="bg-white border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-4xl font-bold text-gray-900">課程問卷管理系統</h1>
+          <p class="mt-2 text-lg text-gray-600">創建問卷模板、發放問卷、查看統計分析</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button onclick="syncWithBackend()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            同步數據
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 標籤頁導航 -->
+  <div class="bg-white border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav class="flex space-x-8">
+        <button onclick="switchTab('templates')" id="tab-templates" class="tab-active py-4 px-2 text-sm font-medium border-b-2 border-transparent hover:border-gray-300 transition-colors">
+          問卷模板管理
+        </button>
+        <button onclick="switchTab('surveys')" id="tab-surveys" class="py-4 px-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 transition-colors">
+          問卷發放管理
+        </button>
+        <button onclick="switchTab('responses')" id="tab-responses" class="py-4 px-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 transition-colors">
+          回應統計分析
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- 主內容區域 -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- 問卷模板管理 -->
+    <div id="content-templates" class="tab-content">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">問卷模板</h2>
+        <button onclick="openTemplateEditor()" class="btn-primary text-white px-6 py-3 rounded-lg shadow-lg">
+          <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          創建新模板
+        </button>
+      </div>
+
+      <div id="templatesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 模板卡片將動態生成 -->
+      </div>
+    </div>
+
+    <!-- 問卷發放管理 -->
+    <div id="content-surveys" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">問卷發放管理</h2>
+        <button onclick="openCreateSurveyModal()" class="btn-primary text-white px-6 py-3 rounded-lg shadow-lg">
+          <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          發放新問卷
+        </button>
+      </div>
+
+      <div id="surveysList" class="space-y-4">
+        <!-- 問卷列表將動態生成 -->
+      </div>
+    </div>
+
+    <!-- 回應統計分析 -->
+    <div id="content-responses" class="tab-content hidden">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">回應統計分析</h2>
+
+      <div id="responseAnalysis" class="space-y-6">
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <p class="text-gray-500">請從問卷發放管理頁面選擇一個問卷查看統計分析</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模板編輯器模態框 -->
+  <div id="templateEditorModal" class="modal">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+          <h3 class="text-2xl font-bold text-gray-900" id="editorTitle">創建問卷模板</h3>
+          <button onclick="closeTemplateEditor()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6">
+          <form id="templateForm" onsubmit="saveTemplate(event)">
+            <!-- 基本信息 -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">模板名稱 *</label>
+              <input type="text" id="templateName" required
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="例如：課程滿意度調查">
+            </div>
+
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">模板描述</label>
+              <textarea id="templateDescription" rows="3"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="簡要描述此問卷的用途"></textarea>
+            </div>
+
+            <!-- 問題列表 -->
+            <div class="mb-6">
+              <div class="flex justify-between items-center mb-4">
+                <label class="block text-sm font-medium text-gray-700">問題列表</label>
+                <button type="button" onclick="addQuestion()" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  + 新增問題
+                </button>
+              </div>
+              <div id="questionsList" class="space-y-4">
+                <!-- 問題將動態添加 -->
+              </div>
+            </div>
+
+            <!-- 按鈕 -->
+            <div class="flex justify-end space-x-4">
+              <button type="button" onclick="closeTemplateEditor()"
+                class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                取消
+              </button>
+              <button type="submit"
+                class="btn-primary text-white px-6 py-3 rounded-lg shadow-lg">
+                保存模板
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 創建問卷模態框 -->
+  <div id="createSurveyModal" class="modal">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-2xl w-full">
+        <div class="border-b px-6 py-4 flex justify-between items-center">
+          <h3 class="text-2xl font-bold text-gray-900">發放新問卷</h3>
+          <button onclick="closeCreateSurveyModal()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6">
+          <form id="createSurveyForm" onsubmit="createSurvey(event)">
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">選擇問卷模板 *</label>
+              <select id="surveyTemplate" required
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">請選擇模板</option>
+              </select>
+            </div>
+
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">選擇課程 *</label>
+              <select id="surveyCourse" required
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">請選擇課程</option>
+              </select>
+            </div>
+
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">問卷狀態</label>
+              <select id="surveyStatus"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="active">開放填寫</option>
+                <option value="closed">已關閉</option>
+              </select>
+            </div>
+
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">過期時間（可選）</label>
+              <input type="datetime-local" id="surveyExpires"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
+            <div class="flex justify-end space-x-4">
+              <button type="button" onclick="closeCreateSurveyModal()"
+                class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                取消
+              </button>
+              <button type="submit"
+                class="btn-primary text-white px-6 py-3 rounded-lg shadow-lg">
+                創建問卷
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 問卷統計模態框 -->
+  <div id="statisticsModal" class="modal">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+          <h3 class="text-2xl font-bold text-gray-900" id="statisticsTitle">問卷統計分析</h3>
+          <button onclick="closeStatisticsModal()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div id="statisticsContent" class="p-6">
+          <!-- 統計內容將動態生成 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // 全局變量
+    let surveyTemplates = [];
+    let surveys = [];
+    let surveyResponses = [];
+    let courseAssignments = [];
+    let teachers = [];
+    let currentEditingTemplate = null;
+    let questionCounter = 0;
+
+    // 初始化
+    async function init() {
+      await loadData();
+      renderTemplatesList();
+      renderSurveysList();
+    }
+
+    // 加載數據
+    async function loadData() {
+      try {
+        const allData = await syncManager.loadFromBackend();
+        surveyTemplates = allData.surveyTemplates || [];
+        surveys = allData.surveys || [];
+        surveyResponses = allData.surveyResponses || [];
+        courseAssignments = allData.courseAssignments || [];
+        teachers = allData.teachers || [];
+
+        console.log('數據加載成功', { surveyTemplates, surveys, surveyResponses });
+      } catch (error) {
+        console.error('數據加載失敗:', error);
+        // 從 localStorage 加載
+        surveyTemplates = JSON.parse(localStorage.getItem('surveyTemplates') || '[]');
+        surveys = JSON.parse(localStorage.getItem('surveys') || '[]');
+        surveyResponses = JSON.parse(localStorage.getItem('surveyResponses') || '[]');
+        courseAssignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+        teachers = JSON.parse(localStorage.getItem('teachers') || '[]');
+      }
+    }
+
+    // 同步數據到後端
+    async function syncWithBackend() {
+      try {
+        await syncManager.saveToBackend();
+        alert('數據同步成功！');
+      } catch (error) {
+        console.error('同步失敗:', error);
+        alert('數據同步失敗: ' + error.message);
+      }
+    }
+
+    // 保存到本地
+    function saveToLocal() {
+      localStorage.setItem('surveyTemplates', JSON.stringify(surveyTemplates));
+      localStorage.setItem('surveys', JSON.stringify(surveys));
+      localStorage.setItem('surveyResponses', JSON.stringify(surveyResponses));
+      syncManager.markAsChanged();
+    }
+
+    // 切換標籤頁
+    function switchTab(tabName) {
+      // 更新標籤樣式
+      document.querySelectorAll('nav button').forEach(btn => {
+        btn.classList.remove('tab-active');
+        btn.classList.add('text-gray-500');
+      });
+      document.getElementById('tab-' + tabName).classList.add('tab-active');
+      document.getElementById('tab-' + tabName).classList.remove('text-gray-500');
+
+      // 顯示對應內容
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById('content-' + tabName).classList.remove('hidden');
+    }
+
+    // ========== 問卷模板管理 ==========
+
+    // 渲染模板列表
+    function renderTemplatesList() {
+      const container = document.getElementById('templatesList');
+
+      if (surveyTemplates.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full bg-white rounded-xl shadow-md p-12 text-center">
+            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <p class="text-gray-500 text-lg">尚無問卷模板</p>
+            <p class="text-gray-400 text-sm mt-2">點擊右上角「創建新模板」開始建立您的第一個問卷模板</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = surveyTemplates.map(template => `
+        <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+          <div class="flex justify-between items-start mb-4">
+            <h3 class="text-xl font-bold text-gray-900">${template.name}</h3>
+            <div class="flex space-x-2">
+              <button onclick="editTemplate(${template.id})" class="text-blue-600 hover:text-blue-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </button>
+              <button onclick="deleteTemplate(${template.id})" class="text-red-600 hover:text-red-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <p class="text-gray-600 text-sm mb-4">${template.description || '無描述'}</p>
+
+          <div class="flex items-center justify-between text-sm text-gray-500">
+            <span>${template.questions.length} 個問題</span>
+            <span>${new Date(template.createdAt).toLocaleDateString('zh-TW')}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 打開模板編輯器
+    function openTemplateEditor() {
+      currentEditingTemplate = null;
+      document.getElementById('editorTitle').textContent = '創建問卷模板';
+      document.getElementById('templateName').value = '';
+      document.getElementById('templateDescription').value = '';
+      document.getElementById('questionsList').innerHTML = '';
+      questionCounter = 0;
+      document.getElementById('templateEditorModal').classList.add('show');
+    }
+
+    // 關閉模板編輯器
+    function closeTemplateEditor() {
+      document.getElementById('templateEditorModal').classList.remove('show');
+    }
+
+    // 編輯模板
+    function editTemplate(id) {
+      const template = surveyTemplates.find(t => t.id === id);
+      if (!template) return;
+
+      currentEditingTemplate = template;
+      document.getElementById('editorTitle').textContent = '編輯問卷模板';
+      document.getElementById('templateName').value = template.name;
+      document.getElementById('templateDescription').value = template.description || '';
+
+      document.getElementById('questionsList').innerHTML = '';
+      questionCounter = 0;
+      template.questions.forEach(q => {
+        addQuestion(q);
+      });
+
+      document.getElementById('templateEditorModal').classList.add('show');
+    }
+
+    // 刪除模板
+    function deleteTemplate(id) {
+      if (!confirm('確定要刪除此問卷模板嗎？')) return;
+
+      surveyTemplates = surveyTemplates.filter(t => t.id !== id);
+      saveToLocal();
+      renderTemplatesList();
+    }
+
+    // 新增問題
+    function addQuestion(existingQuestion = null) {
+      questionCounter++;
+      const qId = existingQuestion ? existingQuestion.questionId : 'q' + questionCounter + '_' + Date.now();
+
+      const questionDiv = document.createElement('div');
+      questionDiv.className = 'question-item bg-gray-50 p-4 rounded-lg';
+      questionDiv.dataset.questionId = qId;
+
+      const type = existingQuestion ? existingQuestion.type : 'rating';
+      const question = existingQuestion ? existingQuestion.question : '';
+      const required = existingQuestion ? existingQuestion.required : true;
+      const ratingMax = existingQuestion ? (existingQuestion.ratingMax || 5) : 5;
+      const options = existingQuestion ? (existingQuestion.options || []) : [];
+
+      questionDiv.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+          <h4 class="font-medium text-gray-900">問題 ${questionCounter}</h4>
+          <button type="button" onclick="removeQuestion('${qId}')" class="delete-btn text-red-600 hover:text-red-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-sm font-medium text-gray-700 mb-2">問題類型</label>
+          <select class="question-type w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateQuestionType('${qId}', this.value)">
+            <option value="rating" ${type === 'rating' ? 'selected' : ''}>評分題（星級/分數）</option>
+            <option value="single" ${type === 'single' ? 'selected' : ''}>單選題</option>
+            <option value="multiple" ${type === 'multiple' ? 'selected' : ''}>多選題</option>
+            <option value="text" ${type === 'text' ? 'selected' : ''}>簡答題</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-sm font-medium text-gray-700 mb-2">問題內容</label>
+          <input type="text" class="question-text w-full px-3 py-2 border border-gray-300 rounded-lg"
+            placeholder="請輸入問題" value="${question}" required>
+        </div>
+
+        <div class="question-options mb-3" style="display: ${['single', 'multiple'].includes(type) ? 'block' : 'none'}">
+          <label class="block text-sm font-medium text-gray-700 mb-2">選項（每行一個）</label>
+          <textarea class="options-text w-full px-3 py-2 border border-gray-300 rounded-lg" rows="4"
+            placeholder="選項1&#10;選項2&#10;選項3">${options.join('\n')}</textarea>
+        </div>
+
+        <div class="question-rating mb-3" style="display: ${type === 'rating' ? 'block' : 'none'}">
+          <label class="block text-sm font-medium text-gray-700 mb-2">最高分數</label>
+          <select class="rating-max w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <option value="5" ${ratingMax === 5 ? 'selected' : ''}>5 分（1-5）</option>
+            <option value="10" ${ratingMax === 10 ? 'selected' : ''}>10 分（1-10）</option>
+          </select>
+        </div>
+
+        <div class="flex items-center">
+          <input type="checkbox" class="question-required mr-2" ${required ? 'checked' : ''}>
+          <label class="text-sm text-gray-700">必填問題</label>
+        </div>
+      `;
+
+      document.getElementById('questionsList').appendChild(questionDiv);
+    }
+
+    // 更新問題類型
+    function updateQuestionType(questionId, type) {
+      const questionDiv = document.querySelector(`[data-question-id="${questionId}"]`);
+      const optionsDiv = questionDiv.querySelector('.question-options');
+      const ratingDiv = questionDiv.querySelector('.question-rating');
+
+      optionsDiv.style.display = ['single', 'multiple'].includes(type) ? 'block' : 'none';
+      ratingDiv.style.display = type === 'rating' ? 'block' : 'none';
+    }
+
+    // 移除問題
+    function removeQuestion(questionId) {
+      const questionDiv = document.querySelector(`[data-question-id="${questionId}"]`);
+      questionDiv.remove();
+    }
+
+    // 保存模板
+    function saveTemplate(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('templateName').value.trim();
+      const description = document.getElementById('templateDescription').value.trim();
+
+      // 收集問題
+      const questions = [];
+      document.querySelectorAll('.question-item').forEach((qDiv, index) => {
+        const type = qDiv.querySelector('.question-type').value;
+        const question = qDiv.querySelector('.question-text').value.trim();
+        const required = qDiv.querySelector('.question-required').checked;
+        const questionId = qDiv.dataset.questionId;
+
+        const q = {
+          questionId,
+          type,
+          question,
+          required
+        };
+
+        if (type === 'rating') {
+          q.ratingMax = parseInt(qDiv.querySelector('.rating-max').value);
+        } else if (['single', 'multiple'].includes(type)) {
+          const optionsText = qDiv.querySelector('.options-text').value.trim();
+          q.options = optionsText.split('\n').map(o => o.trim()).filter(o => o);
+        }
+
+        questions.push(q);
+      });
+
+      if (questions.length === 0) {
+        alert('請至少添加一個問題');
+        return;
+      }
+
+      const now = new Date().toISOString();
+
+      if (currentEditingTemplate) {
+        // 更新現有模板
+        currentEditingTemplate.name = name;
+        currentEditingTemplate.description = description;
+        currentEditingTemplate.questions = questions;
+        currentEditingTemplate.updatedAt = now;
+      } else {
+        // 創建新模板
+        const newTemplate = {
+          id: Date.now(),
+          name,
+          description,
+          questions,
+          createdAt: now,
+          updatedAt: now
+        };
+        surveyTemplates.push(newTemplate);
+      }
+
+      saveToLocal();
+      renderTemplatesList();
+      closeTemplateEditor();
+      alert('模板保存成功！');
+    }
+
+    // ========== 問卷發放管理 ==========
+
+    // 渲染問卷列表
+    function renderSurveysList() {
+      const container = document.getElementById('surveysList');
+
+      if (surveys.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-xl shadow-md p-12 text-center">
+            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <p class="text-gray-500 text-lg">尚無問卷發放紀錄</p>
+            <p class="text-gray-400 text-sm mt-2">點擊右上角「發放新問卷」為課程創建問卷</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = surveys.map(survey => {
+        const template = surveyTemplates.find(t => t.id === survey.templateId);
+        const responsesCount = surveyResponses.filter(r => r.surveyId === survey.id).length;
+        const statusBadge = survey.status === 'active'
+          ? '<span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">開放中</span>'
+          : '<span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">已關閉</span>';
+
+        return `
+          <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <div class="flex items-center space-x-3 mb-2">
+                  <h3 class="text-xl font-bold text-gray-900">${survey.courseName}</h3>
+                  ${statusBadge}
+                </div>
+                <p class="text-gray-600 text-sm mb-2">問卷模板：${template ? template.name : '未知模板'}</p>
+                <p class="text-gray-500 text-sm">教師：${survey.teacherName} | 日期：${survey.courseDate}</p>
+                <p class="text-gray-500 text-sm mt-2">回應數：${responsesCount} 份</p>
+              </div>
+
+              <div class="flex flex-col space-y-2">
+                <button onclick="copySurveyLink(${survey.id})"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                  複製連結
+                </button>
+                <button onclick="viewStatistics(${survey.id})"
+                  class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                  查看統計
+                </button>
+                <button onclick="toggleSurveyStatus(${survey.id})"
+                  class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                  ${survey.status === 'active' ? '關閉' : '開啟'}
+                </button>
+                <button onclick="deleteSurvey(${survey.id})"
+                  class="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors text-sm">
+                  刪除
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 打開創建問卷對話框
+    function openCreateSurveyModal() {
+      // 填充模板選項
+      const templateSelect = document.getElementById('surveyTemplate');
+      templateSelect.innerHTML = '<option value="">請選擇模板</option>' +
+        surveyTemplates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+      // 填充課程選項
+      const courseSelect = document.getElementById('surveyCourse');
+      courseSelect.innerHTML = '<option value="">請選擇課程</option>' +
+        courseAssignments.map(c => {
+          const teacher = teachers.find(t => t.id === c.teacherId);
+          return `<option value="${c.id}">${c.name} - ${c.date} (${teacher ? teacher.name : '未知教師'})</option>`;
+        }).join('');
+
+      document.getElementById('createSurveyModal').classList.add('show');
+    }
+
+    // 關閉創建問卷對話框
+    function closeCreateSurveyModal() {
+      document.getElementById('createSurveyModal').classList.remove('show');
+    }
+
+    // 創建問卷
+    function createSurvey(event) {
+      event.preventDefault();
+
+      const templateId = parseInt(document.getElementById('surveyTemplate').value);
+      const courseId = parseInt(document.getElementById('surveyCourse').value);
+      const status = document.getElementById('surveyStatus').value;
+      const expires = document.getElementById('surveyExpires').value;
+
+      const course = courseAssignments.find(c => c.id === courseId);
+      const teacher = teachers.find(t => t.id === course.teacherId);
+
+      const surveyId = Date.now();
+      const shareUrl = window.location.origin + window.location.pathname.replace('survey-management.html', 'survey-form.html') + '?id=' + surveyId;
+
+      const newSurvey = {
+        id: surveyId,
+        templateId,
+        courseId,
+        courseName: course.name,
+        courseDate: course.date,
+        teacherId: course.teacherId,
+        teacherName: teacher ? teacher.name : '未知教師',
+        status,
+        shareUrl,
+        createdAt: new Date().toISOString(),
+        expiresAt: expires || null
+      };
+
+      surveys.push(newSurvey);
+      saveToLocal();
+      renderSurveysList();
+      closeCreateSurveyModal();
+      alert('問卷創建成功！');
+    }
+
+    // 複製問卷連結
+    function copySurveyLink(surveyId) {
+      const survey = surveys.find(s => s.id === surveyId);
+      if (!survey) return;
+
+      navigator.clipboard.writeText(survey.shareUrl).then(() => {
+        alert('問卷連結已複製到剪貼簿！\n\n' + survey.shareUrl);
+      }).catch(() => {
+        prompt('請手動複製問卷連結：', survey.shareUrl);
+      });
+    }
+
+    // 切換問卷狀態
+    function toggleSurveyStatus(surveyId) {
+      const survey = surveys.find(s => s.id === surveyId);
+      if (!survey) return;
+
+      survey.status = survey.status === 'active' ? 'closed' : 'active';
+      saveToLocal();
+      renderSurveysList();
+    }
+
+    // 刪除問卷
+    function deleteSurvey(surveyId) {
+      if (!confirm('確定要刪除此問卷嗎？相關的回應也會被刪除。')) return;
+
+      surveys = surveys.filter(s => s.id !== surveyId);
+      surveyResponses = surveyResponses.filter(r => r.surveyId !== surveyId);
+      saveToLocal();
+      renderSurveysList();
+    }
+
+    // 查看統計
+    function viewStatistics(surveyId) {
+      const survey = surveys.find(s => s.id === surveyId);
+      const template = surveyTemplates.find(t => t.id === survey.templateId);
+      const responses = surveyResponses.filter(r => r.surveyId === surveyId);
+
+      if (responses.length === 0) {
+        alert('此問卷尚無回應資料');
+        return;
+      }
+
+      document.getElementById('statisticsTitle').textContent = `${survey.courseName} - 統計分析`;
+
+      let html = `
+        <div class="mb-6">
+          <h4 class="text-lg font-bold text-gray-900 mb-2">基本信息</h4>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">總回應數</p>
+              <p class="text-2xl font-bold text-blue-600">${responses.length}</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">課程名稱</p>
+              <p class="text-lg font-bold text-green-600">${survey.courseName}</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">授課教師</p>
+              <p class="text-lg font-bold text-purple-600">${survey.teacherName}</p>
+            </div>
+            <div class="bg-orange-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">課程日期</p>
+              <p class="text-lg font-bold text-orange-600">${survey.courseDate}</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 逐題統計
+      template.questions.forEach((question, index) => {
+        const answers = responses.map(r => {
+          const answer = r.answers.find(a => a.questionId === question.questionId);
+          return answer ? answer.answer : null;
+        }).filter(a => a !== null);
+
+        html += `<div class="mb-6 bg-gray-50 p-6 rounded-lg">`;
+        html += `<h4 class="text-lg font-bold text-gray-900 mb-4">問題 ${index + 1}：${question.question}</h4>`;
+
+        if (question.type === 'rating') {
+          const numericAnswers = answers.map(a => parseFloat(a)).filter(a => !isNaN(a));
+          const avg = numericAnswers.length > 0
+            ? (numericAnswers.reduce((sum, a) => sum + a, 0) / numericAnswers.length).toFixed(2)
+            : 0;
+
+          const distribution = {};
+          for (let i = 1; i <= question.ratingMax; i++) {
+            distribution[i] = numericAnswers.filter(a => a === i).length;
+          }
+
+          html += `
+            <div class="mb-4">
+              <p class="text-3xl font-bold text-blue-600">${avg} / ${question.ratingMax}</p>
+              <p class="text-sm text-gray-600">平均分數</p>
+            </div>
+            <div class="space-y-2">
+          `;
+
+          for (let i = question.ratingMax; i >= 1; i--) {
+            const count = distribution[i];
+            const percent = numericAnswers.length > 0 ? (count / numericAnswers.length * 100).toFixed(1) : 0;
+            html += `
+              <div class="flex items-center">
+                <span class="w-8 text-sm text-gray-600">${i} 分</span>
+                <div class="flex-1 mx-4">
+                  <div class="bg-gray-200 rounded-full h-6">
+                    <div class="bg-blue-500 rounded-full h-6 flex items-center justify-end px-2" style="width: ${percent}%">
+                      <span class="text-xs text-white font-medium">${percent}%</span>
+                    </div>
+                  </div>
+                </div>
+                <span class="w-12 text-sm text-gray-600 text-right">${count} 人</span>
+              </div>
+            `;
+          }
+
+          html += `</div>`;
+        } else if (['single', 'multiple'].includes(question.type)) {
+          const distribution = {};
+          question.options.forEach(opt => {
+            distribution[opt] = 0;
+          });
+
+          answers.forEach(answer => {
+            if (question.type === 'multiple' && Array.isArray(answer)) {
+              answer.forEach(a => {
+                if (distribution[a] !== undefined) distribution[a]++;
+              });
+            } else {
+              if (distribution[answer] !== undefined) distribution[answer]++;
+            }
+          });
+
+          const totalCount = question.type === 'multiple'
+            ? Object.values(distribution).reduce((sum, c) => sum + c, 0)
+            : answers.length;
+
+          html += `<div class="space-y-2">`;
+          Object.entries(distribution).forEach(([option, count]) => {
+            const percent = totalCount > 0 ? (count / totalCount * 100).toFixed(1) : 0;
+            html += `
+              <div class="flex items-center">
+                <span class="w-32 text-sm text-gray-600 truncate">${option}</span>
+                <div class="flex-1 mx-4">
+                  <div class="bg-gray-200 rounded-full h-6">
+                    <div class="bg-green-500 rounded-full h-6 flex items-center justify-end px-2" style="width: ${percent}%">
+                      <span class="text-xs text-white font-medium">${percent}%</span>
+                    </div>
+                  </div>
+                </div>
+                <span class="w-12 text-sm text-gray-600 text-right">${count} 次</span>
+              </div>
+            `;
+          });
+          html += `</div>`;
+        } else if (question.type === 'text') {
+          html += `<div class="space-y-3 max-h-64 overflow-y-auto">`;
+          answers.forEach((answer, i) => {
+            html += `
+              <div class="bg-white p-3 rounded border border-gray-200">
+                <p class="text-sm text-gray-800">${answer}</p>
+              </div>
+            `;
+          });
+          html += `</div>`;
+        }
+
+        html += `</div>`;
+      });
+
+      document.getElementById('statisticsContent').innerHTML = html;
+      document.getElementById('statisticsModal').classList.add('show');
+    }
+
+    // 關閉統計對話框
+    function closeStatisticsModal() {
+      document.getElementById('statisticsModal').classList.remove('show');
+    }
+
+    // 頁面加載時初始化
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

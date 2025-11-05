@@ -27,6 +27,18 @@ const SHEETS_CONFIG = {
   maritimeCourses: {
     name: 'maritimeCourses',
     header: ['id','name','category','method','description','keywords']
+  },
+  surveyTemplates: {
+    name: 'surveyTemplates',
+    header: ['id','name','description','questions','createdAt','updatedAt']
+  },
+  surveys: {
+    name: 'surveys',
+    header: ['id','templateId','courseId','courseName','courseDate','teacherId','teacherName','status','shareUrl','createdAt','expiresAt']
+  },
+  surveyResponses: {
+    name: 'surveyResponses',
+    header: ['id','surveyId','respondentName','respondentEmail','answers','submittedAt']
   }
 };
 
@@ -100,6 +112,16 @@ function doPost(e) {
         data = data.map(c => ({
           ...c,
           keywords: _asArray(c?.keywords)
+        }));
+      } else if (table === 'surveyTemplates') {
+        data = data.map(t => ({
+          ...t,
+          questions: _asArray(t?.questions)
+        }));
+      } else if (table === 'surveyResponses') {
+        data = data.map(r => ({
+          ...r,
+          answers: _asArray(r?.answers)
         }));
       }
 
@@ -210,7 +232,7 @@ function _readTable(tableName) {
     const obj = {};
     header.forEach((key, i) => {
       const val = row[idx[key]];
-      if (['experiences', 'certificates', 'subjects', 'tags', 'keywords'].includes(key)) {
+      if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers'].includes(key)) {
         obj[key] = _asArray(val);
       } else if (val instanceof Date) {
         // 將 Date 物件轉換為 YYYY-MM-DD 格式
@@ -254,7 +276,7 @@ function _writeTable(tableName, dataArray) {
     const row = new Array(idx._len).fill('');
     header.forEach((key, i) => {
       const val = item[key];
-      if (['experiences', 'certificates', 'subjects', 'tags', 'keywords'].includes(key)) {
+      if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers'].includes(key)) {
         row[idx[key]] = JSON.stringify(_asArray(val));
       } else if (key === 'category' && tableName === 'maritimeCourses') {
         // 強制將 category 儲存為文字格式（在前面加 ' 符號）
