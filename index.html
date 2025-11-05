@@ -90,11 +90,11 @@
     }
 
     .left-arrow {
-      left: 10px;
+      left: -20px;
     }
 
     .right-arrow {
-      right: 10px;
+      right: -20px;
     }
 
     /* 當箭頭不可用時的樣式 */
@@ -169,29 +169,6 @@
       height: 300px;
     }
 
-    /* 字卡右下角的 > 圖標 */
-    .card-arrow {
-      position: absolute;
-      bottom: 24px;
-      right: 24px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(0, 122, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: #007aff;
-      transition: all 0.3s ease;
-      z-index: 2;
-    }
-
-    .card:hover .card-arrow {
-      background: #007aff;
-      color: white;
-      transform: translateX(4px);
-    }
 
     .card::before {
       content: '';
@@ -303,11 +280,11 @@
       }
 
       .left-arrow {
-        left: 5px;
+        left: -10px;
       }
 
       .right-arrow {
-        right: 5px;
+        right: -10px;
       }
 
       .grid {
@@ -338,14 +315,6 @@
 
       .card-description {
         font-size: 13px;
-      }
-
-      .card-arrow {
-        width: 28px;
-        height: 28px;
-        font-size: 16px;
-        bottom: 16px;
-        right: 16px;
       }
     }
 
@@ -419,21 +388,18 @@
         <span class="card-icon">🎓</span>
         <h2 class="card-title">師資管理</h2>
         <p class="card-description">管理教師資訊、統計分析與行事曆</p>
-        <div class="card-arrow">›</div>
       </a>
 
       <a href="course-management.html" class="card">
         <span class="card-icon">📋</span>
         <h2 class="card-title">訓練排程</h2>
         <p class="card-description">安排課程、行事曆</p>
-        <div class="card-arrow">›</div>
       </a>
 
       <a href="maritime-courses.html" class="card">
         <span class="card-icon">⚓</span>
         <h2 class="card-title">智慧派課</h2>
         <p class="card-description">海事專業課程管理與分析</p>
-        <div class="card-arrow">›</div>
       </a>
 
       <a href="#" class="card" id="teaching-materials-card">
@@ -442,14 +408,12 @@
         </span>
         <h2 class="card-title">教材管理</h2>
         <p class="card-description">書籍、影片與數位資源</p>
-        <div class="card-arrow">›</div>
       </a>
 
       <a href="survey-management.html" class="card">
         <span class="card-icon">📊</span>
         <h2 class="card-title">課程問卷</h2>
         <p class="card-description">問卷管理、數據統計與分析</p>
-        <div class="card-arrow">›</div>
       </a>
       </div>
 
