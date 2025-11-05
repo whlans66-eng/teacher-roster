@@ -1776,6 +1776,24 @@
         return;
       }
 
+      // 🎯 優先搜尋：先嘗試只在 tags 中搜尋
+      let tagMatchedTeachers = teachers.filter(t => {
+        return keywords.every(kw => {
+          return (t.tags||[]).some(tag => String(tag).toLowerCase().includes(kw));
+        });
+      });
+
+      // 如果 tags 有找到結果，就只顯示 tags 的結果
+      if(tagMatchedTeachers.length > 0){
+        filteredTeachers = tagMatchedTeachers;
+        searchResults.classList.remove('hidden');
+        const kwText = keywords.length > 1 ? `「${keywords.join('」、「')}」` : `「${keywords[0]}」`;
+        searchResults.querySelector('span').textContent = `找到 ${filteredTeachers.length} 位符合標籤 ${kwText} 的師資 🏷️`;
+        renderTeacherGrid(filteredTeachers);
+        return;
+      }
+
+      // 如果 tags 沒有找到，才搜尋所有欄位
       filteredTeachers = teachers.filter(t => {
         // 每個關鍵字都必須在至少一個欄位中找到
         return keywords.every(kw => {
