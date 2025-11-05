@@ -69,6 +69,167 @@
     .method-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,0.15)}
     @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
     .pulse-animation{animation:pulse 2s infinite}
+
+    /* 手機版響應式設計 */
+    @media (max-width: 768px) {
+      /* 行事曆視圖 */
+      #calendarView .container {
+        padding: 16px !important;
+      }
+
+      #calendarView .card {
+        padding: 20px !important;
+      }
+
+      /* 行事曆標題和控制項 */
+      #calendarView .flex.flex-col.md\\:flex-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+      }
+
+      #calendarView h2 {
+        font-size: 20px !important;
+        margin-bottom: 12px;
+      }
+
+      /* 行事曆視圖切換按鈕 */
+      #calendarView .flex.items-center.gap-3 {
+        flex-direction: column !important;
+        width: 100%;
+        gap: 12px !important;
+      }
+
+      #calendarView .flex.items-center.gap-3 button {
+        width: 100%;
+      }
+
+      #calendarView .flex.rounded-xl.p-1 {
+        width: 100%;
+      }
+
+      /* 行事曆導航控制 */
+      #calendarView .flex.items-center.justify-between.mb-6 {
+        flex-direction: column !important;
+        gap: 12px;
+      }
+
+      #calendarView .flex.items-center.space-x-4 {
+        flex-direction: column !important;
+        width: 100%;
+        gap: 8px !important;
+      }
+
+      #calendarView .flex.items-center.space-x-4 button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      #calendarView #currentMonth {
+        min-width: auto !important;
+        width: 100%;
+        text-align: center;
+        font-size: 16px !important;
+      }
+
+      /* 今天按鈕 */
+      #calendarView button[onclick="goToToday()"] {
+        width: 100%;
+      }
+
+      /* 行事曆網格 - 保持 7 列但調整大小 */
+      .calendar-cell {
+        min-height: 80px !important;
+        font-size: 12px !important;
+      }
+
+      /* 星期標題 */
+      #calendarView .grid.grid-cols-7 > div {
+        padding: 8px 4px !important;
+        font-size: 12px !important;
+      }
+
+      /* 師資列表頁面 */
+      #teacherList .flex.flex-col.md\\:flex-row {
+        flex-direction: column !important;
+      }
+
+      #teacherList .flex.items-center.space-x-4 {
+        flex-direction: column !important;
+        width: 100%;
+        gap: 12px !important;
+      }
+
+      #teacherList .flex.flex-col.md\\:flex-row.items-stretch {
+        flex-direction: column !important;
+        width: 100%;
+      }
+
+      #teacherList #searchInput {
+        width: 100% !important;
+      }
+
+      #teacherList button {
+        width: 100%;
+      }
+
+      /* 模式切換按鈕 */
+      #teacherList .flex.bg-gray-100.rounded-lg {
+        width: 100%;
+      }
+
+      /* 統計視圖 */
+      #executiveView .grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* 調整容器內邊距 */
+      .container {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+      }
+
+      /* 卡片內邊距 */
+      .card {
+        padding: 20px !important;
+      }
+
+      /* 標題文字 */
+      h1 {
+        font-size: 28px !important;
+      }
+
+      h2 {
+        font-size: 20px !important;
+      }
+
+      /* 按鈕文字大小 */
+      button {
+        font-size: 14px !important;
+        padding: 10px 16px !important;
+      }
+    }
+
+    /* 小手機螢幕 (< 480px) */
+    @media (max-width: 480px) {
+      .calendar-cell {
+        min-height: 60px !important;
+        font-size: 11px !important;
+        padding: 4px !important;
+      }
+
+      #calendarView .grid.grid-cols-7 > div {
+        padding: 6px 2px !important;
+        font-size: 11px !important;
+      }
+
+      h1 {
+        font-size: 24px !important;
+      }
+
+      h2 {
+        font-size: 18px !important;
+      }
+    }
   </style>
 
   <!-- API 層：與後端通訊 -->
