@@ -655,15 +655,16 @@
           </div>
 
           <div>
-            <label style="display: block; font-size: 14px; font-weight: 600; color: #1d1d1f; margin-bottom: 8px;">
-              關鍵字（用逗號分隔）
-            </label>
-            <input
-              type="text"
-              id="maritimeCourseKeywords"
-              placeholder="例如：導航,雷達,GPS,船舶操作"
-              class="input-field"
-            />
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <label style="font-size: 14px; font-weight: 600; color: #1d1d1f;">
+                關鍵字
+              </label>
+              <button type="button" onclick="addMaritimeKeyword()" style="background: #007aff; color: white; padding: 8px 16px; border-radius: 20px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                ＋ 新增關鍵字
+              </button>
+            </div>
+            <div id="maritimeKeywordList" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; align-items: flex-start; padding: 12px; background: rgba(0, 0, 0, 0.02); border-radius: 12px;"></div>
+            <p style="font-size: 12px; color: #86868b; margin-top: 8px;">關鍵字可用於課程搜尋和分類，例如：導航、雷達、GPS、船舶操作等</p>
           </div>
 
           <div style="display: flex; gap: 12px;">
@@ -812,11 +813,14 @@
         </div>
 
         <div style="margin-bottom: 32px;">
-          <label style="display: block; color: #1d1d1f; font-weight: 600; margin-bottom: 8px;">🏷️ 關鍵字（用逗號分隔）</label>
-          <input type="text" id="maritimeCourseKeywordsModal" placeholder="例如：導航,雷達,GPS,船舶操作"
-                 style="width: 100%; border: 2px solid #e5e5ea; border-radius: 12px; padding: 14px; font-size: 15px; transition: all 0.3s; background: rgba(255, 255, 255, 0.8);"
-                 onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)'"
-                 onblur="this.style.borderColor='#e5e5ea'; this.style.boxShadow='none'">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <label style="color: #1d1d1f; font-weight: 600;">🏷️ 關鍵字</label>
+            <button type="button" onclick="addMaritimeKeywordModal()" style="background: #007aff; color: white; padding: 8px 16px; border-radius: 20px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+              ＋ 新增關鍵字
+            </button>
+          </div>
+          <div id="maritimeKeywordListModal" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; align-items: flex-start; padding: 12px; background: rgba(0, 0, 0, 0.02); border-radius: 12px;"></div>
+          <p style="font-size: 12px; color: #86868b; margin-top: 8px;">關鍵字可用於課程搜尋和分類</p>
         </div>
 
         <!-- 刪除按鈕（僅編輯時顯示）-->
@@ -1108,6 +1112,42 @@
       });
     }
 
+    // 新增關鍵字（課程管理頁面）
+    function addMaritimeKeyword(value = '') {
+      const container = document.getElementById('maritimeKeywordList');
+      const div = document.createElement('div');
+      div.className = 'inline-flex items-center';
+      div.style.cssText = 'background: white; border-radius: 20px; padding: 8px 14px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border: 0.5px solid rgba(0, 0, 0, 0.06); transition: all 0.2s;';
+
+      div.innerHTML = `
+        <input type="text" value="${value}" placeholder="關鍵字..."
+          style="background: transparent; border: none; outline: none; color: #1d1d1f; font-size: 13px; font-weight: 500; width: ${Math.max(60, Math.min(200, (value.length || 4) * 12))}px"
+          maxlength="20"
+          oninput="this.style.width = Math.max(60, Math.min(200, (this.value.length || 4) * 12)) + 'px'">
+        <button type="button" onclick="this.parentElement.remove()" style="margin-left: 8px; color: #86868b; background: none; border: none; cursor: pointer; padding: 0; font-size: 16px; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='#ff3b30'" onmouseout="this.style.color='#86868b'">
+          ×
+        </button>`;
+      container.appendChild(div);
+    }
+
+    // 新增關鍵字（彈跳視窗）
+    function addMaritimeKeywordModal(value = '') {
+      const container = document.getElementById('maritimeKeywordListModal');
+      const div = document.createElement('div');
+      div.className = 'inline-flex items-center';
+      div.style.cssText = 'background: white; border-radius: 20px; padding: 8px 14px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); border: 0.5px solid rgba(0, 0, 0, 0.06); transition: all 0.2s;';
+
+      div.innerHTML = `
+        <input type="text" value="${value}" placeholder="關鍵字..."
+          style="background: transparent; border: none; outline: none; color: #1d1d1f; font-size: 13px; font-weight: 500; width: ${Math.max(60, Math.min(200, (value.length || 4) * 12))}px"
+          maxlength="20"
+          oninput="this.style.width = Math.max(60, Math.min(200, (this.value.length || 4) * 12)) + 'px'">
+        <button type="button" onclick="this.parentElement.remove()" style="margin-left: 8px; color: #86868b; background: none; border: none; cursor: pointer; padding: 0; font-size: 16px; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='#ff3b30'" onmouseout="this.style.color='#86868b'">
+          ×
+        </button>`;
+      container.appendChild(div);
+    }
+
     // 編輯課程（使用彈跳視窗）
     function editMaritimeCourse(courseId) {
       const course = maritimeCourses.find(c => c.id === courseId);
@@ -1119,7 +1159,13 @@
       document.getElementById('maritimeCourseCategoryModal').value = course.category;
       document.getElementById('maritimeCourseMethodModal').value = course.method || '';
       document.getElementById('maritimeCourseDescriptionModal').value = course.description;
-      document.getElementById('maritimeCourseKeywordsModal').value = course.keywords.join(', ');
+
+      // 載入關鍵字
+      document.getElementById('maritimeKeywordListModal').innerHTML = '';
+      (course.keywords || []).forEach(keyword => addMaritimeKeywordModal(keyword));
+      if ((course.keywords || []).length === 0) {
+        addMaritimeKeywordModal();
+      }
 
       // 顯示刪除按鈕（僅編輯時）
       document.getElementById('maritimeDeleteButtonContainer').style.display = 'block';
@@ -1135,6 +1181,7 @@
       modal.style.display = 'none';
       editingMaritimeCourseId = null;
       document.getElementById('maritimeCourseModalForm').reset();
+      document.getElementById('maritimeKeywordListModal').innerHTML = '';
       document.getElementById('maritimeModalTitle').textContent = '新增課程';
       document.getElementById('maritimeDeleteButtonContainer').style.display = 'none';
     }
@@ -1165,8 +1212,9 @@
       const category = document.getElementById('maritimeCourseCategoryModal').value;
       const method = document.getElementById('maritimeCourseMethodModal').value;
       const description = document.getElementById('maritimeCourseDescriptionModal').value.trim();
-      const keywordsInput = document.getElementById('maritimeCourseKeywordsModal').value.trim();
-      const keywords = keywordsInput ? keywordsInput.split(',').map(k => k.trim()).filter(k => k) : [];
+      const keywords = Array.from(document.querySelectorAll('#maritimeKeywordListModal input[type="text"]'))
+        .map(input => input.value.trim())
+        .filter(k => k.length > 0);
 
       if (editingMaritimeCourseId) {
         // 更新現有課程
@@ -1456,10 +1504,8 @@
           const category = document.getElementById('maritimeCourseCategory').value;
           const method = document.getElementById('maritimeCourseMethod').value;
           const description = document.getElementById('maritimeCourseDescription').value;
-          const keywords = document
-            .getElementById('maritimeCourseKeywords')
-            .value.split(',')
-            .map(k => k.trim())
+          const keywords = Array.from(document.querySelectorAll('#maritimeKeywordList input[type="text"]'))
+            .map(input => input.value.trim())
             .filter(k => k.length > 0);
 
           if (editingMaritimeCourseId) {
@@ -1491,6 +1537,8 @@
 
           saveMaritimeCourses();
           this.reset();
+          document.getElementById('maritimeKeywordList').innerHTML = '';
+          addMaritimeKeyword();
           document.querySelector('#maritimeCourseForm button[type="submit"]').textContent = '儲存課程';
           displayManageMaritimeCourses();
         });
@@ -1501,12 +1549,15 @@
       if (cancelEdit) {
         cancelEdit.addEventListener('click', function () {
           document.getElementById('maritimeCourseForm').reset();
+          document.getElementById('maritimeKeywordList').innerHTML = '';
+          addMaritimeKeyword();
           editingMaritimeCourseId = null;
           document.querySelector('#maritimeCourseForm button[type="submit"]').textContent = '儲存課程';
         });
       }
 
       // 初始化顯示
+      addMaritimeKeyword();
       displayMaritimeCourses();
     }
 
