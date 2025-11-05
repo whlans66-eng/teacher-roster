@@ -505,16 +505,21 @@
       </form>
 
       <!-- 按鈕區 -->
-      <div id="viewModeButtons" class="flex justify-end space-x-4 pt-6">
-        <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          關閉
+      <div id="viewModeButtons" class="flex justify-between pt-6">
+        <button id="surveyManageBtn" class="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          📊 問卷管理
         </button>
-        <button onclick="enterEditMode()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          ✏️ 編輯
-        </button>
-        <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          🗑️ 刪除
-        </button>
+        <div class="flex space-x-4">
+          <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            關閉
+          </button>
+          <button onclick="enterEditMode()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            ✏️ 編輯
+          </button>
+          <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            🗑️ 刪除
+          </button>
+        </div>
       </div>
 
       <div id="editModeButtons" class="flex justify-end space-x-4 pt-6" style="display: none;">
@@ -1395,6 +1400,10 @@
         }
       };
 
+      document.getElementById('surveyManageBtn').onclick = () => {
+        openSurveyManagement(courseId);
+      };
+
       document.getElementById('viewEventModal').classList.remove('hidden');
     }
 
@@ -1645,6 +1654,54 @@
         '專題': 'bg-red-500'
       };
       return colors[type] || 'bg-gray-500';
+    }
+
+    // ==================== 問卷管理功能 ====================
+
+    function openSurveyManagement(courseId) {
+      const course = courseAssignments.find(c => c.id === courseId);
+      if (!course) return;
+
+      // 載入問卷數據
+      const surveys = JSON.parse(localStorage.getItem('surveys') || '[]');
+      const surveyTemplates = JSON.parse(localStorage.getItem('surveyTemplates') || '[]');
+      const surveyResponses = JSON.parse(localStorage.getItem('surveyResponses') || '[]');
+
+      // 查找此課程的問卷
+      const courseSurveys = surveys.filter(s => s.courseId === courseId);
+
+      let message = `📊 課程問卷管理\n\n`;
+      message += `課程：${course.name}\n`;
+      message += `日期：${course.date}\n\n`;
+
+      if (courseSurveys.length === 0) {
+        message += `此課程尚未創建問卷。\n\n`;
+        message += `請前往「問卷管理系統」為此課程創建問卷。\n\n`;
+        const goToSurvey = confirm(message + '是否要前往問卷管理系統？');
+        if (goToSurvey) {
+          window.location.href = 'survey-management.html';
+        }
+      } else {
+        message += `已創建 ${courseSurveys.length} 個問卷：\n\n`;
+
+        courseSurveys.forEach((survey, index) => {
+          const template = surveyTemplates.find(t => t.id === survey.templateId);
+          const responses = surveyResponses.filter(r => r.surveyId === survey.id);
+          const statusText = survey.status === 'active' ? '✅ 開放中' : '🔒 已關閉';
+
+          message += `${index + 1}. ${template ? template.name : '未知模板'}\n`;
+          message += `   狀態：${statusText}\n`;
+          message += `   回應數：${responses.length} 份\n`;
+          message += `   連結：${survey.shareUrl}\n\n`;
+        });
+
+        message += `\n請前往「問卷管理系統」查看詳細統計或管理問卷。`;
+
+        const goToSurvey = confirm(message + '\n\n是否要前往問卷管理系統？');
+        if (goToSurvey) {
+          window.location.href = 'survey-management.html';
+        }
+      }
     }
 
     function saveData() {
