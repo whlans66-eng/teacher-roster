@@ -2287,6 +2287,7 @@
         cell.className = `calendar-day p-2 ${
           isCurrentMonth ? 'bg-white' : 'bg-gray-50'
         } ${isToday ? 'today-highlight' : ''}`;
+        cell.style.cssText = 'border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 10px;';
 
         cell.innerHTML = `
           <div class="flex justify-between items-start mb-1">
@@ -2352,16 +2353,17 @@
       const dayEvents = calendarEvents.filter(ev => ev.date === dateKey);
 
       const cell = document.createElement('div');
-      cell.className = `calendar-day p-4 bg-white ${isToday ? 'today-highlight' : ''}`;
+      cell.className = `calendar-day p-3 bg-white ${isToday ? 'today-highlight' : ''}`;
+      cell.style.cssText = 'border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 10px; overflow: hidden;';
 
       cell.innerHTML = `
-        <div class="text-center mb-4 pb-3 border-b border-gray-200">
+        <div class="text-center mb-3 pb-2 border-b border-gray-200">
           <div class="text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-600'}">${dayNames[i]}</div>
           <div class="text-2xl font-bold ${isToday ? 'text-blue-600' : 'text-gray-800'}">
             ${cellDate.getDate()}
           </div>
         </div>
-        <div class="space-y-2">
+        <div class="space-y-2 overflow-y-auto" style="max-height: 400px;">
           ${dayEvents.map(ev => {
             const teacher = teachers.find(t => t.id === ev.teacherId);
             const teacherName = teacher ? teacher.name : '';
@@ -2376,13 +2378,13 @@
             const style = colorMap[ev.color] || colorMap['bg-blue-500'];
             return `
               <div class="event-item rounded-xl cursor-pointer"
-                   style="background: ${style.bg}; border-left: 4px solid ${style.border}; color: ${style.text}; padding: 12px; margin: 8px 0; transition: all 0.2s ease;"
+                   style="background: ${style.bg}; border-left: 4px solid ${style.border}; color: ${style.text}; padding: 10px; margin: 6px 0; transition: all 0.2s ease; overflow: hidden;"
                    onmouseover="this.style.background='${style.bg.replace('0.08', '0.12')}'; this.style.transform='translateX(3px)';"
                    onmouseout="this.style.background='${style.bg}'; this.style.transform='translateX(0)';"
                    onclick="viewCalendarEvent(${ev.id}); event.stopPropagation();">
-                <div class="font-semibold" style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">${teacherName ? teacherName : ev.title}</div>
-                <div style="font-size: 12px; color: #6e6e73; margin-top: 4px;">⏰ ${ev.time || ''}</div>
-                <div style="font-size: 12px; color: #86868b; margin-top: 2px;">${teacherName ? ev.title : ''}</div>
+                <div class="font-semibold truncate" style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">${teacherName ? teacherName : ev.title}</div>
+                <div class="truncate" style="font-size: 12px; color: #6e6e73; margin-top: 4px;">⏰ ${ev.time || ''}</div>
+                <div class="truncate" style="font-size: 12px; color: #86868b; margin-top: 2px;">${teacherName ? ev.title : ''}</div>
               </div>
             `;
           }).join('')}
