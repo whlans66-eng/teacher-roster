@@ -293,6 +293,14 @@
         <p class="card-description">海事專業課程管理與分析</p>
       </a>
 
+      <a href="#" class="card" id="teaching-materials-card">
+        <span class="card-icon">
+          <img src="teaching-materials-icon.png" alt="教材管理">
+        </span>
+        <h2 class="card-title">教材管理</h2>
+        <p class="card-description">書籍、影片與數位資源</p>
+      </a>
+
       <a href="survey-management.html" class="card">
         <span class="card-icon">📊</span>
         <h2 class="card-title">課程問卷</h2>
@@ -311,6 +319,12 @@
   <script>
     // 主頁初始化完成
     console.log('萬海智慧航安訓練管理系統已載入');
+
+    // 教材管理卡片點擊事件
+    document.getElementById('teaching-materials-card')?.addEventListener('click', function(e) {
+      e.preventDefault();
+      alert('📚 教材管理功能開發中\n\n此功能即將推出，敬請期待！');
+    });
   </script>
 </body>
 </html>
