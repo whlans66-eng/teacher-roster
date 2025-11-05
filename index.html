@@ -42,55 +42,6 @@
     .grid-wrapper {
       width: 100%;
       margin-bottom: 40px;
-      position: relative;
-    }
-
-    /* 輪播導航箭頭 */
-    .carousel-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      z-index: 10;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    }
-
-    .carousel-nav:hover {
-      background: white;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-      transform: translateY(-50%) scale(1.1);
-    }
-
-    .carousel-nav:active {
-      transform: translateY(-50%) scale(0.95);
-    }
-
-    .carousel-nav.prev {
-      left: -24px;
-    }
-
-    .carousel-nav.next {
-      right: -24px;
-    }
-
-    .carousel-nav svg {
-      width: 24px;
-      height: 24px;
-      fill: #1d1d1f;
-    }
-
-    .carousel-nav.disabled {
-      opacity: 0.3;
-      pointer-events: none;
     }
 
     .header {
@@ -309,11 +260,6 @@
         bottom: 20px;
         right: 20px;
       }
-
-      /* 在移動設備上隱藏導航箭頭 */
-      .carousel-nav {
-        display: none;
-      }
     }
 
     /* Apple 風格的動畫效果 */
@@ -375,20 +321,6 @@
     </div>
 
     <div class="grid-wrapper">
-      <!-- 左箭頭 -->
-      <div class="carousel-nav prev" id="prevBtn">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-        </svg>
-      </div>
-
-      <!-- 右箭頭 -->
-      <div class="carousel-nav next" id="nextBtn">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
-        </svg>
-      </div>
-
       <div class="grid" id="cardGrid">
       <a href="teacher-management.html" class="card">
         <span class="card-icon">🎓</span>
@@ -439,112 +371,6 @@
   <script>
     // 主頁初始化完成
     console.log('萬海智慧航安訓練管理系統已載入');
-
-    // 輪播功能
-    const cardGrid = document.getElementById('cardGrid');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const cards = cardGrid.querySelectorAll('.card');
-
-    // 計算每次滾動的距離（一張卡片的寬度 + gap）
-    const getScrollAmount = () => {
-      const card = cards[0];
-      const cardWidth = card.offsetWidth;
-      const gap = 28; // gap between cards
-      return cardWidth + gap;
-    };
-
-    // 更新按鈕狀態
-    const updateButtonStates = () => {
-      const scrollLeft = cardGrid.scrollLeft;
-      const maxScroll = cardGrid.scrollWidth - cardGrid.clientWidth;
-
-      // 左箭頭：在最左邊時禁用
-      if (scrollLeft <= 0) {
-        prevBtn.classList.add('disabled');
-      } else {
-        prevBtn.classList.remove('disabled');
-      }
-
-      // 右箭頭：在最右邊時禁用
-      if (scrollLeft >= maxScroll - 5) { // -5 for rounding errors
-        nextBtn.classList.add('disabled');
-      } else {
-        nextBtn.classList.remove('disabled');
-      }
-    };
-
-    // 左箭頭點擊
-    prevBtn.addEventListener('click', () => {
-      const scrollAmount = getScrollAmount();
-      cardGrid.scrollBy({
-        left: -scrollAmount,
-        behavior: 'smooth'
-      });
-    });
-
-    // 右箭頭點擊
-    nextBtn.addEventListener('click', () => {
-      const scrollAmount = getScrollAmount();
-      cardGrid.scrollBy({
-        left: scrollAmount,
-        behavior: 'smooth'
-      });
-    });
-
-    // 監聽滾動事件以更新按鈕狀態
-    cardGrid.addEventListener('scroll', updateButtonStates);
-
-    // 初始化按鈕狀態
-    updateButtonStates();
-
-    // 監聽視窗大小改變
-    window.addEventListener('resize', updateButtonStates);
-
-    // 觸控滑動支持
-    let startX = 0;
-    let scrollLeft = 0;
-    let isDown = false;
-
-    cardGrid.addEventListener('mousedown', (e) => {
-      isDown = true;
-      startX = e.pageX - cardGrid.offsetLeft;
-      scrollLeft = cardGrid.scrollLeft;
-      cardGrid.style.cursor = 'grabbing';
-    });
-
-    cardGrid.addEventListener('mouseleave', () => {
-      isDown = false;
-      cardGrid.style.cursor = 'default';
-    });
-
-    cardGrid.addEventListener('mouseup', () => {
-      isDown = false;
-      cardGrid.style.cursor = 'default';
-    });
-
-    cardGrid.addEventListener('mousemove', (e) => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.pageX - cardGrid.offsetLeft;
-      const walk = (x - startX) * 2; // 滾動速度
-      cardGrid.scrollLeft = scrollLeft - walk;
-    });
-
-    // 觸控事件支持（移動設備）
-    let touchStartX = 0;
-    let touchScrollLeft = 0;
-
-    cardGrid.addEventListener('touchstart', (e) => {
-      touchStartX = e.touches[0].pageX - cardGrid.offsetLeft;
-      touchScrollLeft = cardGrid.scrollLeft;
-    }, { passive: true });
-
-    cardGrid.addEventListener('touchmove', (e) => {
-      const x = e.touches[0].pageX - cardGrid.offsetLeft;
-      const walk = (x - touchStartX) * 2;
-      cardGrid.scrollLeft = touchScrollLeft - walk;
-    }, { passive: true });
 
     // 教材管理卡片點擊事件
     document.getElementById('teaching-materials-card')?.addEventListener('click', function(e) {
