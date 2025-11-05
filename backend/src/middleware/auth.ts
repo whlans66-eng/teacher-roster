@@ -2,7 +2,7 @@
  * JWT 認證中介層
  */
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { AppError } from './errorHandler';
 import { query } from '../config/database';
 import { logger } from '../utils/logger';
@@ -170,9 +170,10 @@ export const optionalAuth = async (
  * 生成 JWT Token
  */
 export const generateToken = (userId: number): string => {
+  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   return jwt.sign(
     { userId },
     JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: expiresIn as any }
   );
 };
