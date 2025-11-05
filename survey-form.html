@@ -215,8 +215,8 @@
       const urlParams = new URLSearchParams(window.location.search);
       surveyId = parseInt(urlParams.get('id'));
 
-      if (!surveyId) {
-        showError('缺少問卷 ID');
+      if (!surveyId || isNaN(surveyId)) {
+        showError('缺少問卷 ID 或 ID 無效');
         return;
       }
 

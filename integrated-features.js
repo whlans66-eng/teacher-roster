@@ -45,6 +45,7 @@ function checkTeacherConflict(teacherId, date, startTime, endTime) {
 
     // 將時間轉換為分鐘數以便比較
     const timeToMinutes = (timeStr) => {
+        if (!timeStr || typeof timeStr !== 'string') return 0;
         const [hours, minutes] = timeStr.split(':').map(Number);
         return hours * 60 + minutes;
     };
@@ -56,7 +57,7 @@ function checkTeacherConflict(teacherId, date, startTime, endTime) {
     const teacher = teachersData[teacherId];
     if (teacher && teacher.courses) {
         teacher.courses.forEach(course => {
-            if (course.date === date) {
+            if (course.date === date && course.time && typeof course.time === 'string') {
                 const [courseStart, courseEnd] = course.time.split('-');
                 const existingStart = timeToMinutes(courseStart);
                 const existingEnd = timeToMinutes(courseEnd);
@@ -76,7 +77,7 @@ function checkTeacherConflict(teacherId, date, startTime, endTime) {
 
     // 檢查行事曆中的事件
     calendarEvents.forEach(event => {
-        if (event.teacherId === teacherId && event.date === date && event.time) {
+        if (event.teacherId === teacherId && event.date === date && event.time && typeof event.time === 'string') {
             const timeParts = event.time.split('-');
             if (timeParts.length === 2) {
                 const [eventStart, eventEnd] = timeParts;
@@ -105,7 +106,24 @@ function checkTeacherConflict(teacherId, date, startTime, endTime) {
 const original_addCourse = window.addCourse || addCourse;
 
 function addCourse_Enhanced(courseData) {
+    // 檢查必要的全域變數
+    if (typeof teachersData === 'undefined' || !currentTeacher) {
+        console.error('❌ teachersData 或 currentTeacher 未定義');
+        if (typeof showMessage === 'function') {
+            showMessage('系統錯誤：無法存取教師資料', 'error');
+        }
+        return;
+    }
+
     const teacher = teachersData[currentTeacher];
+
+    if (!teacher) {
+        console.error('❌ 找不到教師資料');
+        if (typeof showMessage === 'function') {
+            showMessage('找不到教師資料', 'error');
+        }
+        return;
+    }
 
     // 檢查新增課程後的時數限制
     const newCourseHours = calculateHours(`${courseData.startTime}-${courseData.endTime}`);
@@ -182,7 +200,25 @@ if (typeof addCourse !== 'undefined') {
 const original_deleteCourse = window.deleteCourse || deleteCourse;
 
 function deleteCourse_Enhanced(index) {
+    // 檢查必要的全域變數
+    if (typeof teachersData === 'undefined' || !currentTeacher) {
+        console.error('❌ teachersData 或 currentTeacher 未定義');
+        if (typeof showMessage === 'function') {
+            showMessage('系統錯誤：無法存取教師資料', 'error');
+        }
+        return;
+    }
+
     const teacher = teachersData[currentTeacher];
+
+    if (!teacher || !teacher.courses || !teacher.courses[index]) {
+        console.error('❌ 找不到課程資料');
+        if (typeof showMessage === 'function') {
+            showMessage('找不到課程資料', 'error');
+        }
+        return;
+    }
+
     const course = teacher.courses[index];
     const courseName = course.subject;
     const courseId = course.id;
@@ -277,8 +313,21 @@ function goToToday() {
 // ========== 本週課表功能 ==========
 
 function renderWeekSchedulePreview() {
+    // 檢查必要的全域變數
+    if (typeof teachersData === 'undefined' || typeof currentTeacher === 'undefined') {
+        console.warn('⚠️ teachersData 或 currentTeacher 未定義');
+        const previewElement = document.getElementById('weekSchedulePreview');
+        if (previewElement) {
+            previewElement.innerHTML = '<p class="text-gray-500 text-xs">系統尚未初始化</p>';
+        }
+        return;
+    }
+
     if (!currentTeacher || !teachersData[currentTeacher]) {
-        document.getElementById('weekSchedulePreview').innerHTML = '<p class="text-gray-500 text-xs">請選擇師資</p>';
+        const previewElement = document.getElementById('weekSchedulePreview');
+        if (previewElement) {
+            previewElement.innerHTML = '<p class="text-gray-500 text-xs">請選擇師資</p>';
+        }
         return;
     }
 
