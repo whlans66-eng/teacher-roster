@@ -135,6 +135,14 @@
       box-shadow: 0 16px 48px rgba(52, 199, 89, 0.3);
     }
 
+    .stat-card.blue {
+      background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+    }
+
+    .stat-card.blue:hover {
+      box-shadow: 0 16px 48px rgba(0, 122, 255, 0.3);
+    }
+
     .btn-primary {
       background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
       color: white;
@@ -670,7 +678,7 @@
     <div id="maritimeStatsPage" class="hidden">
       <!-- 統計卡片 -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px;">
-        <div class="stat-card">
+        <div class="stat-card blue">
           <div style="position: relative; z-index: 1;">
             <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">總課程數</div>
             <div id="maritimeTotalCourses" style="font-size: 42px; font-weight: 700; margin-bottom: 4px;">0</div>
