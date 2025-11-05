@@ -932,17 +932,38 @@
       const categoryFilter = document.getElementById('maritimeCategoryFilter').value;
       const resultsContainer = document.getElementById('maritimeCourseResults');
 
-      let filteredCourses = maritimeCourses.filter(course => {
-        const matchesSearch =
-          !searchTerm ||
-          course.name.toLowerCase().includes(searchTerm) ||
-          course.description.toLowerCase().includes(searchTerm) ||
-          course.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm));
+      let filteredCourses;
+      let isKeywordMatch = false;
 
-        const matchesCategory = !categoryFilter || course.category === categoryFilter;
+      // 如果有搜尋字串
+      if (searchTerm) {
+        // 🎯 優先搜尋：先嘗試只在 keywords 中搜尋
+        let keywordMatchedCourses = maritimeCourses.filter(course => {
+          const matchesKeyword = course.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm));
+          const matchesCategory = !categoryFilter || course.category === categoryFilter;
+          return matchesKeyword && matchesCategory;
+        });
 
-        return matchesSearch && matchesCategory;
-      });
+        // 如果 keywords 有找到結果，就只顯示 keywords 的結果
+        if (keywordMatchedCourses.length > 0) {
+          filteredCourses = keywordMatchedCourses;
+          isKeywordMatch = true;
+        } else {
+          // 如果 keywords 沒有找到，才搜尋所有欄位（課程名稱、描述）
+          filteredCourses = maritimeCourses.filter(course => {
+            const matchesSearch =
+              course.name.toLowerCase().includes(searchTerm) ||
+              course.description.toLowerCase().includes(searchTerm);
+            const matchesCategory = !categoryFilter || course.category === categoryFilter;
+            return matchesSearch && matchesCategory;
+          });
+        }
+      } else {
+        // 沒有搜尋字串，只按分類過濾
+        filteredCourses = maritimeCourses.filter(course => {
+          return !categoryFilter || course.category === categoryFilter;
+        });
+      }
 
       resultsContainer.innerHTML = '';
 
@@ -950,6 +971,14 @@
         resultsContainer.innerHTML =
           '<div style="grid-column: 1 / -1; text-align: center; padding: 48px 0; color: #6e6e73;">找不到符合條件的課程</div>';
         return;
+      }
+
+      // 如果是透過關鍵字找到的，顯示提示訊息
+      if (isKeywordMatch && searchTerm) {
+        const hint = document.createElement('div');
+        hint.style.cssText = 'grid-column: 1 / -1; padding: 16px; background: linear-gradient(135deg, #e6f3ff 0%, #f0f5ff 100%); border-radius: 12px; margin-bottom: 16px; text-align: center; border: 1px solid #007aff30;';
+        hint.innerHTML = `<span style="color: #007aff; font-weight: 600;">🏷️ 找到 ${filteredCourses.length} 個符合關鍵字「${searchTerm}」的課程</span>`;
+        resultsContainer.appendChild(hint);
       }
 
       filteredCourses.forEach(course => {
