@@ -2040,6 +2040,25 @@
     closeAddEventModal();
     renderCalendar();
   }
+
+  // 查看行事曆事件詳情
+  function viewCalendarEvent(eventId){
+    const event = calendarEvents.find(e => e.id === eventId);
+    if (!event) return;
+
+    const teacher = teachers.find(t => t.id === event.teacherId);
+    const teacherName = teacher ? teacher.name : '未指派';
+
+    alert(`📅 事件詳情\n\n` +
+      `標題：${event.title}\n` +
+      `師資：${teacherName}\n` +
+      `日期：${event.date}\n` +
+      `時間：${event.time || '未設定'}\n` +
+      `地點：${event.location || '未設定'}\n` +
+      `備註：${event.note || '無'}`
+    );
+  }
+
   function deleteEventById(id){
     calendarEvents = calendarEvents.filter(ev=>ev.id!==id);
     saveCalendarLocal();
@@ -2060,8 +2079,7 @@
 
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
-    grid.className = 'grid grid-cols-7';
-    const today = new Date().toDateString();
+    const todayStr = fmtDate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
 
     for(let w=0; w<6; w++){
       for(let d=0; d<7; d++){
@@ -2069,41 +2087,40 @@
         cellDate.setDate(start.getDate() + (w*7) + d);
 
         const isCurrentMonth = (cellDate.getMonth() === month);
-        const isToday = (cellDate.toDateString() === today);
+        const dateKey = fmtDate(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+        const isToday = (dateKey === todayStr);
 
-// 用你上面定義的 fmtDate 來得到 YYYY-MM-DD
-const dateKey = fmtDate(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+        const dayEvents = calendarEvents.filter(ev => ev.date === dateKey);
 
-// 這一天的事件
-const dayEvents = calendarEvents
-  .filter(ev => ev.date === dateKey)
-  .sort((a,b) => (a.time||'').localeCompare(b.time||''));
+        const cell = document.createElement('div');
+        cell.className = `calendar-day p-2 ${
+          isCurrentMonth ? 'bg-white' : 'bg-gray-50'
+        } ${isToday ? 'today-highlight' : ''}`;
 
-// 先建 element
-const cell = document.createElement('div');
-cell.className = `calendar-day border-r border-b border-white border-opacity-20 p-4 ${
-  isCurrentMonth ? 'bg-white bg-opacity-60' : 'bg-gray-100 bg-opacity-40'
-} ${isToday ? 'today-highlight' : ''} hover:bg-white hover:bg-opacity-80 transition-all cursor-pointer`;
+        cell.innerHTML = `
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-base font-semibold ${
+              isCurrentMonth ? (isToday ? 'text-blue-600' : 'text-gray-800') : 'text-gray-400'
+            }">
+              ${cellDate.getDate()}
+            </span>
+          </div>
+          <div class="space-y-1 overflow-y-auto max-h-20">
+            ${dayEvents.map(ev => {
+              const teacher = teachers.find(t => t.id === ev.teacherId);
+              const teacherName = teacher ? teacher.name : '';
+              return `
+                <div class="event-item ${ev.color||'bg-blue-500'} text-white rounded cursor-pointer hover:opacity-80"
+                     onclick="viewCalendarEvent(${ev.id}); event.stopPropagation();">
+                  <div class="font-medium truncate">${teacherName ? teacherName : ev.title}</div>
+                  <div class="text-[10px] truncate">${ev.time || ''} ${teacherName ? ev.title : ''}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
 
-// 只設定一次 onclick，帶入 dateKey
-cell.onclick = () => openAddEventModalForDate(dateKey);
-
-cell.innerHTML = `
-  <div class="flex justify-between items-start mb-2">
-    <span class="text-lg font-bold ${isCurrentMonth ? (isToday?'text-white':'text-gray-800'):'text-gray-400'} ${isToday?'bg-white bg-opacity-20 px-2 py-1 rounded-lg':''}">
-      ${cellDate.getDate()}
-    </span>
-  </div>
-  <div class="space-y-1">
-    ${dayEvents.map(ev=>`
-      <div class="event-item ${ev.color||'bg-blue-500'} text-white text-xs truncate"
-           title="點擊刪除：${ev.title}${ev.time?' '+ev.time:''}${ev.location?(' · '+ev.location):''}${ev.teacherId?(' · '+(teachers.find(t=>t.id===ev.teacherId)?.name||'')):''}"
-           onclick="event.stopPropagation(); deleteEventById(${ev.id})">
-        ${ev.time? ev.time+' ' : ''}${ev.title}${ev.teacherId?` · ${(teachers.find(t=>t.id===ev.teacherId)?.name||'')}`:''}
-      </div>`).join('')}
-  </div>`;
-grid.appendChild(cell);
-
+        grid.appendChild(cell);
       }
     }
   }
@@ -2120,47 +2137,44 @@ grid.appendChild(cell);
 
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
-    grid.className = 'grid grid-cols-7';
     const dayNames = ['日','一','二','三','四','五','六'];
-    const today = new Date().toDateString();
 
     for(let i=0;i<7;i++){
       const cellDate = new Date(startOfWeek);
       cellDate.setDate(startOfWeek.getDate()+i);
 
-      const isToday = (cellDate.toDateString()===today);
       const dateKey = fmtDate(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+      const todayStr = fmtDate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+      const isToday = (dateKey === todayStr);
+      const dayEvents = calendarEvents.filter(ev => ev.date === dateKey);
 
-const dayEvents = calendarEvents
-  .filter(ev => ev.date === dateKey)
-  .sort((a,b) => (a.time||'').localeCompare(b.time||''));
+      const cell = document.createElement('div');
+      cell.className = `calendar-day p-4 bg-white ${isToday ? 'today-highlight' : ''}`;
 
-// 先建 element
-const cell = document.createElement('div');
-cell.className = `week-day border-r border-b border-white border-opacity-20 p-4 bg-white bg-opacity-60 ${isToday?'today-highlight':''} hover:bg-white hover:bg-opacity-80 transition-all cursor-pointer`;
+      cell.innerHTML = `
+        <div class="text-center mb-4 pb-3 border-b border-gray-200">
+          <div class="text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-600'}">${dayNames[i]}</div>
+          <div class="text-2xl font-bold ${isToday ? 'text-blue-600' : 'text-gray-800'}">
+            ${cellDate.getDate()}
+          </div>
+        </div>
+        <div class="space-y-2">
+          ${dayEvents.map(ev => {
+            const teacher = teachers.find(t => t.id === ev.teacherId);
+            const teacherName = teacher ? teacher.name : '';
+            return `
+              <div class="event-item ${ev.color||'bg-blue-500'} text-white p-3 rounded-xl cursor-pointer hover:opacity-80"
+                   onclick="viewCalendarEvent(${ev.id}); event.stopPropagation();">
+                <div class="font-semibold">${teacherName ? teacherName : ev.title}</div>
+                <div class="text-xs mt-1">⏰ ${ev.time || ''}</div>
+                <div class="text-xs">${teacherName ? ev.title : ''}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
 
-// 只設定一次 onclick，帶入 dateKey
-cell.onclick = () => openAddEventModalForDate(dateKey);
-
-cell.innerHTML = `
-  <div class="text-center mb-4 pb-3 border-b border-white border-opacity-30">
-    <div class="text-sm font-semibold ${isToday?'text-white':'text-gray-600'}">${dayNames[i]}</div>
-    <div class="text-2xl font-bold ${isToday?'text-white':'text-gray-800'} ${isToday?'bg-white bg-opacity-20 rounded-lg px-2 py-1 inline-block mt-1':''}">
-      ${cellDate.getDate()}
-    </div>
-  </div>
-  <div class="space-y-2">
-    ${dayEvents.map(ev=>`
-      <div class="event-item ${ev.color||'bg-blue-500'} text-white text-sm p-3 rounded-xl"
-           title="點擊刪除：${ev.title}${ev.time?' '+ev.time:''}${ev.location?(' · '+ev.location):''}${ev.teacherId?(' · '+(teachers.find(t=>t.id===ev.teacherId)?.name||'')):''}"
-           onclick="event.stopPropagation(); deleteEventById(${ev.id})">
-        <div class="font-semibold">${ev.title}${ev.teacherId?` · ${(teachers.find(t=>t.id===ev.teacherId)?.name||'')}`:''}</div>
-        ${ev.time? `<div class="text-xs opacity-90 mt-1">⏰ ${ev.time}${ev.location?` · ${ev.location}`:''}</div>` : (ev.location?`<div class="text-xs opacity-90 mt-1">${ev.location}</div>`:'')}
-        ${ev.note? `<div class="text-xs opacity-90 mt-1">🗒️ ${ev.note}</div>`:''}
-      </div>`).join('')}
-  </div>`;
-grid.appendChild(cell);
-
+      grid.appendChild(cell);
     }
   }
 
