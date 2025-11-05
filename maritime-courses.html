@@ -601,10 +601,10 @@
     <!-- 課程管理頁面 -->
     <div id="maritimeEditPage" class="hidden">
       <div class="card">
-        <h2 style="font-size: 24px; font-weight: 600; color: #1d1d1f; margin-bottom: 20px;">新增/編輯課程</h2>
+        <h2 style="font-size: 28px; font-weight: 600; color: #1d1d1f; margin-bottom: 28px; letter-spacing: -0.015em;">新增/編輯課程</h2>
         <form id="maritimeCourseForm" style="display: grid; gap: 20px;">
           <div>
-            <label style="display: block; font-size: 14px; font-weight: 600; color: #1d1d1f; margin-bottom: 8px;">
+            <label style="display: block; font-size: 15px; font-weight: 600; color: #1d1d1f; margin-bottom: 10px;">
               課程名稱
             </label>
             <input type="text" id="maritimeCourseName" required class="input-field" placeholder="請輸入課程名稱" />
@@ -612,7 +612,7 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             <div>
-              <label style="display: block; font-size: 14px; font-weight: 600; color: #1d1d1f; margin-bottom: 8px;">
+              <label style="display: block; font-size: 15px; font-weight: 600; color: #1d1d1f; margin-bottom: 10px;">
                 課程分類
               </label>
               <select id="maritimeCourseCategory" required class="input-field">
@@ -629,7 +629,7 @@
               </select>
             </div>
             <div>
-              <label style="display: block; font-size: 14px; font-weight: 600; color: #1d1d1f; margin-bottom: 8px;">
+              <label style="display: block; font-size: 15px; font-weight: 600; color: #1d1d1f; margin-bottom: 10px;">
                 授課方式
               </label>
               <select id="maritimeCourseMethod" required class="input-field">
@@ -642,7 +642,7 @@
           </div>
 
           <div>
-            <label style="display: block; font-size: 14px; font-weight: 600; color: #1d1d1f; margin-bottom: 8px;">
+            <label style="display: block; font-size: 15px; font-weight: 600; color: #1d1d1f; margin-bottom: 10px;">
               課程描述
             </label>
             <textarea
@@ -655,27 +655,27 @@
           </div>
 
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <label style="font-size: 14px; font-weight: 600; color: #1d1d1f;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <label style="font-size: 15px; font-weight: 600; color: #1d1d1f;">
                 關鍵字
               </label>
-              <button type="button" onclick="addMaritimeKeyword()" style="background: #007aff; color: white; padding: 8px 16px; border-radius: 20px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+              <button type="button" onclick="addMaritimeKeyword()" style="background: #007aff; color: white; padding: 9px 18px; border-radius: 20px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);" onmouseover="this.style.background='#0051d5'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 8px rgba(0, 122, 255, 0.25)';" onmouseout="this.style.background='#007aff'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.12)';">
                 ＋ 新增關鍵字
               </button>
             </div>
-            <div id="maritimeKeywordList" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; align-items: flex-start; padding: 12px; background: rgba(0, 0, 0, 0.02); border-radius: 12px;"></div>
-            <p style="font-size: 12px; color: #86868b; margin-top: 8px;">關鍵字可用於課程搜尋和分類，例如：導航、雷達、GPS、船舶操作等</p>
+            <div id="maritimeKeywordList" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 64px; align-items: flex-start; padding: 16px; background: rgba(0, 0, 0, 0.025); border-radius: 14px; border: 1px solid rgba(0, 0, 0, 0.06);"></div>
+            <p style="font-size: 13px; color: #86868b; margin-top: 10px; line-height: 1.5;">關鍵字可用於課程搜尋和分類，例如：導航、雷達、GPS、船舶操作等</p>
           </div>
 
-          <div style="display: flex; gap: 12px;">
-            <button type="submit" class="btn-primary">儲存課程</button>
-            <button type="button" id="maritimeCancelEdit" class="btn-secondary">取消</button>
+          <div style="display: flex; gap: 14px; margin-top: 8px;">
+            <button type="submit" class="btn-primary" style="padding: 13px 28px; font-size: 15px;">💾 儲存課程</button>
+            <button type="button" id="maritimeCancelEdit" class="btn-secondary" style="padding: 13px 28px; font-size: 15px;">取消</button>
           </div>
         </form>
       </div>
 
       <div class="card">
-        <h3 style="font-size: 20px; font-weight: 600; color: #1d1d1f; margin-bottom: 20px;">已建立的課程</h3>
+        <h3 style="font-size: 24px; font-weight: 600; color: #1d1d1f; margin-bottom: 24px; letter-spacing: -0.01em;">已建立的課程</h3>
         <div style="margin-bottom: 20px;">
           <input
             type="text"
@@ -1084,26 +1084,30 @@
       filteredCourses.forEach(course => {
         const courseItem = document.createElement('div');
         courseItem.style.cssText =
-          'border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;';
+          'border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 14px; padding: 24px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #fafafa;';
         courseItem.onmouseover = function () {
-          this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
+          this.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
+          this.style.background = '#ffffff';
+          this.style.transform = 'translateY(-2px)';
         };
         courseItem.onmouseout = function () {
           this.style.boxShadow = 'none';
+          this.style.background = '#fafafa';
+          this.style.transform = 'translateY(0)';
         };
 
         courseItem.innerHTML = `
           <div style="flex: 1;">
-            <h4 style="font-size: 16px; font-weight: 600; color: #1d1d1f; margin-bottom: 4px;">${course.name}</h4>
-            <p style="font-size: 13px; color: #6e6e73; margin-bottom: 8px;">${maritimeCategoryNames[course.category]}</p>
-            <p style="font-size: 12px; color: #8e8e93;">關鍵字: ${course.keywords.join(', ')}</p>
+            <h4 style="font-size: 17px; font-weight: 600; color: #1d1d1f; margin-bottom: 6px; letter-spacing: -0.01em;">${course.name}</h4>
+            <p style="font-size: 14px; color: #6e6e73; margin-bottom: 8px; font-weight: 500;">${maritimeCategoryNames[course.category]}</p>
+            <p style="font-size: 13px; color: #86868b;">關鍵字: ${course.keywords.join(', ')}</p>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button onclick="editMaritimeCourse(${course.id})" style="background: linear-gradient(135deg, #ff9500 0%, #c76a00 100%); color: white; padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
-              編輯
+          <div style="display: flex; gap: 10px;">
+            <button onclick="editMaritimeCourse(${course.id})" style="background: #007aff; color: white; padding: 10px 24px; border-radius: 10px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);" onmouseover="this.style.background='#0051d5'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(0, 122, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15)';" onmouseout="this.style.background='#007aff'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)';">
+              ✏️ 編輯
             </button>
-            <button onclick="deleteMaritimeCourse(${course.id})" style="background: linear-gradient(135deg, #ff3b30 0%, #c9002e 100%); color: white; padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
-              刪除
+            <button onclick="deleteMaritimeCourse(${course.id})" style="background: #ff3b30; color: white; padding: 10px 24px; border-radius: 10px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);" onmouseover="this.style.background='#c9002e'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(255, 59, 48, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15)';" onmouseout="this.style.background='#ff3b30'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)';">
+              🗑️ 刪除
             </button>
           </div>
         `;
