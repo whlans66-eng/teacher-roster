@@ -101,12 +101,121 @@
     }
 
     @media (max-width: 768px) {
+      /* 隱藏桌面版行事曆，顯示手機版 */
       .calendar-grid-container {
         display: none;
       }
 
       .mobile-calendar-view {
         display: block !important;
+      }
+
+      /* 容器內邊距 */
+      .container {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+      }
+
+      /* 標題區域 */
+      h1 {
+        font-size: 32px !important;
+      }
+
+      h2 {
+        font-size: 20px !important;
+      }
+
+      /* 卡片內邊距 */
+      .card {
+        padding: 20px !important;
+      }
+
+      /* 課程行事曆標題和按鈕 */
+      .flex.flex-col.md\\:flex-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+      }
+
+      .flex.items-center.gap-3 {
+        flex-direction: column !important;
+        width: 100%;
+        gap: 12px !important;
+      }
+
+      .flex.items-center.gap-3 button {
+        width: 100%;
+      }
+
+      .flex.rounded-xl.p-1 {
+        width: 100%;
+      }
+
+      /* 導航控制 */
+      .flex.items-center.justify-between.mb-6 {
+        flex-direction: column !important;
+        gap: 12px;
+      }
+
+      .flex.items-center.space-x-4 {
+        flex-direction: column !important;
+        width: 100%;
+        gap: 8px !important;
+      }
+
+      .flex.items-center.space-x-4 button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      #currentMonth {
+        min-width: auto !important;
+        width: 100%;
+        text-align: center;
+        font-size: 16px !important;
+      }
+
+      /* 今天按鈕 */
+      button[onclick="goToToday()"] {
+        width: 100%;
+      }
+
+      /* 按鈕 */
+      .modern-btn {
+        width: 100%;
+        padding: 12px 20px !important;
+        font-size: 14px !important;
+      }
+
+      /* 統計卡片 */
+      .grid.grid-cols-2,
+      .grid.grid-cols-3,
+      .grid.grid-cols-4 {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* 調整文字大小 */
+      button {
+        font-size: 14px !important;
+      }
+    }
+
+    /* 小手機螢幕 (< 480px) */
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 28px !important;
+      }
+
+      h2 {
+        font-size: 18px !important;
+      }
+
+      .card {
+        padding: 16px !important;
+      }
+
+      button {
+        font-size: 13px !important;
+        padding: 10px 16px !important;
       }
     }
 

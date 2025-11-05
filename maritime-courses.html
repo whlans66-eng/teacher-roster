@@ -533,6 +533,160 @@
     .hidden {
       display: none !important;
     }
+
+    /* 手機版響應式設計 */
+    @media (max-width: 768px) {
+      /* 容器內邊距 */
+      .container {
+        padding: 16px !important;
+      }
+
+      /* 標題區域 */
+      .header h1 {
+        font-size: 32px !important;
+      }
+
+      .header p {
+        font-size: 15px !important;
+      }
+
+      /* 導航選單 */
+      .nav-tabs {
+        flex-direction: column;
+        width: 100%;
+        margin-bottom: 24px !important;
+      }
+
+      .nav-tab {
+        width: 100%;
+        text-align: center;
+        padding: 12px 16px;
+      }
+
+      /* 卡片 */
+      .card {
+        padding: 24px !important;
+      }
+
+      /* 搜尋欄和篩選器 */
+      .card > div[style*="grid-template-columns"] {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+      }
+
+      .card #maritimeSearchInput {
+        width: 100% !important;
+      }
+
+      .card #maritimeCategoryFilter {
+        width: 100% !important;
+      }
+
+      /* 課程卡片網格 */
+      #maritimeCourseResults {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+
+      /* 課程卡片 */
+      .course-card {
+        padding: 20px !important;
+      }
+
+      /* 課程管理表單 */
+      #maritimeEditPage .card > form > div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+
+      /* 按鈕 */
+      .btn-primary,
+      .btn-secondary {
+        width: 100%;
+        padding: 12px 20px !important;
+      }
+
+      /* 統計頁面 */
+      #maritimeStatsPage .card {
+        padding: 24px !important;
+      }
+
+      /* 圖表容器 */
+      .chart-container {
+        width: 100% !important;
+        max-width: 280px;
+      }
+
+      .pie-chart {
+        width: 240px !important;
+        height: 240px !important;
+      }
+
+      .pie-chart::before {
+        width: 110px !important;
+        height: 110px !important;
+      }
+
+      .pie-chart::after {
+        font-size: 12px !important;
+      }
+
+      /* 標籤 */
+      .tag {
+        font-size: 12px !important;
+        padding: 5px 12px !important;
+      }
+
+      /* 課程表單輸入欄位 */
+      .input-field {
+        font-size: 14px !important;
+        padding: 10px 14px !important;
+      }
+
+      /* 統計卡片 */
+      .stat-card {
+        padding: 20px !important;
+      }
+    }
+
+    /* 小手機螢幕 (< 480px) */
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 28px !important;
+      }
+
+      .header p {
+        font-size: 14px !important;
+      }
+
+      .card {
+        padding: 20px !important;
+      }
+
+      .course-card {
+        padding: 16px !important;
+      }
+
+      .nav-tab {
+        font-size: 13px !important;
+        padding: 10px 12px !important;
+      }
+
+      .pie-chart {
+        width: 200px !important;
+        height: 200px !important;
+      }
+
+      .pie-chart::before {
+        width: 90px !important;
+        height: 90px !important;
+      }
+
+      .pie-chart::after {
+        font-size: 11px !important;
+      }
+    }
   </style>
 
   <!-- API 層：與後端通訊 -->
