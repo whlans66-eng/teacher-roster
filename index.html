@@ -152,18 +152,21 @@
     .card {
       background: #ffffff;
       border-radius: 20px;
-      padding: 56px 40px;
+      padding: 40px;
       text-align: center;
       cursor: pointer;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid rgba(0, 0, 0, 0.04);
       text-decoration: none;
-      display: block;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       position: relative;
       overflow: hidden;
-      flex: 1;
-      min-width: 280px;
-      max-width: 360px;
+      flex-shrink: 0;
+      width: 300px;
+      height: 300px;
     }
 
     /* 字卡右下角的 > 圖標 */
@@ -217,8 +220,8 @@
     }
 
     .card-icon {
-      font-size: 80px;
-      margin-bottom: 28px;
+      font-size: 64px;
+      margin-bottom: 20px;
       display: block;
       position: relative;
       z-index: 1;
@@ -231,26 +234,26 @@
     }
 
     .card-icon img {
-      width: 80px;
-      height: 80px;
+      width: 64px;
+      height: 64px;
       object-fit: contain;
     }
 
     .card-title {
-      font-size: 32px;
+      font-size: 24px;
       font-weight: 600;
       color: #1d1d1f;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       letter-spacing: -0.015em;
       position: relative;
       z-index: 1;
     }
 
     .card-description {
-      font-size: 17px;
+      font-size: 14px;
       color: #6e6e73;
       font-weight: 400;
-      line-height: 1.6;
+      line-height: 1.5;
       position: relative;
       z-index: 1;
     }
@@ -313,34 +316,36 @@
       }
 
       .card {
-        padding: 40px 28px;
-        min-width: 280px;
-        max-width: 280px;
+        padding: 30px;
+        width: 260px;
+        height: 260px;
       }
 
       .card-icon {
-        font-size: 68px;
+        font-size: 56px;
+        margin-bottom: 16px;
       }
 
       .card-icon img {
-        width: 68px;
-        height: 68px;
+        width: 56px;
+        height: 56px;
       }
 
       .card-title {
-        font-size: 24px;
+        font-size: 20px;
+        margin-bottom: 6px;
       }
 
       .card-description {
-        font-size: 15px;
+        font-size: 13px;
       }
 
       .card-arrow {
-        width: 32px;
-        height: 32px;
-        font-size: 18px;
-        bottom: 20px;
-        right: 20px;
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+        bottom: 16px;
+        right: 16px;
       }
     }
 
