@@ -967,7 +967,13 @@
       if (searchTerm) {
         // 🎯 優先搜尋：先嘗試只在 keywords 中搜尋
         let keywordMatchedCourses = maritimeCourses.filter(course => {
-          const matchesKeyword = course.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm));
+          if (!course || typeof course.name !== 'string') return false;
+
+          const matchesKeyword = Array.isArray(course.keywords)
+            ? course.keywords.some(keyword =>
+                typeof keyword === 'string' && keyword.toLowerCase().includes(searchTerm)
+              )
+            : false;
           const matchesCategory = !categoryFilter || course.category === categoryFilter;
           return matchesKeyword && matchesCategory;
         });
@@ -979,9 +985,13 @@
         } else {
           // 如果 keywords 沒有找到，才搜尋所有欄位（課程名稱、描述）
           filteredCourses = maritimeCourses.filter(course => {
+            if (!course || typeof course.name !== 'string') return false;
+
             const matchesSearch =
               course.name.toLowerCase().includes(searchTerm) ||
-              course.description.toLowerCase().includes(searchTerm);
+              (course.description && typeof course.description === 'string'
+                ? course.description.toLowerCase().includes(searchTerm)
+                : false);
             const matchesCategory = !categoryFilter || course.category === categoryFilter;
             return matchesSearch && matchesCategory;
           });
@@ -989,6 +999,7 @@
       } else {
         // 沒有搜尋字串，只按分類過濾
         filteredCourses = maritimeCourses.filter(course => {
+          if (!course) return false;
           return !categoryFilter || course.category === categoryFilter;
         });
       }
@@ -1068,10 +1079,22 @@
       const container = document.getElementById('maritimeManageCourseList');
 
       let filteredCourses = maritimeCourses.filter(
-        course =>
-          course.name.toLowerCase().includes(searchTerm) ||
-          course.description.toLowerCase().includes(searchTerm) ||
-          course.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm))
+        course => {
+          // 確保資料完整性
+          if (!course || typeof course.name !== 'string') return false;
+
+          const matchName = course.name.toLowerCase().includes(searchTerm);
+          const matchDescription = course.description && typeof course.description === 'string'
+            ? course.description.toLowerCase().includes(searchTerm)
+            : false;
+          const matchKeywords = Array.isArray(course.keywords)
+            ? course.keywords.some(keyword =>
+                typeof keyword === 'string' && keyword.toLowerCase().includes(searchTerm)
+              )
+            : false;
+
+          return matchName || matchDescription || matchKeywords;
+        }
       );
 
       container.innerHTML = '';
