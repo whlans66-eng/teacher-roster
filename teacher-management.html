@@ -2109,11 +2109,23 @@
             ${dayEvents.map(ev => {
               const teacher = teachers.find(t => t.id === ev.teacherId);
               const teacherName = teacher ? teacher.name : '';
+              const colorMap = {
+                'bg-blue-500': { bg: 'rgba(0, 122, 255, 0.08)', border: '#007aff', text: '#1d1d1f' },
+                'bg-green-500': { bg: 'rgba(52, 199, 89, 0.08)', border: '#34c759', text: '#1d1d1f' },
+                'bg-purple-500': { bg: 'rgba(175, 82, 222, 0.08)', border: '#af52de', text: '#1d1d1f' },
+                'bg-red-500': { bg: 'rgba(255, 59, 48, 0.08)', border: '#ff3b30', text: '#1d1d1f' },
+                'bg-orange-500': { bg: 'rgba(255, 149, 0, 0.08)', border: '#ff9500', text: '#1d1d1f' },
+                'bg-pink-500': { bg: 'rgba(255, 45, 85, 0.08)', border: '#ff2d55', text: '#1d1d1f' }
+              };
+              const style = colorMap[ev.color] || colorMap['bg-blue-500'];
               return `
-                <div class="event-item ${ev.color||'bg-blue-500'} text-white rounded cursor-pointer hover:opacity-80"
+                <div class="event-item rounded cursor-pointer"
+                     style="background: ${style.bg}; border-left: 3px solid ${style.border}; color: ${style.text}; padding: 6px 8px; margin: 4px 0; transition: all 0.2s ease;"
+                     onmouseover="this.style.background='${style.bg.replace('0.08', '0.12')}'; this.style.transform='translateX(2px)';"
+                     onmouseout="this.style.background='${style.bg}'; this.style.transform='translateX(0)';"
                      onclick="viewCalendarEvent(${ev.id}); event.stopPropagation();">
-                  <div class="font-medium truncate">${teacherName ? teacherName : ev.title}</div>
-                  <div class="text-[10px] truncate">${ev.time || ''} ${teacherName ? ev.title : ''}</div>
+                  <div class="font-medium truncate" style="font-size: 11px; font-weight: 600;">${teacherName ? teacherName : ev.title}</div>
+                  <div class="truncate" style="font-size: 10px; color: #6e6e73; margin-top: 2px;">${ev.time || ''} ${teacherName ? ev.title : ''}</div>
                 </div>
               `;
             }).join('')}
@@ -2162,12 +2174,24 @@
           ${dayEvents.map(ev => {
             const teacher = teachers.find(t => t.id === ev.teacherId);
             const teacherName = teacher ? teacher.name : '';
+            const colorMap = {
+              'bg-blue-500': { bg: 'rgba(0, 122, 255, 0.08)', border: '#007aff', text: '#1d1d1f' },
+              'bg-green-500': { bg: 'rgba(52, 199, 89, 0.08)', border: '#34c759', text: '#1d1d1f' },
+              'bg-purple-500': { bg: 'rgba(175, 82, 222, 0.08)', border: '#af52de', text: '#1d1d1f' },
+              'bg-red-500': { bg: 'rgba(255, 59, 48, 0.08)', border: '#ff3b30', text: '#1d1d1f' },
+              'bg-orange-500': { bg: 'rgba(255, 149, 0, 0.08)', border: '#ff9500', text: '#1d1d1f' },
+              'bg-pink-500': { bg: 'rgba(255, 45, 85, 0.08)', border: '#ff2d55', text: '#1d1d1f' }
+            };
+            const style = colorMap[ev.color] || colorMap['bg-blue-500'];
             return `
-              <div class="event-item ${ev.color||'bg-blue-500'} text-white p-3 rounded-xl cursor-pointer hover:opacity-80"
+              <div class="event-item rounded-xl cursor-pointer"
+                   style="background: ${style.bg}; border-left: 4px solid ${style.border}; color: ${style.text}; padding: 12px; margin: 8px 0; transition: all 0.2s ease;"
+                   onmouseover="this.style.background='${style.bg.replace('0.08', '0.12')}'; this.style.transform='translateX(3px)';"
+                   onmouseout="this.style.background='${style.bg}'; this.style.transform='translateX(0)';"
                    onclick="viewCalendarEvent(${ev.id}); event.stopPropagation();">
-                <div class="font-semibold">${teacherName ? teacherName : ev.title}</div>
-                <div class="text-xs mt-1">⏰ ${ev.time || ''}</div>
-                <div class="text-xs">${teacherName ? ev.title : ''}</div>
+                <div class="font-semibold" style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">${teacherName ? teacherName : ev.title}</div>
+                <div style="font-size: 12px; color: #6e6e73; margin-top: 4px;">⏰ ${ev.time || ''}</div>
+                <div style="font-size: 12px; color: #86868b; margin-top: 2px;">${teacherName ? ev.title : ''}</div>
               </div>
             `;
           }).join('')}
@@ -2222,10 +2246,36 @@
       .event-item{font-size:.8rem;padding:8px 12px;margin:4px 0;border-radius:8px;cursor:pointer;transition:all .3s ease;box-shadow:0 2px 8px rgba(0,0,0,.1);backdrop-filter: blur(10px);}
       .event-item:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 20px rgba(0,0,0,.15);}
       .glass-effect{background: rgba(255,255,255,0.95);backdrop-filter: blur(20px);border:1px solid rgba(255,255,255,0.2);}
-      .gradient-bg{background: linear-gradient(135deg,#e0f2fe 0%,#f3e5f5 100%);}
-      .btn-primary{background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);transition: all .3s ease;}
-      .btn-primary:hover{transform: translateY(-2px);box-shadow:0 10px 25px rgba(102,126,234,.4);}
-      .today-highlight{background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;}
+      .gradient-bg{background: #f5f5f7;}
+      .btn-primary{background: #007aff; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);}
+      .btn-primary:hover{background: #0051d5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);}
+      .today-highlight{
+        background: rgba(0, 122, 255, 0.06) !important;
+        border: 2px solid #007aff !important;
+        box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.1), 0 4px 12px rgba(0, 122, 255, 0.15) !important;
+      }
+      .calendar-day{
+        min-height: 120px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 10px;
+      }
+      .calendar-day:hover{
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .event-item{
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      .event-item:hover{
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
     `;
     const style = document.createElement('style');
     style.textContent = css;
