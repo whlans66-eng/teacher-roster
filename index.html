@@ -480,6 +480,12 @@
     const leftArrow = document.getElementById('leftArrow');
     const rightArrow = document.getElementById('rightArrow');
 
+    // 檢查必要的 DOM 元素是否存在
+    if (!cardGrid || !leftArrow || !rightArrow) {
+      console.error('❌ 無法找到輪播所需的 DOM 元素');
+      return;
+    }
+
     // 計算每次滾動的距離
     function getScrollAmount() {
       const card = cardGrid.querySelector('.card');

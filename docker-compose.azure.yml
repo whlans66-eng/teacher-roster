@@ -1,0 +1,86 @@
+version: '3.8'
+
+# =====================================================
+# Docker Compose 配置 - Azure 資料庫版本
+# =====================================================
+# 使用說明：
+# 1. 在 Azure 上建立 MySQL 資料庫
+# 2. 更新 .env 檔案中的 DB_HOST 等設定
+# 3. 下載 SSL 憑證到 backend/azure-mysql-ca.pem
+# 4. 執行：docker-compose -f docker-compose.azure.yml up -d
+# =====================================================
+
+services:
+  # ===================================================
+  # 後端 API 服務（連接到 Azure MySQL）
+  # ===================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: teacher-roster-backend
+    ports:
+      - "${PORT:-3001}:${PORT:-3001}"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SSL_MODE=${DB_SSL_MODE:-REQUIRED}
+      - DB_SSL_CA=${DB_SSL_CA}
+    volumes:
+      # 掛載 SSL 憑證
+      - ./backend/azure-mysql-ca.pem:/app/azure-mysql-ca.pem:ro
+      # 日誌目錄
+      - ./logs:/app/logs
+      # 上傳檔案
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-3001}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.teacher-roster.service=backend"
+      - "com.teacher-roster.environment=${NODE_ENV:-production}"
+
+  # ===================================================
+  # 前端服務（可選）
+  # ===================================================
+  # frontend:
+  #   build:
+  #     context: ./frontend-new
+  #     dockerfile: Dockerfile
+  #   container_name: teacher-roster-frontend
+  #   ports:
+  #     - "5173:80"
+  #   environment:
+  #     - VITE_API_URL=${VITE_API_URL}
+  #   restart: unless-stopped
+  #   networks:
+  #     - app-network
+  #   depends_on:
+  #     - backend
+
+networks:
+  app-network:
+    driver: bridge
+    name: teacher-roster-network
+
+# =====================================================
+# 注意事項
+# =====================================================
+# 1. 此配置不包含 MySQL 容器，因為使用 Azure Database
+# 2. 確保 Azure 防火牆允許您的 Docker 主機 IP
+# 3. 建議使用 Azure Container Instances 或 App Service 部署
+# 4. 定期更新 SSL 憑證
+# 5. 監控 Azure Database 效能和連線數
+# =====================================================
