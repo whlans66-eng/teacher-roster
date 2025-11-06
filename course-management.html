@@ -1451,6 +1451,19 @@
       const course = courseAssignments.find(c => c.id === courseId);
       if (!course) return;
 
+      // 選擇該課程的日期並更新課程總覽
+      selectDate(course.date);
+
+      // 只在手機版（螢幕寬度 <= 768px）才滾動到課程總覽區域
+      if (window.innerWidth <= 768) {
+        setTimeout(() => {
+          const courseOverview = document.getElementById('courseOverviewTitle');
+          if (courseOverview) {
+            courseOverview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+
       editingCourseId = courseId;
       const teacher = teachers.find(t => t.id === course.teacherId);
 
