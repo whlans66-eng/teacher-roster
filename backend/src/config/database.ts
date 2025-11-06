@@ -3,8 +3,29 @@
  */
 import mysql from 'mysql2/promise';
 import { logger } from '../utils/logger';
+import fs from 'fs';
+import path from 'path';
 
-const dbConfig = {
+// SSL 配置（用於 Azure Database for MySQL）
+let sslConfig: any = undefined;
+if (process.env.DB_SSL_MODE === 'REQUIRED' && process.env.DB_SSL_CA) {
+  try {
+    const caPath = process.env.DB_SSL_CA;
+    if (fs.existsSync(caPath)) {
+      sslConfig = {
+        ca: fs.readFileSync(caPath),
+        rejectUnauthorized: true,
+      };
+      logger.info('✅ SSL 憑證已載入，將使用加密連線');
+    } else {
+      logger.warn(`⚠️ SSL 憑證檔案不存在：${caPath}`);
+    }
+  } catch (error) {
+    logger.error('❌ 載入 SSL 憑證失敗:', error);
+  }
+}
+
+const dbConfig: mysql.PoolOptions = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
   user: process.env.DB_USER || 'root',
@@ -16,6 +37,7 @@ const dbConfig = {
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
   timezone: '+08:00', // 台灣時區
+  ssl: sslConfig, // Azure Database for MySQL SSL 支援
 };
 
 // 建立連線池
@@ -27,7 +49,15 @@ export const pool = mysql.createPool(dbConfig);
 export async function testConnection(): Promise<boolean> {
   try {
     const connection = await pool.getConnection();
-    logger.info('✅ 資料庫連線成功');
+    const [rows] = await connection.query('SELECT VERSION() as version, @@hostname as hostname');
+    const dbInfo = (rows as any)[0];
+    logger.info('✅ 資料庫連線成功', {
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      version: dbInfo.version,
+      hostname: dbInfo.hostname,
+      ssl: sslConfig ? '已啟用' : '未啟用',
+    });
     connection.release();
     return true;
   } catch (error) {

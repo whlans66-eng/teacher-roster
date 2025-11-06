@@ -28,13 +28,13 @@
 |------|--------|--------|
 | **前端** | 純 HTML + localStorage | React + TypeScript + Zustand |
 | **後端** | Google Apps Script | Node.js + Express + TypeScript |
-| **資料庫** | Google Sheets | MySQL 8.0 |
+| **資料庫** | Google Sheets | MySQL 8.0 或 Azure Database |
 | **認證** | 硬編碼 Token | JWT + bcrypt |
 | **權限** | 無 | RBAC (角色權限控制) |
-| **安全性** | Token 暴露在前端 | 所有敏感資訊在後端 |
+| **安全性** | Token 暴露在前端 | 所有敏感資訊在後端 + SSL |
 | **併發控制** | 無 | 樂觀鎖 (version 欄位) |
 | **操作日誌** | 無 | 完整的 audit_logs |
-| **部署** | 手動更新 | Docker Compose |
+| **部署** | 手動更新 | Docker / Azure App Service |
 
 ---
 
@@ -391,7 +391,7 @@ node database/migrate-from-sheets.js
 
 ## 🚀 部署指南
 
-### Docker 生產環境部署
+### 選項一：Docker 本地部署
 
 ```bash
 # 1. 修改 .env 為生產環境設定
@@ -399,12 +399,40 @@ NODE_ENV=production
 DB_PASSWORD=<強密碼>
 JWT_SECRET=<隨機64字元>
 
-# 2. 建置並啟動
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# 2. 建置並啟動（含本地 MySQL）
+docker-compose up -d
 
 # 3. 查看狀態
 docker-compose ps
 ```
+
+### 選項二：Azure 雲端部署 ⭐ (推薦)
+
+**使用 Azure Database for MySQL + Azure App Service**
+
+詳細步驟請參考：[AZURE_SETUP.md](./AZURE_SETUP.md)
+
+```bash
+# 1. 在 Azure 建立 MySQL 資料庫
+az mysql flexible-server create --name teacher-roster-mysql ...
+
+# 2. 更新 .env 使用 Azure 資料庫
+DB_HOST=teacher-roster-mysql.mysql.database.azure.com
+DB_USER=roster_admin
+DB_PASSWORD=<Azure密碼>
+DB_SSL_MODE=REQUIRED
+
+# 3. 使用 Azure 專用的 Docker Compose
+docker-compose -f docker-compose.azure.yml up -d
+```
+
+**優點：**
+- ✅ 99.99% 可用性 SLA
+- ✅ 自動備份和還原
+- ✅ 內建監控和警示
+- ✅ 彈性擴展資源
+- ✅ SSL/TLS 加密連線
+- ✅ 無需管理伺服器
 
 ### 安全檢查清單
 
