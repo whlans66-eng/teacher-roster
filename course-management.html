@@ -1451,6 +1451,17 @@
       const course = courseAssignments.find(c => c.id === courseId);
       if (!course) return;
 
+      // 選擇該課程的日期並更新課程總覽
+      selectDate(course.date);
+
+      // 滾動到課程總覽區域
+      setTimeout(() => {
+        const courseOverview = document.getElementById('courseOverviewTitle');
+        if (courseOverview) {
+          courseOverview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+
       editingCourseId = courseId;
       const teacher = teachers.find(t => t.id === course.teacherId);
 
