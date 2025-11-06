@@ -1118,101 +1118,173 @@
 
     // ==================== 今日課程總覽 ====================
     function renderTodayCourses() {
-      // 決定顯示的日期
-      let displayDate;
       let titleText;
+      let displayCourses;
 
-      if (selectedDate !== null) {
-        displayDate = selectedDate;
+      // 根據選擇狀況決定顯示模式
+      if (selectedTeacherId !== null && selectedDate === null) {
+        // 情況1：選擇了老師但沒選日期 → 顯示該老師的所有課程
+        const teacher = teachers.find(t => t.id === selectedTeacherId);
+        titleText = `👨‍🏫 ${teacher ? teacher.name : '未知師資'} 的所有課程`;
+        displayCourses = courseAssignments.filter(c => c.teacherId === selectedTeacherId);
+      } else if (selectedDate !== null) {
+        // 情況2：選擇了日期（可能同時選擇了老師）
         const date = new Date(selectedDate + 'T00:00:00');
-        titleText = `📅 ${date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} 課程總覽`;
+        const dateText = date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+        if (selectedTeacherId !== null) {
+          const teacher = teachers.find(t => t.id === selectedTeacherId);
+          titleText = `📅 ${dateText} - ${teacher ? teacher.name : '未知師資'} 的課程`;
+          displayCourses = courseAssignments.filter(c => c.date === selectedDate && c.teacherId === selectedTeacherId);
+        } else {
+          titleText = `📅 ${dateText} 課程總覽`;
+          displayCourses = courseAssignments.filter(c => c.date === selectedDate);
+        }
       } else {
-        displayDate = getLocalDateString(new Date());
+        // 情況3：都沒選擇 → 顯示今天的課程
+        const todayDate = getLocalDateString(new Date());
         titleText = '📅 今日課程總覽';
+        displayCourses = courseAssignments.filter(c => c.date === todayDate);
       }
 
       document.getElementById('courseOverviewTitle').textContent = titleText;
 
-      let displayCourses = courseAssignments.filter(c => c.date === displayDate);
-
-      // 根據選擇的師資過濾
-      if (selectedTeacherId !== null) {
-        displayCourses = displayCourses.filter(c => c.teacherId === selectedTeacherId);
-      }
-
       const container = document.getElementById('todayCoursesContainer');
 
       if (displayCourses.length === 0) {
+        let emptyMessage = '今天沒有排課';
+        if (selectedTeacherId !== null && selectedDate === null) {
+          emptyMessage = '該師資尚未有排課紀錄';
+        } else if (selectedDate !== null) {
+          emptyMessage = '該日期沒有排課';
+        }
+
         container.innerHTML = `
           <div class="text-center py-8 text-gray-500">
             <div class="text-4xl mb-2">✨</div>
-            <p>${selectedDate ? '該日期沒有排課' : '今天沒有排課'}</p>
+            <p>${emptyMessage}</p>
           </div>
         `;
         return;
       }
 
-      const todayCourses = displayCourses;
-
-      // 按師資分組
-      const grouped = {};
-      todayCourses.forEach(c => {
-        if (!grouped[c.teacherId]) {
-          grouped[c.teacherId] = [];
+      // 排序課程：先按日期，再按時間
+      const sortedCourses = displayCourses.sort((a, b) => {
+        if (a.date !== b.date) {
+          return a.date.localeCompare(b.date);
         }
-        grouped[c.teacherId].push(c);
+        return a.time.localeCompare(b.time);
       });
 
-      container.innerHTML = Object.entries(grouped).map(([teacherId, courses]) => {
-        const teacher = teachers.find(t => t.id === Number(teacherId));
-        if (!teacher) return '';
+      // 如果是顯示某個老師的所有課程，按日期分組
+      if (selectedTeacherId !== null && selectedDate === null) {
+        const groupedByDate = {};
+        sortedCourses.forEach(c => {
+          if (!groupedByDate[c.date]) {
+            groupedByDate[c.date] = [];
+          }
+          groupedByDate[c.date].push(c);
+        });
 
-        return `
-          <div class="bg-white rounded-xl p-4 border border-gray-200">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 p-0.5">
-                  <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
-                    ${teacher.photo ?
-                      `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` :
-                      `<span class="text-lg font-bold text-gray-600">${(teacher.name || '?')[0]}</span>`
-                    }
-                  </div>
-                </div>
-                <div>
-                  <h4 class="font-semibold text-gray-800">${teacher.name}</h4>
-                  <p class="text-xs text-gray-500">${courses.length} 堂課</p>
-                </div>
+        container.innerHTML = Object.entries(groupedByDate).map(([date, courses]) => {
+          const dateObj = new Date(date + 'T00:00:00');
+          const dateText = dateObj.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', weekday: 'long' });
+
+          return `
+            <div class="bg-white rounded-xl p-4 border border-gray-200">
+              <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                <h4 class="font-semibold text-gray-800">📅 ${dateText}</h4>
+                <span class="text-xs text-gray-500">${courses.length} 堂課</span>
               </div>
-            </div>
-            <div class="space-y-2">
-              ${courses.sort((a, b) => a.time.localeCompare(b.time)).map(c => {
-                const statusColors = {
-                  '上班': 'bg-blue-50 text-blue-700 border-blue-200',
-                  '休假': 'bg-green-50 text-green-700 border-green-200',
-                  '出差': 'bg-orange-50 text-orange-700 border-orange-200'
-                };
-                const statusClass = statusColors[c.status] || statusColors['上班'];
+              <div class="space-y-2">
+                ${courses.map(c => {
+                  const statusColors = {
+                    '上班': 'bg-blue-50 text-blue-700 border-blue-200',
+                    '休假': 'bg-green-50 text-green-700 border-green-200',
+                    '出差': 'bg-orange-50 text-orange-700 border-orange-200'
+                  };
+                  const statusClass = statusColors[c.status] || statusColors['上班'];
 
-                return `
-                  <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200" onclick="viewEvent(${c.id})">
-                    <div class="flex justify-between items-start">
-                      <div class="flex-1">
-                        <p class="font-medium text-gray-800">${c.name}</p>
-                        <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
-                          <span>🕐 ${c.time}</span>
-                          <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
-                          <span class="px-2 py-0.5 ${statusClass} rounded border">${c.status || '上班'}</span>
+                  return `
+                    <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200" onclick="viewEvent(${c.id})">
+                      <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                          <p class="font-medium text-gray-800">${c.name}</p>
+                          <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
+                            <span>🕐 ${c.time}</span>
+                            <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
+                            <span class="px-2 py-0.5 ${statusClass} rounded border">${c.status || '上班'}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                `;
-              }).join('')}
+                  `;
+                }).join('')}
+              </div>
             </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      } else {
+        // 按師資分組（原有邏輯）
+        const grouped = {};
+        sortedCourses.forEach(c => {
+          if (!grouped[c.teacherId]) {
+            grouped[c.teacherId] = [];
+          }
+          grouped[c.teacherId].push(c);
+        });
+
+        container.innerHTML = Object.entries(grouped).map(([teacherId, courses]) => {
+          const teacher = teachers.find(t => t.id === Number(teacherId));
+          if (!teacher) return '';
+
+          return `
+            <div class="bg-white rounded-xl p-4 border border-gray-200">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-3">
+                  <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 p-0.5">
+                    <div class="w-full h-full rounded-full bg-white flex items-center justify-center">
+                      ${teacher.photo ?
+                        `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` :
+                        `<span class="text-lg font-bold text-gray-600">${(teacher.name || '?')[0]}</span>`
+                      }
+                    </div>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-800">${teacher.name}</h4>
+                    <p class="text-xs text-gray-500">${courses.length} 堂課</p>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-2">
+                ${courses.map(c => {
+                  const statusColors = {
+                    '上班': 'bg-blue-50 text-blue-700 border-blue-200',
+                    '休假': 'bg-green-50 text-green-700 border-green-200',
+                    '出差': 'bg-orange-50 text-orange-700 border-orange-200'
+                  };
+                  const statusClass = statusColors[c.status] || statusColors['上班'];
+
+                  return `
+                    <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200" onclick="viewEvent(${c.id})">
+                      <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                          <p class="font-medium text-gray-800">${c.name}</p>
+                          <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
+                            <span>🕐 ${c.time}</span>
+                            <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
+                            <span class="px-2 py-0.5 ${statusClass} rounded border">${c.status || '上班'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
     }
 
     // ==================== 行事曆 ====================
