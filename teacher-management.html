@@ -260,8 +260,8 @@
 
             <!-- 模式切換 -->
             <div class="flex bg-gray-100 rounded-lg p-1">
-              <button onclick="switchMode('edit')" id="editModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white" style="background-color:#007aff">✏️ 編輯模式</button>
-              <button onclick="switchMode('display')" id="displayModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800">👁️ 呈現模式</button>
+              <button onclick="switchMode('edit')" id="editModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white" style="background-color:#007aff">編輯模式</button>
+              <button onclick="switchMode('display')" id="displayModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800">呈現模式</button>
             </div>
 
             <div class="flex space-x-3">
@@ -285,7 +285,7 @@
               <button onclick="clearSearch()" id="clearBtn" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">✕</button>
             </div>
             <button onclick="addNewTeacher()" id="addTeacherBtn" class="text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 shadow-sm whitespace-nowrap" style="background-color:#007aff">
-              ➕ 新增師資
+              新增師資
             </button>
           </div>
         </div>
@@ -594,10 +594,10 @@
           關閉
         </button>
         <button onclick="enterEventEditMode()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          ✏️ 編輯
+          編輯
         </button>
         <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          🗑️ 刪除
+          刪除
         </button>
       </div>
 
@@ -606,7 +606,7 @@
           取消
         </button>
         <button onclick="saveEditedEvent()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          💾 儲存變更
+          儲存變更
         </button>
       </div>
     </div>
@@ -732,7 +732,7 @@
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-semibold text-gray-800">課程時間軸</h3>
           <button onclick="openAddCourseModal()" class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl flex items-center space-x-2">
-            <span>➕</span><span>新增課程</span>
+            <span>新增課程</span>
           </button>
         </div>
 
@@ -869,7 +869,7 @@
           <div class="bg-gray-50 p-6 rounded-lg">
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-xl font-semibold text-gray-800">工作經歷</h3>
-              <button type="button" onclick="addExperience()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增經歷</button>
+              <button type="button" onclick="addExperience()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增經歷</button>
             </div>
             <div id="experienceList" class="space-y-3"></div>
           </div>
@@ -878,7 +878,7 @@
           <div class="bg-gray-50 p-6 rounded-lg">
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-xl font-semibold text-gray-800">證書與資格</h3>
-              <button type="button" onclick="addCertificate()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增證書</button>
+              <button type="button" onclick="addCertificate()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增證書</button>
             </div>
             <div id="certificateList" class="space-y-3"></div>
           </div>
@@ -887,7 +887,7 @@
           <div class="bg-gray-50 p-6 rounded-lg">
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-xl font-semibold text-gray-800">講授課程</h3>
-              <button type="button" onclick="addSubject()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">➕ 新增課程</button>
+              <button type="button" onclick="addSubject()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增課程</button>
             </div>
             <div id="subjectList" class="space-y-3"></div>
           </div>
@@ -905,10 +905,10 @@
           </div>
 
           <div class="flex justify-between pt-6">
-            <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors hidden">🗑️ 刪除師資</button>
+            <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors hidden">刪除師資</button>
             <div class="flex space-x-4 ml-auto">
               <button type="button" onclick="backToList()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">取消</button>
-              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">💾 儲存</button>
+              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">儲存</button>
             </div>
           </div>
         </form>
@@ -1479,7 +1479,6 @@
         addBtn.classList.add('hidden');
         modeDescription.innerHTML = `
           <div class="flex items-center space-x-2">
-            <span class="text-green-600">👁️</span>
             <span class="text-green-700 text-sm font-medium">呈現模式：以美觀的方式展示師資陣容，適合對外展示</span>
           </div>`;
         modeDescription.className = 'bg-green-50 border border-green-200 rounded-lg p-3';
@@ -1700,7 +1699,7 @@
                   return `<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-green-500">
                     <div class="flex items-center justify-between">
                       <p class="text-gray-700 flex-1">${certName}</p>
-                      ${fileUrl?`<button onclick="viewCertificateFromDetail('${certName}','${fileUrl}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors ml-3">👁️ 檢視</button>`:''}
+                      ${fileUrl?`<button onclick="viewCertificateFromDetail('${certName}','${fileUrl}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors ml-3">檢視</button>`:''}
                     </div></div>`;
                 }).join('')}
               </div>`:`
@@ -1728,7 +1727,7 @@
 
         ${currentMode==='edit'?`
         <div class="mt-8 text-center">
-          <button onclick="editTeacher(${teacher.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl">✏️ 編輯師資資料</button>
+          <button onclick="editTeacher(${teacher.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl">編輯師資資料</button>
         </div>`:''}
       `;
     }
@@ -1775,9 +1774,9 @@
             <input type="text" value="${value}" placeholder="請輸入證書或資格名稱..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <div class="flex items-center space-x-2">
               <input type="file" id="certFile_${uid}" accept=".jpg,.jpeg,.png,.pdf,.txt,.doc,.docx" class="hidden" onchange="handleCertificateFile(this)">
-              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">📎 上傳檔案</button>
+              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">上傳檔案</button>
               <div class="file-info text-sm text-gray-600" data-filename="${fileName}" data-fileurl="${fileUrl}">${fileName?`已上傳: ${fileName}`:'未上傳檔案'}</div>
-              ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">👁️ 檢視</button>`:''}
+              ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">檢視</button>`:''}
             </div>
           </div>
           <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
@@ -1806,7 +1805,7 @@
           btn.type='button';
           btn.onclick=()=>viewCertificateFile(btn);
           btn.className='bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs';
-          btn.innerHTML='👁️ 檢視';
+          btn.innerHTML='檢視';
           info.parentElement.appendChild(btn);
         }
       }catch(err){
@@ -2358,7 +2357,7 @@
     if (!event) return;
 
     const modalTitle = document.getElementById('eventModalTitle');
-    modalTitle.textContent = '✏️ 編輯事件';
+    modalTitle.textContent = '編輯事件';
     document.getElementById('eventViewMode').style.display = 'none';
     document.getElementById('editEventForm').style.display = 'block';
     document.getElementById('eventViewModeButtons').style.display = 'none';

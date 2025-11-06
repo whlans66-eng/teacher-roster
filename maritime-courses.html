@@ -710,13 +710,13 @@
     <!-- 導航選單 -->
     <div class="nav-tabs">
       <button id="maritimeViewTab" class="nav-tab active" onclick="switchMaritimeTab('view')">
-        📚 課程瀏覽
+        課程瀏覽
       </button>
       <button id="maritimeEditTab" class="nav-tab" onclick="switchMaritimeTab('edit')">
-        ✏️ 課程管理
+        課程管理
       </button>
       <button id="maritimeStatsTab" class="nav-tab" onclick="switchMaritimeTab('stats')">
-        📊 統計分析
+        統計分析
       </button>
     </div>
 
@@ -822,7 +822,7 @@
           </div>
 
           <div style="display: flex; gap: 14px; margin-top: 8px;">
-            <button type="submit" class="btn-primary" style="padding: 13px 28px; font-size: 15px;">💾 儲存課程</button>
+            <button type="submit" class="btn-primary" style="padding: 13px 28px; font-size: 15px;">儲存課程</button>
             <button type="button" id="maritimeCancelEdit" class="btn-secondary" style="padding: 13px 28px; font-size: 15px;">取消</button>
           </div>
         </form>
@@ -927,7 +927,7 @@
         </div>
 
         <div style="margin-bottom: 24px;">
-          <label style="display: block; color: #1d1d1f; font-weight: 600; margin-bottom: 8px;">📚 課程分類</label>
+          <label style="display: block; color: #1d1d1f; font-weight: 600; margin-bottom: 8px;">課程分類</label>
           <select id="maritimeCourseCategoryModal" required
                   style="width: 100%; border: 2px solid #e5e5ea; border-radius: 12px; padding: 14px; font-size: 15px; transition: all 0.3s; background: rgba(255, 255, 255, 0.8);"
                   onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)'"
@@ -1281,10 +1281,10 @@
           </div>
           <div style="display: flex; gap: 10px;">
             <button onclick="editMaritimeCourse(${course.id})" style="background: #007aff; color: white; padding: 10px 24px; border-radius: 10px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);" onmouseover="this.style.background='#0051d5'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(0, 122, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15)';" onmouseout="this.style.background='#007aff'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)';">
-              ✏️ 編輯
+              編輯
             </button>
             <button onclick="deleteMaritimeCourse(${course.id})" style="background: #ff3b30; color: white; padding: 10px 24px; border-radius: 10px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);" onmouseover="this.style.background='#c9002e'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(255, 59, 48, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15)';" onmouseout="this.style.background='#ff3b30'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)';">
-              🗑️ 刪除
+              刪除
             </button>
           </div>
         `;
