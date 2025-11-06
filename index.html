@@ -260,6 +260,10 @@
         padding: 0 16px;
       }
 
+      .header {
+        margin-bottom: 40px;
+      }
+
       .header h1 {
         font-size: 40px;
       }
@@ -277,15 +281,22 @@
         display: none !important;
       }
 
+      /* 改為垂直排列 */
       .grid {
-        gap: 16px;
-        padding: 30px 16px 50px 16px;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 20px 16px 50px 16px;
+        overflow-x: visible;
+        overflow-y: visible;
       }
 
       .card {
         padding: 30px;
-        width: 260px;
+        width: 100%;
+        max-width: 340px;
         height: 260px;
+        flex-shrink: 0;
       }
 
       .card-icon {
@@ -305,6 +316,39 @@
 
       .card-description {
         font-size: 13px;
+      }
+    }
+
+    /* 小手機螢幕 */
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 32px;
+      }
+
+      .header p {
+        font-size: 17px;
+      }
+
+      .card {
+        height: 240px;
+        padding: 24px;
+      }
+
+      .card-icon {
+        font-size: 48px;
+      }
+
+      .card-icon img {
+        width: 48px;
+        height: 48px;
+      }
+
+      .card-title {
+        font-size: 18px;
+      }
+
+      .card-description {
+        font-size: 12px;
       }
     }
 
