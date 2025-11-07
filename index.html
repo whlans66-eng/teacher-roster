@@ -60,7 +60,7 @@
       width: 48px;
       height: 48px;
       cursor: pointer;
-      display: flex;
+      display: none; /* 桌面版隱藏 */
       align-items: center;
       justify-content: center;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -132,11 +132,12 @@
       overflow-x: auto;
       overflow-y: visible;
       scroll-behavior: smooth;
-      max-width: 1600px;
+      max-width: 1400px;
       margin: 0 auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none; /* Firefox */
       -ms-overflow-style: none; /* IE and Edge */
+      justify-content: center;
     }
 
     /* 隱藏滾動條 */
@@ -144,9 +145,23 @@
       display: none;
     }
 
-    /* 確保卡片不會縮小 */
-    .grid > .card {
-      flex-shrink: 0;
+    /* 桌面版：讓卡片自動換行並居中 */
+    @media (min-width: 769px) {
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 300px));
+        justify-content: center;
+        overflow-x: visible;
+        max-width: 1400px;
+        gap: 32px;
+      }
+    }
+
+    /* 確保卡片不會縮小（手機版） */
+    @media (max-width: 768px) {
+      .grid > .card {
+        flex-shrink: 0;
+      }
     }
 
     .card {
