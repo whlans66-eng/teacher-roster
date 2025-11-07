@@ -466,8 +466,117 @@
     // 教材管理卡片點擊事件
     document.getElementById('teaching-materials-card')?.addEventListener('click', function(e) {
       e.preventDefault();
-      alert('📚 教材管理功能開發中\n\n此功能即將推出，敬請期待！');
+      showComingSoonModal('教材管理', '書籍、影片與數位資源管理功能');
     });
+
+    // 顯示「即將推出」模態視窗
+    function showComingSoonModal(title, description) {
+      // 創建模態視窗
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        animation: fadeIn 0.3s ease;
+      `;
+
+      modal.innerHTML = `
+        <div style="
+          background: white;
+          border-radius: 24px;
+          padding: 48px 40px;
+          max-width: 480px;
+          width: 90%;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          text-align: center;
+          animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        ">
+          <div style="
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(0, 122, 255, 0.3);
+          ">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </div>
+          <h3 style="
+            font-size: 28px;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+          ">${title}</h3>
+          <p style="
+            font-size: 17px;
+            color: #6e6e73;
+            margin-bottom: 8px;
+            line-height: 1.5;
+          ">${description}</p>
+          <p style="
+            font-size: 15px;
+            color: #86868b;
+            margin-bottom: 32px;
+          ">此功能即將推出，敬請期待！</p>
+          <button onclick="this.closest('[style*=fixed]').remove()" style="
+            background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+            color: white;
+            border: none;
+            padding: 14px 48px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
+          " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 24px rgba(0, 122, 255, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(0, 122, 255, 0.3)'">
+            我知道了
+          </button>
+        </div>
+      `;
+
+      // 添加動畫樣式
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+
+      // 點擊背景關閉
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+
+      document.body.appendChild(modal);
+    }
 
     // 輪播功能
     const cardGrid = document.getElementById('cardGrid');
