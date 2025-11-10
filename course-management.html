@@ -1520,8 +1520,86 @@
     }
 
     function viewEvent(courseId) {
-      // 顯示「功能開發中」模態視窗
-      showUnderDevelopmentModal('📅 課程詳情', '查看和編輯課程詳細資訊的功能');
+      const course = courseAssignments.find(c => c.id === courseId);
+      if (!course) return;
+
+      // 選擇該課程的日期並更新課程總覽
+      selectDate(course.date);
+
+      // 只在手機版（螢幕寬度 <= 768px）才滾動到課程總覽區域
+      if (window.innerWidth <= 768) {
+        setTimeout(() => {
+          const courseOverview = document.getElementById('courseOverviewTitle');
+          if (courseOverview) {
+            courseOverview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+
+      editingCourseId = courseId;
+      const teacher = teachers.find(t => t.id === course.teacherId);
+
+      // 顯示查看模式
+      const modalTitle = document.getElementById('modalTitle');
+      modalTitle.textContent = '📅 課程詳情';
+      modalTitle.style.cssText = 'font-size: 28px; font-weight: 600; letter-spacing: -0.015em;';
+      document.getElementById('viewMode').style.display = 'block';
+      document.getElementById('editCourseForm').style.display = 'none';
+      document.getElementById('viewModeButtons').style.display = 'flex';
+      document.getElementById('editModeButtons').style.display = 'none';
+
+      document.getElementById('viewMode').innerHTML = `
+        <div class="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
+          <div>
+            <label class="text-xs font-medium text-gray-600">師資</label>
+            <p class="text-lg font-semibold text-gray-900">👨‍🏫 ${teacher ? teacher.name : '未知'}</p>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">課程名稱</label>
+            <p class="text-lg font-semibold text-gray-900">${course.name}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-medium text-gray-600">日期</label>
+              <p class="text-sm text-gray-800">📅 ${course.date}</p>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-600">時間</label>
+              <p class="text-sm text-gray-800">⏰ ${course.time}</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-medium text-gray-600">課程類型</label>
+              <p class="text-sm text-gray-800">📚 ${course.type}</p>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-600">狀態</label>
+              <p class="text-sm text-gray-800">💼 ${course.status || '上班'}</p>
+            </div>
+          </div>
+          ${course.note ? `
+          <div>
+            <label class="text-xs font-medium text-gray-600">備註</label>
+            <p class="text-sm text-gray-800 whitespace-pre-wrap">${course.note}</p>
+          </div>
+          ` : '<div class="text-center text-gray-400 text-sm py-2">無備註</div>'}
+        </div>
+      `;
+
+      document.getElementById('deleteEventBtn').onclick = () => {
+        if (confirm('確定要刪除此課程嗎？')) {
+          deleteCourse(courseId);
+          closeViewEventModal();
+        }
+      };
+
+      // 修改問卷管理按鈕為顯示「開發中」提示
+      document.getElementById('surveyManageBtn').onclick = () => {
+        showUnderDevelopmentModal('📊 問卷管理', '課程問卷管理功能');
+      };
+
+      document.getElementById('viewEventModal').classList.remove('hidden');
     }
 
     // 顯示「功能開發中」模態視窗
