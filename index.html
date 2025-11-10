@@ -48,61 +48,6 @@
       padding: 0 60px;
     }
 
-    /* 導航箭頭樣式 */
-    .nav-arrow {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 10;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-      color: #1d1d1f;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .nav-arrow:hover {
-      background: rgba(255, 255, 255, 1);
-      border-color: rgba(0, 122, 255, 0.3);
-      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
-      transform: translateY(-50%) scale(1.05);
-    }
-
-    .nav-arrow:active {
-      transform: translateY(-50%) scale(0.98);
-    }
-
-    .nav-arrow svg {
-      transition: transform 0.2s ease;
-    }
-
-    .nav-arrow:hover svg {
-      transform: scale(1.1);
-    }
-
-    .left-arrow {
-      left: -20px;
-    }
-
-    .right-arrow {
-      right: -20px;
-    }
-
-    /* 當箭頭不可用時的樣式 */
-    .nav-arrow.disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
 
     .header {
       text-align: center;
@@ -411,12 +356,6 @@
     </div>
 
     <div class="grid-wrapper">
-      <button class="nav-arrow left-arrow" id="leftArrow" aria-label="向左滑動">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-      </button>
-
       <div class="grid" id="cardGrid">
       <a href="teacher-management.html" class="card">
         <span class="card-icon">🎓</span>
@@ -444,12 +383,6 @@
         <p class="card-description">書籍、影片與數位資源</p>
       </a>
       </div>
-
-      <button class="nav-arrow right-arrow" id="rightArrow" aria-label="向右滑動">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </button>
     </div>
 
     <div class="content-wrapper">
@@ -578,84 +511,6 @@
       document.body.appendChild(modal);
     }
 
-    // 輪播功能
-    const cardGrid = document.getElementById('cardGrid');
-    const leftArrow = document.getElementById('leftArrow');
-    const rightArrow = document.getElementById('rightArrow');
-
-    // 檢查必要的 DOM 元素是否存在
-    if (!cardGrid || !leftArrow || !rightArrow) {
-      console.error('❌ 無法找到輪播所需的 DOM 元素');
-      return;
-    }
-
-    // 計算每次滾動的距離
-    function getScrollAmount() {
-      const card = cardGrid.querySelector('.card');
-      if (!card) return 0;
-
-      const cardWidth = card.offsetWidth;
-      const gap = 28; // 與 CSS 中的 gap 值相同
-
-      // 滾動兩張卡片的距離
-      return (cardWidth + gap) * 2;
-    }
-
-    // 向左滾動
-    leftArrow.addEventListener('click', function() {
-      const scrollAmount = getScrollAmount();
-      cardGrid.scrollBy({
-        left: -scrollAmount,
-        behavior: 'smooth'
-      });
-    });
-
-    // 向右滾動
-    rightArrow.addEventListener('click', function() {
-      const scrollAmount = getScrollAmount();
-      cardGrid.scrollBy({
-        left: scrollAmount,
-        behavior: 'smooth'
-      });
-    });
-
-    // 更新箭頭的可用狀態
-    function updateArrowStates() {
-      const scrollLeft = cardGrid.scrollLeft;
-      const maxScroll = cardGrid.scrollWidth - cardGrid.clientWidth;
-
-      // 如果已經滾動到最左邊，禁用左箭頭
-      if (scrollLeft <= 0) {
-        leftArrow.classList.add('disabled');
-      } else {
-        leftArrow.classList.remove('disabled');
-      }
-
-      // 如果已經滾動到最右邊，禁用右箭頭
-      if (scrollLeft >= maxScroll - 1) { // -1 是為了處理浮點數誤差
-        rightArrow.classList.add('disabled');
-      } else {
-        rightArrow.classList.remove('disabled');
-      }
-    }
-
-    // 監聽滾動事件以更新箭頭狀態
-    cardGrid.addEventListener('scroll', updateArrowStates);
-
-    // 監聽窗口大小變化以更新箭頭狀態
-    window.addEventListener('resize', updateArrowStates);
-
-    // 初始化箭頭狀態
-    updateArrowStates();
-
-    // 支持鍵盤導航
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowLeft') {
-        leftArrow.click();
-      } else if (e.key === 'ArrowRight') {
-        rightArrow.click();
-      }
-    });
   </script>
 </body>
 </html>
