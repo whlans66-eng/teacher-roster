@@ -1,0 +1,4252 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>師資陣容管理系統</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- 字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;background-color:#f5f5f7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+    .card {
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 1px 2px rgba(0, 0, 0, 0.06);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.08),
+        0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .fade-in{animation:fadeIn .3s ease-in}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .slide-in{animation:slideIn .3s ease-out}
+    @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+    .move-transition{transition:transform .2s ease-in-out}
+    .location-option.selected{border-color:#007aff;background-color:#f0f5ff}
+    .location-option.selected.onboard{border-color:#007aff;background-color:#e6f0ff}
+    .location-option.selected.onshore{border-color:#34c759;background-color:#e8f9ed}
+    .teacher-type-option.selected{border-color:#007aff;background-color:#f0f5ff}
+    .teacher-type-option.selected.internal{border-color:#007aff;background-color:#e6f0ff}
+    .teacher-type-option.selected.external{border-color:#5856d6;background-color:#f0efff}
+    .calendar-cell{min-height:110px;border:1px solid rgba(0,0,0,.06);border-radius:12px;transition:all .3s cubic-bezier(0.4,0,0.2,1)}
+    .calendar-cell:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.08)}
+
+    .status-badge{display:inline-flex;align-items:center;justify-content:center;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.875rem;font-weight:600;transition:all .2s ease;border-width:1px;border-style:solid}
+
+    /* 海事課程系統樣式 */
+    .highlight{background-color:#fef3c7;padding:2px 4px;border-radius:3px}
+    .chart-container{position:relative;width:280px;height:280px;margin:0 auto;padding:20px}
+    .pie-chart{width:280px;height:280px;border-radius:50%;background:conic-gradient(from 0deg,#4f46e5 0deg,#4f46e5 var(--angle1,0deg),#06b6d4 var(--angle1,0deg),#06b6d4 var(--angle2,0deg),#10b981 var(--angle2,0deg),#10b981 var(--angle3,0deg),#f59e0b var(--angle3,0deg),#f59e0b var(--angle4,0deg),#ef4444 var(--angle4,0deg),#ef4444 var(--angle5,0deg),#8b5cf6 var(--angle5,0deg),#8b5cf6 var(--angle6,0deg),#f97316 var(--angle6,0deg),#f97316 var(--angle7,0deg),#84cc16 var(--angle7,0deg),#84cc16 var(--angle8,0deg),#ec4899 var(--angle8,0deg),#ec4899 360deg);box-shadow:0 20px 60px rgba(0,0,0,0.15),0 8px 25px rgba(0,0,0,0.1),inset 0 1px 0 rgba(255,255,255,0.1);position:relative;transition:all .3s ease}
+    .pie-chart:hover{transform:scale(1.05);box-shadow:0 25px 80px rgba(0,0,0,0.2),0 12px 35px rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.2)}
+    .pie-chart::before{content:'';position:absolute;top:50%;left:50%;width:120px;height:120px;background:linear-gradient(135deg,#ffffff 0%,#f8fafc 100%);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 8px 32px rgba(0,0,0,0.1),inset 0 2px 8px rgba(0,0,0,0.05);border:3px solid rgba(255,255,255,0.8)}
+    .pie-chart::after{content:'📊\A課程分布';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:bold;color:#374151;z-index:1;text-align:center;white-space:pre;line-height:1.3}
+    .legend-item{transition:all .2s ease;padding:8px;border-radius:8px;cursor:pointer}
+    .legend-item:hover{background-color:#f3f4f6;transform:translateX(5px)}
+    .legend-color{width:16px;height:16px;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.2);border:2px solid rgba(255,255,255,0.8)}
+    .bar-chart{background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:8px;padding:4px}
+    .bar-fill{border-radius:4px;transition:all .3s ease;position:relative;overflow:hidden}
+    .bar-fill::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);animation:shimmer 2s infinite}
+    @keyframes shimmer{0%{left:-100%}100%{left:100%}}
+    .donut-chart{position:relative;width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(from 0deg,var(--color) 0deg,var(--color) var(--angle,0deg),#e5e7eb var(--angle,0deg),#e5e7eb 360deg);box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+    .donut-chart::before{content:'';position:absolute;width:70px;height:70px;background:white;border-radius:50%;box-shadow:inset 0 2px 8px rgba(0,0,0,0.1)}
+    .donut-chart-label{position:absolute;font-size:14px;font-weight:bold;color:#374151;z-index:1}
+    .method-card{background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:12px;padding:20px;text-align:center;transition:all .3s ease;border:1px solid rgba(255,255,255,0.2)}
+    .method-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,0.15)}
+    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+    .pulse-animation{animation:pulse 2s infinite}
+
+    /* 手機版響應式設計 */
+    @media (max-width: 768px) {
+      /* 行事曆視圖 */
+      #calendarView .container {
+        padding: 16px !important;
+      }
+
+      #calendarView .card {
+        padding: 20px !important;
+      }
+
+      /* 行事曆標題和控制項 */
+      #calendarView .flex.flex-col.md\\:flex-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+      }
+
+      #calendarView h2 {
+        font-size: 20px !important;
+        margin-bottom: 12px;
+      }
+
+      /* 行事曆視圖切換按鈕 */
+      #calendarView .flex.items-center.gap-3 {
+        flex-direction: column !important;
+        width: 100%;
+        gap: 12px !important;
+      }
+
+      #calendarView .flex.items-center.gap-3 button {
+        width: 100%;
+      }
+
+      #calendarView .flex.rounded-xl.p-1 {
+        width: 100%;
+      }
+
+      /* 行事曆導航控制 */
+      #calendarView .flex.items-center.justify-between.mb-6 {
+        flex-direction: column !important;
+        gap: 12px;
+      }
+
+      #calendarView .flex.items-center.space-x-4 {
+        flex-direction: column !important;
+        width: 100%;
+        gap: 8px !important;
+      }
+
+      #calendarView .flex.items-center.space-x-4 button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      #calendarView #currentMonth {
+        min-width: auto !important;
+        width: 100%;
+        text-align: center;
+        font-size: 16px !important;
+      }
+
+      /* 今天按鈕 */
+      #calendarView button[onclick="goToToday()"] {
+        width: 100%;
+      }
+
+      /* 行事曆網格 - 保持 7 列但調整大小 */
+      .calendar-cell {
+        min-height: 80px !important;
+        font-size: 12px !important;
+      }
+
+      /* 星期標題 */
+      #calendarView .grid.grid-cols-7 > div {
+        padding: 8px 4px !important;
+        font-size: 12px !important;
+      }
+
+      /* 師資列表頁面 */
+      #teacherList .flex.flex-col.md\\:flex-row {
+        flex-direction: column !important;
+      }
+
+      #teacherList .flex.items-center.space-x-4 {
+        flex-direction: column !important;
+        width: 100%;
+        gap: 12px !important;
+      }
+
+      #teacherList .flex.flex-col.md\\:flex-row.items-stretch {
+        flex-direction: column !important;
+        width: 100%;
+      }
+
+      #teacherList #searchInput {
+        width: 100% !important;
+      }
+
+      #teacherList button {
+        width: 100%;
+      }
+
+      /* 模式切換按鈕 */
+      #teacherList .flex.bg-gray-100.rounded-lg {
+        width: 100%;
+      }
+
+      /* 統計視圖 */
+      #executiveView .grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* 調整容器內邊距 */
+      .container {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+      }
+
+      /* 卡片內邊距 */
+      .card {
+        padding: 20px !important;
+      }
+
+      /* 標題文字 */
+      h1 {
+        font-size: 28px !important;
+      }
+
+      h2 {
+        font-size: 20px !important;
+      }
+
+      /* 按鈕文字大小 */
+      button {
+        font-size: 14px !important;
+        padding: 10px 16px !important;
+      }
+    }
+
+    /* 小手機螢幕 (< 480px) */
+    @media (max-width: 480px) {
+      .calendar-cell {
+        min-height: 60px !important;
+        font-size: 11px !important;
+        padding: 4px !important;
+      }
+
+      #calendarView .grid.grid-cols-7 > div {
+        padding: 6px 2px !important;
+        font-size: 11px !important;
+      }
+
+      h1 {
+        font-size: 24px !important;
+      }
+
+      h2 {
+        font-size: 18px !important;
+      }
+    }
+  </style>
+
+  <!-- API 層：與後端通訊 -->
+  <script src="js/api.js"></script>
+</head>
+<body class="min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <!-- 返回首頁按鈕 -->
+    <div class="mb-6">
+      <a href="index.html" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        <span class="mr-2">←</span> 返回首頁
+      </a>
+    </div>
+
+    <!-- 標題區域 -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-gray-900 mb-2" style="letter-spacing:-0.02em">師資陣容管理</h1>
+      <p class="text-gray-600">管理您的教師團隊資訊</p>
+    </div>
+
+    <!-- 師資列表頁面 -->
+    <div id="teacherList" class="fade-in">
+      <div class="flex flex-col space-y-4 mb-6">
+        <!-- 標題和模式切換 -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+          <div class="flex items-center space-x-4">
+            <h2 class="text-2xl font-semibold text-gray-800">師資列表</h2>
+
+            <!-- 模式切換 -->
+            <div class="flex bg-gray-100 rounded-lg p-1">
+              <button onclick="switchMode('edit')" id="editModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white" style="background-color:#007aff">編輯模式</button>
+              <button onclick="switchMode('display')" id="displayModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800">呈現模式</button>
+            </div>
+
+            <div class="flex space-x-3">
+             <!-- 統計 + 行事曆 -->
+              <button onclick="showStatisticsView()" class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm border border-gray-200 flex items-center space-x-2">
+                <span>📈</span><span>統計分析</span>
+              </button>
+
+              <button onclick="showCalendarView()"
+                class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm border border-gray-200 flex items-center space-x-2">
+                  <span>📅</span><span>行事曆</span>
+                 </button>
+            </div>
+          </div>
+
+          <!-- 搜尋 + 新增 -->
+          <div class="flex flex-col md:flex-row items-stretch md:items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto">
+            <div class="relative">
+              <input id="searchInput" type="text" placeholder="搜尋所有欄位（支援多個關鍵字，用空格分隔）" class="w-full md:w-80 px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 transition-all" style="outline:none;--tw-ring-color:#007aff" oninput="searchTeachers()">
+              <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</div>
+              <button onclick="clearSearch()" id="clearBtn" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">✕</button>
+            </div>
+            <button onclick="addNewTeacher()" id="addTeacherBtn" class="text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 shadow-sm whitespace-nowrap" style="background-color:#007aff">
+              新增師資
+            </button>
+          </div>
+        </div>
+
+        <!-- 模式說明 -->
+        <div id="modeDescription" class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+          <div class="flex items-center space-x-2">
+            <span style="color:#007aff">ℹ️</span>
+            <span class="text-sm font-medium" style="color:#007aff">編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 搜尋提示 -->
+      <div id="searchResults" class="hidden mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+        <span class="font-medium" style="color:#007aff"></span>
+      </div>
+
+      <!-- 卡片網格 -->
+      <div id="teacherGrid" class="grid gap-6"></div>
+    </div>
+
+    <!-- 統計頁 -->
+    <div id="executiveView" class="hidden fade-in">
+      <div class="rounded-xl shadow-sm border border-purple-200 p-8 max-w-7xl mx-auto" style="background: linear-gradient(135deg, #f3e7f9 0%, #e9d5f5 100%);">
+        <button onclick="backToListFromExecutive()" class="mb-6 font-medium flex items-center transition-colors" style="color:#007aff">← 返回師資管理</button>
+        <div class="text-center mb-8">
+          <h1 class="text-4xl font-bold text-gray-900 mb-2" style="letter-spacing:-0.02em">師資統計分析</h1>
+          <p class="text-gray-600">深度分析師資陣容結構與分布</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-600 text-sm font-medium">總師資數量</p>
+                <p id="totalCount" class="text-3xl font-bold text-gray-900">0</p>
+              </div><div class="text-4xl opacity-60">👥</div>
+            </div>
+          </div>
+          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-600 text-sm font-medium">內部師資</p>
+                <p id="internalCount" class="text-3xl font-bold text-gray-900">0</p>
+                <p id="internalPercent" class="text-gray-500 text-xs">0%</p>
+              </div><div class="text-4xl opacity-60">👨‍💼</div>
+            </div>
+          </div>
+          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-600 text-sm font-medium">外部師資</p>
+                <p id="externalCount" class="text-3xl font-bold text-gray-900">0</p>
+                <p id="externalPercent" class="text-gray-500 text-xs">0%</p>
+              </div><div class="text-4xl opacity-60">👨‍🎓</div>
+            </div>
+          </div>
+          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-600 text-sm font-medium">海上/陸地</p>
+                <p class="text-lg font-bold text-gray-900"><span id="onboardCount">0</span>/<span id="onshoreCount">0</span></p>
+                <p id="locationRatio" class="text-gray-500 text-xs">比例 0:0</p>
+              </div><div class="text-4xl opacity-60">🚢</div>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div class="bg-white bg-opacity-70 rounded-xl p-6 shadow-sm">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">📊</span>師資類型分析</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 rounded-full" style="background-color:#007aff"></div><span class="font-medium text-gray-700">內部師資</span></div>
+                <div class="text-right"><div class="font-bold text-gray-900" id="internalCountDetail">0 位</div><div class="text-sm text-gray-500" id="internalPercentDetail">0%</div></div>
+              </div>
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 rounded-full" style="background-color:#5856d6"></div><span class="font-medium text-gray-700">外部師資</span></div>
+                <div class="text-right"><div class="font-bold text-gray-900" id="externalCountDetail">0 位</div><div class="text-sm text-gray-500" id="externalPercentDetail">0%</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white bg-opacity-70 rounded-xl p-6 shadow-sm">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">🗺️</span>工作地點分析</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-orange-500 rounded-full"></div><span class="font-medium text-gray-700">海上工作</span></div>
+                <div class="text-right"><div class="font-bold text-orange-600" id="onboardCountDetail">0 位</div><div class="text-sm text-gray-500" id="onboardPercentDetail">0%</div></div>
+              </div>
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-green-500 rounded-full"></div><span class="font-medium text-gray-700">陸地工作</span></div>
+                <div class="text-right"><div class="font-bold text-green-600" id="onshoreCountDetail">0 位</div><div class="text-sm text-gray-500" id="onshorePercentDetail">0%</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white bg-opacity-70 rounded-xl p-6 mb-8 shadow-sm">
+          <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">🔄</span>交叉分析</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold text-orange-600" id="internalOnboard">0</div><div class="text-sm text-gray-600">內部海上師資</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold text-green-600" id="internalOnshore">0</div><div class="text-sm text-gray-600">內部陸地師資</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold text-orange-600" id="externalOnboard">0</div><div class="text-sm text-gray-600">外部海上師資</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold text-green-600" id="externalOnshore">0</div><div class="text-sm text-gray-600">外部陸地師資</div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white bg-opacity-70 rounded-xl p-6 shadow-sm">
+          <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2">📚</span>課程統計分析</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg p-4 shadow-sm text-center">
+              <div class="text-3xl font-bold text-indigo-600" id="totalSubjects">0</div>
+              <div class="text-sm text-gray-600 mt-1">總課程數</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 shadow-sm text-center">
+              <div class="text-3xl font-bold text-purple-600" id="avgSubjectsPerTeacher">0</div>
+              <div class="text-sm text-gray-600 mt-1">平均每人課程數</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 shadow-sm text-center">
+              <div class="text-3xl font-bold text-orange-600" id="uniqueSubjects">0</div>
+              <div class="text-sm text-gray-600 mt-1">不重複課程數</div>
+            </div>
+          </div>
+          <div class="mt-6">
+            <h4 class="text-lg font-semibold text-gray-700 mb-3">熱門課程排行</h4>
+            <div id="popularSubjects" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 行事曆視圖（Apple 風格） -->
+<div id="calendarView" class="hidden">
+  <div class="min-h-full" style="background: #f5f5f7;">
+    <div class="container mx-auto p-8 max-w-7xl">
+      <!-- 返回按鈕 -->
+      <div class="mb-6">
+        <button onclick="backToListFromCalendar()" class="inline-flex items-center px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+          <span class="mr-2">←</span> 返回師資管理
+        </button>
+      </div>
+
+      <!-- 行事曆卡片 -->
+      <div class="card p-6 fade-in">
+        <!-- 標題和控制項 -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <h2 style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;" class="text-gray-900">📅 行事曆</h2>
+          <div class="flex items-center gap-3">
+            <button onclick="openAddEventModal()" class="modern-btn px-6 py-2 rounded-xl font-medium" style="font-size: 15px;">
+              ✨ 新增事件
+            </button>
+            <div class="flex rounded-xl p-1" style="background: rgba(118, 118, 128, 0.12);">
+              <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-900" style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);">
+                📅 月
+              </button>
+              <button id="weekViewBtn" onclick="setViewMode('week')" class="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600" style="background: transparent;">
+                📊 週
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 導航控制 -->
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center space-x-4">
+            <button onclick="previousPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
+              ← <span id="prevLabel">上個月</span>
+            </button>
+            <h3 id="currentMonth" class="font-semibold text-gray-800 min-w-[200px] text-center" style="font-size: 19px; font-weight: 600;"></h3>
+            <button onclick="nextPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
+              <span id="nextLabel">下個月</span> →
+            </button>
+          </div>
+          <button onclick="goToToday()" class="modern-btn px-4 py-2 rounded-xl font-medium" style="font-size: 15px;">
+            🎯 今天
+          </button>
+        </div>
+
+        <!-- 行事曆網格 -->
+        <div class="bg-white rounded-xl overflow-hidden border border-gray-200" style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);">
+          <!-- 星期標題 -->
+          <div class="grid grid-cols-7" style="background: #007aff;">
+            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">日</div>
+            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">一</div>
+            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">二</div>
+            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">三</div>
+            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">四</div>
+            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">五</div>
+            <div class="p-3 text-center font-semibold text-white" style="font-size: 14px;">六</div>
+          </div>
+          <!-- 日期網格 -->
+          <div id="calendarGrid" class="grid grid-cols-7"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增事件彈窗（整合師資/地點/備註） -->
+  <div id="addEventModal" class="fixed inset-0 bg-black bg-opacity-60 modal-backdrop hidden flex items-center justify-center z-50">
+    <div class="glass-effect rounded-2xl p-8 w-[480px] mx-4 shadow-2xl border border-white border-opacity-20">
+      <h3 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">✨ 新增事件</h3>
+      <form onsubmit="addEventIntegrated(event)">
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold mb-2">📝 事件標題</label>
+          <input type="text" id="eventTitle" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80" required>
+        </div>
+        <div class="mb-4 grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-2">📅 日期</label>
+            <input type="date" id="eventDate" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80" required>
+          </div>
+          <div>
+            <label class="block text-gray-700 font-semibold mb-2">⏰ 時間</label>
+            <input type="time" id="eventTime" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold mb-2">👩‍🏫 指派師資（可選）</label>
+          <select id="eventTeacherId" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+            <option value="">（未指派）</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 font-semibold mb-2">📍 地點</label>
+          <input type="text" id="eventLocation" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80" placeholder="會議室 A / 線上">
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 font-semibold mb-2">🗒️ 備註</label>
+          <textarea id="eventNote" rows="2" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80"></textarea>
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 font-semibold mb-3">🎨 顏色</label>
+          <div class="flex space-x-3 justify-center">
+            <button type="button" onclick="selectColor('bg-blue-500')" class="w-8 h-8 bg-blue-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+            <button type="button" onclick="selectColor('bg-green-500')" class="w-8 h-8 bg-green-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+            <button type="button" onclick="selectColor('bg-red-500')" class="w-8 h-8 bg-red-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+            <button type="button" onclick="selectColor('bg-purple-500')" class="w-8 h-8 bg-purple-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+            <button type="button" onclick="selectColor('bg-yellow-500')" class="w-8 h-8 bg-yellow-500 rounded-full border-2 border-transparent hover:border-white hover:shadow-lg transition-all"></button>
+          </div>
+        </div>
+        <div class="flex space-x-4">
+          <button type="button" onclick="closeAddEventModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-semibold transition-all shadow-md">
+            ❌ 取消
+          </button>
+          <button type="submit" class="flex-1 btn-primary text-white py-3 rounded-xl font-semibold shadow-lg">
+            ✅ 儲存
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 查看/編輯事件詳情 Modal -->
+  <div id="viewEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" style="box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.15);">
+      <h3 id="eventModalTitle" class="text-gray-900 mb-6" style="font-size: 28px; font-weight: 600; letter-spacing: -0.015em;">📅 事件詳情</h3>
+
+      <!-- 查看模式 -->
+      <div id="eventViewMode" class="space-y-4"></div>
+
+      <!-- 編輯模式 -->
+      <form id="editEventForm" class="space-y-4" style="display: none;">
+        <div>
+          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">事件標題</label>
+          <input type="text" id="editEventTitle" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇師資</label>
+          <select id="editEventTeacherId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            <option value="">未指派</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">日期</label>
+            <input type="date" id="editEventDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
+          </div>
+          <div>
+            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">時間</label>
+            <input type="time" id="editEventTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">地點</label>
+          <input type="text" id="editEventLocation" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">備註</label>
+          <textarea id="editEventNote" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="事件相關備註..." style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);"></textarea>
+        </div>
+      </form>
+
+      <!-- 按鈕區 -->
+      <div id="eventViewModeButtons" class="flex justify-end space-x-4 pt-6">
+        <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          關閉
+        </button>
+        <button onclick="enterEventEditMode()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          編輯
+        </button>
+        <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          刪除
+        </button>
+      </div>
+
+      <div id="eventEditModeButtons" class="flex justify-end space-x-4 pt-6" style="display: none;">
+        <button onclick="cancelEventEditMode()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          取消
+        </button>
+        <button onclick="saveEditedEvent()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          儲存變更
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- 派課管理視圖 -->
+    <div id="courseManagementView" class="hidden fade-in">
+      <div class="container mx-auto px-6 py-8 max-w-7xl">
+        <!-- 返回按鈕 + 標題 -->
+        <div class="flex justify-between items-center mb-8">
+          <div>
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">📋 派課管理系統</h1>
+            <p class="text-gray-600">管理師資課程分配與時數統計</p>
+          </div>
+          <button onclick="backToListFromCourseManagement()" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl border border-gray-200">
+            ← 返回師資列表
+          </button>
+        </div>
+
+        <!-- 師資選擇與日期範圍 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">選擇師資</label>
+              <select id="courseTeacherSelect" onchange="updateCourseView()" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                <option value="">請選擇師資</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">開始日期</label>
+              <input type="date" id="courseStartDate" onchange="updateCourseView()" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">結束日期</label>
+              <input type="date" id="courseEndDate" onchange="updateCourseView()" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+            <button onclick="setCourseDateRange('thisMonth')" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">本月</button>
+            <button onclick="setCourseDateRange('lastMonth')" class="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium">上月</button>
+            <button onclick="setCourseDateRange('last3Months')" class="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium">近3月</button>
+            <button onclick="setCourseDateRange('last6Months')" class="px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">近半年</button>
+            <button onclick="setCourseDateRange('thisYear')" class="px-4 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium">今年</button>
+          </div>
+        </div>
+
+        <!-- 統計卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+            </div>
+            <p class="text-sm opacity-90 mb-1">授課時數</p>
+            <p id="courseTotalHours" class="text-4xl font-bold">0</p>
+            <p class="text-xs opacity-75 mt-1">小時</p>
+          </div>
+
+          <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <p class="text-sm opacity-90 mb-1">課程數量</p>
+            <p id="courseTotalCount" class="text-4xl font-bold">0</p>
+            <p class="text-xs opacity-75 mt-1">門課程</p>
+          </div>
+
+          <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <p class="text-sm opacity-90 mb-1">本月時數</p>
+            <p id="courseMonthlyHours" class="text-4xl font-bold">0</p>
+            <p class="text-xs opacity-75 mt-1">小時</p>
+          </div>
+
+          <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+            <div class="flex items-center justify-between mb-4">
+              <div class="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+              </div>
+            </div>
+            <p class="text-sm opacity-90 mb-1">今日課程</p>
+            <p id="courseTodayCount" class="text-4xl font-bold">0</p>
+            <p class="text-xs opacity-75 mt-1">門課程</p>
+          </div>
+        </div>
+
+        <!-- 課程類型分析 (純 CSS 卡片，不使用 Canvas) -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <h3 class="text-lg font-semibold text-gray-800 mb-6">課程類型分析</h3>
+          <div id="courseTypeCards" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <!-- 課程類型卡片將由 JS 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 老師本週課表 -->
+        <div id="teacherWeekSchedule" class="bg-white rounded-2xl shadow-lg p-6 mb-8 hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-800">📅 本週課表 - 即時檢視可用時段</h3>
+            <span class="text-sm text-gray-500">綠色：可用 | 紅色：已佔用</span>
+          </div>
+          <div id="teacherWeekScheduleContent" class="space-y-3">
+            <!-- 課表內容將由 JS 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 新增課程按鈕與時間軸 -->
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-lg font-semibold text-gray-800">課程時間軸</h3>
+          <button onclick="openAddCourseModal()" class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl flex items-center space-x-2">
+            <span>新增課程</span>
+          </button>
+        </div>
+
+        <!-- 課程時間軸 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+          <div id="courseTimeline" class="space-y-4 max-h-[600px] overflow-y-auto">
+            <div class="text-center text-gray-500 py-12">
+              請選擇師資以查看課程
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增課程 Modal -->
+    <div id="addCourseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+      <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">新增課程</h3>
+        <form id="addCourseForm" onsubmit="addCourseSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">課程名稱</label>
+            <input type="text" id="addCourseName" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="請輸入課程名稱">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">課程日期</label>
+              <input type="date" id="addCourseDate" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">課程類型</label>
+              <select id="addCourseType" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="正課">正課</option>
+                <option value="補課">補課</option>
+                <option value="實驗課">實驗課</option>
+                <option value="實作課">實作課</option>
+                <option value="專題">專題</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">開始時間</label>
+              <input type="time" id="addCourseStartTime" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">結束時間</label>
+              <input type="time" id="addCourseEndTime" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 pt-4">
+            <button type="button" onclick="closeAddCourseModal()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-medium transition-colors">取消</button>
+            <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-medium transition-all shadow-lg">確認新增</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 師資詳細（呈現模式） -->
+    <div id="teacherDetailView" class="hidden slide-in">
+      <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
+        <button onclick="backToList()" class="mb-6 text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors">← 返回師資列表</button>
+        <div id="teacherDetailContent"></div>
+      </div>
+    </div>
+
+    <!-- 師資詳細（編輯） -->
+    <div id="teacherDetail" class="hidden slide-in">
+      <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
+        <button onclick="backToList()" class="mb-6 text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors">← 返回師資列表</button>
+        <form id="teacherForm" class="space-y-6">
+          <!-- 基本資訊 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">基本資訊</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">姓名 *</label>
+                <input type="text" id="teacherName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input type="email" id="teacherEmail" placeholder="example@email.com" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-3">師資類型 *</label>
+                <div class="flex space-x-4">
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="teacherType" value="internal" id="typeInternal" class="sr-only">
+                    <div class="teacher-type-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-blue-400 hover:bg-blue-50">
+                      <div class="text-2xl">👨‍💼</div>
+                      <div><div class="font-medium text-gray-800">內部師資</div><div class="text-sm text-gray-500">公司內部教師</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="teacherType" value="external" id="typeExternal" class="sr-only">
+                    <div class="teacher-type-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-purple-400 hover:bg-purple-50">
+                      <div class="text-2xl">👨‍🎓</div>
+                      <div><div class="font-medium text-gray-800">外部師資</div><div class="text-sm text-gray-500">外聘專業教師</div></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-3">工作地點 *</label>
+                <div class="flex space-x-4">
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="workLocation" value="onboard" id="locationOnboard" class="sr-only">
+                    <div class="location-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-orange-400 hover:bg-orange-50">
+                      <div class="text-2xl">🚢</div><div><div class="font-medium text-gray-800">在船</div><div class="text-sm text-gray-500">海上工作</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="workLocation" value="onshore" id="locationOnshore" class="sr-only">
+                    <div class="location-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-green-400 hover:bg-green-50">
+                      <div class="text-2xl">🏢</div><div><div class="font-medium text-gray-800">在岸</div><div class="text-sm text-gray-500">陸地工作</div></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">照片</label>
+                <div class="flex items-center space-x-4">
+                  <div id="photoPreview" class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-2xl">👤</div>
+                  <input type="file" id="teacherPhoto" accept="image/*" class="hidden" onchange="previewPhoto(this)">
+                  <button type="button" onclick="document.getElementById('teacherPhoto').click()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">選擇照片</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 經歷 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800">工作經歷</h3>
+              <button type="button" onclick="addExperience()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增經歷</button>
+            </div>
+            <div id="experienceList" class="space-y-3"></div>
+          </div>
+
+          <!-- 證書 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800">證書與資格</h3>
+              <button type="button" onclick="addCertificate()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增證書</button>
+            </div>
+            <div id="certificateList" class="space-y-3"></div>
+          </div>
+
+          <!-- 課程 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800">講授課程</h3>
+              <button type="button" onclick="addSubject()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增課程</button>
+            </div>
+            <div id="subjectList" class="space-y-3"></div>
+          </div>
+
+          <!-- Tags 標籤 -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800">標籤 Tags</h3>
+              <button type="button" onclick="addTag()" class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 shadow-sm border border-gray-200 hover:shadow-md">
+                ＋ 新增標籤
+              </button>
+            </div>
+            <div id="tagList" class="flex flex-wrap gap-2 min-h-[60px] items-start"></div>
+            <p class="text-sm text-gray-500 mt-3">標籤可用於分類或標記師資特色，例如：專業領域、語言能力、特殊技能等</p>
+          </div>
+
+          <div class="flex justify-between pt-6">
+            <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors hidden">刪除師資</button>
+            <div class="flex space-x-4 ml-auto">
+              <button type="button" onclick="backToList()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">取消</button>
+              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">儲存</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 海事專業訓練課程系統 -->
+  <div id="maritimeCourseView" class="hidden fade-in">
+    <div class="container mx-auto px-4 py-8">
+      <!-- 返回按鈕 + 標題區域 -->
+      <div class="flex justify-between items-center mb-8">
+        <header class="text-left">
+          <h1 class="text-4xl font-bold text-purple-900 mb-2">海事專業訓練課程系統</h1>
+          <p class="text-purple-600">Maritime Professional Training Course System</p>
+        </header>
+        <button onclick="backToListFromMaritimeCourse()" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl border border-gray-200">
+          ← 返回師資列表
+        </button>
+      </div>
+
+      <!-- 導航選單 -->
+      <nav class="flex justify-center mb-8">
+        <div class="bg-white rounded-lg shadow-md p-2 flex space-x-2">
+          <button id="maritimeViewTab" class="px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors">課程瀏覽</button>
+          <button id="maritimeEditTab" class="px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors">課程管理</button>
+          <button id="maritimeStatsTab" class="px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors">統計分析</button>
+        </div>
+      </nav>
+
+      <!-- 課程瀏覽頁面 -->
+      <div id="maritimeViewPage" class="fade-in">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">課程搜尋</h2>
+          <div class="flex flex-col md:flex-row gap-4">
+            <input type="text" id="maritimeSearchInput" placeholder="輸入關鍵字搜尋課程..."
+                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <select id="maritimeCategoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="">所有分類</option>
+              <option value="01">01船舶操縱與航行實務訓練</option>
+              <option value="02">02領導統御與檢查應對管理</option>
+              <option value="03">03事故案例分析與應變處置訓練</option>
+              <option value="04">04船舶設備操作與技術知能訓練</option>
+              <option value="05">05國際法規與環境合規知識</option>
+              <option value="06">06船舶貨物裝卸作業實務</option>
+              <option value="07">07船員經驗交流與職能回饋</option>
+              <option value="08">08職級轉換與壓力調適</option>
+              <option value="09">09其他</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="maritimeCourseResults" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <!-- 課程卡片將在這裡顯示 -->
+        </div>
+      </div>
+
+      <!-- 課程管理頁面 -->
+      <div id="maritimeEditPage" class="hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">新增/編輯課程</h2>
+          <form id="maritimeCourseForm" class="space-y-4">
+            <div>
+              <label for="maritimeCourseName" class="block text-sm font-medium text-gray-700 mb-1">課程名稱</label>
+              <input type="text" id="maritimeCourseName" required
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label for="maritimeCourseCategory" class="block text-sm font-medium text-gray-700 mb-1">課程分類</label>
+              <select id="maritimeCourseCategory" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="">請選擇分類</option>
+                <option value="01">01船舶操縱與航行實務訓練</option>
+                <option value="02">02領導統御與檢查應對管理</option>
+                <option value="03">03事故案例分析與應變處置訓練</option>
+                <option value="04">04船舶設備操作與技術知能訓練</option>
+                <option value="05">05國際法規與環境合規知識</option>
+                <option value="06">06船舶貨物裝卸作業實務</option>
+                <option value="07">07船員經驗交流與職能回饋</option>
+                <option value="08">08職級轉換與壓力調適</option>
+                <option value="09">09其他</option>
+              </select>
+            </div>
+            <div>
+              <label for="maritimeCourseDescription" class="block text-sm font-medium text-gray-700 mb-1">課程描述</label>
+              <textarea id="maritimeCourseDescription" rows="4" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+            <div>
+              <label for="maritimeCourseMethod" class="block text-sm font-medium text-gray-700 mb-1">授課方式</label>
+              <select id="maritimeCourseMethod" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="">請選擇授課方式</option>
+                <option value="實體課程">實體課程</option>
+                <option value="線上課程">線上課程</option>
+                <option value="混合課程">混合課程</option>
+              </select>
+            </div>
+            <div>
+              <label for="maritimeCourseKeywords" class="block text-sm font-medium text-gray-700 mb-1">關鍵字（用逗號分隔）</label>
+              <input type="text" id="maritimeCourseKeywords" placeholder="例如：導航,雷達,GPS,船舶操作"
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex gap-4">
+              <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                儲存課程
+              </button>
+              <button type="button" id="maritimeCancelEdit" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">已建立的課程</h3>
+          <div class="mb-4">
+            <input type="text" id="maritimeManageSearchInput" placeholder="搜尋課程進行編輯..."
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div id="maritimeManageCourseList" class="space-y-3">
+            <!-- 課程管理列表將在這裡顯示 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 統計分析頁面 -->
+      <div id="maritimeStatsPage" class="hidden">
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">總課程數</h3>
+            <p id="maritimeTotalCourses" class="text-3xl font-bold text-blue-600">0</p>
+          </div>
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">最熱門分類</h3>
+            <p id="maritimePopularCategory" class="text-lg font-semibold text-green-600">-</p>
+          </div>
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">總關鍵字數</h3>
+            <p id="maritimeTotalKeywords" class="text-3xl font-bold text-purple-600">0</p>
+          </div>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2 mb-6">
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">課程統計</h3>
+            <div id="maritimeCategoryStats" class="space-y-3">
+              <!-- 分類統計將在這裡顯示 -->
+            </div>
+          </div>
+          <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">分類分布圓餅圖</h3>
+            <div class="chart-container">
+              <div id="maritimePieChart" class="pie-chart"></div>
+            </div>
+            <div id="maritimeChartLegend" class="mt-4 space-y-2">
+              <!-- 圖例將在這裡顯示 -->
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">授課方式統計</h3>
+          <div id="maritimeMethodStats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 授課方式統計將在這裡顯示 -->
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">熱門關鍵字</h3>
+          <div id="maritimeKeywordCloud" class="flex flex-wrap gap-2">
+            <!-- 關鍵字雲將在這裡顯示 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 海事課程編輯彈跳視窗 -->
+    <div id="maritimeCourseModal" class="fixed inset-0 bg-black bg-opacity-60 modal-backdrop hidden flex items-center justify-center z-50">
+      <div class="glass-effect rounded-2xl p-8 w-[600px] mx-4 shadow-2xl border border-white border-opacity-20 max-h-[90vh] overflow-y-auto">
+        <h3 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
+          <span id="maritimeModalTitle">✨ 編輯課程</span>
+        </h3>
+        <form id="maritimeCourseModalForm" onsubmit="saveMaritimeCourseFromModal(event)">
+          <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">📝 課程名稱</label>
+            <input type="text" id="maritimeCourseNameModal" required
+                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">📚 課程分類</label>
+            <select id="maritimeCourseCategoryModal" required
+                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+              <option value="">請選擇分類</option>
+              <option value="01">01船舶操縱與航行實務訓練</option>
+              <option value="02">02領導統御與檢查應對管理</option>
+              <option value="03">03事故案例分析與應變處置訓練</option>
+              <option value="04">04船舶設備操作與技術知能訓練</option>
+              <option value="05">05國際法規與環境合規知識</option>
+              <option value="06">06船舶貨物裝卸作業實務</option>
+              <option value="07">07船員經驗交流與職能回饋</option>
+              <option value="08">08職級轉換與壓力調適</option>
+              <option value="09">09其他</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">📖 課程描述</label>
+            <textarea id="maritimeCourseDescriptionModal" rows="4" required
+                      class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80"></textarea>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">💻 授課方式</label>
+            <select id="maritimeCourseMethodModal" required
+                    class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+              <option value="">請選擇授課方式</option>
+              <option value="實體課程">實體課程</option>
+              <option value="線上課程">線上課程</option>
+              <option value="混合課程">混合課程</option>
+            </select>
+          </div>
+          <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">🏷️ 關鍵字（用逗號分隔）</label>
+            <input type="text" id="maritimeCourseKeywordsModal" placeholder="例如：導航,雷達,GPS,船舶操作"
+                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white bg-opacity-80">
+          </div>
+          <!-- 刪除按鈕（僅編輯時顯示）-->
+          <div id="maritimeDeleteButtonContainer" style="display: none; margin-bottom: 16px;">
+            <button type="button" onclick="deleteMaritimeCourseFromModal()"
+                    style="width: 100%; background: #ff3b30; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
+                    onmouseover="this.style.background='#ff2d1f'"
+                    onmouseout="this.style.background='#ff3b30'">
+              刪除課程
+            </button>
+          </div>
+
+          <!-- 取消和儲存按鈕 -->
+          <div class="flex space-x-4">
+            <button type="button" onclick="closeMaritimeCourseModal()"
+                    style="flex: 1; background: #f5f5f7; color: #1d1d1f; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
+                    onmouseover="this.style.background='#e5e5ea'"
+                    onmouseout="this.style.background='#f5f5f7'">
+              取消
+            </button>
+            <button type="submit"
+                    style="flex: 1; background: #007aff; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
+                    onmouseover="this.style.background='#0051d5'"
+                    onmouseout="this.style.background='#007aff'">
+              儲存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 後端 API 設定 / 工具 ====== -->
+  <script>
+    /* === 使用新的 API 層（js/api.js） === */
+
+    /* ---------- 檔案上傳（使用新的 API） ---------- */
+    async function apiUploadToDrive(file){
+      if(!api || !api.uploadFile) throw new Error('API 未初始化');
+      if(file.size > 30*1024*1024) throw new Error('檔案大小不能超過 30MB');
+
+      try {
+        const result = await api.uploadFile(file, file.name);
+        return result; // {ok,id,url,name,size,mime}
+      } catch (error) {
+        throw new Error(error.message || '上傳失敗');
+      }
+    }
+
+    /* ---------- API 連線檢查 ---------- */
+    const API_STATUS_CLASSES = {
+      idle: 'status-badge bg-gray-100 text-gray-600 border-gray-200',
+      checking: 'status-badge bg-amber-100 text-amber-700 border-amber-200',
+      success: 'status-badge bg-green-100 text-green-700 border-green-200',
+      error: 'status-badge bg-red-100 text-red-700 border-red-200'
+    };
+
+    const API_STATUS_TEXT = {
+      idle: '尚未檢查',
+      checking: '檢測中',
+      success: '正常',
+      error: '失敗'
+    };
+
+    let apiStatusLastChecked = null;
+
+    function formatDateTimeForStatus(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+      return date.toLocaleString('zh-TW', { hour12: false });
+    }
+
+    function updateApiStatusUI(state, message, detail = '') {
+      const badge = document.getElementById('apiStatusBadge');
+      const messageEl = document.getElementById('apiStatusMessage');
+      const detailEl = document.getElementById('apiStatusDetail');
+      if (!badge || !messageEl || !detailEl) return;
+
+      const badgeClass = API_STATUS_CLASSES[state] || API_STATUS_CLASSES.idle;
+      badge.className = badgeClass;
+      badge.textContent = API_STATUS_TEXT[state] || API_STATUS_TEXT.idle;
+
+      messageEl.textContent = message;
+
+      if (detail) {
+        detailEl.textContent = detail;
+        detailEl.classList.remove('hidden');
+      } else {
+        detailEl.textContent = '';
+        detailEl.classList.add('hidden');
+      }
+    }
+
+    function setApiStatusButtonLoading(isLoading) {
+      const button = document.getElementById('apiStatusButton');
+      if (!button) return;
+
+      if (isLoading) {
+        button.disabled = true;
+        button.classList.add('opacity-60', 'cursor-not-allowed');
+        button.innerHTML = '<span class="mr-2">⏳</span>檢測中...';
+      } else {
+        button.disabled = false;
+        button.classList.remove('opacity-60', 'cursor-not-allowed');
+        button.innerHTML = '<span class="mr-2">🩺</span>測試 API 連線';
+      }
+    }
+
+    function buildBaseDetailMessage() {
+      if (typeof API_CONFIG !== 'undefined' && API_CONFIG?.baseUrl) {
+        return `目前設定的 API URL：${API_CONFIG.baseUrl}`;
+      }
+      return '請先完成 Google Apps Script 部署並設定允許此網域存取。';
+    }
+
+    function setupApiStatusUI() {
+      updateApiStatusUI('idle', '尚未檢查 API 連線狀態', buildBaseDetailMessage());
+    }
+
+    async function handleApiStatusCheck(manual = false) {
+      if (typeof api === 'undefined' || !api?.ping) {
+        updateApiStatusUI('error', 'API 尚未初始化', '請確認 js/api.js 已正確載入。');
+        if (manual) {
+          showSyncStatus('❌ API 尚未初始化，請檢查 js/api.js 是否載入成功', 'error');
+        }
+        return;
+      }
+
+      setApiStatusButtonLoading(true);
+      updateApiStatusUI('checking', '正在測試 API 連線...', '請稍候，通常會在 1 秒內完成檢查。');
+
+      const startedAt = performance.now();
+
+      try {
+        const result = await api.ping();
+
+        if (!result?.ok) {
+          throw new Error(result?.error || 'API 回應未標示 ok');
+        }
+
+        const elapsed = Math.round(performance.now() - startedAt);
+        apiStatusLastChecked = new Date();
+
+        const detailParts = [
+          `最後檢查時間：${formatDateTimeForStatus(apiStatusLastChecked)}`,
+          `延遲：約 ${elapsed} ms`
+        ];
+
+        if (result?.timestamp) {
+          const serverTime = formatDateTimeForStatus(new Date(result.timestamp));
+          if (serverTime) {
+            detailParts.push(`伺服器時間：${serverTime}`);
+          }
+        }
+
+        if (typeof API_CONFIG !== 'undefined' && API_CONFIG?.baseUrl) {
+          detailParts.push(`目前 API URL：${API_CONFIG.baseUrl}`);
+        }
+
+        updateApiStatusUI('success', 'API 連線正常', detailParts.join('｜'));
+
+        if (manual) {
+          showSyncStatus('✅ API 連線正常', 'success');
+        }
+      } catch (error) {
+        const errorMessage = error?.message || String(error);
+        const detailParts = [`原因：${errorMessage}`];
+
+        if (typeof API_CONFIG !== 'undefined' && API_CONFIG?.baseUrl) {
+          detailParts.push(`目前 API URL：${API_CONFIG.baseUrl}`);
+        }
+
+        updateApiStatusUI('error', 'API 連線失敗', detailParts.join('｜'));
+
+        if (manual) {
+          showSyncStatus(`❌ API 連線失敗：${errorMessage}`, 'error');
+        }
+      } finally {
+        setApiStatusButtonLoading(false);
+      }
+    }
+
+    window.checkApiStatus = handleApiStatusCheck;
+
+    /* ---------- 正常化 ---------- */
+    function normalize(list){
+      if (!Array.isArray(list)) return [];
+      const toStr = v => (v == null ? '' : String(v));
+      const arrStr = a => Array.isArray(a) ? a.map(toStr).filter(Boolean) : [];
+      return list.map(t => ({
+        id: t?.id ?? Date.now(),
+        name: toStr(t?.name),
+        email: toStr(t?.email),
+        teacherType: (t?.teacherType === 'external' ? 'external' : 'internal'),
+        workLocation: (t?.workLocation === 'onboard' ? 'onboard' : 'onshore'),
+        photo: toStr(t?.photo), // URL（Drive）
+        experiences: arrStr(t?.experiences),
+        certificates: Array.isArray(t?.certificates)
+          ? t.certificates.map(c => (typeof c === 'string'
+              ? toStr(c)
+              : { name: toStr(c?.name), fileName: toStr(c?.fileName), fileUrl: toStr(c?.fileUrl) }
+            )).filter(x => (typeof x === 'string' ? x : x.name))
+          : [],
+        subjects: arrStr(t?.subjects),
+        tags: arrStr(t?.tags), 
+      }));
+    }
+    const initial = name => (String(name ?? '').trim()[0] || '?');
+
+    /* ---------- 狀態 ---------- */
+    let teachers = normalize(JSON.parse(localStorage.getItem('teachers') || '[]'));
+    let currentTeacherId = null;
+    let draggedElement = null;
+    let filteredTeachers = [];
+    window.currentMode = 'edit';
+
+    /* ---------- 靜默同步（0.1秒） ---------- */
+    const SYNC_DEBOUNCE_MS = 100;
+    let syncTimer = null, syncing = false, syncAgain = false;
+
+    function slimForLocal(items){
+      return (items||[]).map(t=>({
+        id:t.id, name:t.name, email:t.email,
+        teacherType:t.teacherType, workLocation:t.workLocation,
+        photo:t.photo, experiences:t.experiences||[],
+        certificates:(t.certificates||[]).map(c=> typeof c==='string' ? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
+        subjects:t.subjects||[]
+      }));
+    }
+    function saveLocalSilently(){
+      try{
+        localStorage.setItem('teachers', JSON.stringify(slimForLocal(teachers)));
+      }catch(err){
+        console.warn('localStorage 超額，已改存最小資訊：', err);
+        try{
+          const min = teachers.map(t=>({id:t.id,name:t.name,teacherType:t.teacherType,workLocation:t.workLocation}));
+          localStorage.setItem('teachers', JSON.stringify(min));
+        }catch(e){}
+      }
+    }
+
+    function scheduleCloudSave(){
+      if(!api) return;
+      if(syncTimer) clearTimeout(syncTimer);
+      syncTimer = setTimeout(doCloudSave, SYNC_DEBOUNCE_MS);
+    }
+    async function doCloudSave(){
+      if(syncing){ syncAgain=true; return; }
+      syncing = true;
+      try{
+        await api.save('teachers', teachers);
+        console.log('✅ 師資資料已同步到雲端');
+      }catch(e){
+        console.warn('雲端靜默上傳失敗：', e);
+      }finally{
+        syncing=false;
+        if(syncAgain){ syncAgain=false; scheduleCloudSave(); }
+      }
+    }
+
+    async function cloudLoadSilent(){
+      if(!api) return null;
+      try{
+        const data = await api.list('teachers');
+        return Array.isArray(data) ? data : null;
+      }catch(e){
+        console.warn('雲端靜默載入失敗：', e);
+      }
+      return null;
+    }
+
+    /* ---------- 啟動 ---------- */
+    document.addEventListener('DOMContentLoaded', async () => {
+      setupApiStatusUI();
+      handleApiStatusCheck(false);
+
+      renderTeacherGrid();
+      setupLocationSelection();
+
+      const cloud = await cloudLoadSilent();
+      if(Array.isArray(cloud)){
+        teachers = normalize(cloud);
+        saveLocalSilently();
+        renderTeacherGrid();
+      }
+
+      // ✨ 重要：從 localStorage 重新載入派課和海事課程數據
+      // 因為 cloudLoadSilent() 可能已經通過 syncManager 更新了 localStorage
+      console.log('🔄 重新載入派課和海事課程數據...');
+      const localCourses = localStorage.getItem('courseAssignments');
+      const localMaritime = localStorage.getItem('maritimeCourses');
+
+      if (localCourses) {
+        courseAssignments = JSON.parse(localCourses);
+        console.log('📦 從 localStorage 載入派課數據，共', courseAssignments.length, '筆');
+      }
+
+      if (localMaritime) {
+        maritimeCourses = JSON.parse(localMaritime);
+        console.log('📦 從 localStorage 載入海事課程數據，共', maritimeCourses.length, '筆');
+      }
+
+      // 再次嘗試從後端載入（如果有更新的數據）
+      await loadCourseAssignmentsFromBackend();
+      await loadMaritimeCoursesFromBackend();
+
+      // 同步到行事曆
+      if (courseAssignments.length > 0) {
+        console.log('📅 同步派課數據到行事曆...');
+        syncCourseAssignmentsToCalendar();
+      }
+    });
+
+    /* ---------- 互動 ---------- */
+    function setupLocationSelection() {
+      document.addEventListener('change', function(e) {
+        if (e.target.name === 'workLocation') {
+          document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
+          e.target.closest('label').querySelector('.location-option').classList.add('selected', e.target.value);
+        }
+        if (e.target.name === 'teacherType') {
+          document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
+          e.target.closest('label').querySelector('.teacher-type-option').classList.add('selected', e.target.value);
+        }
+      });
+    }
+
+    window.switchMode = function switchMode(mode){
+      window.currentMode = mode;
+      const editBtn = document.getElementById('editModeBtn');
+      const displayBtn = document.getElementById('displayModeBtn');
+      const addBtn = document.getElementById('addTeacherBtn');
+      const modeDescription = document.getElementById('modeDescription');
+
+      if (mode === 'edit') {
+        editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white';
+        displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
+        addBtn.classList.remove('hidden');
+        modeDescription.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <span class="text-blue-600">ℹ️</span>
+            <span class="text-blue-700 text-sm font-medium">編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
+          </div>`;
+        modeDescription.className = 'bg-blue-50 border border-blue-200 rounded-lg p-3';
+      } else {
+        editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
+        displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-green-600 text-white';
+        addBtn.classList.add('hidden');
+        modeDescription.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <span class="text-green-700 text-sm font-medium">呈現模式：以美觀的方式展示師資陣容，適合對外展示</span>
+          </div>`;
+        modeDescription.className = 'bg-green-50 border border-green-200 rounded-lg p-3';
+      }
+      renderTeacherGrid();
+    }
+
+    function renderTeacherGrid(teachersToRender = null) {
+      const grid = document.getElementById('teacherGrid');
+      grid.innerHTML = '';
+      grid.className = currentMode==='edit'
+        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+        : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8';
+
+      const displayTeachers = teachersToRender || teachers;
+      if (displayTeachers.length === 0) {
+        const searchInput = document.getElementById('searchInput');
+        const isSearching = searchInput && searchInput.value.trim() !== '';
+        grid.innerHTML = isSearching ? `
+          <div class="col-span-full text-center py-12">
+            <div class="text-6xl mb-4">🔍</div>
+            <h3 class="text-xl font-medium text-gray-600 mb-2">找不到符合的師資</h3>
+            <p class="text-gray-500">請嘗試其他關鍵字或清除搜尋條件</p>
+          </div>` : `
+          <div class="col-span-full text-center py-12">
+            <div class="text-6xl mb-4">👨‍🏫</div>
+            <h3 class="text-xl font-medium text-gray-600 mb-2">尚未新增任何師資</h3>
+            <p class="text-gray-500">點擊上方「新增師資」按鈕開始建立您的師資陣容</p>
+          </div>`;
+        return;
+      }
+
+      displayTeachers.forEach((teacher, index) => {
+        const card = document.createElement('div');
+
+        if (currentMode === 'edit') {
+          card.className = 'bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group';
+          card.draggable = true;
+          card.dataset.teacherId = teacher.id;
+          card.dataset.index = index;
+          card.onclick = () => editTeacher(teacher.id);
+          card.addEventListener('dragstart', handleDragStart);
+          card.addEventListener('dragover', handleDragOver);
+          card.addEventListener('drop', handleDrop);
+          card.addEventListener('dragend', handleDragEnd);
+          card.innerHTML = `
+            <div class="p-4 text-center relative">
+              <div class="absolute top-2 left-2 flex flex-col space-y-1">
+                ${teacher.teacherType==='internal' ? `
+                  <div class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span>👨‍💼</span><span>內部</span>
+                  </div>` : `
+                  <div class="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span>👨‍🎓</span><span>外部</span>
+                  </div>`}
+                ${teacher.workLocation==='onboard' ? `
+                  <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span>🚢</span><span>在船</span>
+                  </div>` : `
+                  <div class="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span>🏢</span><span>在岸</span>
+                  </div>`}
+              </div>
+              <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : initial(teacher.name)}
+              </div>
+              <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
+              <div class="mt-1 text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">
+                ${teacher.workLocation==='onboard'?'🚢 海上工作':'🏢 陸地工作'}
+              </div>
+              <div class="mt-2 text-xs text-gray-500 cursor-move">⋮⋮ 拖拽排序</div>
+              <button onclick="event.stopPropagation(); copyTeacher(${teacher.id})"
+                class="absolute top-2 right-2 bg-green-500 hover:bg-green-600 text-white p-2 rounded-full text-xs transition-colors shadow-lg opacity-0 group-hover:opacity-100" title="複製師資">📋</button>
+            </div>`;
+        } else {
+          const isInternal = teacher.teacherType === 'internal';
+          const bgGradient = isInternal ? 'from-blue-50 to-indigo-50' : 'from-purple-50 to-pink-50';
+          const titleColor = isInternal ? 'text-blue-800' : 'text-purple-800';
+          const categoryTitle = isInternal ? '公司內部講師' : '外聘專業講師';
+          const categoryIcon = isInternal ? '👨‍💼' : '👨‍🎓';
+          const categoryBadgeColor = isInternal ? 'bg-blue-500' : 'bg-purple-500';
+          card.className = 'bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer';
+          card.onclick = () => viewTeacherDetail(teacher.id);
+          card.innerHTML = `
+            <div class="relative p-8 bg-gradient-to-br ${bgGradient} text-center">
+              <div class="absolute top-3 right-3">
+                <div class="${categoryBadgeColor} text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                  <span>${categoryIcon}</span><span>${categoryTitle}</span>
+                </div>
+              </div>
+              <div class="w-20 h-20 mx-auto mb-4 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-1 shadow-lg">
+                <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                  ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${initial(teacher.name)}</span>`}
+                </div>
+              </div>
+              <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}</h3>
+              <div class="text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium mb-2">
+                ${teacher.workLocation==='onboard'?'🚢 海上工作':'🏢 陸地工作'}
+              </div>
+              <div class="text-xs text-gray-500 opacity-70">點擊查看詳細資料</div>
+            </div>`;
+        }
+        grid.appendChild(card);
+      });
+    }
+
+    function addNewTeacher(){
+      currentTeacherId = null;
+      document.getElementById('teacherList').classList.add('hidden');
+      document.getElementById('teacherDetail').classList.remove('hidden');
+      document.getElementById('deleteBtn').classList.add('hidden');
+      document.getElementById('teacherForm').reset();
+      const photoBox = document.getElementById('photoPreview');
+      photoBox.innerHTML = '👤'; photoBox.removeAttribute('data-url');
+      document.getElementById('experienceList').innerHTML = '';
+      document.getElementById('certificateList').innerHTML = '';
+      document.getElementById('subjectList').innerHTML = '';
+      document.getElementById('tagList').innerHTML = '';
+      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
+      document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
+      addExperience(); addCertificate(); addSubject(); addTag();
+    }
+
+    function editTeacher(teacherId){
+      const teacher = teachers.find(t=>t.id===teacherId); if(!teacher) return;
+      currentTeacherId = teacherId;
+      document.getElementById('teacherList').classList.add('hidden');
+      document.getElementById('teacherDetail').classList.remove('hidden');
+      document.getElementById('deleteBtn').classList.remove('hidden');
+      document.getElementById('teacherName').value = teacher.name;
+      document.getElementById('teacherEmail').value = teacher.email || '';
+      const teacherType = teacher.teacherType || 'internal';
+      document.getElementById(teacherType==='internal'?'typeInternal':'typeExternal').checked = true;
+      const workLocation = teacher.workLocation || 'onshore';
+      document.getElementById(workLocation==='onboard'?'locationOnboard':'locationOnshore').checked = true;
+
+      document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
+      document.querySelector(`input[value="${teacherType}"]`).closest('label').querySelector('.teacher-type-option').classList.add('selected',teacherType);
+      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
+      document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
+
+      const photoBox = document.getElementById('photoPreview');
+      if (teacher.photo){
+        photoBox.innerHTML = `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">`;
+        photoBox.setAttribute('data-url', teacher.photo);
+      }else{
+        photoBox.innerHTML = '👤'; photoBox.removeAttribute('data-url');
+      }
+
+      document.getElementById('experienceList').innerHTML = '';
+      (teacher.experiences||[]).forEach(exp=>addExperience(exp));
+      document.getElementById('certificateList').innerHTML = '';
+      (teacher.certificates||[]).forEach(cert=>{
+        if (typeof cert === 'string') addCertificate(cert);
+        else addCertificate(cert.name||'', cert.fileName||'', cert.fileUrl||'');
+      });
+      document.getElementById('subjectList').innerHTML = '';
+      (teacher.subjects||[]).forEach(s=>addSubject(s));
+      document.getElementById('tagList').innerHTML = '';
+      (teacher.tags||[]).forEach(t=>addTag(t));
+    }
+
+    function viewTeacherDetail(teacherId){
+      const teacher = teachers.find(t=>t.id===teacherId); if(!teacher) return;
+      document.getElementById('teacherList').classList.add('hidden');
+      document.getElementById('teacherDetailView').classList.remove('hidden');
+      const isInternal = teacher.teacherType==='internal';
+      const bgGradient = isInternal?'from-blue-50 to-indigo-50':'from-purple-50 to-pink-50';
+      const titleColor = isInternal?'text-blue-800':'text-purple-800';
+      const categoryTitle = isInternal?'公司內部講師':'外聘專業講師';
+      const categoryIcon = isInternal?'👨‍💼':'👨‍🎓';
+      const categoryBadgeColor = isInternal?'bg-blue-500':'bg-purple-500';
+
+      const content = document.getElementById('teacherDetailContent');
+      content.innerHTML = `
+        <div class="bg-gradient-to-br ${bgGradient} rounded-2xl p-8 mb-8 relative overflow-hidden">
+          <div class="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+            <div class="w-32 h-32 rounded-full ${isInternal?'bg-gradient-to-br from-blue-400 to-indigo-500':'bg-gradient-to-br from-purple-400 to-pink-500'} p-2 shadow-xl">
+              <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                ${teacher.photo ? `<img src="${teacher.photo}" class="w-28 h-28 object-cover rounded-full">` : `<span class="text-4xl font-bold text-gray-600">${initial(teacher.name)}</span>`}
+              </div>
+            </div>
+            <div class="flex-1 text-center md:text-left">
+              <div class="mb-4">
+                <div class="${categoryBadgeColor} text-white px-4 py-2 rounded-full text-sm font-medium inline-flex items-center space-x-2">
+                  <span>${categoryIcon}</span><span>${categoryTitle}</span>
+                </div>
+              </div>
+              <h1 class="text-4xl font-bold ${titleColor} mb-3">${teacher.name}</h1>
+              <div class="space-y-2 text-lg">
+                ${teacher.email ? `<div class="flex items-center justify-center md:justify-start space-x-2"><span class="text-gray-600">📧</span><span class="text-gray-700">${teacher.email}</span></div>` : ''}
+                <div class="flex items-center justify-center md:justify-start space-x-2">
+                  <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'}">${teacher.workLocation==='onboard'?'🚢':'🏢'}</span>
+                  <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">${teacher.workLocation==='onboard'?'海上工作':'陸地工作'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl">💼</span>工作經歷</h3>
+            ${(teacher.experiences&&teacher.experiences.length>0)?`
+              <div class="space-y-3">
+                ${teacher.experiences.map(exp=>`<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-blue-500"><p class="text-gray-700">${exp}</p></div>`).join('')}
+              </div>`:`
+              <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📝</div><p>尚未填寫工作經歷</p></div>`}
+          </div>
+
+          <div class="bg-gray-50 rounded-xl p-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl">🏆</span>證書與資格</h3>
+            ${(teacher.certificates&&teacher.certificates.length>0)?`
+              <div class="space-y-3">
+                ${teacher.certificates.map(cert=>{
+                  const certName = typeof cert==='string'?cert:cert.name;
+                  const fileUrl  = typeof cert==='object' ? cert.fileUrl : '';
+                  return `<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                      <p class="text-gray-700 flex-1">${certName}</p>
+                      ${fileUrl?`<button onclick="viewCertificateFromDetail('${certName}','${fileUrl}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors ml-3">檢視</button>`:''}
+                    </div></div>`;
+                }).join('')}
+              </div>`:`
+              <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">🎓</div><p>尚未填寫證書資格</p></div>`}
+          </div>
+        </div>
+
+        <div class="bg-gray-50 rounded-xl p-6 mt-8">
+          <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl">📚</span>講授課程</h3>
+          ${(teacher.subjects&&teacher.subjects.length>0)?`
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              ${teacher.subjects.map(s=>`<div class="bg-white rounded-lg p-4 shadow-sm text-center border-l-4 border-purple-500"><p class="text-gray-700 font-medium">${s}</p></div>`).join('')}
+            </div>`:`
+            <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📖</div><p>尚未填寫講授課程</p></div>`}
+        </div>
+
+        <div class="bg-gray-50 rounded-xl p-6 mt-8">
+          <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl">🏷️</span>標籤 Tags</h3>
+          ${(teacher.tags&&teacher.tags.length>0)?`
+            <div class="flex flex-wrap gap-2">
+              ${teacher.tags.map(tag=>`<span class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-sm">${tag}</span>`).join('')}
+            </div>`:`
+            <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">🏷️</div><p>尚未填寫標籤</p></div>`}
+        </div>
+
+        ${currentMode==='edit'?`
+        <div class="mt-8 text-center">
+          <button onclick="editTeacher(${teacher.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl">編輯師資資料</button>
+        </div>`:''}
+      `;
+    }
+
+    function viewCertificateFromDetail(fileName,fileUrl){
+      if(!fileUrl){ alert('沒有檔案可以檢視'); return; }
+      const isPdf = String(fileName).toLowerCase().endsWith('.pdf');
+      const w = window.open('', '_blank');
+      if(isPdf){
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><embed src="${fileUrl}" type="application/pdf" width="100%" height="100%"></body></html>`);
+      }else{
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;"><img src="${fileUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
+      }
+    }
+
+    // backToList 已移至全局 window 對象，見文件底部
+
+    function addExperience(value=''){
+      const c = document.getElementById('experienceList');
+      const div = document.createElement('div');
+      div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
+      div.innerHTML = `
+        <div class="flex flex-col space-y-1">
+          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+        </div>
+        <input type="text" value="${value}" placeholder="請輸入工作經歷..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+      c.appendChild(div);
+    }
+
+    function addCertificate(value='', fileName='', fileUrl=''){
+      const c = document.getElementById('certificateList');
+      const div = document.createElement('div');
+      div.className = 'bg-white p-4 rounded-lg border border-gray-200 move-transition';
+      const uid = Date.now()+Math.random();
+      div.innerHTML = `
+        <div class="flex items-start space-x-3">
+          <div class="flex flex-col space-y-1">
+            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+          </div>
+          <div class="flex-1 space-y-3">
+            <input type="text" value="${value}" placeholder="請輸入證書或資格名稱..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <div class="flex items-center space-x-2">
+              <input type="file" id="certFile_${uid}" accept=".jpg,.jpeg,.png,.pdf,.txt,.doc,.docx" class="hidden" onchange="handleCertificateFile(this)">
+              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">上傳檔案</button>
+              <div class="file-info text-sm text-gray-600" data-filename="${fileName}" data-fileurl="${fileUrl}">${fileName?`已上傳: ${fileName}`:'未上傳檔案'}</div>
+              ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">檢視</button>`:''}
+            </div>
+          </div>
+          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
+        </div>`;
+      c.appendChild(div);
+    }
+
+    async function handleCertificateFile(input){
+      if(!(input.files && input.files[0])) return;
+      const file = input.files[0];
+      const info = input.parentElement.querySelector('.file-info');
+      const okTypes = ['image/jpeg','image/jpg','image/png','application/pdf','text/plain','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if(!okTypes.includes(file.type)){ alert('支援格式：JPG, PNG, PDF, TXT, DOC, DOCX'); return; }
+      if(file.size > 30*1024*1024){ alert('檔案大小不能超過 30MB'); return; }
+
+      const old = info.textContent;
+      info.textContent = '上傳中...';
+      try{
+        const r = await apiUploadToDrive(file);
+        info.setAttribute('data-filename', r.name || file.name);
+        info.setAttribute('data-fileurl',  r.url);
+        info.textContent = `已上傳: ${r.name || file.name}`;
+        let btn = info.parentElement.querySelector('button[onclick="viewCertificateFile(this)"]');
+        if(!btn){
+          btn = document.createElement('button');
+          btn.type='button';
+          btn.onclick=()=>viewCertificateFile(btn);
+          btn.className='bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs';
+          btn.innerHTML='檢視';
+          info.parentElement.appendChild(btn);
+        }
+      }catch(err){
+        console.error(err);
+        info.textContent = old || '上傳失敗';
+        alert('上傳失敗：' + err.message);
+      }
+    }
+
+    function viewCertificateFile(button){
+      const info = button.parentElement.querySelector('.file-info');
+      const fileName = info.getAttribute('data-filename') || '檔案';
+      const fileUrl  = info.getAttribute('data-fileurl')  || '';
+      if(!fileUrl){ alert('沒有檔案可以檢視'); return; }
+      const isPdf = fileName.toLowerCase().endsWith('.pdf');
+      const w = window.open('', '_blank');
+      if(isPdf){
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><embed src="${fileUrl}" type="application/pdf" width="100%" height="100%"></body></html>`);
+      }else{
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;"><img src="${fileUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
+      }
+    }
+
+    function addSubject(value=''){
+      const c = document.getElementById('subjectList');
+      const div = document.createElement('div');
+      div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
+      div.innerHTML = `
+        <div class="flex flex-col space-y-1">
+          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+        </div>
+        <input type="text" value="${value}" placeholder="請輸入講授課程..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+      c.appendChild(div);
+    }
+
+    function addTag(value=''){
+      const c = document.getElementById('tagList');
+      const div = document.createElement('div');
+      div.className = 'inline-flex items-center bg-white hover:bg-gray-50 rounded-full px-4 py-2 shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md group';
+
+      div.innerHTML = `
+        <input type="text" value="${value}" placeholder="標籤..."
+          class="bg-transparent border-none outline-none text-gray-800 text-sm font-medium transition-all duration-200"
+          maxlength="20"
+          style="width: ${Math.max(20, Math.min(240, (value.length || 1) * 15))}px"
+          oninput="this.style.width = Math.max(20, Math.min(240, (this.value.length || 1) * 15)) + 'px'">
+        <button type="button" onclick="this.parentElement.remove()" class="ml-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>`;
+      c.appendChild(div);
+    }
+
+    function moveUp(button){
+      const item = button.closest('.bg-white') || button.closest('.flex.items-center');
+      const prev = item.previousElementSibling;
+      if(prev){ item.parentNode.insertBefore(item, prev); item.style.transform='translateY(-5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
+    }
+    function moveDown(button){
+      const item = button.closest('.bg-white') || button.closest('.flex.items-center');
+      const next = item.nextElementSibling;
+      if(next){ item.parentNode.insertBefore(next, item); item.style.transform='translateY(5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
+    }
+
+    async function previewPhoto(input){
+      if (!(input.files && input.files[0])) return;
+      const file = input.files[0];
+      if (file.size > 30*1024*1024){ alert('照片不能超過 30MB'); return; }
+
+      // 先本地預覽
+      const reader = new FileReader();
+      reader.onload = e => { document.getElementById('photoPreview').innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-full">`; };
+      reader.readAsDataURL(file);
+
+      // 直傳 Drive，寫回 URL
+      try{
+        const r = await apiUploadToDrive(file);
+        document.getElementById('photoPreview').setAttribute('data-url', r.url);
+      }catch(err){
+        console.error(err);
+        alert('照片上傳失敗：' + err.message);
+      }
+    }
+
+    // 儲存（靜默：本機快取 + 雲端上傳）
+    document.getElementById('teacherForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      const name = document.getElementById('teacherName').value.trim();
+      const email = document.getElementById('teacherEmail').value.trim();
+      const teacherType = document.querySelector('input[name="teacherType"]:checked')?.value;
+      const workLocation = document.querySelector('input[name="workLocation"]:checked')?.value;
+      if(!name){ alert('請輸入師資姓名'); return; }
+      if(!teacherType){ alert('請選擇師資類型'); return; }
+      if(!workLocation){ alert('請選擇工作地點'); return; }
+      if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('請輸入正確的Email格式'); return; }
+
+      const experiences = Array.from(document.querySelectorAll('#experienceList input')).map(i=>i.value.trim()).filter(Boolean);
+      const certificates = Array.from(document.querySelectorAll('#certificateList .bg-white')).map(item=>{
+        const nameInput = item.querySelector('input[type="text"]');
+        const info = item.querySelector('.file-info');
+        const nm = nameInput.value.trim(); if(!nm) return null;
+        const fileName = info.getAttribute('data-filename') || '';
+        const fileUrl  = info.getAttribute('data-fileurl')  || '';
+        return fileUrl ? { name:nm, fileName, fileUrl } : nm;
+      }).filter(Boolean);
+      const subjects = Array.from(document.querySelectorAll('#subjectList input')).map(i=>i.value.trim()).filter(Boolean);
+      const tags = Array.from(document.querySelectorAll('#tagList input[type="text"]')).map(i=>i.value.trim()).filter(Boolean);
+
+      // 調試：確認 tags 有被收集
+      console.log('收集到的 tags:', tags);
+
+      const photoBox = document.getElementById('photoPreview');
+      const photoUrl = photoBox.getAttribute('data-url') || '';
+
+      const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, photo: photoUrl, experiences, certificates, subjects, tags };
+
+      if(currentTeacherId){
+        const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData;
+      }else{
+        teachers.push(teacherData);
+      }
+      teachers = normalize(teachers);
+      saveLocalSilently();
+      scheduleCloudSave();
+      backToList();
+    });
+
+    function deleteTeacher(){
+      if(!currentTeacherId) return;
+      if(confirm('確定要刪除這位師資嗎？此操作無法復原。')){
+        teachers = teachers.filter(t=>t.id!==currentTeacherId);
+        saveLocalSilently();
+        scheduleCloudSave();
+        backToList();
+      }
+    }
+
+    function copyTeacher(teacherId){
+      const t = teachers.find(x=>x.id===teacherId); if(!t) return;
+      const copy = {
+        id: Date.now(),
+        name: (t.name || '') + ' (複製)',
+        email: t.email || '',
+        teacherType: t.teacherType || 'internal',
+        workLocation: t.workLocation || 'onshore',
+        photo: t.photo,
+        experiences: [...(t.experiences||[])],
+        certificates: (t.certificates||[]).map(c=> typeof c==='string'? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
+        subjects: [...(t.subjects||[])],
+        tags: [...(t.tags||[])]
+      };
+      const i = teachers.findIndex(x=>x.id===teacherId);
+      teachers.splice(i+1,0,copy);
+      teachers = normalize(teachers);
+      saveLocalSilently();
+      scheduleCloudSave();
+      renderTeacherGrid();
+    }
+
+    function handleDragStart(e){ draggedElement = this; this.style.opacity='0.5'; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/html', this.outerHTML); }
+    function handleDragOver(e){ if(e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect='move'; return false; }
+    function handleDrop(e){
+      if(e.stopPropagation) e.stopPropagation();
+      if(draggedElement !== this){
+        const di = parseInt(draggedElement.dataset.index);
+        const ti = parseInt(this.dataset.index);
+        const d = teachers[di];
+        teachers.splice(di,1);
+        teachers.splice(ti,0,d);
+        saveLocalSilently();
+        scheduleCloudSave();
+        renderTeacherGrid();
+      }
+      return false;
+    }
+    function handleDragEnd(){ this.style.opacity='1'; draggedElement=null; }
+
+    function searchTeachers(){
+      const searchInput = document.getElementById('searchInput');
+      const searchText = searchInput.value.trim();
+      const clearBtn = document.getElementById('clearBtn');
+      const searchResults = document.getElementById('searchResults');
+
+      if(searchText){
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+        searchResults.classList.add('hidden');
+        renderTeacherGrid();
+        return;
+      }
+
+      // 將搜尋字串分割成多個關鍵字（支援空格和逗號分隔）
+      const keywords = searchText
+        .split(/[,\s]+/)
+        .map(kw => kw.trim().toLowerCase())
+        .filter(kw => kw.length > 0);
+
+      if(keywords.length === 0){
+        clearBtn.classList.add('hidden');
+        searchResults.classList.add('hidden');
+        renderTeacherGrid();
+        return;
+      }
+
+      // 🎯 優先搜尋：先嘗試只在 tags 中搜尋
+      let tagMatchedTeachers = teachers.filter(t => {
+        return keywords.every(kw => {
+          return (t.tags||[]).some(tag => String(tag).toLowerCase().includes(kw));
+        });
+      });
+
+      // 如果 tags 有找到結果，就只顯示 tags 的結果
+      if(tagMatchedTeachers.length > 0){
+        filteredTeachers = tagMatchedTeachers;
+        searchResults.classList.remove('hidden');
+        const kwText = keywords.length > 1 ? `「${keywords.join('」、「')}」` : `「${keywords[0]}」`;
+        searchResults.querySelector('span').textContent = `找到 ${filteredTeachers.length} 位符合標籤 ${kwText} 的師資 🏷️`;
+        renderTeacherGrid(filteredTeachers);
+        return;
+      }
+
+      // 如果 tags 沒有找到，才搜尋所有欄位
+      filteredTeachers = teachers.filter(t => {
+        // 每個關鍵字都必須在至少一個欄位中找到
+        return keywords.every(kw => {
+          // 搜尋所有欄位
+
+          // 姓名
+          if(String(t.name||'').toLowerCase().includes(kw)) return true;
+
+          // Email
+          if(String(t.email||'').toLowerCase().includes(kw)) return true;
+
+          // 師資類型（支援中英文）
+          if(t.teacherType === 'internal' && ('internal'.includes(kw) || '內部'.includes(kw) || '內部師資'.includes(kw))) return true;
+          if(t.teacherType === 'external' && ('external'.includes(kw) || '外部'.includes(kw) || '外部師資'.includes(kw))) return true;
+
+          // 工作地點（支援中英文）
+          if(t.workLocation === 'onboard' && ('onboard'.includes(kw) || '在船'.includes(kw) || '海上'.includes(kw))) return true;
+          if(t.workLocation === 'onshore' && ('onshore'.includes(kw) || '在岸'.includes(kw) || '陸地'.includes(kw))) return true;
+
+          // 工作經歷
+          if((t.experiences||[]).some(x => String(x).toLowerCase().includes(kw))) return true;
+
+          // 證書
+          if((t.certificates||[]).some(c => {
+            if(typeof c === 'string') return String(c).toLowerCase().includes(kw);
+            return String(c.name||'').toLowerCase().includes(kw);
+          })) return true;
+
+          // 講授課程
+          if((t.subjects||[]).some(s => String(s).toLowerCase().includes(kw))) return true;
+
+          return false;
+        });
+      });
+
+      if(filteredTeachers.length > 0){
+        searchResults.classList.remove('hidden');
+        const kwText = keywords.length > 1 ? `「${keywords.join('」、「')}」` : `「${keywords[0]}」`;
+        searchResults.querySelector('span').textContent = `找到 ${filteredTeachers.length} 位符合 ${kwText} 的師資`;
+      } else {
+        searchResults.classList.add('hidden');
+      }
+      renderTeacherGrid(filteredTeachers);
+    }
+
+    function clearSearch(){
+      const searchInput = document.getElementById('searchInput');
+      searchInput.value = '';
+      document.getElementById('clearBtn').classList.add('hidden');
+      document.getElementById('searchResults').classList.add('hidden');
+      filteredTeachers = [];
+      renderTeacherGrid();
+    }
+
+    function showStatisticsView(){ document.getElementById('teacherList').classList.add('hidden'); document.getElementById('executiveView').classList.remove('hidden'); renderStatisticsView(); }
+    function backToListFromExecutive(){ setRoute('list'); }
+
+    function renderStatisticsView(){
+      const total = teachers.length;
+      const internal = teachers.filter(t=>t.teacherType==='internal').length;
+      const external = teachers.filter(t=>t.teacherType==='external').length;
+      const onboard = teachers.filter(t=>t.workLocation==='onboard').length;
+      const onshore = teachers.filter(t=>t.workLocation==='onshore').length;
+      const internalOnboard = teachers.filter(t=>t.teacherType==='internal' && t.workLocation==='onboard').length;
+      const internalOnshore = teachers.filter(t=>t.teacherType==='internal' && t.workLocation==='onshore').length;
+      const externalOnboard = teachers.filter(t=>t.teacherType==='external' && t.workLocation==='onboard').length;
+      const externalOnshore = teachers.filter(t=>t.teacherType==='external' && t.workLocation==='onshore').length;
+      const allSubjects = teachers.flatMap(t=>t.subjects||[]);
+      const uniqueSubjects = [...new Set(allSubjects)];
+      const avg = total>0 ? (allSubjects.length/total).toFixed(1) : 0;
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('internalCount').textContent = internal;
+      document.getElementById('externalCount').textContent = external;
+      document.getElementById('onboardCount').textContent = onboard;
+      document.getElementById('onshoreCount').textContent = onshore;
+
+      const ip = total>0 ? ((internal/total)*100).toFixed(1) : 0;
+      const ep = total>0 ? ((external/total)*100).toFixed(1) : 0;
+      const obp = total>0 ? ((onboard/total)*100).toFixed(1) : 0;
+      const osp = total>0 ? ((onshore/total)*100).toFixed(1) : 0;
+
+      document.getElementById('internalPercent').textContent = `${ip}%`;
+      document.getElementById('externalPercent').textContent = `${ep}%`;
+      document.getElementById('locationRatio').textContent = `比例 ${onboard}:${onshore}`;
+
+      document.getElementById('internalCountDetail').textContent = `${internal} 位`;
+      document.getElementById('internalPercentDetail').textContent = `${ip}%`;
+      document.getElementById('externalCountDetail').textContent = `${external} 位`;
+      document.getElementById('externalPercentDetail').textContent = `${ep}%`;
+      document.getElementById('onboardCountDetail').textContent = `${onboard} 位`;
+      document.getElementById('onboardPercentDetail').textContent = `${obp}%`;
+      document.getElementById('onshoreCountDetail').textContent = `${onshore} 位`;
+      document.getElementById('onshorePercentDetail').textContent = `${osp}%`;
+
+      document.getElementById('internalOnboard').textContent = internalOnboard;
+      document.getElementById('internalOnshore').textContent = internalOnshore;
+      document.getElementById('externalOnboard').textContent = externalOnboard;
+      document.getElementById('externalOnshore').textContent = externalOnshore;
+
+      document.getElementById('totalSubjects').textContent = allSubjects.length;
+      document.getElementById('avgSubjectsPerTeacher').textContent = avg;
+      document.getElementById('uniqueSubjects').textContent = uniqueSubjects.length;
+
+      const counts = {}; allSubjects.forEach(s=>counts[s]=(counts[s]||0)+1);
+      const sorted = Object.entries(counts).sort(([,a],[,b])=>b-a).slice(0,10);
+      const box = document.getElementById('popularSubjects');
+      box.innerHTML = sorted.length>0 ? sorted.map(([s,c],i)=>`
+        <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold">${i+1}</div>
+            <span class="font-medium text-gray-700">${s}</span>
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-purple-600">${c} 位</div>
+            <div class="text-xs text-gray-500">師資教授</div>
+          </div>
+        </div>`).join('') : `
+        <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2">📚</div><p>尚未有課程資料</p></div>`;
+    }
+
+    /* 匯出 */
+    function _collectRows(){
+      if(!Array.isArray(teachers) || teachers.length===0){ alert('目前沒有師資資料可以匯出'); return null; }
+      return teachers.map((t,i)=>({
+        idx:i+1,
+        name:t.name||'',
+        email:t.email||'',
+        teacherType:t.teacherType==='internal'?'內部師資':'外部師資',
+        workLocation:t.workLocation==='onboard'?'海上工作':'陸地工作',
+        experiences:(t.experiences||[]).join('；') || '無',
+        certificates:(t.certificates||[]).map(c=> typeof c==='string'? c : (c?.name||'')).filter(Boolean).join('；') || '無',
+        subjects:(t.subjects||[]).join('；') || '無'
+      }));
+    }
+    function forceDownload(dataOrBlob, filename, mime='text/plain;charset=utf-8'){
+      const blob = dataOrBlob instanceof Blob ? dataOrBlob : new Blob([String(dataOrBlob)],{type:mime});
+      try{
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.target = '_blank'; a.rel='noopener';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(()=>URL.revokeObjectURL(url),1500);
+        return;
+      }catch(e){}
+      try{
+        const fr = new FileReader();
+        fr.onload = ()=>{ const w = window.open(fr.result,'_blank'); if(!w) alert('瀏覽器封鎖了下載視窗，請允許彈出視窗'); };
+        fr.readAsDataURL(blob); return;
+      }catch(e){}
+      blob.text().then(txt=>{
+        const w = window.open('','_blank');
+        if(w){
+          w.document.write('<pre style="white-space:pre-wrap;word-break:break-all;font:12px/1.4 monospace;">'
+            + txt.replace(/[<>&]/g, s=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[s])) + '</pre>');
+        }else{ alert('無法另開視窗，請允許彈出視窗'); }
+      });
+    }
+
+  </script>
+
+  <script>
+  /* ======== 行事曆（新樣式整合，沿用既有資料結構） ======== */
+  let currentDate = new Date();
+  let viewMode = 'month';
+  let selectedColor = 'bg-blue-500';
+  let reminderInterval = null;
+
+  // 仍沿用前面全域的 teachers
+  let calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
+  // event = { id, date:'YYYY-MM-DD', title, time:'HH:MM'|'', teacherId:null|number, location:'', note:'', color:'bg-xxx-500' }
+
+  function saveCalendarLocal(){ localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents)); }
+  function fmtDate(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+  function todayStr(){ const d=new Date(); return fmtDate(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+  function showCalendarView(){
+    document.getElementById('teacherList').classList.add('hidden');
+    document.getElementById('executiveView').classList.add('hidden');
+    document.getElementById('teacherDetail').classList.add('hidden');
+    document.getElementById('teacherDetailView').classList.add('hidden');
+    document.getElementById('calendarView').classList.remove('hidden');
+
+    const sel = document.getElementById('eventTeacherId');
+    sel.innerHTML = `<option value="">（未指派）</option>` + (teachers||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+
+    currentDate = new Date();
+    document.getElementById('eventDate').value = todayStr();
+
+    renderCalendar();
+    startReminderCheck();
+  }
+  function backToListFromCalendar(){
+    stopReminderCheck();
+    setRoute('list');
+  }
+
+  function setViewMode(mode){
+    viewMode = mode;
+    const monthBtn = document.getElementById('monthViewBtn');
+    const weekBtn  = document.getElementById('weekViewBtn');
+    if(mode==='month'){
+      monthBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-900';
+      monthBtn.style.cssText = 'box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);';
+      weekBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold text-gray-600';
+      weekBtn.style.cssText = 'background: transparent;';
+      document.getElementById('prevLabel').textContent = '上個月';
+      document.getElementById('nextLabel').textContent = '下個月';
+    }else{
+      weekBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-900';
+      weekBtn.style.cssText = 'box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);';
+      monthBtn.className = 'px-4 py-2 rounded-lg text-sm font-semibold text-gray-600';
+      monthBtn.style.cssText = 'background: transparent;';
+      document.getElementById('prevLabel').textContent = '上週';
+      document.getElementById('nextLabel').textContent = '下週';
+    }
+    renderCalendar();
+  }
+  function previousPeriod(){ if(viewMode==='month'){ currentDate.setMonth(currentDate.getMonth()-1);} else{ currentDate.setDate(currentDate.getDate()-7);} renderCalendar(); }
+  function nextPeriod(){ if(viewMode==='month'){ currentDate.setMonth(currentDate.getMonth()+1);} else{ currentDate.setDate(currentDate.getDate()+7);} renderCalendar(); }
+  function goToToday(){ currentDate = new Date(); renderCalendar(); }
+
+  function openAddEventModal(){
+    document.getElementById('eventTitle').value = '';
+    document.getElementById('eventTime').value  = '';
+    document.getElementById('eventLocation').value = '';
+    document.getElementById('eventNote').value = '';
+    selectedColor = 'bg-blue-500';
+    document.getElementById('eventDate').value = todayStr();
+    document.getElementById('addEventModal').classList.remove('hidden');
+  }
+  function openAddEventModalForDate(dateKey){
+    openAddEventModal();
+    document.getElementById('eventDate').value = dateKey;
+  }
+  function closeAddEventModal(){ document.getElementById('addEventModal').classList.add('hidden'); }
+  function selectColor(color){ selectedColor = color; }
+
+  function addEventIntegrated(e){
+    e.preventDefault();
+    const title = (document.getElementById('eventTitle').value||'').trim();
+    const date  = (document.getElementById('eventDate').value||'').trim();
+    const time  = (document.getElementById('eventTime').value||'').trim();
+    const teacherIdVal = document.getElementById('eventTeacherId').value;
+    const teacherId = teacherIdVal ? Number(teacherIdVal) : null;
+    const location = (document.getElementById('eventLocation').value||'').trim();
+    const note     = (document.getElementById('eventNote').value||'').trim();
+    if(!title || !date) return;
+
+    calendarEvents.push({ id: Date.now(), date, title, time, teacherId, location, note, color: selectedColor });
+    saveCalendarLocal();
+    closeAddEventModal();
+    renderCalendar();
+  }
+
+  // 查看行事曆事件詳情
+  let editingEventId = null;
+
+  function viewCalendarEvent(eventId){
+    const event = calendarEvents.find(e => e.id === eventId);
+    if (!event) return;
+
+    editingEventId = eventId;
+    const teacher = teachers.find(t => t.id === event.teacherId);
+    const teacherName = teacher ? teacher.name : '未指派';
+
+    // 顯示查看模式
+    const modalTitle = document.getElementById('eventModalTitle');
+    modalTitle.textContent = '📅 事件詳情';
+    document.getElementById('eventViewMode').style.display = 'block';
+    document.getElementById('editEventForm').style.display = 'none';
+    document.getElementById('eventViewModeButtons').style.display = 'flex';
+    document.getElementById('eventEditModeButtons').style.display = 'none';
+
+    document.getElementById('eventViewMode').innerHTML = `
+      <div class="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
+        <div>
+          <label class="text-xs font-medium text-gray-600">師資</label>
+          <p class="text-lg font-semibold text-gray-900">👨‍🏫 ${teacherName}</p>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600">事件標題</label>
+          <p class="text-lg font-semibold text-gray-900">${event.title}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs font-medium text-gray-600">日期</label>
+            <p class="text-sm text-gray-800">📅 ${event.date}</p>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600">時間</label>
+            <p class="text-sm text-gray-800">⏰ ${event.time || '未設定'}</p>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600">地點</label>
+          <p class="text-sm text-gray-800">📍 ${event.location || '未設定'}</p>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600">備註</label>
+          <p class="text-sm text-gray-800">${event.note || '無'}</p>
+        </div>
+      </div>
+    `;
+
+    // 設定刪除按鈕事件
+    document.getElementById('deleteEventBtn').onclick = function() {
+      if (confirm('確定要刪除這個事件嗎？')) {
+        deleteCalendarEvent(eventId);
+      }
+    };
+
+    document.getElementById('viewEventModal').classList.remove('hidden');
+  }
+
+  function closeViewEventModal() {
+    document.getElementById('viewEventModal').classList.add('hidden');
+    editingEventId = null;
+  }
+
+  function enterEventEditMode() {
+    const event = calendarEvents.find(e => e.id === editingEventId);
+    if (!event) return;
+
+    const modalTitle = document.getElementById('eventModalTitle');
+    modalTitle.textContent = '編輯事件';
+    document.getElementById('eventViewMode').style.display = 'none';
+    document.getElementById('editEventForm').style.display = 'block';
+    document.getElementById('eventViewModeButtons').style.display = 'none';
+    document.getElementById('eventEditModeButtons').style.display = 'flex';
+
+    // 填充表單
+    document.getElementById('editEventTitle').value = event.title;
+    document.getElementById('editEventTeacherId').value = event.teacherId || '';
+    document.getElementById('editEventDate').value = event.date;
+    document.getElementById('editEventTime').value = event.time || '';
+    document.getElementById('editEventLocation').value = event.location || '';
+    document.getElementById('editEventNote').value = event.note || '';
+
+    // 填充師資選項
+    const teacherSelect = document.getElementById('editEventTeacherId');
+    teacherSelect.innerHTML = '<option value="">未指派</option>';
+    teachers.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.name;
+      if (t.id === event.teacherId) opt.selected = true;
+      teacherSelect.appendChild(opt);
+    });
+  }
+
+  function cancelEventEditMode() {
+    // 返回查看模式
+    viewCalendarEvent(editingEventId);
+  }
+
+  function saveEditedEvent() {
+    const title = document.getElementById('editEventTitle').value.trim();
+    const teacherId = document.getElementById('editEventTeacherId').value;
+    const date = document.getElementById('editEventDate').value;
+    const time = document.getElementById('editEventTime').value;
+    const location = document.getElementById('editEventLocation').value.trim();
+    const note = document.getElementById('editEventNote').value.trim();
+
+    if (!title || !date) {
+      alert('請填寫事件標題和日期！');
+      return;
+    }
+
+    const eventIndex = calendarEvents.findIndex(e => e.id === editingEventId);
+    if (eventIndex === -1) return;
+
+    calendarEvents[eventIndex] = {
+      ...calendarEvents[eventIndex],
+      title,
+      teacherId: teacherId ? Number(teacherId) : null,
+      date,
+      time,
+      location,
+      note
+    };
+
+    localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+    renderCalendar();
+    closeViewEventModal();
+    alert('✅ 事件已更新！');
+  }
+
+  function deleteCalendarEvent(eventId) {
+    calendarEvents = calendarEvents.filter(e => e.id !== eventId);
+    localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+    renderCalendar();
+    closeViewEventModal();
+    alert('✅ 事件已刪除！');
+  }
+
+  function deleteEventById(id){
+    calendarEvents = calendarEvents.filter(ev=>ev.id!==id);
+    saveCalendarLocal();
+    renderCalendar();
+  }
+
+  function renderCalendar(){ if(viewMode==='month') renderMonthView(); else renderWeekView(); }
+
+  function renderMonthView(){
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+    document.getElementById('currentMonth').textContent = `${year}年 ${monthNames[month]}`;
+
+    const firstDay = new Date(year, month, 1);
+    const start = new Date(firstDay);
+    start.setDate(start.getDate() - firstDay.getDay());
+
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    const todayStr = fmtDate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+    for(let w=0; w<6; w++){
+      for(let d=0; d<7; d++){
+        const cellDate = new Date(start);
+        cellDate.setDate(start.getDate() + (w*7) + d);
+
+        const isCurrentMonth = (cellDate.getMonth() === month);
+        const dateKey = fmtDate(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+        const isToday = (dateKey === todayStr);
+
+        const dayEvents = calendarEvents.filter(ev => ev.date === dateKey);
+
+        const cell = document.createElement('div');
+        cell.className = `calendar-day p-2 ${
+          isCurrentMonth ? 'bg-white' : 'bg-gray-50'
+        } ${isToday ? 'today-highlight' : ''}`;
+        cell.style.cssText = 'border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 10px;';
+
+        cell.innerHTML = `
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-base font-semibold ${
+              isCurrentMonth ? (isToday ? 'text-blue-600' : 'text-gray-800') : 'text-gray-400'
+            }">
+              ${cellDate.getDate()}
+            </span>
+          </div>
+          <div class="space-y-1 overflow-y-auto max-h-20">
+            ${dayEvents.map(ev => {
+              const teacher = teachers.find(t => t.id === ev.teacherId);
+              const teacherName = teacher ? teacher.name : '';
+              const colorMap = {
+                'bg-blue-500': { bg: 'rgba(0, 122, 255, 0.08)', border: '#007aff', text: '#1d1d1f' },
+                'bg-green-500': { bg: 'rgba(52, 199, 89, 0.08)', border: '#34c759', text: '#1d1d1f' },
+                'bg-purple-500': { bg: 'rgba(175, 82, 222, 0.08)', border: '#af52de', text: '#1d1d1f' },
+                'bg-red-500': { bg: 'rgba(255, 59, 48, 0.08)', border: '#ff3b30', text: '#1d1d1f' },
+                'bg-orange-500': { bg: 'rgba(255, 149, 0, 0.08)', border: '#ff9500', text: '#1d1d1f' },
+                'bg-pink-500': { bg: 'rgba(255, 45, 85, 0.08)', border: '#ff2d55', text: '#1d1d1f' }
+              };
+              const style = colorMap[ev.color] || colorMap['bg-blue-500'];
+              return `
+                <div class="event-item rounded cursor-pointer"
+                     style="background: ${style.bg}; border-left: 3px solid ${style.border}; color: ${style.text}; padding: 6px 8px; margin: 4px 0; transition: all 0.2s ease;"
+                     onmouseover="this.style.background='${style.bg.replace('0.08', '0.12')}'; this.style.transform='translateX(2px)';"
+                     onmouseout="this.style.background='${style.bg}'; this.style.transform='translateX(0)';"
+                     onclick="viewCalendarEvent(${ev.id}); event.stopPropagation();">
+                  <div class="font-medium truncate" style="font-size: 11px; font-weight: 600;">${teacherName ? teacherName : ev.title}</div>
+                  <div class="truncate" style="font-size: 10px; color: #6e6e73; margin-top: 2px;">${ev.time || ''} ${teacherName ? ev.title : ''}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        grid.appendChild(cell);
+      }
+    }
+  }
+
+  function renderWeekView(){
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setDate(startOfWeek.getDate()-startOfWeek.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate()+6);
+
+    const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+    document.getElementById('currentMonth').textContent =
+      `${startOfWeek.getFullYear()}年 ${monthNames[startOfWeek.getMonth()]} ${startOfWeek.getDate()}日 - ${endOfWeek.getDate()}日`;
+
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    const dayNames = ['日','一','二','三','四','五','六'];
+
+    for(let i=0;i<7;i++){
+      const cellDate = new Date(startOfWeek);
+      cellDate.setDate(startOfWeek.getDate()+i);
+
+      const dateKey = fmtDate(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+      const todayStr = fmtDate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+      const isToday = (dateKey === todayStr);
+      const dayEvents = calendarEvents.filter(ev => ev.date === dateKey);
+
+      const cell = document.createElement('div');
+      cell.className = `calendar-day p-3 bg-white ${isToday ? 'today-highlight' : ''}`;
+      cell.style.cssText = 'border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 10px; overflow: hidden;';
+
+      cell.innerHTML = `
+        <div class="text-center mb-3 pb-2 border-b border-gray-200">
+          <div class="text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-600'}">${dayNames[i]}</div>
+          <div class="text-2xl font-bold ${isToday ? 'text-blue-600' : 'text-gray-800'}">
+            ${cellDate.getDate()}
+          </div>
+        </div>
+        <div class="space-y-2 overflow-y-auto" style="max-height: 400px;">
+          ${dayEvents.map(ev => {
+            const teacher = teachers.find(t => t.id === ev.teacherId);
+            const teacherName = teacher ? teacher.name : '';
+            const colorMap = {
+              'bg-blue-500': { bg: 'rgba(0, 122, 255, 0.08)', border: '#007aff', text: '#1d1d1f' },
+              'bg-green-500': { bg: 'rgba(52, 199, 89, 0.08)', border: '#34c759', text: '#1d1d1f' },
+              'bg-purple-500': { bg: 'rgba(175, 82, 222, 0.08)', border: '#af52de', text: '#1d1d1f' },
+              'bg-red-500': { bg: 'rgba(255, 59, 48, 0.08)', border: '#ff3b30', text: '#1d1d1f' },
+              'bg-orange-500': { bg: 'rgba(255, 149, 0, 0.08)', border: '#ff9500', text: '#1d1d1f' },
+              'bg-pink-500': { bg: 'rgba(255, 45, 85, 0.08)', border: '#ff2d55', text: '#1d1d1f' }
+            };
+            const style = colorMap[ev.color] || colorMap['bg-blue-500'];
+            return `
+              <div class="event-item rounded-xl cursor-pointer"
+                   style="background: ${style.bg}; border-left: 4px solid ${style.border}; color: ${style.text}; padding: 10px; margin: 6px 0; transition: all 0.2s ease; overflow: hidden;"
+                   onmouseover="this.style.background='${style.bg.replace('0.08', '0.12')}'; this.style.transform='translateX(3px)';"
+                   onmouseout="this.style.background='${style.bg}'; this.style.transform='translateX(0)';"
+                   onclick="viewCalendarEvent(${ev.id}); event.stopPropagation();">
+                <div class="font-semibold truncate" style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">${teacherName ? teacherName : ev.title}</div>
+                <div class="truncate" style="font-size: 12px; color: #6e6e73; margin-top: 4px;">⏰ ${ev.time || ''}</div>
+                <div class="truncate" style="font-size: 12px; color: #86868b; margin-top: 2px;">${teacherName ? ev.title : ''}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      grid.appendChild(cell);
+    }
+  }
+
+  function checkTodayReminders(){
+    const tStr = todayStr();
+    const now = new Date();
+    const upcoming = calendarEvents.filter(ev=>{
+      if(ev.date!==tStr || !ev.time) return false;
+      const dt = new Date(`${tStr}T${ev.time}`);
+      const diff = dt - now;
+      return diff>0 && diff<=30*60*1000;
+    }).sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+
+    const box  = document.getElementById('todayReminders');
+    const list = document.getElementById('remindersList');
+    if(upcoming.length){
+      list.innerHTML = upcoming.map(ev=>{
+        const dt = new Date(`${tStr}T${ev.time}`);
+        const mins = Math.ceil((dt-now)/(60*1000));
+        const teacherName = ev.teacherId ? (teachers.find(t=>t.id===ev.teacherId)?.name || '') : '';
+        return `
+          <div class="reminder-item bg-white bg-opacity-20 rounded-lg p-3 flex items-center justify-between">
+            <div>
+              <div class="font-medium">${ev.title}${teacherName?` · ${teacherName}`:''}</div>
+              <div class="text-sm opacity-90">${ev.time} - ${mins}分鐘後開始${ev.location?` · ${ev.location}`:''}</div>
+            </div>
+            <div class="text-2xl">⚠️</div>
+          </div>`;
+      }).join('');
+      box.classList.remove('hidden');
+    }else{
+      box.classList.add('hidden');
+    }
+  }
+  function startReminderCheck(){ if(reminderInterval) clearInterval(reminderInterval); reminderInterval = setInterval(checkTodayReminders,60000); checkTodayReminders(); }
+  function stopReminderCheck(){ if(reminderInterval) clearInterval(reminderInterval); }
+
+  // 把必要樣式注入（補齊你原本沒關閉的函式）
+  function injectCalendarCSS(){
+    const css = `
+      .calendar-day{
+        min-height:140px;
+        transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 10px;
+      }
+      .calendar-day:hover{
+        transform:translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .week-day{min-height:450px;transition:all .3s ease;}
+      .week-day:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.1);}
+      .event-item{font-size:.8rem;padding:8px 12px;margin:4px 0;border-radius:8px;cursor:pointer;transition:all .3s ease;box-shadow:0 2px 8px rgba(0,0,0,.1);backdrop-filter: blur(10px);}
+      .event-item:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 20px rgba(0,0,0,.15);}
+      .glass-effect{background: rgba(255,255,255,0.95);backdrop-filter: blur(20px);border:1px solid rgba(255,255,255,0.2);}
+      .gradient-bg{background: #f5f5f7;}
+      .btn-primary{background: #007aff; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);}
+      .btn-primary:hover{background: #0051d5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);}
+      .today-highlight{
+        background: rgba(0, 122, 255, 0.06) !important;
+        border: 2px solid #007aff !important;
+        box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.1), 0 4px 12px rgba(0, 122, 255, 0.15) !important;
+      }
+      .calendar-day{
+        min-height: 120px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 10px;
+      }
+      .calendar-day:hover{
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .event-item{
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      .event-item:hover{
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+    `;
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+  injectCalendarCSS();
+
+  // ========== 派課管理功能 ==========
+  let courseAssignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+  let currentCourseTeacherId = null;
+  let currentCourseStartDate = null;
+  let currentCourseEndDate = null;
+
+  // 從後端載入派課數據
+  async function loadCourseAssignmentsFromBackend() {
+    if (!api) {
+      console.log('⚠️ API 未初始化，跳過從後端載入');
+      return;
+    }
+
+    try {
+      console.log('🌐 嘗試從後端 API 載入派課數據...');
+      const data = await api.list('courseAssignments');
+
+      if (Array.isArray(data)) {
+        if (data.length > 0) {
+          console.log('✅ 從後端 API 載入派課數據成功，共', data.length, '筆');
+          courseAssignments = data;
+          localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+
+          // 同步到行事曆
+          syncCourseAssignmentsToCalendar();
+
+          // 如果正在顯示派課視圖，則更新顯示
+          if (currentMode === 'courses') {
+            updateCourseView();
+          }
+        } else {
+          console.log('📝 後端 API 返回空的派課數據');
+          // 不要清空本地數據，保持現有的 courseAssignments
+          if (courseAssignments.length > 0) {
+            console.log('📌 保留本地派課數據，共', courseAssignments.length, '筆');
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ 從後端 API 載入派課數據失敗:', error.message);
+      // 使用本地數據
+      if (courseAssignments.length > 0) {
+        console.log('📌 使用本地派課數據，共', courseAssignments.length, '筆');
+      } else {
+        console.warn('❌ 沒有本地數據可用');
+      }
+    }
+  }
+
+  // 將派課數據同步到行事曆
+  function syncCourseAssignmentsToCalendar() {
+    // 先移除所有由派課產生的行事曆事件
+    calendarEvents = calendarEvents.filter(e => !e.courseId);
+
+    console.log('🔄 開始同步派課到行事曆...');
+    console.log('  - courseAssignments 數量:', courseAssignments.length);
+
+    // 將所有派課轉換為行事曆事件
+    courseAssignments.forEach((course, index) => {
+      const teacher = teachers.find(t => t.id === course.teacherId);
+      const teacherName = teacher ? teacher.name : '未知師資';
+
+      // 標準化日期格式：將 ISO 8601 格式 (2025-11-01T16:00:00.000Z) 轉換為 YYYY-MM-DD
+      let normalizedDate = course.date;
+      if (normalizedDate && normalizedDate.includes('T')) {
+        normalizedDate = normalizedDate.split('T')[0]; // 取 T 之前的部分
+      }
+
+      // 調試：顯示前幾筆資料的日期格式
+      if (index < 3) {
+        console.log(`  - 派課 ${index + 1}: ${course.name}`);
+        console.log(`    原始日期: "${course.date}"`);
+        console.log(`    標準化後: "${normalizedDate}"`);
+        console.log(`    時間: "${course.time}"`);
+      }
+
+      calendarEvents.push({
+        id: course.id,
+        date: normalizedDate,
+        title: `${course.name} - ${teacherName}`,
+        time: course.time,
+        teacherId: course.teacherId,
+        location: course.type,
+        note: `課程類型：${course.type}${course.note ? '\n' + course.note : ''}`,
+        color: getCourseTypeColor(course.type),
+        courseId: course.id // 標記為派課產生的事件
+      });
+    });
+
+    saveCalendarLocal();
+    console.log('✅ 派課數據已同步到行事曆，共', courseAssignments.length, '筆');
+    console.log('  - calendarEvents 總數:', calendarEvents.length, '筆');
+
+    // 如果目前正在行事曆視圖，重新渲染以顯示更新
+    if (currentMode === 'calendar') {
+      renderCalendar();
+      console.log('🔄 行事曆視圖已更新');
+    }
+  }
+
+  // 顯示派課管理視圖
+  function showCourseManagementView() {
+    console.log('📋 顯示派課管理視圖');
+    console.log('  - courseAssignments 總數:', courseAssignments.length);
+
+    document.getElementById('teacherList').classList.add('hidden');
+    document.getElementById('courseManagementView').classList.remove('hidden');
+
+    // 初始化師資選擇
+    const teacherSelect = document.getElementById('courseTeacherSelect');
+    teacherSelect.innerHTML = '<option value="">請選擇師資</option>';
+    teachers.forEach(teacher => {
+      const option = document.createElement('option');
+      option.value = String(teacher.id);
+      option.textContent = teacher.name;
+      teacherSelect.appendChild(option);
+    });
+
+    console.log('  - 師資選單已建立，共', teachers.length, '位師資');
+
+    // 初始化日期
+    initCourseDates();
+
+    console.log('  - 日期已初始化:', currentCourseStartDate, '~', currentCourseEndDate);
+
+    // 更新課程視圖（如果已選擇師資）
+    if (currentCourseTeacherId) {
+      console.log('  - 已選擇師資，更新視圖');
+      updateCourseView();
+    } else {
+      console.log('  - 尚未選擇師資，等待用戶選擇');
+    }
+  }
+
+  // 返回師資列表
+  function backToListFromCourseManagement() {
+    setRoute('list');
+  }
+
+  // 初始化日期
+  function initCourseDates() {
+    const today = new Date();
+    const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    currentCourseStartDate = startDate.toISOString().split('T')[0];
+    currentCourseEndDate = endDate.toISOString().split('T')[0];
+
+    document.getElementById('courseStartDate').value = currentCourseStartDate;
+    document.getElementById('courseEndDate').value = currentCourseEndDate;
+  }
+
+  // 設定日期範圍
+  function setCourseDateRange(range) {
+    const today = new Date();
+    let startDate, endDate;
+
+    switch(range) {
+      case 'thisMonth':
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        break;
+      case 'lastMonth':
+        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+        break;
+      case 'last3Months':
+        startDate = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+        endDate = today;
+        break;
+      case 'last6Months':
+        startDate = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+        endDate = today;
+        break;
+      case 'thisYear':
+        startDate = new Date(today.getFullYear(), 0, 1);
+        endDate = today;
+        break;
+    }
+
+    currentCourseStartDate = startDate.toISOString().split('T')[0];
+    currentCourseEndDate = endDate.toISOString().split('T')[0];
+
+    document.getElementById('courseStartDate').value = currentCourseStartDate;
+    document.getElementById('courseEndDate').value = currentCourseEndDate;
+
+    updateCourseView();
+  }
+
+  // 更新課程視圖
+  function updateCourseView() {
+    const teacherId = document.getElementById('courseTeacherSelect').value;
+    currentCourseTeacherId = teacherId ? Number(teacherId) : null;
+    currentCourseStartDate = document.getElementById('courseStartDate').value;
+    currentCourseEndDate = document.getElementById('courseEndDate').value;
+
+    console.log('🔄 更新課程視圖 - 師資ID:', currentCourseTeacherId, '日期範圍:', currentCourseStartDate, '~', currentCourseEndDate);
+    console.log('📦 當前 courseAssignments 總數:', courseAssignments.length);
+
+    if (!currentCourseTeacherId) {
+      document.getElementById('courseTimeline').innerHTML = '<div class="text-center text-gray-500 py-12">請選擇師資以查看課程</div>';
+      document.getElementById('courseTotalHours').textContent = '0';
+      document.getElementById('courseTotalCount').textContent = '0';
+      document.getElementById('courseMonthlyHours').textContent = '0';
+      document.getElementById('courseTodayCount').textContent = '0';
+      document.getElementById('courseTypeCards').innerHTML = '';
+      document.getElementById('teacherWeekSchedule').classList.add('hidden');
+      return;
+    }
+
+    updateCourseStats();
+    renderCourseTypeCards();
+    renderCourseTimeline();
+    renderTeacherWeekSchedule();
+  }
+
+  // 計算時數
+  function calculateCourseHours(timeRange) {
+    const [start, end] = timeRange.split('-');
+    const startTime = new Date(`2024-01-01 ${start}`);
+    const endTime = new Date(`2024-01-01 ${end}`);
+    return (endTime - startTime) / (1000 * 60 * 60);
+  }
+
+  // 過濾課程
+  function getFilteredCourses(teacherId) {
+    if (!teacherId) {
+      console.log('⚠️ getFilteredCourses - 沒有選擇師資');
+      return [];
+    }
+
+    console.log('🔎 開始過濾課程');
+    console.log('  - 師資ID:', teacherId);
+    console.log('  - 日期範圍:', currentCourseStartDate, '~', currentCourseEndDate);
+    console.log('  - courseAssignments 總數:', courseAssignments.length);
+
+    // 打印前 3 筆數據供檢查
+    if (courseAssignments.length > 0) {
+      console.log('  - 前 3 筆數據:', courseAssignments.slice(0, 3));
+    }
+
+    const filtered = courseAssignments.filter(course => {
+      const matchTeacher = Number(course.teacherId) === Number(teacherId);
+
+      // ✨ 修復：如果沒有設定日期範圍，顯示所有日期
+      let inDateRange = true;
+      if (currentCourseStartDate && currentCourseEndDate) {
+        inDateRange = (course.date >= currentCourseStartDate && course.date <= currentCourseEndDate);
+      }
+
+      // 詳細記錄不匹配的原因
+      if (!matchTeacher) {
+        console.log(`  ✗ 課程 ${course.name} - 師資不匹配 (${course.teacherId} !== ${teacherId})`);
+      } else if (!inDateRange) {
+        console.log(`  ✗ 課程 ${course.name} (${course.date}) - 日期超出範圍 [${currentCourseStartDate} ~ ${currentCourseEndDate}]`);
+      } else {
+        console.log(`  ✓ 課程 ${course.name} (${course.date}) - 匹配成功`);
+      }
+
+      return matchTeacher && inDateRange;
+    });
+
+    console.log('  ✅ 過濾結果:', filtered.length, '筆課程');
+    if (filtered.length > 0) {
+      console.log('  - 過濾後的課程:', filtered);
+    }
+
+    return filtered;
+  }
+
+  // 更新統計
+  function updateCourseStats() {
+    const filteredCourses = getFilteredCourses(currentCourseTeacherId);
+
+    console.log('🔍 更新統計 - 師資ID:', currentCourseTeacherId, '過濾後課程數:', filteredCourses.length);
+
+    // 總時數
+    const totalHours = filteredCourses.reduce((sum, course) => {
+      return sum + calculateCourseHours(course.time);
+    }, 0);
+
+    // 課程數量
+    const totalCount = filteredCourses.length;
+
+    // 本月時數
+    const today = new Date();
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+
+    const monthCourses = courseAssignments.filter(course => {
+      return Number(course.teacherId) === Number(currentCourseTeacherId) &&
+             course.date >= monthStart &&
+             course.date <= monthEnd;
+    });
+
+    const monthlyHours = monthCourses.reduce((sum, course) => {
+      return sum + calculateCourseHours(course.time);
+    }, 0);
+
+    // 今日課程
+    const todayStr = today.toISOString().split('T')[0];
+    const todayCourses = courseAssignments.filter(course => {
+      return Number(course.teacherId) === Number(currentCourseTeacherId) && course.date === todayStr;
+    }).length;
+
+    console.log('📊 統計結果 - 總時數:', totalHours, '總課程數:', totalCount, '本月時數:', monthlyHours, '今日課程:', todayCourses);
+
+    document.getElementById('courseTotalHours').textContent = Math.round(totalHours);
+    document.getElementById('courseTotalCount').textContent = totalCount;
+    document.getElementById('courseMonthlyHours').textContent = monthlyHours.toFixed(1);
+    document.getElementById('courseTodayCount').textContent = todayCourses;
+  }
+
+  // 渲染課程類型卡片（取代Canvas）
+  function renderCourseTypeCards() {
+    const filteredCourses = getFilteredCourses(currentCourseTeacherId);
+    const typeCount = {};
+
+    console.log('🎨 渲染課程類型卡片 - 課程數:', filteredCourses.length);
+
+    filteredCourses.forEach(course => {
+      typeCount[course.type] = (typeCount[course.type] || 0) + 1;
+    });
+
+    console.log('📈 課程類型統計:', typeCount);
+
+    const colors = {
+      '正課': { from: 'from-blue-500', to: 'to-blue-600' },
+      '補課': { from: 'from-yellow-500', to: 'to-yellow-600' },
+      '實驗課': { from: 'from-purple-500', to: 'to-purple-600' },
+      '實作課': { from: 'from-green-500', to: 'to-green-600' },
+      '專題': { from: 'from-pink-500', to: 'to-pink-600' }
+    };
+
+    const total = Object.values(typeCount).reduce((a, b) => a + b, 0);
+    const container = document.getElementById('courseTypeCards');
+
+    if (!container) {
+      console.error('❌ 找不到 courseTypeCards 容器');
+      return;
+    }
+
+    container.innerHTML = '';
+
+    Object.entries(typeCount).forEach(([type, count]) => {
+      const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+      const color = colors[type] || { from: 'from-gray-500', to: 'to-gray-600' };
+
+      const card = document.createElement('div');
+      card.className = `bg-gradient-to-br ${color.from} ${color.to} rounded-xl p-4 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer`;
+      card.innerHTML = `
+        <h4 class="text-sm font-semibold mb-2 opacity-90">${type}</h4>
+        <p class="text-3xl font-bold mb-1">${count}</p>
+        <p class="text-xs opacity-80">門課程 · ${percentage}%</p>
+      `;
+      container.appendChild(card);
+    });
+
+    if (total === 0) {
+      container.innerHTML = '<div class="col-span-full text-center text-gray-500 py-8">暫無課程資料</div>';
+    }
+  }
+
+  // 渲染課程時間軸
+  function renderCourseTimeline() {
+    const filteredCourses = getFilteredCourses(currentCourseTeacherId);
+    const sortedCourses = [...filteredCourses].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const timeline = document.getElementById('courseTimeline');
+    timeline.innerHTML = '';
+
+    if (sortedCourses.length === 0) {
+      timeline.innerHTML = '<div class="text-center text-gray-500 py-12">選定時間範圍內無課程資料</div>';
+      return;
+    }
+
+    sortedCourses.forEach((course, index) => {
+      const hours = calculateCourseHours(course.time);
+      const courseDate = new Date(course.date);
+      const today = new Date();
+      const isPast = courseDate < today;
+      const isToday = courseDate.toDateString() === today.toDateString();
+
+      const statusColors = {
+        'completed': { bg: 'bg-green-500', text: '已完成' },
+        'ongoing': { bg: 'bg-orange-500', text: '進行中' },
+        'upcoming': { bg: 'bg-blue-500', text: '未來' }
+      };
+
+      let status = 'upcoming';
+      if (isPast) status = 'completed';
+      if (isToday) status = 'ongoing';
+
+      const statusInfo = statusColors[status];
+
+      const item = document.createElement('div');
+      item.className = 'border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all hover:-translate-y-1';
+      item.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2">
+              <h4 class="text-lg font-semibold text-gray-800">${course.name}</h4>
+              <span class="px-3 py-1 ${statusInfo.bg} text-white text-xs font-medium rounded-full">${statusInfo.text}</span>
+              <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">${course.type}</span>
+            </div>
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+              <span>📅 ${new Date(course.date).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</span>
+              <span>🕐 ${course.time}</span>
+              <span>⏱️ ${hours.toFixed(1)}小時</span>
+            </div>
+          </div>
+          <button onclick="deleteCourseAssignment(${course.id})" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+      `;
+      timeline.appendChild(item);
+    });
+  }
+
+  // 開啟新增課程 Modal
+  function openAddCourseModal() {
+    if (!currentCourseTeacherId) {
+      alert('請先選擇師資');
+      return;
+    }
+    document.getElementById('addCourseModal').classList.remove('hidden');
+    document.getElementById('addCourseModal').style.display = 'flex';
+    document.getElementById('addCourseDate').value = new Date().toISOString().split('T')[0];
+  }
+
+  // 關閉新增課程 Modal
+  function closeAddCourseModal() {
+    document.getElementById('addCourseModal').classList.add('hidden');
+    document.getElementById('addCourseModal').style.display = 'none';
+    document.getElementById('addCourseForm').reset();
+  }
+
+  // 提交新增課程
+  function addCourseSubmit(event) {
+    event.preventDefault();
+
+    const courseName = document.getElementById('addCourseName').value;
+    const courseDate = document.getElementById('addCourseDate').value;
+    const startTime = document.getElementById('addCourseStartTime').value;
+    const endTime = document.getElementById('addCourseEndTime').value;
+    const courseType = document.getElementById('addCourseType').value;
+    const timeRange = `${startTime}-${endTime}`;
+
+    // 檢查是否有衝堂
+    const conflicts = checkTeacherConflict(currentCourseTeacherId, courseDate, startTime, endTime);
+
+    if (conflicts.length > 0) {
+      const conflictMessages = conflicts.map(c =>
+        `- ${c.name} (${c.time}) [${c.type}] 來源：${c.source}`
+      ).join('\n');
+
+      const confirmMessage = `⚠️ 衝堂警告！\n\n該老師在此時段已有以下課程：\n${conflictMessages}\n\n是否仍要繼續派課？`;
+
+      if (!confirm(confirmMessage)) {
+        return; // 取消派課
+      }
+    }
+
+    const newCourse = {
+      id: Date.now(),
+      teacherId: currentCourseTeacherId,
+      name: courseName,
+      date: courseDate,
+      time: timeRange,
+      type: courseType
+    };
+
+    courseAssignments.push(newCourse);
+    saveCourseLocal();
+
+    // 同步到行事曆
+    const teacher = teachers.find(t => t.id === currentCourseTeacherId);
+    const teacherName = teacher ? teacher.name : '未知師資';
+
+    calendarEvents.push({
+      id: newCourse.id, // 使用相同 ID 以便同步刪除
+      date: courseDate,
+      title: `${courseName} - ${teacherName}`,
+      time: timeRange,
+      teacherId: currentCourseTeacherId,
+      location: courseType,
+      note: `課程類型：${courseType}`,
+      color: getCourseTypeColor(courseType),
+      courseId: newCourse.id // 標記為派課產生的事件
+    });
+    saveCalendarLocal();
+
+    updateCourseView();
+    closeAddCourseModal();
+
+    // 顯示成功訊息
+    // alert('✅ 課程新增成功！已同步到行事曆');
+  }
+
+  // 刪除課程
+  function deleteCourseAssignment(courseId) {
+    if (!confirm('確定要刪除此課程嗎？')) return;
+
+    courseAssignments = courseAssignments.filter(c => c.id !== courseId);
+    saveCourseLocal();
+
+    // 同步刪除行事曆中的對應事件
+    calendarEvents = calendarEvents.filter(e => e.courseId !== courseId);
+    saveCalendarLocal();
+
+    updateCourseView();
+
+    alert('✅ 課程已刪除，已同步更新行事曆');
+  }
+
+  // 儲存到 localStorage 和後端
+  function saveCourseLocal() {
+    try {
+      localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+      // 同步到後端
+      saveCourseToBackend();
+    } catch(err) {
+      console.warn('localStorage 超額，課程數據保存失敗：', err);
+      alert('存儲空間已滿，課程數據可能無法保存，請刪除部分數據');
+    }
+  }
+
+  // 儲存派課數據到後端
+  async function saveCourseToBackend() {
+    if (!api || !syncManager) return;
+    try {
+      await syncManager.saveTable('courseAssignments');
+      console.log('✅ 派課數據已同步到後端');
+    } catch (error) {
+      console.warn('⚠️ 派課數據後端同步失敗:', error);
+    }
+  }
+
+  // 點擊 Modal 外部關閉
+  document.getElementById('addCourseModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeAddCourseModal();
+    }
+  });
+
+  // 點擊 addEventModal 外部關閉
+  document.getElementById('addEventModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeAddEventModal();
+    }
+  });
+
+  // 點擊 maritimeCourseModal 外部關閉
+  document.getElementById('maritimeCourseModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeMaritimeCourseModal();
+    }
+  });
+
+  // ========== 衝堂檢查與行事曆整合功能 ==========
+
+  // 檢查老師在特定時間是否有衝堂
+  function checkTeacherConflict(teacherId, date, startTime, endTime) {
+    const conflicts = [];
+
+    // 將時間轉換為分鐘數以便比較
+    const timeToMinutes = (timeStr) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const newStart = timeToMinutes(startTime);
+    const newEnd = timeToMinutes(endTime);
+
+    // 檢查派課管理中的課程
+    courseAssignments.forEach(course => {
+      if (course.teacherId === teacherId && course.date === date) {
+        const [courseStart, courseEnd] = course.time.split('-');
+        const existingStart = timeToMinutes(courseStart);
+        const existingEnd = timeToMinutes(courseEnd);
+
+        // 檢查時間是否重疊
+        if (!(newEnd <= existingStart || newStart >= existingEnd)) {
+          conflicts.push({
+            name: course.name,
+            time: course.time,
+            type: course.type,
+            source: '派課管理'
+          });
+        }
+      }
+    });
+
+    // 檢查行事曆中的事件
+    calendarEvents.forEach(event => {
+      if (event.teacherId === teacherId && event.date === date && event.time) {
+        const timeParts = event.time.split('-');
+        if (timeParts.length === 2) {
+          const [eventStart, eventEnd] = timeParts;
+          const existingStart = timeToMinutes(eventStart);
+          const existingEnd = timeToMinutes(eventEnd);
+
+          // 檢查時間是否重疊（排除派課產生的事件，避免重複檢查）
+          if (!event.courseId && !(newEnd <= existingStart || newStart >= existingEnd)) {
+            conflicts.push({
+              name: event.title,
+              time: event.time,
+              type: event.location || '行事曆事件',
+              source: '行事曆'
+            });
+          }
+        }
+      }
+    });
+
+    return conflicts;
+  }
+
+  // 診斷工具：檢查派課管理數據狀態
+  function diagnoseCourseManagement() {
+    console.log('🔧 === 派課管理診斷報告 ===');
+    console.log('');
+    console.log('📊 基本狀態：');
+    console.log('  - courseAssignments 總數:', courseAssignments.length);
+    console.log('  - 當前選擇師資ID:', currentCourseTeacherId);
+    console.log('  - 日期範圍:', currentCourseStartDate, '~', currentCourseEndDate);
+    console.log('  - 師資總數:', teachers.length);
+    console.log('');
+
+    if (courseAssignments.length === 0) {
+      console.warn('⚠️ courseAssignments 是空的！');
+      console.log('嘗試從 localStorage 讀取...');
+      const localData = localStorage.getItem('courseAssignments');
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        console.log('localStorage 中有', parsed.length, '筆數據');
+        console.log('數據樣本:', parsed.slice(0, 2));
+      } else {
+        console.error('❌ localStorage 也沒有數據');
+      }
+    } else {
+      console.log('✅ courseAssignments 有數據');
+      console.log('前 3 筆數據:', courseAssignments.slice(0, 3));
+      console.log('');
+
+      // 統計師資分佈
+      const teacherCounts = {};
+      courseAssignments.forEach(c => {
+        teacherCounts[c.teacherId] = (teacherCounts[c.teacherId] || 0) + 1;
+      });
+      console.log('📈 各師資課程數量:', teacherCounts);
+      console.log('');
+
+      // 統計日期分佈
+      const dates = courseAssignments.map(c => c.date).sort();
+      console.log('📅 日期範圍:', dates[0], '~', dates[dates.length - 1]);
+      console.log('');
+    }
+
+    if (currentCourseTeacherId) {
+      console.log('🔍 當前過濾結果：');
+      const filtered = getFilteredCourses(currentCourseTeacherId);
+      console.log('  - 過濾後課程數:', filtered.length);
+    } else {
+      console.log('⚠️ 尚未選擇師資');
+    }
+
+    console.log('');
+    console.log('💡 建議：');
+    if (courseAssignments.length === 0) {
+      console.log('  1. 檢查後端 API 是否正常');
+      console.log('  2. 檢查 Google Sheets 是否有數據');
+      console.log('  3. 嘗試手動新增一筆派課測試');
+    }
+    console.log('  - 手動重新載入數據: await loadCourseAssignmentsFromBackend()');
+    console.log('  - 手動更新視圖: updateCourseView()');
+    console.log('');
+  }
+
+  // 將診斷函數暴露到全局
+  window.diagnoseCourseManagement = diagnoseCourseManagement;
+
+  // 獲取課程類型對應的顏色
+  function getCourseTypeColor(type) {
+    const colorMap = {
+      '正課': '#3b82f6',    // 藍色
+      '補課': '#f59e0b',    // 黃色
+      '實驗課': '#8b5cf6',  // 紫色
+      '實作課': '#10b981',  // 綠色
+      '專題': '#ec4899'     // 粉色
+    };
+    return colorMap[type] || '#6b7280'; // 預設灰色
+  }
+
+  // 獲取老師在指定日期範圍內的課程（用於顯示可用時間）
+  function getTeacherSchedule(teacherId, startDate, endDate) {
+    const schedule = [];
+
+    // 從派課管理獲取
+    courseAssignments.forEach(course => {
+      if (course.teacherId === teacherId &&
+          course.date >= startDate &&
+          course.date <= endDate) {
+        schedule.push({
+          date: course.date,
+          time: course.time,
+          title: course.name,
+          type: course.type,
+          source: '派課'
+        });
+      }
+    });
+
+    // 從行事曆獲取
+    calendarEvents.forEach(event => {
+      if (event.teacherId === teacherId &&
+          event.date >= startDate &&
+          event.date <= endDate &&
+          !event.courseId) { // 排除派課產生的事件
+        schedule.push({
+          date: event.date,
+          time: event.time || '全天',
+          title: event.title,
+          type: event.location || '行事曆',
+          source: '行事曆'
+        });
+      }
+    });
+
+    return schedule.sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+  }
+
+  // 渲染老師本週課表
+  function renderTeacherWeekSchedule() {
+    if (!currentCourseTeacherId) {
+      document.getElementById('teacherWeekSchedule').classList.add('hidden');
+      return;
+    }
+
+    // 獲取本週日期範圍
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const startDate = monday.toISOString().split('T')[0];
+    const endDate = sunday.toISOString().split('T')[0];
+
+    // 獲取課表
+    const schedule = getTeacherSchedule(currentCourseTeacherId, startDate, endDate);
+
+    const container = document.getElementById('teacherWeekScheduleContent');
+    const scheduleDiv = document.getElementById('teacherWeekSchedule');
+
+    if (schedule.length === 0) {
+      scheduleDiv.classList.add('hidden');
+      return;
+    }
+
+    scheduleDiv.classList.remove('hidden');
+
+    // 按日期分組
+    const groupedByDate = {};
+    schedule.forEach(item => {
+      if (!groupedByDate[item.date]) {
+        groupedByDate[item.date] = [];
+      }
+      groupedByDate[item.date].push(item);
+    });
+
+    // 生成 HTML
+    const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+    let html = '<div class="grid grid-cols-1 md:grid-cols-7 gap-3">';
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayEvents = groupedByDate[dateStr] || [];
+      const isToday = dateStr === today.toISOString().split('T')[0];
+
+      html += `
+        <div class="border rounded-lg p-3 ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'}">
+          <div class="font-semibold text-sm mb-2 ${isToday ? 'text-blue-700' : 'text-gray-700'}">
+            週${weekDays[date.getDay()]} ${date.getMonth() + 1}/${date.getDate()}
+            ${isToday ? '<span class="text-xs ml-1">(今天)</span>' : ''}
+          </div>
+          <div class="space-y-2">
+      `;
+
+      if (dayEvents.length === 0) {
+        html += '<div class="text-xs text-green-600 bg-green-50 rounded px-2 py-1">✓ 全天可用</div>';
+      } else {
+        dayEvents.forEach(event => {
+          const bgColor = event.source === '派課' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700';
+          html += `
+            <div class="text-xs ${bgColor} rounded px-2 py-1">
+              <div class="font-semibold">${event.time}</div>
+              <div class="truncate" title="${event.title}">${event.title}</div>
+              <div class="text-xs opacity-75">${event.type}</div>
+            </div>
+          `;
+        });
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  // ========== 派課管理功能結束 ==========
+
+  // ========== URL 路由系統 ==========
+  // 讓瀏覽器前進/後退按鈕可以使用，每個頁面都有獨立網址
+
+  const routes = {
+    '': 'teacherList',              // 主頁
+    'list': 'teacherList',          // 師資列表
+    'statistics': 'executiveView',  // 統計分析
+    'calendar': 'calendarView',     // 行事曆
+    'courses': 'courseManagementView', // 派課管理
+    'maritime': 'maritimeCourseView', // 海事課程系統
+    'teacher': 'teacherDetail',     // 師資詳細（編輯）
+    'teacher-view': 'teacherDetailView' // 師資詳細（呈現）
+  };
+
+  // 獲取當前路由
+  function getCurrentRoute() {
+    const hash = window.location.hash.slice(1); // 移除 #
+    return hash || '';
+  }
+
+  // 設定路由（更新 URL）
+  function setRoute(route) {
+    window.location.hash = route;
+  }
+
+  // 根據路由顯示對應視圖
+  function handleRoute() {
+    const route = getCurrentRoute();
+    const viewId = routes[route] || routes[''];
+
+    // 隱藏所有視圖
+    document.getElementById('teacherList')?.classList.add('hidden');
+    document.getElementById('executiveView')?.classList.add('hidden');
+    document.getElementById('calendarView')?.classList.add('hidden');
+    document.getElementById('courseManagementView')?.classList.add('hidden');
+    document.getElementById('maritimeCourseView')?.classList.add('hidden');
+    document.getElementById('teacherDetail')?.classList.add('hidden');
+    document.getElementById('teacherDetailView')?.classList.add('hidden');
+
+    // 顯示當前視圖
+    const currentView = document.getElementById(viewId);
+    if (currentView) {
+      currentView.classList.remove('hidden');
+
+      // 特殊處理：某些視圖需要重新渲染
+      if (route === 'statistics') {
+        renderStatisticsView();
+      } else if (route === 'calendar') {
+        renderCalendar();
+        startReminderCheck();
+      } else if (route === 'courses') {
+        // 初始化派課管理視圖
+        const teacherSelect = document.getElementById('courseTeacherSelect');
+        if (teacherSelect && teacherSelect.children.length <= 1) {
+          teacherSelect.innerHTML = '<option value="">請選擇師資</option>';
+          teachers.forEach(teacher => {
+            const option = document.createElement('option');
+            option.value = teacher.id;
+            option.textContent = teacher.name;
+            teacherSelect.appendChild(option);
+          });
+          initCourseDates();
+        }
+      } else if (route === 'maritime') {
+        // 初始化海事課程系統
+        if (typeof initMaritimeCourseSystem === 'function') {
+          initMaritimeCourseSystem();
+        }
+      } else if (route === 'list' || route === '') {
+        // 返回列表時重新渲染並確保模式狀態正確同步
+        if (typeof switchMode === 'function' && typeof currentMode !== 'undefined') {
+          switchMode(currentMode);
+        } else if (typeof renderTeacherGrid === 'function') {
+          renderTeacherGrid();
+        }
+      }
+      // teacher 和 teacher-view 路由不需要特殊處理，內容已由對應函數填充
+    }
+  }
+
+  // 監聽 URL 變化（瀏覽器前進/後退）
+  window.addEventListener('hashchange', handleRoute);
+
+  // 頁面載入時處理路由
+  window.addEventListener('load', handleRoute);
+
+  // 更新所有視圖切換函數，使用路由
+  window.showStatisticsView = function() {
+    setRoute('statistics');
+  };
+
+  window.showCalendarView = function() {
+    setRoute('calendar');
+  };
+
+  window.showCourseManagementView = function() {
+    setRoute('courses');
+  };
+
+  window.backToList = function() {
+    // 停止提醒檢查（如果從行事曆返回）
+    if (typeof stopReminderCheck === 'function') stopReminderCheck();
+    // 隱藏所有詳細視圖
+    document.getElementById('teacherDetail')?.classList.add('hidden');
+    document.getElementById('teacherDetailView')?.classList.add('hidden');
+    // 顯示師資列表
+    document.getElementById('teacherList')?.classList.remove('hidden');
+    // 重新渲染以確保模式狀態正確
+    if (typeof window.switchMode === 'function' && typeof window.currentMode !== 'undefined') {
+      window.switchMode(window.currentMode);
+    }
+    // 更新路由
+    setRoute('list');
+  };
+
+  window.backToListFromExecutive = function() {
+    setRoute('list');
+  };
+
+  window.backToListFromCalendar = function() {
+    if (typeof stopReminderCheck === 'function') stopReminderCheck();
+    setRoute('list');
+  };
+
+  window.backToListFromCourseManagement = function() {
+    setRoute('list');
+  };
+
+  window.showMaritimeCourseView = function() {
+    setRoute('maritime');
+  };
+
+  window.backToListFromMaritimeCourse = function() {
+    setRoute('list');
+  };
+
+  // ========== URL 路由系統結束 ==========
+
+  // ========== 海事課程系統 JavaScript ==========
+  </script>
+  <script>
+  // 課程資料儲存
+  let maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses')) || [];
+  let editingMaritimeCourseId = null;
+
+  // 分類對應表
+  const maritimeCategoryNames = {
+    '01': '01船舶操縱與航行實務訓練',
+    '02': '02領導統御與檢查應對管理',
+    '03': '03事故案例分析與應變處置訓練',
+    '04': '04船舶設備操作與技術知能訓練',
+    '05': '05國際法規與環境合規知識',
+    '06': '06船舶貨物裝卸作業實務',
+    '07': '07船員經驗交流與職能回饋',
+    '08': '08職級轉換與壓力調適',
+    '09': '09其他'
+  };
+
+  // 初始化示例資料
+  if (maritimeCourses.length === 0) {
+    maritimeCourses = [
+      {
+        id: 1,
+        name: '船舶導航系統操作',
+        category: '01',
+        method: '實體課程',
+        description: '學習現代船舶導航系統的操作，包括GPS、雷達、電子海圖等設備的使用方法和注意事項。',
+        keywords: ['GPS', '雷達', '電子海圖', '導航', '定位', '航行安全']
+      },
+      {
+        id: 2,
+        name: '船員領導力培訓',
+        category: '02',
+        method: '線上課程',
+        description: '提升船員的領導能力和團隊管理技巧，學習有效的溝通方式和衝突解決方法。',
+        keywords: ['領導力', '團隊管理', '溝通技巧', '衝突解決', '人員管理']
+      },
+      {
+        id: 3,
+        name: '海上緊急應變處理',
+        category: '03',
+        method: '混合課程',
+        description: '學習各種海上緊急情況的應變處理程序，包括火災、碰撞、人員落水等事故的處理。',
+        keywords: ['緊急應變', '火災處理', '碰撞事故', '救生', '安全程序', '事故處理']
+      }
+    ];
+    saveMaritimeCourses();
+  }
+
+  // 儲存課程資料到 localStorage 和後端
+  function saveMaritimeCourses() {
+    localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+    // 同步到後端
+    saveMaritimeCoursesToBackend();
+  }
+
+  // 儲存海事課程數據到後端
+  async function saveMaritimeCoursesToBackend() {
+    if (!api || !syncManager) return;
+    try {
+      await syncManager.saveTable('maritimeCourses');
+      console.log('✅ 海事課程數據已同步到後端');
+    } catch (error) {
+      console.warn('⚠️ 海事課程數據後端同步失敗:', error);
+    }
+  }
+
+  // 從後端載入海事課程數據
+  async function loadMaritimeCoursesFromBackend() {
+    if (!api) {
+      console.log('⚠️ API 未初始化，跳過從後端載入海事課程');
+      return;
+    }
+
+    try {
+      console.log('🌐 嘗試從後端 API 載入海事課程數據...');
+      const data = await api.list('maritimeCourses');
+
+      if (Array.isArray(data)) {
+        if (data.length > 0) {
+          console.log('✅ 從後端 API 載入海事課程數據成功，共', data.length, '筆');
+          maritimeCourses = data;
+          localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+
+          // 更新顯示（如果正在海事課程頁面）
+          if (window.location.hash === '#maritime') {
+            displayMaritimeCourses();
+            displayManageMaritimeCourses();
+          }
+        } else {
+          console.log('📝 後端 API 返回空的海事課程數據');
+          // 不要清空本地數據
+          if (maritimeCourses.length > 0) {
+            console.log('📌 保留本地海事課程數據，共', maritimeCourses.length, '筆');
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ 從後端 API 載入海事課程數據失敗:', error.message);
+      if (maritimeCourses.length > 0) {
+        console.log('📌 使用本地海事課程數據，共', maritimeCourses.length, '筆');
+      } else {
+        console.warn('❌ 沒有本地海事課程數據可用');
+      }
+    }
+  }
+
+  // 頁面切換功能
+  function switchMaritimeTab(tab) {
+    // 隱藏所有頁面
+    document.getElementById('maritimeViewPage').classList.add('hidden');
+    document.getElementById('maritimeEditPage').classList.add('hidden');
+    document.getElementById('maritimeStatsPage').classList.add('hidden');
+
+    // 重置所有按鈕樣式
+    document.querySelectorAll('#maritimeCourseView nav button').forEach(btn => {
+      btn.className = 'px-6 py-2 rounded-md text-blue-600 hover:bg-blue-50 font-medium transition-colors';
+    });
+
+    // 顯示選中的頁面和更新按鈕樣式
+    if (tab === 'view') {
+      document.getElementById('maritimeViewPage').classList.remove('hidden');
+      document.getElementById('maritimeViewTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
+      displayMaritimeCourses();
+    } else if (tab === 'edit') {
+      document.getElementById('maritimeEditPage').classList.remove('hidden');
+      document.getElementById('maritimeEditTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
+      displayManageMaritimeCourses();
+    } else if (tab === 'stats') {
+      document.getElementById('maritimeStatsPage').classList.remove('hidden');
+      document.getElementById('maritimeStatsTab').className = 'px-6 py-2 rounded-md bg-blue-600 text-white font-medium transition-colors';
+      displayMaritimeStats();
+    }
+  }
+
+  // 顯示課程列表
+  function displayMaritimeCourses() {
+    const searchTerm = document.getElementById('maritimeSearchInput').value.toLowerCase();
+    const categoryFilter = document.getElementById('maritimeCategoryFilter').value;
+    const resultsContainer = document.getElementById('maritimeCourseResults');
+
+    let filteredCourses = maritimeCourses.filter(course => {
+      const matchesSearch = !searchTerm ||
+        course.name.toLowerCase().includes(searchTerm) ||
+        course.description.toLowerCase().includes(searchTerm) ||
+        course.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm));
+
+      const matchesCategory = !categoryFilter || course.category === categoryFilter;
+
+      return matchesSearch && matchesCategory;
+    });
+
+    resultsContainer.innerHTML = '';
+
+    if (filteredCourses.length === 0) {
+      resultsContainer.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">找不到符合條件的課程</div>';
+      return;
+    }
+
+    filteredCourses.forEach(course => {
+      const courseCard = document.createElement('div');
+      courseCard.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow fade-in cursor-pointer';
+
+      // 點擊字卡進入編輯（使用彈跳視窗）
+      courseCard.onclick = function(e) {
+        editMaritimeCourse(course.id);
+      };
+
+      const highlightedName = highlightMaritimeText(course.name, searchTerm);
+      const highlightedDescription = highlightMaritimeText(course.description, searchTerm);
+      const highlightedKeywords = course.keywords.map(keyword => highlightMaritimeText(keyword, searchTerm));
+
+      courseCard.innerHTML = `
+        <div class="mb-3">
+          <div class="flex flex-wrap gap-2 mb-2">
+            <span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+              ${maritimeCategoryNames[course.category]}
+            </span>
+            <span class="inline-block text-xs px-2 py-1 rounded-full ${getMaritimeMethodTagClass(course.method)}">
+              ${course.method || '未設定'}
+            </span>
+          </div>
+          <h3 class="text-lg font-bold text-gray-800">${highlightedName}</h3>
+        </div>
+        <p class="text-gray-600 mb-4">${highlightedDescription}</p>
+        <div class="flex flex-wrap gap-1">
+          ${highlightedKeywords.map(keyword =>
+            `<span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">${keyword}</span>`
+          ).join('')}
+        </div>
+      `;
+
+      resultsContainer.appendChild(courseCard);
+    });
+  }
+
+  // 高亮顯示搜尋關鍵字
+  function highlightMaritimeText(text, searchTerm) {
+    if (!searchTerm) return text;
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
+  }
+
+  // 取得授課方式標籤樣式
+  function getMaritimeMethodTagClass(method) {
+    switch(method) {
+      case '實體課程':
+        return 'bg-blue-100 text-blue-800';
+      case '線上課程':
+        return 'bg-green-100 text-green-800';
+      case '混合課程':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  // 顯示管理課程列表
+  function displayManageMaritimeCourses() {
+    const searchTerm = document.getElementById('maritimeManageSearchInput').value.toLowerCase();
+    const container = document.getElementById('maritimeManageCourseList');
+
+    let filteredCourses = maritimeCourses.filter(course =>
+      course.name.toLowerCase().includes(searchTerm) ||
+      course.description.toLowerCase().includes(searchTerm) ||
+      course.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm))
+    );
+
+    container.innerHTML = '';
+
+    if (filteredCourses.length === 0) {
+      container.innerHTML = '<div class="text-center py-4 text-gray-500">沒有找到課程</div>';
+      return;
+    }
+
+    filteredCourses.forEach(course => {
+      const courseItem = document.createElement('div');
+      courseItem.className = 'border border-gray-200 rounded-lg p-4 flex justify-between items-center';
+
+      courseItem.innerHTML = `
+        <div class="flex-1">
+          <h4 class="font-semibold text-gray-800">${course.name}</h4>
+          <p class="text-sm text-gray-600">${maritimeCategoryNames[course.category]}</p>
+          <p class="text-xs text-gray-500 mt-1">關鍵字: ${course.keywords.join(', ')}</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="editMaritimeCourse(${course.id})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600 transition-colors">
+            編輯
+          </button>
+          <button onclick="deleteMaritimeCourse(${course.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors">
+            刪除
+          </button>
+        </div>
+      `;
+
+      container.appendChild(courseItem);
+    });
+  }
+
+  // 編輯課程（使用彈跳視窗）
+  function editMaritimeCourse(courseId) {
+    const course = maritimeCourses.find(c => c.id === courseId);
+    if (!course) return;
+
+    editingMaritimeCourseId = courseId;
+    document.getElementById('maritimeModalTitle').textContent = '編輯課程';
+    document.getElementById('maritimeCourseNameModal').value = course.name;
+    document.getElementById('maritimeCourseCategoryModal').value = course.category;
+    document.getElementById('maritimeCourseMethodModal').value = course.method || '';
+    document.getElementById('maritimeCourseDescriptionModal').value = course.description;
+    document.getElementById('maritimeCourseKeywordsModal').value = course.keywords.join(', ');
+
+    // 顯示刪除按鈕（僅編輯時）
+    document.getElementById('maritimeDeleteButtonContainer').style.display = 'block';
+
+    // 打開彈跳視窗
+    document.getElementById('maritimeCourseModal').classList.remove('hidden');
+  }
+
+  // 關閉彈跳視窗
+  function closeMaritimeCourseModal() {
+    document.getElementById('maritimeCourseModal').classList.add('hidden');
+    editingMaritimeCourseId = null;
+    document.getElementById('maritimeCourseModalForm').reset();
+    document.getElementById('maritimeModalTitle').textContent = '新增課程';
+    document.getElementById('maritimeDeleteButtonContainer').style.display = 'none';
+  }
+
+  // 從彈跳視窗刪除課程
+  function deleteMaritimeCourseFromModal() {
+    if (!editingMaritimeCourseId) return;
+
+    if (confirm('確定要刪除這個課程嗎？此操作無法復原。')) {
+      maritimeCourses = maritimeCourses.filter(c => c.id !== editingMaritimeCourseId);
+      saveMaritimeCourses();
+      displayMaritimeCourses();
+      displayManageMaritimeCourses();
+      closeMaritimeCourseModal();
+      showMaritimeMessage('課程已刪除', 'success');
+    }
+  }
+
+  // 從彈跳視窗儲存課程
+  function saveMaritimeCourseFromModal(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('maritimeCourseNameModal').value.trim();
+    const category = document.getElementById('maritimeCourseCategoryModal').value;
+    const method = document.getElementById('maritimeCourseMethodModal').value;
+    const description = document.getElementById('maritimeCourseDescriptionModal').value.trim();
+    const keywordsInput = document.getElementById('maritimeCourseKeywordsModal').value.trim();
+    const keywords = keywordsInput ? keywordsInput.split(',').map(k => k.trim()).filter(k => k) : [];
+
+    if (editingMaritimeCourseId) {
+      // 更新現有課程
+      const courseIndex = maritimeCourses.findIndex(c => c.id === editingMaritimeCourseId);
+      maritimeCourses[courseIndex] = {
+        ...maritimeCourses[courseIndex],
+        name,
+        category,
+        method,
+        description,
+        keywords
+      };
+    } else {
+      // 新增課程
+      const newCourse = {
+        id: Date.now(),
+        name,
+        category,
+        method,
+        description,
+        keywords
+      };
+      maritimeCourses.push(newCourse);
+    }
+
+    saveMaritimeCourses();
+    displayMaritimeCourses();
+    displayManageMaritimeCourses();
+    closeMaritimeCourseModal();
+    showMaritimeMessage(editingMaritimeCourseId ? '課程已更新' : '課程已新增', 'success');
+  }
+
+  // 刪除課程
+  function deleteMaritimeCourse(courseId) {
+    if (confirm('確定要刪除這個課程嗎？')) {
+      maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
+      saveMaritimeCourses();
+      displayMaritimeCourses(); // 更新搜尋頁面
+      displayManageMaritimeCourses(); // 更新管理頁面
+      showMaritimeMessage('課程已刪除', 'success');
+    }
+  }
+
+  // 顯示統計資料
+  function displayMaritimeStats() {
+    // 總課程數
+    document.getElementById('maritimeTotalCourses').textContent = maritimeCourses.length;
+
+    // 總關鍵字數
+    const allKeywords = maritimeCourses.flatMap(course => course.keywords);
+    document.getElementById('maritimeTotalKeywords').textContent = allKeywords.length;
+
+    // 最熱門分類
+    const categoryCount = {};
+    maritimeCourses.forEach(course => {
+      categoryCount[course.category] = (categoryCount[course.category] || 0) + 1;
+    });
+
+    const popularCategoryCode = Object.keys(categoryCount).reduce((a, b) =>
+      categoryCount[a] > categoryCount[b] ? a : b, '');
+    document.getElementById('maritimePopularCategory').textContent =
+      popularCategoryCode ? maritimeCategoryNames[popularCategoryCode] : '-';
+
+    // 各分類統計
+    const categoryStatsContainer = document.getElementById('maritimeCategoryStats');
+    categoryStatsContainer.innerHTML = '';
+
+    const colors = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#f97316', '#84cc16', '#ec4899'];
+
+    Object.keys(maritimeCategoryNames).forEach((categoryCode, index) => {
+      const count = categoryCount[categoryCode] || 0;
+      const percentage = maritimeCourses.length > 0 ? (count / maritimeCourses.length * 100).toFixed(1) : 0;
+
+      const statItem = document.createElement('div');
+      statItem.className = 'flex justify-between items-center py-2 border-b border-gray-200';
+      statItem.innerHTML = `
+        <span class="text-gray-700 text-sm">${maritimeCategoryNames[categoryCode].substring(0, 15)}...</span>
+        <div class="flex items-center gap-2">
+          <div class="w-20 bg-gray-200 rounded-full h-2">
+            <div class="h-2 rounded-full" style="width: ${percentage}%; background-color: ${colors[index]}"></div>
+          </div>
+          <span class="text-xs font-semibold text-gray-600 w-12">${count}</span>
+        </div>
+      `;
+      categoryStatsContainer.appendChild(statItem);
+    });
+
+    // 圓餅圖
+    displayMaritimePieChart(categoryCount, colors);
+
+    // 授課方式統計
+    const methodCount = {};
+    maritimeCourses.forEach(course => {
+      const method = course.method || '未設定';
+      methodCount[method] = (methodCount[method] || 0) + 1;
+    });
+
+    const methodStatsContainer = document.getElementById('maritimeMethodStats');
+    methodStatsContainer.innerHTML = '';
+
+    const methodColors = { '實體課程': '#3b82f6', '線上課程': '#10b981', '混合課程': '#f59e0b', '未設定': '#6b7280' };
+    const methodIcons = { '實體課程': '🏫', '線上課程': '💻', '混合課程': '🔄', '未設定': '❓' };
+
+    Object.entries(methodCount).forEach(([method, count]) => {
+      const percentage = maritimeCourses.length > 0 ? (count / maritimeCourses.length * 100).toFixed(1) : 0;
+      const angle = (count / maritimeCourses.length * 360).toFixed(1);
+
+      const methodItem = document.createElement('div');
+      methodItem.className = 'method-card';
+      methodItem.innerHTML = `
+        <div class="donut-chart mx-auto mb-4 ${count > 0 ? 'pulse-animation' : ''}"
+             style="--color: ${methodColors[method]}; --angle: ${angle}deg;">
+          <div class="donut-chart-label">${count}</div>
+        </div>
+        <div class="text-2xl mb-2">${methodIcons[method]}</div>
+        <h4 class="font-bold text-gray-800 mb-1">${method}</h4>
+        <p class="text-sm text-gray-600">${percentage}% 的課程</p>
+        <div class="mt-2 text-xs text-gray-500">
+          共 ${count} 門課程
+        </div>
+      `;
+      methodStatsContainer.appendChild(methodItem);
+    });
+
+    // 關鍵字雲
+    const keywordCount = {};
+    allKeywords.forEach(keyword => {
+      keywordCount[keyword] = (keywordCount[keyword] || 0) + 1;
+    });
+
+    const sortedKeywords = Object.entries(keywordCount)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 20);
+
+    const keywordCloudContainer = document.getElementById('maritimeKeywordCloud');
+    keywordCloudContainer.innerHTML = '';
+
+    sortedKeywords.forEach(([keyword, count]) => {
+      const keywordTag = document.createElement('span');
+      const fontSize = Math.min(16 + count * 2, 24);
+      keywordTag.className = 'bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium';
+      keywordTag.style.fontSize = `${fontSize}px`;
+      keywordTag.textContent = `${keyword} (${count})`;
+      keywordCloudContainer.appendChild(keywordTag);
+    });
+  }
+
+  // 顯示圓餅圖
+  function displayMaritimePieChart(categoryCount, colors) {
+    const pieChart = document.getElementById('maritimePieChart');
+    const chartLegend = document.getElementById('maritimeChartLegend');
+
+    const total = Object.values(categoryCount).reduce((sum, count) => sum + count, 0);
+
+    if (total === 0) {
+      pieChart.style.background = '#e5e7eb';
+      chartLegend.innerHTML = '<p class="text-gray-500 text-center">暫無資料</p>';
+      return;
+    }
+
+    let currentAngle = 0;
+    const angles = [];
+
+    Object.keys(maritimeCategoryNames).forEach((categoryCode, index) => {
+      const count = categoryCount[categoryCode] || 0;
+      const percentage = (count / total) * 360;
+      currentAngle += percentage;
+      angles.push(currentAngle);
+    });
+
+    // 設定CSS變數
+    angles.forEach((angle, index) => {
+      pieChart.style.setProperty(`--angle${index + 1}`, `${angle}deg`);
+    });
+
+    // 圖例
+    chartLegend.innerHTML = '';
+    Object.keys(maritimeCategoryNames).forEach((categoryCode, index) => {
+      const count = categoryCount[categoryCode] || 0;
+      const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+
+      if (count > 0) {
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item flex items-center gap-3 text-sm';
+        legendItem.innerHTML = `
+          <div class="legend-color" style="background-color: ${colors[index]}"></div>
+          <div class="flex-1">
+            <span class="text-gray-800 font-medium">${maritimeCategoryNames[categoryCode].substring(2, 12)}...</span>
+            <div class="text-xs text-gray-500">${count} 門課程 (${percentage}%)</div>
+          </div>
+        `;
+        chartLegend.appendChild(legendItem);
+      }
+    });
+  }
+
+  // 顯示訊息
+  function showMaritimeMessage(message, type = 'info') {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+      type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+    }`;
+    messageDiv.textContent = message;
+
+    document.body.appendChild(messageDiv);
+
+    setTimeout(() => {
+      messageDiv.remove();
+    }, 3000);
+  }
+
+  // 初始化海事課程系統事件監聽器
+  function initMaritimeCourseSystem() {
+    // 頁面切換
+    const viewTab = document.getElementById('maritimeViewTab');
+    const editTab = document.getElementById('maritimeEditTab');
+    const statsTab = document.getElementById('maritimeStatsTab');
+
+    if (viewTab) viewTab.addEventListener('click', () => switchMaritimeTab('view'));
+    if (editTab) editTab.addEventListener('click', () => switchMaritimeTab('edit'));
+    if (statsTab) statsTab.addEventListener('click', () => switchMaritimeTab('stats'));
+
+    // 搜尋功能
+    const searchInput = document.getElementById('maritimeSearchInput');
+    const categoryFilter = document.getElementById('maritimeCategoryFilter');
+    const manageSearchInput = document.getElementById('maritimeManageSearchInput');
+
+    if (searchInput) searchInput.addEventListener('input', displayMaritimeCourses);
+    if (categoryFilter) categoryFilter.addEventListener('change', displayMaritimeCourses);
+    if (manageSearchInput) manageSearchInput.addEventListener('input', displayManageMaritimeCourses);
+
+    // 課程表單處理
+    const courseForm = document.getElementById('maritimeCourseForm');
+    if (courseForm) {
+      courseForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('maritimeCourseName').value;
+        const category = document.getElementById('maritimeCourseCategory').value;
+        const method = document.getElementById('maritimeCourseMethod').value;
+        const description = document.getElementById('maritimeCourseDescription').value;
+        const keywords = document.getElementById('maritimeCourseKeywords').value
+          .split(',')
+          .map(k => k.trim())
+          .filter(k => k.length > 0);
+
+        if (editingMaritimeCourseId) {
+          // 編輯現有課程
+          const courseIndex = maritimeCourses.findIndex(c => c.id === editingMaritimeCourseId);
+          maritimeCourses[courseIndex] = {
+            ...maritimeCourses[courseIndex],
+            name,
+            category,
+            method,
+            description,
+            keywords
+          };
+          editingMaritimeCourseId = null;
+        } else {
+          // 新增課程
+          const newCourse = {
+            id: Date.now(),
+            name,
+            category,
+            method,
+            description,
+            keywords
+          };
+          maritimeCourses.push(newCourse);
+        }
+
+        saveMaritimeCourses();
+        this.reset();
+        displayManageMaritimeCourses();
+
+        showMaritimeMessage('課程已成功儲存！', 'success');
+      });
+    }
+
+    // 取消編輯
+    const cancelEdit = document.getElementById('maritimeCancelEdit');
+    if (cancelEdit) {
+      cancelEdit.addEventListener('click', function() {
+        document.getElementById('maritimeCourseForm').reset();
+        editingMaritimeCourseId = null;
+        document.querySelector('#maritimeCourseForm button[type="submit"]').textContent = '儲存課程';
+      });
+    }
+
+    // 初始化顯示
+    displayMaritimeCourses();
+  }
+
+  // 確保在頁面加載和路由變化時初始化
+  window.addEventListener('load', function() {
+    if (window.location.hash === '#maritime') {
+      setTimeout(initMaritimeCourseSystem, 100);
+    }
+  });
+
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash === '#maritime') {
+      setTimeout(initMaritimeCourseSystem, 100);
+    }
+  });
+
+  // 將函數暴露到全局作用域
+  window.editMaritimeCourse = editMaritimeCourse;
+  window.deleteMaritimeCourse = deleteMaritimeCourse;
+
+  // ========== 海事課程系統結束 ==========
+  </script>
+</body>
+</html>
