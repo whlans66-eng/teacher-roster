@@ -1,0 +1,191 @@
+# =====================================================
+# Azure Container App 配置檔案
+# =====================================================
+# 使用方法：
+# az containerapp create --yaml azure-container-app.yaml
+# =====================================================
+
+properties:
+  environmentId: /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/teacher-roster-rg/providers/Microsoft.App/managedEnvironments/teacher-roster-env
+
+  configuration:
+    # 容器登錄設定
+    registries:
+      - server: teacherrosteracr.azurecr.io
+        username: <ACR_USERNAME>
+        passwordSecretRef: acr-password
+
+    # 密鑰設定
+    secrets:
+      - name: acr-password
+        value: <ACR_PASSWORD>
+      - name: jwt-secret
+        value: <JWT_SECRET>
+      - name: session-secret
+        value: <SESSION_SECRET>
+
+    # 進入點設定（External = 對外公開）
+    ingress:
+      external: true
+      targetPort: 3001
+      transport: http
+      allowInsecure: false
+      traffic:
+        - latestRevision: true
+          weight: 100
+
+      # CORS 設定
+      corsPolicy:
+        allowedOrigins:
+          - https://your-frontend.azurestaticapps.net
+          - http://localhost:5173
+        allowedMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+        allowedHeaders:
+          - "*"
+        allowCredentials: true
+
+    # 自動縮放設定
+    scale:
+      minReplicas: 1
+      maxReplicas: 5
+      rules:
+        # HTTP 請求數量縮放
+        - name: http-scaling
+          http:
+            metadata:
+              concurrentRequests: "50"
+
+        # CPU 使用率縮放
+        - name: cpu-scaling
+          custom:
+            type: cpu
+            metadata:
+              type: Utilization
+              value: "70"
+
+  # Managed Identity 設定
+  identity:
+    type: UserAssigned
+    userAssignedIdentities:
+      /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/teacher-roster-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/teacher-roster-identity: {}
+
+  # 容器定義
+  template:
+    containers:
+      - name: teacher-roster-backend
+        image: teacherrosteracr.azurecr.io/teacher-roster-backend:latest
+
+        # 資源限制
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+
+        # 環境變數
+        env:
+          # 應用程式設定
+          - name: NODE_ENV
+            value: production
+          - name: PORT
+            value: "3001"
+
+          # Fabric Warehouse 連線
+          - name: FABRIC_SERVER
+            value: <YOUR_WORKSPACE>.datawarehouse.fabric.microsoft.com
+          - name: FABRIC_DATABASE
+            value: teacher_roster_warehouse
+          - name: FABRIC_AUTH_TYPE
+            value: azure-active-directory-default
+          - name: AZURE_CLIENT_ID
+            value: <MANAGED_IDENTITY_CLIENT_ID>
+
+          # JWT 設定
+          - name: JWT_SECRET
+            secretRef: jwt-secret
+          - name: JWT_EXPIRES_IN
+            value: "7d"
+
+          # Session 設定
+          - name: SESSION_SECRET
+            secretRef: session-secret
+
+          # CORS
+          - name: CORS_ORIGIN
+            value: https://your-frontend.azurestaticapps.net
+
+          # 日誌
+          - name: LOG_LEVEL
+            value: info
+          - name: LOG_DIR
+            value: /app/logs
+
+          # 檔案上傳
+          - name: UPLOAD_DIR
+            value: /app/uploads
+          - name: MAX_FILE_SIZE
+            value: "10485760"
+
+        # 探針設定
+        probes:
+          # 存活探針
+          - type: Liveness
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # 就緒探針
+          - type: Readiness
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # 啟動探針
+          - type: Startup
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+
+        # 卷掛載（用於持久化）
+        volumeMounts:
+          - volumeName: logs
+            mountPath: /app/logs
+          - volumeName: uploads
+            mountPath: /app/uploads
+
+    # 卷定義
+    volumes:
+      - name: logs
+        storageType: AzureFile
+        storageName: logs-storage
+      - name: uploads
+        storageType: AzureFile
+        storageName: uploads-storage
+
+# =====================================================
+# 使用說明
+# =====================================================
+# 1. 替換所有 <...> 標記的值
+# 2. 確保已建立 Container Apps Environment
+# 3. 執行部署：
+#    az containerapp create \
+#      --name teacher-roster-backend \
+#      --resource-group teacher-roster-rg \
+#      --yaml azure-container-app.yaml
+# =====================================================
