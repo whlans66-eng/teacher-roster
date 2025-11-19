@@ -14,7 +14,7 @@
 | **單一登入** | ❌ | ✅ |
 | **角色自動分配** | ❌ 手動 | ✅ 根據部門 |
 | **安全性** | 基本 | 企業級 |
-| **文檔** | [查看](RBAC-GOOGLE-APPS-SCRIPT.md) | [查看](AZURE-AD-INTEGRATION.md) |
+| **文檔** | [查看](RBAC-GOOGLE-APPS-SCRIPT.md) | [查看](enterprise-solution/) |
 
 ---
 
@@ -87,7 +87,7 @@ MySQL 資料庫
 ```
 
 ### 立即開始
-👉 [查看完整文檔](AZURE-AD-INTEGRATION.md)
+👉 [查看完整文檔](enterprise-solution/)
 
 ---
 
@@ -189,8 +189,7 @@ MySQL 資料庫
 ## 📚 相關文檔
 
 - [方案 A 完整文檔](RBAC-GOOGLE-APPS-SCRIPT.md)
-- [方案 B 完整文檔](AZURE-AD-INTEGRATION.md)
-- [方案 B 架構圖](AZURE-AD-ARCHITECTURE.md)
+- [方案 B 完整文檔](enterprise-solution/)
 - [RBAC 基礎規劃](RBAC-PLANNING.md)
 - [範例程式碼](examples/)
 

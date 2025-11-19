@@ -20,7 +20,7 @@
 - ⏱️ 實施時間：2-3 週
 - 💰 成本：伺服器成本
 - 🔧 複雜度：高
-- 📖 文檔：[AZURE-AD-INTEGRATION.md](../AZURE-AD-INTEGRATION.md)
+- 📖 文檔：[企業版方案](../enterprise-solution/)
 
 > 💡 **建議**：如果您不需要 Azure AD 和 Docker，請使用方案 A（簡化版）
 

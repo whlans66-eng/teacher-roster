@@ -3,15 +3,23 @@
 版本：v1.1.0
 更新日期：2025-11-19
 
-## 🔔 重要更新
+## 🔔 重要：選擇適合您的方案
 
-本系統將整合 **Azure AD (Microsoft Entra ID)** 進行單一登入（SSO）：
+本系統提供**兩種 RBAC 實作方案**：
 
-- ✅ **公司員工**：使用 Outlook 帳號登入（Azure AD SSO）
-- ✅ **角色自動分配**：根據部門自動分配角色（學員/教師/管理者）
-- ✅ **訪客訪問**：保留訪客登入選項，可匿名瀏覽公開資訊
+### 📦 方案 A：簡化版（推薦，快速上手）
+- ⏱️ **實施時間**：3-4 小時
+- 💰 **成本**：免費
+- 🏗️ **架構**：GitHub Pages + Google Apps Script
+- 📖 **文檔**：[RBAC-GOOGLE-APPS-SCRIPT.md](RBAC-GOOGLE-APPS-SCRIPT.md)
 
-> 📖 **詳細的 Azure AD 整合規劃請參考**：[AZURE-AD-INTEGRATION.md](AZURE-AD-INTEGRATION.md)
+### 🏢 方案 B：企業版（Azure AD + Docker + MySQL）
+- ⏱️ **實施時間**：2-3 週
+- 💰 **成本**：需要伺服器
+- 🏗️ **架構**：Node.js + MySQL + Azure AD SSO
+- 📖 **文檔**：[企業版方案](enterprise-solution/)
+
+> 💡 **建議**：如果您使用 GitHub Pages + Google Apps Script 架構，請選擇方案 A
 
 ---
 
