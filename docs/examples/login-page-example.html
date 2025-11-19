@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登入 - 教師花名冊系統</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 420px;
+      overflow: hidden;
+    }
+
+    .login-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+    }
+
+    .login-header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .login-header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .login-body {
+      padding: 40px 30px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-group .input-hint {
+      font-size: 12px;
+      color: #999;
+      margin-top: 5px;
+    }
+
+    .role-selector {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .role-option {
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .role-option:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+
+    .role-option.selected {
+      border-color: #667eea;
+      background: #667eea;
+      color: white;
+    }
+
+    .role-option .role-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .role-option .role-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-login:active {
+      transform: translateY(0);
+    }
+
+    .btn-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .demo-accounts {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .demo-accounts h3 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .demo-account {
+      background: white;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .demo-account:hover {
+      background: #e8eaf6;
+    }
+
+    .demo-account .account-info {
+      flex: 1;
+    }
+
+    .demo-account .account-role {
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .demo-account .btn-use {
+      padding: 4px 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .error-message {
+      background: #ffebee;
+      color: #c62828;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .login-footer {
+      padding: 20px 30px;
+      background: #f8f9fa;
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .login-footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .loading-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .btn-login.loading .btn-text {
+      display: none;
+    }
+
+    .btn-login.loading .loading-spinner {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <!-- 登入頭部 -->
+    <div class="login-header">
+      <h1>🎓 教師花名冊系統</h1>
+      <p>Teacher Roster Management System</p>
+    </div>
+
+    <!-- 登入表單 -->
+    <div class="login-body">
+      <!-- 錯誤訊息 -->
+      <div class="error-message" id="error-message">
+        登入失敗：用戶名或密碼錯誤
+      </div>
+
+      <!-- 角色選擇（示範用） -->
+      <div class="form-group">
+        <label>選擇角色（示範用）</label>
+        <div class="role-selector">
+          <div class="role-option" data-role="student">
+            <div class="role-icon">🎓</div>
+            <div class="role-name">學員</div>
+          </div>
+          <div class="role-option" data-role="teacher">
+            <div class="role-icon">👨‍🏫</div>
+            <div class="role-name">教師</div>
+          </div>
+          <div class="role-option" data-role="admin">
+            <div class="role-icon">⚙️</div>
+            <div class="role-name">管理者</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 登入表單 -->
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">用戶名或 Email</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="請輸入用戶名或 Email"
+            required
+            autocomplete="username"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">密碼</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="請輸入密碼"
+            required
+            autocomplete="current-password"
+          >
+          <div class="input-hint">示範環境請使用下方測試帳號</div>
+        </div>
+
+        <button type="submit" class="btn-login" id="login-btn">
+          <span class="btn-text">登入</span>
+          <div class="loading-spinner"></div>
+        </button>
+      </form>
+
+      <!-- 示範帳號 -->
+      <div class="demo-accounts">
+        <h3>🔑 測試帳號（示範用）</h3>
+
+        <div class="demo-account" onclick="useDemoAccount('student001', 'password123')">
+          <div class="account-info">
+            <div><strong>student001</strong></div>
+            <div class="account-role">學員</div>
+          </div>
+          <button class="btn-use" type="button">使用</button>
+        </div>
+
+        <div class="demo-account" onclick="useDemoAccount('teacher001', 'password123')">
+          <div class="account-info">
+            <div><strong>teacher001</strong></div>
+            <div class="account-role">教師 (王大明)</div>
+          </div>
+          <button class="btn-use" type="button">使用</button>
+        </div>
+
+        <div class="demo-account" onclick="useDemoAccount('admin', 'admin123')">
+          <div class="account-info">
+            <div><strong>admin</strong></div>
+            <div class="account-role">管理者</div>
+          </div>
+          <button class="btn-use" type="button">使用</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 登入底部 -->
+    <div class="login-footer">
+      <p>
+        還沒有帳號？ <a href="register.html">註冊新帳號</a>
+        <br>
+        <a href="forgot-password.html">忘記密碼？</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- 引入權限控制輔助函數 -->
+  <script src="auth-helpers.js"></script>
+
+  <script>
+    // API 設定（請替換為您的實際 API 地址）
+    const API_BASE_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+
+    // ============================================
+    // 角色選擇（僅供示範）
+    // ============================================
+
+    let selectedRole = null;
+
+    document.querySelectorAll('.role-option').forEach(option => {
+      option.addEventListener('click', function() {
+        // 移除其他選項的 selected 類
+        document.querySelectorAll('.role-option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+
+        // 加入 selected 類
+        this.classList.add('selected');
+
+        selectedRole = this.getAttribute('data-role');
+
+        console.log('選擇角色:', selectedRole);
+      });
+    });
+
+    // ============================================
+    // 登入表單處理
+    // ============================================
+
+    const loginForm = document.getElementById('login-form');
+    const loginBtn = document.getElementById('login-btn');
+    const errorMessage = document.getElementById('error-message');
+
+    loginForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        showError('請輸入用戶名和密碼');
+        return;
+      }
+
+      // 顯示載入狀態
+      loginBtn.classList.add('loading');
+      loginBtn.disabled = true;
+      hideError();
+
+      try {
+        // 呼叫登入 API
+        const result = await performLogin(username, password);
+
+        if (result.ok) {
+          // 登入成功
+          console.log('登入成功:', result.data);
+
+          // 設定認證狀態
+          setAuthState(result.data.user, result.data.token);
+
+          // 顯示成功訊息
+          alert('登入成功！歡迎，' + result.data.user.full_name);
+
+          // 檢查是否有 redirect 參數
+          const urlParams = new URLSearchParams(window.location.search);
+          const redirect = urlParams.get('redirect');
+
+          if (redirect) {
+            window.location.href = redirect;
+          } else {
+            // 根據角色導向不同頁面
+            redirectByRole(result.data.user.role);
+          }
+        } else {
+          // 登入失敗
+          showError(result.error || '登入失敗，請檢查用戶名和密碼');
+        }
+      } catch (error) {
+        console.error('登入錯誤:', error);
+        showError('登入失敗：' + error.message);
+      } finally {
+        // 隱藏載入狀態
+        loginBtn.classList.remove('loading');
+        loginBtn.disabled = false;
+      }
+    });
+
+    /**
+     * 執行登入 API 呼叫
+     */
+    async function performLogin(username, password) {
+      // 這裡是示範，實際應呼叫您的 Google Apps Script API
+      console.log('呼叫登入 API:', username);
+
+      // 示範模式：直接返回成功
+      if (isDemoMode()) {
+        return simulateLogin(username, password);
+      }
+
+      // 實際 API 呼叫
+      const response = await fetch(API_BASE_URL + '?action=login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+      });
+
+      return await response.json();
+    }
+
+    /**
+     * 模擬登入（示範用）
+     */
+    function simulateLogin(username, password) {
+      // 延遲 1 秒模擬網路請求
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          // 示範帳號資料
+          const demoAccounts = {
+            'student001': {
+              password: 'password123',
+              user: {
+                id: 'student-001',
+                username: 'student001',
+                email: 'student@example.com',
+                full_name: '學員張三',
+                role: 'student',
+                permissions: ['teacher.view', 'course.view', 'assignment.view', 'survey.respond']
+              }
+            },
+            'teacher001': {
+              password: 'password123',
+              user: {
+                id: 'teacher-001',
+                username: 'teacher001',
+                email: 'wang@example.com',
+                full_name: '王大明',
+                role: 'teacher',
+                permissions: ['teacher.view', 'teacher.update_own', 'course.view', 'assignment.view_own', 'survey.view_own']
+              }
+            },
+            'admin': {
+              password: 'admin123',
+              user: {
+                id: 'admin-001',
+                username: 'admin',
+                email: 'admin@example.com',
+                full_name: '系統管理員',
+                role: 'admin',
+                permissions: ['*']
+              }
+            }
+          };
+
+          const account = demoAccounts[username];
+
+          if (!account || account.password !== password) {
+            resolve({
+              ok: false,
+              error: '用戶名或密碼錯誤'
+            });
+          } else {
+            resolve({
+              ok: true,
+              data: {
+                user: account.user,
+                token: 'demo-token-' + username + '-' + Date.now(),
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+              }
+            });
+          }
+        }, 1000);
+      });
+    }
+
+    /**
+     * 根據角色導向不同頁面
+     */
+    function redirectByRole(role) {
+      const roleHomePage = {
+        'visitor': '/index.html',
+        'student': '/my-schedule.html',
+        'teacher': '/my-profile.html',
+        'admin': '/admin/teachers.html'
+      };
+
+      const homePage = roleHomePage[role] || '/index.html';
+      console.log('導向:', homePage);
+
+      // 示範模式：導向教師列表
+      window.location.href = 'teacher-card-example.html';
+    }
+
+    /**
+     * 顯示錯誤訊息
+     */
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.add('show');
+    }
+
+    /**
+     * 隱藏錯誤訊息
+     */
+    function hideError() {
+      errorMessage.classList.remove('show');
+    }
+
+    /**
+     * 使用示範帳號
+     */
+    function useDemoAccount(username, password) {
+      document.getElementById('username').value = username;
+      document.getElementById('password').value = password;
+
+      // 自動選擇對應角色
+      const roleMap = {
+        'student001': 'student',
+        'teacher001': 'teacher',
+        'admin': 'admin'
+      };
+
+      const role = roleMap[username];
+      if (role) {
+        document.querySelectorAll('.role-option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+        document.querySelector(`.role-option[data-role="${role}"]`)?.classList.add('selected');
+      }
+    }
+
+    /**
+     * 檢查是否為示範模式
+     */
+    function isDemoMode() {
+      // 如果 API_BASE_URL 包含 YOUR_SCRIPT_ID，視為示範模式
+      return API_BASE_URL.includes('YOUR_SCRIPT_ID');
+    }
+
+    // ============================================
+    // 初始化
+    // ============================================
+
+    // 檢查是否已登入
+    if (restoreAuthState()) {
+      const role = getCurrentRole();
+      console.log('已登入，角色:', role);
+
+      if (confirm('您已登入，是否要繼續登入其他帳號？')) {
+        clearAuthState();
+      } else {
+        redirectByRole(role);
+      }
+    }
+
+    // 顯示示範模式提示
+    if (isDemoMode()) {
+      console.log('%c🎭 示範模式', 'color: #667eea; font-size: 16px; font-weight: bold;');
+      console.log('請使用下方測試帳號登入');
+      console.log('');
+      console.log('測試帳號：');
+      console.log('- student001 / password123 (學員)');
+      console.log('- teacher001 / password123 (教師)');
+      console.log('- admin / admin123 (管理者)');
+    }
+  </script>
+</body>
+</html>
