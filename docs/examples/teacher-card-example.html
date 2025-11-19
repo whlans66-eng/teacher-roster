@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教師卡片範例 - 角色權限差異化</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* 角色切換器 */
+    .role-switcher {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .role-switcher h2 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .role-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .role-btn {
+      padding: 10px 20px;
+      border: 2px solid #ddd;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .role-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .role-btn.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .current-role-info {
+      margin-top: 15px;
+      padding: 10px;
+      background: #e7f3ff;
+      border-left: 4px solid #007bff;
+      border-radius: 4px;
+    }
+
+    /* 教師卡片網格 */
+    .teachers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    /* 教師卡片 */
+    .teacher-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .teacher-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .teacher-photo {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      background: #ddd;
+    }
+
+    .teacher-name {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .teacher-type {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #e0e0e0;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .teacher-type.full-time { background: #c8e6c9; color: #2e7d32; }
+    .teacher-type.part-time { background: #fff9c4; color: #f57f17; }
+    .teacher-type.adjunct { background: #bbdefb; color: #1565c0; }
+
+    .teacher-email {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .teacher-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 15px;
+    }
+
+    .tag {
+      padding: 4px 10px;
+      background: #f0f0f0;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .teacher-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #007bff;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #545b62;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 權限提示 */
+    .permission-hint {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #856404;
+      text-align: center;
+    }
+
+    /* 隱藏元素 */
+    [data-require-role]:not([data-role-granted]) {
+      display: none !important;
+    }
+
+    .blur-for-visitor {
+      filter: blur(4px);
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 角色切換器 (僅供示範) -->
+    <div class="role-switcher">
+      <h2>🎭 角色切換器（示範用）</h2>
+      <div class="role-buttons">
+        <button class="role-btn" onclick="switchRole('visitor')">👤 訪客</button>
+        <button class="role-btn" onclick="switchRole('student')">🎓 學員</button>
+        <button class="role-btn" onclick="switchRole('teacher')">👨‍🏫 教師</button>
+        <button class="role-btn" onclick="switchRole('admin')">⚙️ 管理者</button>
+      </div>
+      <div class="current-role-info">
+        <strong>當前角色：</strong><span id="current-role-display">訪客</span>
+        <span id="current-user-display"></span>
+      </div>
+    </div>
+
+    <!-- 教師卡片列表 -->
+    <div class="teachers-grid" id="teachers-container">
+      <!-- 教師卡片會由 JavaScript 動態生成 -->
+    </div>
+  </div>
+
+  <!-- 引入權限控制輔助函數 -->
+  <script src="auth-helpers.js"></script>
+
+  <script>
+    // ============================================
+    // 示範資料
+    // ============================================
+
+    const DEMO_TEACHERS = [
+      {
+        id: '1',
+        userId: 'teacher-001',
+        name: '王大明',
+        email: 'wang@example.com',
+        teacherType: 'full-time',
+        teacherTypeLabel: '專任',
+        workLocation: '台北校區',
+        photoUrl: 'https://via.placeholder.com/300x200?text=王大明',
+        tags: ['船舶操縱', 'GMDSS', '海事英文', '航海學', '氣象學'],
+        experiences: ['遠洋船長 10年', '甲級船員訓練中心教官'],
+        certificates: ['船長執照', '一等管輪', 'GMDSS證書']
+      },
+      {
+        id: '2',
+        userId: 'teacher-002',
+        name: '李小華',
+        email: 'lee@example.com',
+        teacherType: 'part-time',
+        teacherTypeLabel: '兼任',
+        workLocation: '高雄校區',
+        photoUrl: 'https://via.placeholder.com/300x200?text=李小華',
+        tags: ['輪機工程', '柴油機', '船舶自動化'],
+        experiences: ['輪機長 15年'],
+        certificates: ['輪機長執照', '二等管輪']
+      },
+      {
+        id: '3',
+        userId: 'teacher-003',
+        name: '張志明',
+        email: 'chang@example.com',
+        teacherType: 'adjunct',
+        teacherTypeLabel: '外聘',
+        workLocation: '基隆校區',
+        photoUrl: 'https://via.placeholder.com/300x200?text=張志明',
+        tags: ['海事法規', '航運管理', '海商法'],
+        experiences: ['海事律師 8年'],
+        certificates: ['律師執照', '海事仲裁人']
+      }
+    ];
+
+    // ============================================
+    // 角色切換（僅供示範）
+    // ============================================
+
+    function switchRole(role) {
+      // 更新按鈕狀態
+      document.querySelectorAll('.role-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // 模擬不同用戶
+      const demoUsers = {
+        visitor: null,
+        student: {
+          id: 'student-001',
+          username: 'student001',
+          email: 'student@example.com',
+          full_name: '學員張三',
+          role: 'student',
+          permissions: ['teacher.view', 'course.view']
+        },
+        teacher: {
+          id: 'teacher-001',
+          username: 'teacher001',
+          email: 'wang@example.com',
+          full_name: '王大明',
+          role: 'teacher',
+          permissions: ['teacher.view', 'teacher.update_own', 'course.view']
+        },
+        admin: {
+          id: 'admin-001',
+          username: 'admin',
+          email: 'admin@example.com',
+          full_name: '管理員',
+          role: 'admin',
+          permissions: ['*']
+        }
+      };
+
+      if (role === 'visitor') {
+        clearAuthState();
+      } else {
+        setAuthState(demoUsers[role], 'demo-token-' + role);
+      }
+
+      // 更新顯示
+      updateRoleDisplay();
+      renderTeachers();
+    }
+
+    function updateRoleDisplay() {
+      const roleNames = {
+        'visitor': '👤 訪客',
+        'student': '🎓 學員',
+        'teacher': '👨‍🏫 教師',
+        'admin': '⚙️ 管理者'
+      };
+
+      const currentRole = getCurrentRole();
+      document.getElementById('current-role-display').textContent = roleNames[currentRole];
+
+      const userDisplay = document.getElementById('current-user-display');
+      if (AuthState.user) {
+        userDisplay.textContent = ` | 用戶：${AuthState.user.full_name}`;
+      } else {
+        userDisplay.textContent = '';
+      }
+    }
+
+    // ============================================
+    // 渲染教師卡片
+    // ============================================
+
+    function renderTeachers() {
+      const container = document.getElementById('teachers-container');
+      const currentRole = getCurrentRole();
+      const currentUserId = getCurrentUserId();
+
+      container.innerHTML = DEMO_TEACHERS.map(teacher => {
+        return renderTeacherCard(teacher, currentRole, currentUserId);
+      }).join('');
+    }
+
+    function renderTeacherCard(teacher, role, currentUserId) {
+      const isOwnProfile = currentUserId === teacher.userId;
+      const teacherTypeClass = teacher.teacherType.replace('_', '-');
+
+      // 根據角色決定要顯示的標籤數量
+      const tagsToShow = role === 'visitor' ? teacher.tags.slice(0, 3) : teacher.tags;
+
+      // 根據角色決定是否顯示 email
+      const showEmail = role !== 'visitor';
+      const emailDisplay = showEmail ? teacher.email : '***@***.com';
+
+      // 判斷是否可以查看詳情
+      const canViewDetail = canViewDetails('teacher');
+
+      // 判斷是否可以編輯
+      const canEditTeacher = canEdit({ type: 'teacher', userId: teacher.userId });
+
+      // 判斷是否可以刪除
+      const canDeleteTeacher = canDelete('teacher');
+
+      return `
+        <div class="teacher-card">
+          <img src="${teacher.photoUrl}" alt="${teacher.name}" class="teacher-photo">
+
+          <h3 class="teacher-name">${teacher.name}</h3>
+
+          <!-- 教師類型：訪客看不到 -->
+          ${role !== 'visitor' ? `
+            <span class="teacher-type ${teacherTypeClass}">
+              ${teacher.teacherTypeLabel}
+            </span>
+          ` : ''}
+
+          <!-- Email：訪客看到模糊的 -->
+          <div class="teacher-email ${role === 'visitor' ? 'blur-for-visitor' : ''}">
+            📧 ${emailDisplay}
+          </div>
+
+          <!-- 標籤：訪客只看到 3 個 -->
+          <div class="teacher-tags">
+            ${tagsToShow.map(tag => `<span class="tag">${tag}</span>`).join('')}
+            ${role === 'visitor' && teacher.tags.length > 3 ? `
+              <span class="tag" style="background: #ffc107; color: #000;">
+                +${teacher.tags.length - 3} 更多
+              </span>
+            ` : ''}
+          </div>
+
+          <!-- 訪客提示 -->
+          ${role === 'visitor' ? `
+            <div class="permission-hint">
+              🔒 登入後可查看完整資料
+            </div>
+          ` : ''}
+
+          <!-- 操作按鈕 -->
+          <div class="teacher-actions">
+            <!-- 查看詳情：學員以上可見 -->
+            ${canViewDetail ? `
+              <button class="btn btn-primary" onclick="viewTeacherDetails('${teacher.id}')">
+                查看詳情
+              </button>
+            ` : ''}
+
+            <!-- 編輯：管理者或本人可見 -->
+            ${canEditTeacher ? `
+              <button class="btn btn-secondary" onclick="editTeacher('${teacher.id}')">
+                ${isOwnProfile ? '編輯我的資料' : '編輯'}
+              </button>
+            ` : ''}
+
+            <!-- 刪除：僅管理者可見 -->
+            ${canDeleteTeacher ? `
+              <button class="btn btn-danger" onclick="deleteTeacher('${teacher.id}')">
+                刪除
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- 本人標記 -->
+          ${isOwnProfile ? `
+            <div style="margin-top: 10px; text-align: center; color: #28a745; font-weight: bold;">
+              ✓ 這是您的資料
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // ============================================
+    // 按鈕事件處理
+    // ============================================
+
+    function viewTeacherDetails(teacherId) {
+      const teacher = DEMO_TEACHERS.find(t => t.id === teacherId);
+      const role = getCurrentRole();
+
+      if (role === 'visitor') {
+        alert('請先登入以查看教師詳細資料');
+        return;
+      }
+
+      // 顯示詳細資訊
+      let details = `
+教師詳細資料
+================
+
+姓名：${teacher.name}
+Email：${teacher.email}
+類型：${teacher.teacherTypeLabel}
+工作地點：${teacher.workLocation}
+
+專長領域：
+${teacher.tags.join(', ')}
+
+教學經歷：
+${teacher.experiences.join('\n')}
+
+證照資格：
+${teacher.certificates.join('\n')}
+      `;
+
+      alert(details);
+    }
+
+    function editTeacher(teacherId) {
+      const teacher = DEMO_TEACHERS.find(t => t.id === teacherId);
+      alert(`開啟編輯教師界面：${teacher.name}\n(此為示範，實際應導向編輯頁面)`);
+    }
+
+    function deleteTeacher(teacherId) {
+      const teacher = DEMO_TEACHERS.find(t => t.id === teacherId);
+
+      if (confirm(`確定要刪除教師「${teacher.name}」嗎？\n此操作無法復原！`)) {
+        alert(`已刪除教師：${teacher.name}\n(此為示範，實際應呼叫 API)`);
+      }
+    }
+
+    // ============================================
+    // 初始化
+    // ============================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // 預設為訪客
+      switchRole('visitor');
+
+      console.log('=== 教師卡片權限示範 ===');
+      console.log('請使用上方的角色切換器，查看不同角色看到的畫面差異');
+      console.log('');
+      console.log('角色說明：');
+      console.log('- 訪客：只能看到基本資訊（姓名、部分標籤）');
+      console.log('- 學員：可查看完整資料，包含 email、經歷、證照');
+      console.log('- 教師：可編輯自己的資料');
+      console.log('- 管理者：可編輯和刪除所有教師');
+    });
+  </script>
+</body>
+</html>
