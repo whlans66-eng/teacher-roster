@@ -4,6 +4,15 @@
 
 本目錄包含完整的 RBAC（角色基礎訪問控制）規劃文檔和可執行的範例程式碼，幫助您理解和實作不同角色看到不同畫面的功能。
 
+## 🔔 重要：Azure AD 整合
+
+本系統將整合 **Azure AD (Microsoft Entra ID)** 進行單一登入：
+- ✅ 公司員工使用 Outlook 帳號登入
+- ✅ 根據部門自動分配角色
+- ✅ 保留訪客登入選項
+
+詳細資訊請參考：[AZURE-AD-INTEGRATION.md](../AZURE-AD-INTEGRATION.md)
+
 ---
 
 ## 📁 文件清單
