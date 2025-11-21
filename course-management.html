@@ -354,6 +354,136 @@
       margin: 16px 0;
     }
 
+    /* ========== iOS 原生風格增強 ========== */
+
+    /* 毛玻璃 Modal 背景 */
+    #viewEventModal {
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    #viewEventModal > div {
+      background: rgba(255, 255, 255, 0.95) !important;
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      border: 0.5px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* iOS 風格的彈出式操作選單 */
+    .context-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.2);
+      z-index: 9999;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    .context-menu-overlay.show {
+      display: block;
+      opacity: 1;
+    }
+
+    .context-menu-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      width: 90%;
+      max-width: 320px;
+      background-color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(25px) saturate(180%);
+      -webkit-backdrop-filter: blur(25px) saturate(180%);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .context-menu-overlay.show .context-menu-popup {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    .menu-option {
+      padding: 16px 20px;
+      font-size: 17px;
+      color: var(--apple-gray-dark);
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      background: transparent;
+      transition: background-color 0.1s;
+    }
+
+    .menu-option:last-child {
+      border-bottom: none;
+    }
+
+    .menu-option:active {
+      background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    .menu-option-danger {
+      color: var(--apple-red) !important;
+    }
+
+    .menu-option i {
+      font-size: 16px;
+      opacity: 0.6;
+    }
+
+    /* iOS 大標題樣式 */
+    .ios-large-title {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: #000;
+      margin-bottom: 8px;
+      line-height: 1.1;
+    }
+
+    /* iOS 極細分隔線 */
+    .ios-separator {
+      height: 0.5px;
+      background: rgba(0, 0, 0, 0.1);
+      margin: 16px 0;
+    }
+
+    /* iOS 標準按鈕增強 */
+    .apple-btn {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .apple-btn:active {
+      opacity: 0.6;
+      transform: scale(0.98);
+    }
+
+    /* 淡入動畫 */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.4s ease-out;
+    }
+
     @media (max-width: 768px) {
       /* 隱藏桌面版行事曆，顯示手機版 */
       .calendar-grid-container {
@@ -802,6 +932,32 @@
     </div>
   </div>
 
+  <!-- iOS 風格的彈出式操作選單 -->
+  <div class="context-menu-overlay" id="contextMenuOverlay" onclick="closeContextMenu()">
+    <div class="context-menu-popup" onclick="event.stopPropagation()">
+      <div class="menu-option" onclick="copyCourseToClipboard(); closeContextMenu();">
+        <span>複製</span>
+        <span>📋</span>
+      </div>
+      <div class="menu-option" onclick="openDuplicateDateModal(); closeContextMenu();">
+        <span>複製到其他日期</span>
+        <span>📅</span>
+      </div>
+      <div class="menu-option" onclick="shareCourse(); closeContextMenu();">
+        <span>分享</span>
+        <span>📤</span>
+      </div>
+      <div class="menu-option" onclick="openSurveyManagement(editingCourseId); closeContextMenu();">
+        <span>問卷管理</span>
+        <span>📊</span>
+      </div>
+      <div class="menu-option menu-option-danger" onclick="confirmDeleteCourse(); closeContextMenu();">
+        <span>刪除</span>
+        <span>🗑️</span>
+      </div>
+    </div>
+  </div>
+
   <!-- 複製到其他日期 Modal -->
   <div id="duplicateDateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[60] p-4">
     <div class="card p-8 max-w-md w-full mx-4" style="box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);">
@@ -896,40 +1052,19 @@
 
       <!-- 按鈕區 -->
       <div id="viewModeButtons" class="pt-6">
-        <!-- TimeTree 風格的快速操作選單 -->
-        <div class="flex flex-wrap gap-2 mb-4">
-          <button onclick="copyCourseToClipboard()" class="action-btn">
-            <span>📋</span>
-            <span>複製</span>
+        <!-- iOS 風格的主要操作按鈕 -->
+        <div class="flex flex-wrap gap-3 items-center">
+          <button onclick="toggleContextMenu()" class="apple-btn apple-btn-secondary" style="margin-right: auto;">
+            <span style="font-size: 18px; font-weight: bold;">⋯</span>
+            <span style="margin-left: 6px;">更多</span>
           </button>
-          <button onclick="openDuplicateDateModal()" class="action-btn">
-            <span>📅</span>
-            <span>複製到其他日期</span>
-          </button>
-          <button onclick="shareCourse()" class="action-btn">
-            <span>📤</span>
-            <span>分享</span>
-          </button>
-        </div>
 
-        <div class="divider"></div>
-
-        <!-- Apple 風格的主要操作按鈕 -->
-        <div class="flex flex-wrap gap-3 justify-between items-center">
-          <button id="surveyManageBtn" class="apple-btn apple-btn-secondary">
-            📊 問卷管理
+          <button onclick="closeViewEventModal()" class="apple-btn apple-btn-secondary">
+            關閉
           </button>
-          <div class="flex flex-wrap gap-2">
-            <button onclick="closeViewEventModal()" class="apple-btn apple-btn-secondary">
-              關閉
-            </button>
-            <button onclick="enterEditMode()" class="apple-btn apple-btn-primary">
-              ✏️ 編輯
-            </button>
-            <button id="deleteEventBtn" class="apple-btn apple-btn-danger">
-              🗑️ 刪除
-            </button>
-          </div>
+          <button onclick="enterEditMode()" class="apple-btn apple-btn-primary">
+            ✏️ 編輯
+          </button>
         </div>
       </div>
 
@@ -2413,6 +2548,34 @@
         '專題': 'bg-red-500'
       };
       return colors[type] || 'bg-gray-500';
+    }
+
+    // ==================== iOS 風格彈出式選單 ====================
+
+    /**
+     * 切換彈出式選單
+     */
+    function toggleContextMenu() {
+      const overlay = document.getElementById('contextMenuOverlay');
+      overlay.classList.toggle('show');
+    }
+
+    /**
+     * 關閉彈出式選單
+     */
+    function closeContextMenu() {
+      const overlay = document.getElementById('contextMenuOverlay');
+      overlay.classList.remove('show');
+    }
+
+    /**
+     * 確認刪除課程（從選單觸發）
+     */
+    function confirmDeleteCourse() {
+      if (confirm('確定要刪除此課程嗎？此操作無法復原。')) {
+        deleteCourse(editingCourseId);
+        closeViewEventModal();
+      }
     }
 
     // ==================== Phase 1: 複製、分享功能 ====================
