@@ -562,6 +562,26 @@
       animation: fadeInUp 0.4s ease-out;
     }
 
+    /* ========== Modal 內 SVG Icon 樣式 ========== */
+    .modal-icon {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vertical-align: -3px;
+      margin-right: 6px;
+    }
+
+    .modal-icon-sm {
+      width: 14px;
+      height: 14px;
+      vertical-align: -2px;
+    }
+
     /* ========== 自動標籤樣式 ========== */
     .auto-tag {
       display: inline-flex;
@@ -575,6 +595,16 @@
       cursor: pointer;
       transition: all 0.2s ease;
       user-select: none;
+    }
+
+    .auto-tag svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .auto-tag:hover {
@@ -1158,7 +1188,10 @@
           </div>
 
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p class="text-sm text-blue-800">💡 課程將會保留所有資訊（師資、時間、備註等），僅更改日期。</p>
+            <p class="text-sm text-blue-800">
+              <svg class="modal-icon modal-icon-sm"><use href="#icon-lightbulb"></use></svg>
+              課程將會保留所有資訊（師資、時間、備註等），僅更改日期。
+            </p>
           </div>
         </div>
       </div>
@@ -1250,7 +1283,10 @@
           <!-- 自動生成的標籤 -->
           <div class="mt-3">
             <div class="flex items-center justify-between mb-2">
-              <label class="block font-medium text-gray-700" style="font-size: 13px;">🏷️ 自動標籤</label>
+              <label class="block font-medium text-gray-700" style="font-size: 13px;">
+                <svg class="modal-icon modal-icon-sm"><use href="#icon-tag"></use></svg>
+                自動標籤
+              </label>
               <button type="button" onclick="autoGenerateTags()" class="text-xs" style="color: var(--apple-blue);">重新生成</button>
             </div>
             <div id="autoTagsContainer" class="flex flex-wrap gap-2"></div>
@@ -1265,15 +1301,16 @@
         <div id="viewModeButtons">
           <div class="flex flex-wrap gap-3 items-center">
             <button onclick="toggleContextMenu()" class="apple-btn apple-btn-secondary" style="margin-right: auto;">
-              <span style="font-size: 18px; font-weight: bold;">⋯</span>
-              <span style="margin-left: 6px;">更多</span>
+              <svg class="modal-icon"><use href="#icon-more"></use></svg>
+              更多
             </button>
 
             <button onclick="closeViewEventModal()" class="apple-btn apple-btn-secondary">
               關閉
             </button>
             <button onclick="enterEditMode()" class="apple-btn apple-btn-primary">
-              ✏️ 編輯
+              <svg class="modal-icon"><use href="#icon-edit"></use></svg>
+              編輯
             </button>
           </div>
         </div>
@@ -1284,7 +1321,8 @@
             取消
           </button>
           <button onclick="saveEditedCourse()" class="modern-btn px-6 py-3 rounded-xl font-medium" style="font-size: 15px;">
-            💾 儲存變更
+            <svg class="modal-icon"><use href="#icon-save"></use></svg>
+            儲存變更
           </button>
         </div>
       </div>
@@ -2267,7 +2305,7 @@
                 ${course.tags.map(tag => {
                   // 判斷標籤類型並給予對應顏色
                   let tagClass = 'tag-default';
-                  let tagIcon = '🏷️';
+                  let tagIcon = 'icon-tag';
                   for (const [key, rule] of Object.entries(TAG_RULES)) {
                     if (rule.keywords.includes(tag)) {
                       tagClass = rule.class;
@@ -2275,7 +2313,7 @@
                       break;
                     }
                   }
-                  return `<span class="auto-tag ${tagClass}" style="cursor: default;"><span>${tagIcon}</span><span>${tag}</span></span>`;
+                  return `<span class="auto-tag ${tagClass}" style="cursor: default;"><svg class="modal-icon-sm"><use href="#${tagIcon}"></use></svg><span>${tag}</span></span>`;
                 }).join('')}
               </div>
             ` : ''}
@@ -2806,27 +2844,27 @@
       important: {
         keywords: ['重要', '必須', '注意', '務必', '切記', '關鍵', '緊急'],
         class: 'tag-important',
-        icon: '⚠️'
+        icon: 'icon-alert'
       },
       exam: {
         keywords: ['考試', '測驗', '評量', '期中', '期末', '小考', '大考'],
         class: 'tag-exam',
-        icon: '📝'
+        icon: 'icon-file'
       },
       experiment: {
         keywords: ['實驗', '實習', '實作', '實務', '操作', '練習'],
         class: 'tag-experiment',
-        icon: '🔬'
+        icon: 'icon-flask'
       },
       project: {
         keywords: ['專題', '報告', '作業', '習題', '繳交', '截止'],
         class: 'tag-project',
-        icon: '📊'
+        icon: 'icon-presentation'
       },
       meeting: {
         keywords: ['會議', '討論', '說明', '講解', '演講', '座談'],
         class: 'tag-meeting',
-        icon: '👥'
+        icon: 'icon-users'
       }
     };
 
@@ -2910,7 +2948,7 @@
 
       container.innerHTML = currentTags.map((tag, index) => `
         <div class="auto-tag ${tag.class}">
-          <span>${tag.icon}</span>
+          <svg class="modal-icon-sm"><use href="#${tag.icon}"></use></svg>
           <span>${tag.text}</span>
           <span class="auto-tag-remove" onclick="removeTag(${index}); event.stopPropagation();">×</span>
         </div>
@@ -3452,5 +3490,59 @@
     // ==================== 啟動應用 ====================
     window.addEventListener('DOMContentLoaded', init);
   </script>
+
+  <!-- SVG Icon 定義庫（僅用於 Modal） -->
+  <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <symbol id="icon-edit" viewBox="0 0 24 24">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </symbol>
+      <symbol id="icon-save" viewBox="0 0 24 24">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+        <polyline points="7 3 7 8 15 8"></polyline>
+      </symbol>
+      <symbol id="icon-more" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="1"></circle>
+        <circle cx="19" cy="12" r="1"></circle>
+        <circle cx="5" cy="12" r="1"></circle>
+      </symbol>
+      <symbol id="icon-tag" viewBox="0 0 24 24">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+      </symbol>
+      <symbol id="icon-alert" viewBox="0 0 24 24">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </symbol>
+      <symbol id="icon-file" viewBox="0 0 24 24">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+        <polyline points="13 2 13 9 20 9"></polyline>
+      </symbol>
+      <symbol id="icon-flask" viewBox="0 0 24 24">
+        <path d="M9 3h6"></path>
+        <path d="M10 3v7.586a2 2 0 0 1-.586 1.414L4 17.414A2 2 0 0 0 5.414 21h13.172a2 2 0 0 0 1.414-3.586l-5.414-5.414A2 2 0 0 1 14 10.586V3"></path>
+      </symbol>
+      <symbol id="icon-presentation" viewBox="0 0 24 24">
+        <path d="M2 3h20"></path>
+        <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path>
+        <path d="M7 21l5-5 5 5"></path>
+      </symbol>
+      <symbol id="icon-users" viewBox="0 0 24 24">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </symbol>
+      <symbol id="icon-lightbulb" viewBox="0 0 24 24">
+        <path d="M9 18h6"></path>
+        <path d="M10 22h4"></path>
+        <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
+      </symbol>
+    </defs>
+  </svg>
+
 </body>
 </html>
