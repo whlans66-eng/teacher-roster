@@ -22,7 +22,7 @@ const SHEETS_CONFIG = {
   },
   courseAssignments: {
     name: 'courseAssignments',
-    header: ['id','teacherId','name','date','time','type','status','note']
+    header: ['id','teacherId','name','date','time','type','status','note','rsvpStatus','reminderTime','createdBy','createdAt','updatedAt']
   },
   maritimeCourses: {
     name: 'maritimeCourses',
@@ -39,6 +39,18 @@ const SHEETS_CONFIG = {
   surveyResponses: {
     name: 'surveyResponses',
     header: ['id','surveyId','respondentName','respondentEmail','answers','submittedAt']
+  },
+  activityLog: {
+    name: 'activityLog',
+    header: ['id','courseId','userId','userName','action','actionType','details','timestamp']
+  },
+  comments: {
+    name: 'comments',
+    header: ['id','courseId','userId','userName','userAvatar','content','timestamp','updatedAt']
+  },
+  likes: {
+    name: 'likes',
+    header: ['id','courseId','userId','userName','timestamp']
   }
 };
 
@@ -368,4 +380,125 @@ function _formatDate(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * Email 提醒系統
+ *
+ * 設定方式：
+ * 1. 在 Google Apps Script 編輯器中，點擊「觸發器」圖示（時鐘）
+ * 2. 新增觸發器：
+ *    - 選擇函式：sendCourseReminders
+ *    - 部署方式：Head
+ *    - 選取活動來源：時間驅動
+ *    - 選取時間型觸發條件：每日計時器
+ *    - 選取時段：上午 8-9 點
+ * 3. 儲存
+ *
+ * 這樣系統會每天早上 8-9 點自動檢查並發送課程提醒。
+ */
+function sendCourseReminders() {
+  try {
+    const courseAssignments = _readTable('courseAssignments');
+    const teachers = _readTable('teachers');
+    const today = new Date();
+    const todayStr = _formatDate(today);
+
+    let sentCount = 0;
+
+    courseAssignments.forEach(course => {
+      if (!course.reminderTime || !course.date) return;
+
+      const teacher = teachers.find(t => t.id === course.teacherId);
+      if (!teacher || !teacher.email) return;
+
+      // 判斷是否需要發送提醒
+      const shouldSend = _shouldSendReminder(course.date, course.reminderTime, todayStr);
+
+      if (shouldSend) {
+        _sendReminderEmail(teacher, course);
+        sentCount++;
+      }
+    });
+
+    Logger.log(`✅ 課程提醒發送完成！共發送 ${sentCount} 封提醒信。`);
+    return { ok: true, sent: sentCount };
+
+  } catch (err) {
+    Logger.log(`❌ 發送提醒失敗: ${err}`);
+    return { ok: false, error: String(err) };
+  }
+}
+
+/**
+ * 判斷是否應該發送提醒
+ */
+function _shouldSendReminder(courseDate, reminderTime, todayStr) {
+  const courseDateObj = new Date(courseDate);
+  const todayObj = new Date(todayStr);
+
+  if (reminderTime === '課程當天 09:00') {
+    return courseDate === todayStr;
+  }
+
+  const diffDays = Math.floor((courseDateObj - todayObj) / (1000 * 60 * 60 * 24));
+
+  if (reminderTime === '1天前' && diffDays === 1) return true;
+  if (reminderTime === '3天前' && diffDays === 3) return true;
+  if (reminderTime === '1週前' && diffDays === 7) return true;
+
+  return false;
+}
+
+/**
+ * 發送提醒 Email
+ */
+function _sendReminderEmail(teacher, course) {
+  const subject = `📅 課程提醒：${course.name}`;
+
+  const body = `
+親愛的 ${teacher.name} 老師，您好！
+
+這是您的課程提醒通知：
+
+📚 課程名稱：${course.name}
+📅 上課日期：${course.date}
+⏰ 上課時間：${course.time}
+📍 課程類型：${course.type}
+${course.note ? `📝 備註：${course.note}` : ''}
+
+${course.rsvpStatus === '已確認' ? '✅ 您已確認參加此課程' : '⚠️ 請確認是否參加此課程'}
+
+--
+此為系統自動發送的提醒信件，請勿直接回覆。
+如有任何問題，請聯絡管理員。
+
+教師排課管理系統
+  `.trim();
+
+  try {
+    MailApp.sendEmail({
+      to: teacher.email,
+      subject: subject,
+      body: body
+    });
+    Logger.log(`✅ 已發送提醒給 ${teacher.name} (${teacher.email})`);
+  } catch (err) {
+    Logger.log(`❌ 發送失敗給 ${teacher.name}: ${err}`);
+  }
+}
+
+/**
+ * 測試函數：手動觸發提醒（用於測試）
+ *
+ * 使用方式：
+ * 1. 在 Google Apps Script 編輯器中選擇此函數
+ * 2. 點擊「執行」按鈕
+ * 3. 授權必要權限（發送 Email）
+ * 4. 查看執行記錄檔
+ */
+function testSendReminders() {
+  const result = sendCourseReminders();
+  Logger.log('測試結果:', JSON.stringify(result));
+  return result;
 }
