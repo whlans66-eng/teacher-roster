@@ -548,6 +548,33 @@
     </div>
   </div>
 
+  <!-- 複製到其他日期 Modal -->
+  <div id="duplicateDateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[60] p-4">
+    <div class="card p-8 max-w-md w-full mx-4" style="box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);">
+      <h3 class="text-gray-900 mb-6" style="font-size: 24px; font-weight: 600;">📅 複製到其他日期</h3>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇新日期</label>
+          <input type="date" id="duplicateNewDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px;" required>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p class="text-sm text-blue-800">💡 課程將會保留所有資訊（師資、時間、備註等），僅更改日期。</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-4 pt-6">
+        <button onclick="closeDuplicateDateModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px;">
+          取消
+        </button>
+        <button onclick="confirmDuplicateCourse()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px;">
+          確認複製
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 查看/編輯課程詳情 Modal -->
   <div id="viewEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
     <div class="card p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" style="box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.15);">
@@ -614,20 +641,36 @@
       </form>
 
       <!-- 按鈕區 -->
-      <div id="viewModeButtons" class="flex justify-between pt-6">
-        <button id="surveyManageBtn" class="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          📊 問卷管理
-        </button>
-        <div class="flex space-x-4">
-          <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-            關閉
+      <div id="viewModeButtons" class="pt-6">
+        <!-- 操作選單（複製、分享等） -->
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button onclick="copyCourseToClipboard()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all" style="font-size: 14px;">
+            📋 複製
           </button>
-          <button onclick="enterEditMode()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-            ✏️ 編輯
+          <button onclick="openDuplicateDateModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all" style="font-size: 14px;">
+            📅 複製到其他日期
           </button>
-          <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-            🗑️ 刪除
+          <button onclick="shareCourse()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all" style="font-size: 14px;">
+            📤 分享
           </button>
+        </div>
+
+        <!-- 主要操作按鈕 -->
+        <div class="flex justify-between">
+          <button id="surveyManageBtn" class="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            📊 問卷管理
+          </button>
+          <div class="flex space-x-4">
+            <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+              關閉
+            </button>
+            <button onclick="enterEditMode()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+              ✏️ 編輯
+            </button>
+            <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+              🗑️ 刪除
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1548,7 +1591,16 @@
       document.getElementById('viewModeButtons').style.display = 'flex';
       document.getElementById('editModeButtons').style.display = 'none';
 
+      // 載入社交資料
+      const courseLikes = loadArray('likes').filter(l => l.courseId === courseId);
+      const courseComments = loadArray('comments').filter(c => c.courseId === courseId);
+      const activityLogs = loadArray('activityLog').filter(a => a.courseId === courseId);
+      const currentUserId = 'user_1'; // 模擬當前用戶 ID
+      const currentUserName = '管理員'; // 模擬當前用戶名稱
+      const userHasLiked = courseLikes.some(l => l.userId === currentUserId);
+
       document.getElementById('viewMode').innerHTML = `
+        <!-- 課程基本資訊 -->
         <div class="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
           <div>
             <label class="text-xs font-medium text-gray-600">師資</label>
@@ -1583,9 +1635,109 @@
             <label class="text-xs font-medium text-gray-600">備註</label>
             <p class="text-sm text-gray-800 whitespace-pre-wrap">${course.note}</p>
           </div>
-          ` : '<div class="text-center text-gray-400 text-sm py-2">無備註</div>'}
+          ` : ''}
+        </div>
+
+        <!-- 提醒設定 -->
+        <div class="bg-blue-50 rounded-xl p-4 border border-blue-200 mt-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">🔔</span>
+              <div>
+                <label class="text-sm font-medium text-gray-700">提醒設定</label>
+                <p class="text-xs text-gray-500">${course.reminderTime || '未設定'}</p>
+              </div>
+            </div>
+            <button onclick="setReminder()" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600">
+              ${course.reminderTime ? '修改' : '設定'}
+            </button>
+          </div>
+        </div>
+
+        <!-- RSVP 確認狀態 -->
+        <div class="bg-green-50 rounded-xl p-4 border border-green-200 mt-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">✓</span>
+              <div>
+                <label class="text-sm font-medium text-gray-700">參加確認</label>
+                <p class="text-xs ${course.rsvpStatus === '已確認' ? 'text-green-600' : 'text-gray-500'}">
+                  ${course.rsvpStatus || '待確認'}
+                </p>
+              </div>
+            </div>
+            <button onclick="toggleRSVP()" class="px-3 py-1 ${course.rsvpStatus === '已確認' ? 'bg-gray-500' : 'bg-green-500'} text-white rounded-lg text-sm hover:opacity-80">
+              ${course.rsvpStatus === '已確認' ? '取消確認' : '確認參加'}
+            </button>
+          </div>
+        </div>
+
+        <!-- 社交互動區 -->
+        <div class="flex items-center space-x-4 mt-4 pb-4 border-b border-gray-200">
+          <!-- 按讚 -->
+          <button onclick="toggleLike()" class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all ${userHasLiked ? 'text-red-500' : 'text-gray-600'}">
+            <span class="text-xl">${userHasLiked ? '❤️' : '🤍'}</span>
+            <span class="text-sm font-medium">${courseLikes.length}</span>
+          </button>
+
+          <!-- 留言 -->
+          <div class="flex items-center space-x-2 text-gray-600">
+            <span class="text-xl">💬</span>
+            <span class="text-sm font-medium">${courseComments.length}</span>
+          </div>
+        </div>
+
+        <!-- 留言討論區 -->
+        <div class="mt-4">
+          <h4 class="text-sm font-semibold text-gray-700 mb-3">💬 討論區</h4>
+
+          <!-- 留言列表 -->
+          <div id="commentsList" class="space-y-3 mb-4 max-h-60 overflow-y-auto">
+            ${courseComments.length > 0 ? courseComments.map(comment => `
+              <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div class="flex items-start space-x-2">
+                  <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">
+                    ${comment.userName.charAt(0)}
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-sm font-medium text-gray-900">${comment.userName}</span>
+                      <span class="text-xs text-gray-500">${formatTimestamp(comment.timestamp)}</span>
+                    </div>
+                    <p class="text-sm text-gray-700 whitespace-pre-wrap">${comment.content}</p>
+                  </div>
+                </div>
+              </div>
+            `).join('') : '<p class="text-sm text-gray-400 text-center py-4">尚無留言，成為第一個留言的人！</p>'}
+          </div>
+
+          <!-- 新增留言 -->
+          <div class="flex space-x-2">
+            <textarea id="newCommentInput" rows="2" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="輸入留言..."></textarea>
+            <button onclick="addComment()" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 self-end">
+              發送
+            </button>
+          </div>
+        </div>
+
+        <!-- 操作歷史 -->
+        <div class="mt-4 pt-4 border-t border-gray-200">
+          <h4 class="text-sm font-semibold text-gray-700 mb-3">📜 操作歷史</h4>
+          <div class="space-y-2 max-h-40 overflow-y-auto">
+            ${activityLogs.length > 0 ? activityLogs.slice().reverse().map(log => `
+              <div class="flex items-center space-x-2 text-xs text-gray-600">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="font-medium">${log.userName}</span>
+                <span>${log.action}</span>
+                <span class="text-gray-400">${formatTimestamp(log.timestamp)}</span>
+              </div>
+            `).join('') : '<p class="text-xs text-gray-400 text-center py-2">尚無操作記錄</p>'}
+          </div>
         </div>
       `;
+
+      // 初始化社交功能
+      initSocialFeatures(courseId, currentUserId, currentUserName);
 
       document.getElementById('deleteEventBtn').onclick = () => {
         if (confirm('確定要刪除此課程嗎？')) {
@@ -1962,6 +2114,408 @@
         '專題': 'bg-red-500'
       };
       return colors[type] || 'bg-gray-500';
+    }
+
+    // ==================== Phase 1: 複製、分享功能 ====================
+
+    /**
+     * 功能 1.1: 複製課程資訊到剪貼簿
+     */
+    async function copyCourseToClipboard() {
+      const course = courseAssignments.find(c => c.id === editingCourseId);
+      if (!course) return;
+
+      const teacher = teachers.find(t => t.id === course.teacherId);
+      const courseText = `📅 ${course.name}\n` +
+                        `👨‍🏫 教師：${teacher ? teacher.name : '未知'}\n` +
+                        `📆 日期：${course.date}\n` +
+                        `⏰ 時間：${course.time}\n` +
+                        `📍 類型：${course.type}\n` +
+                        `${course.note ? '📝 備註：' + course.note : ''}`;
+
+      try {
+        // 使用現代 Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(courseText);
+          showMessage('✅ 課程資訊已複製到剪貼簿！', 'success');
+        } else {
+          // 降級方案：使用傳統方式
+          const textarea = document.createElement('textarea');
+          textarea.value = courseText;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          showMessage('✅ 課程資訊已複製！', 'success');
+        }
+      } catch (err) {
+        console.error('複製失敗:', err);
+        showMessage('❌ 複製失敗，請手動複製', 'error');
+      }
+    }
+
+    /**
+     * 功能 1.2: 開啟「複製到其他日期」Modal
+     */
+    function openDuplicateDateModal() {
+      const course = courseAssignments.find(c => c.id === editingCourseId);
+      if (!course) return;
+
+      // 設定預設日期為明天
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      document.getElementById('duplicateNewDate').value = tomorrowStr;
+
+      // 顯示 Modal
+      document.getElementById('duplicateDateModal').classList.remove('hidden');
+    }
+
+    /**
+     * 關閉「複製到其他日期」Modal
+     */
+    function closeDuplicateDateModal() {
+      document.getElementById('duplicateDateModal').classList.add('hidden');
+    }
+
+    /**
+     * 確認複製課程到新日期
+     */
+    function confirmDuplicateCourse() {
+      const newDate = document.getElementById('duplicateNewDate').value;
+      if (!newDate) {
+        alert('請選擇新日期！');
+        return;
+      }
+
+      const originalCourse = courseAssignments.find(c => c.id === editingCourseId);
+      if (!originalCourse) return;
+
+      // 檢查時間衝突
+      const conflicts = checkTimeConflict(
+        originalCourse.teacherId,
+        newDate,
+        originalCourse.time
+      );
+
+      if (conflicts.length > 0) {
+        const continueAnyway = confirm(
+          `⚠️ 衝堂警告！\n\n${conflicts.join('\n')}\n\n是否仍要繼續複製？`
+        );
+        if (!continueAnyway) return;
+      }
+
+      // 建立新課程（複製所有資訊，僅改日期）
+      const newCourseId = Date.now();
+      const newCourse = {
+        ...originalCourse,
+        id: newCourseId,
+        date: newDate
+      };
+
+      courseAssignments.push(newCourse);
+
+      // 同步建立行事曆事件
+      const teacher = teachers.find(t => t.id === newCourse.teacherId);
+      const newEvent = {
+        id: newCourseId,
+        courseId: newCourseId,
+        date: newDate,
+        title: `${newCourse.name} - ${teacher ? teacher.name : ''}`,
+        time: newCourse.time,
+        teacherId: newCourse.teacherId,
+        location: newCourse.type,
+        color: getCourseTypeColor(newCourse.type)
+      };
+      calendarEvents.push(newEvent);
+
+      // 儲存並更新介面
+      saveData();
+      updateStatistics();
+      renderCalendar();
+      renderTodayCourses();
+      closeDuplicateDateModal();
+
+      showMessage(`✅ 課程已成功複製到 ${newDate}！`, 'success');
+    }
+
+    /**
+     * 檢查時間衝突（用於複製課程）
+     */
+    function checkTimeConflict(teacherId, date, time) {
+      const conflicts = [];
+      const timeToMinutes = (t) => {
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+      };
+
+      const [newStart, newEnd] = time.split('-');
+      const newStartMin = timeToMinutes(newStart);
+      const newEndMin = timeToMinutes(newEnd);
+
+      courseAssignments.forEach(c => {
+        if (c.teacherId === teacherId && c.date === date) {
+          const [start, end] = c.time.split('-');
+          const startMin = timeToMinutes(start);
+          const endMin = timeToMinutes(end);
+
+          if (!(newEndMin <= startMin || newStartMin >= endMin)) {
+            conflicts.push(`- ${c.name} (${c.time})`);
+          }
+        }
+      });
+
+      return conflicts;
+    }
+
+    /**
+     * 功能 1.3: 分享課程（使用 Web Share API 或產生連結）
+     */
+    async function shareCourse() {
+      const course = courseAssignments.find(c => c.id === editingCourseId);
+      if (!course) return;
+
+      const teacher = teachers.find(t => t.id === course.teacherId);
+      const shareText = `📅 課程資訊\n\n` +
+                       `課程：${course.name}\n` +
+                       `教師：${teacher ? teacher.name : '未知'}\n` +
+                       `日期：${course.date}\n` +
+                       `時間：${course.time}\n` +
+                       `類型：${course.type}`;
+
+      const shareUrl = window.location.href;
+
+      try {
+        // 優先使用 Web Share API（行動裝置支援）
+        if (navigator.share) {
+          await navigator.share({
+            title: course.name,
+            text: shareText,
+            url: shareUrl
+          });
+          showMessage('✅ 課程已分享！', 'success');
+        } else {
+          // 降級方案：複製分享文字到剪貼簿
+          const fullText = shareText + `\n\n連結：${shareUrl}`;
+
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(fullText);
+            showMessage('✅ 分享連結已複製到剪貼簿！', 'success', '您可以貼到 Line、Email 或其他地方分享');
+          } else {
+            // 最後降級方案
+            const textarea = document.createElement('textarea');
+            textarea.value = fullText;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showMessage('✅ 分享連結已複製！', 'success');
+          }
+        }
+      } catch (err) {
+        console.error('分享失敗:', err);
+        if (err.name === 'AbortError') {
+          // 使用者取消分享，不顯示錯誤
+          return;
+        }
+        showMessage('❌ 分享失敗', 'error');
+      }
+    }
+
+    // ==================== Phase 3: 社交互動功能 ====================
+
+    let currentCourseId = null;
+    let currentUserId = null;
+    let currentUserName = null;
+
+    /**
+     * 初始化社交功能
+     */
+    function initSocialFeatures(courseId, userId, userName) {
+      currentCourseId = courseId;
+      currentUserId = userId;
+      currentUserName = userName;
+    }
+
+    /**
+     * 切換按讚
+     */
+    function toggleLike() {
+      let likes = loadArray('likes');
+      const existingLike = likes.find(l => l.courseId === currentCourseId && l.userId === currentUserId);
+
+      if (existingLike) {
+        // 取消按讚
+        likes = likes.filter(l => !(l.courseId === currentCourseId && l.userId === currentUserId));
+        logActivity(currentCourseId, '取消了按讚', 'unlike');
+      } else {
+        // 新增按讚
+        likes.push({
+          id: Date.now(),
+          courseId: currentCourseId,
+          userId: currentUserId,
+          userName: currentUserName,
+          timestamp: new Date().toISOString()
+        });
+        logActivity(currentCourseId, '按了讚', 'like');
+      }
+
+      localStorage.setItem('likes', JSON.stringify(likes));
+      viewEvent(currentCourseId); // 重新渲染
+    }
+
+    /**
+     * 新增留言
+     */
+    function addComment() {
+      const input = document.getElementById('newCommentInput');
+      const content = input.value.trim();
+
+      if (!content) {
+        alert('請輸入留言內容！');
+        return;
+      }
+
+      const comments = loadArray('comments');
+      comments.push({
+        id: Date.now(),
+        courseId: currentCourseId,
+        userId: currentUserId,
+        userName: currentUserName,
+        userAvatar: '', // 可以後續新增頭像功能
+        content: content,
+        timestamp: new Date().toISOString(),
+        updatedAt: null
+      });
+
+      localStorage.setItem('comments', JSON.stringify(comments));
+      logActivity(currentCourseId, '發表了留言', 'comment');
+
+      input.value = '';
+      viewEvent(currentCourseId); // 重新渲染
+    }
+
+    /**
+     * 切換 RSVP 確認狀態
+     */
+    function toggleRSVP() {
+      const course = courseAssignments.find(c => c.id === currentCourseId);
+      if (!course) return;
+
+      const newStatus = course.rsvpStatus === '已確認' ? '待確認' : '已確認';
+      course.rsvpStatus = newStatus;
+      course.updatedAt = new Date().toISOString();
+
+      saveData();
+      logActivity(currentCourseId, newStatus === '已確認' ? '確認參加課程' : '取消參加確認', 'rsvp');
+      viewEvent(currentCourseId); // 重新渲染
+      showMessage(`✅ 已${newStatus === '已確認' ? '確認' : '取消'}參加！`, 'success');
+    }
+
+    /**
+     * 設定提醒
+     */
+    function setReminder() {
+      const course = courseAssignments.find(c => c.id === currentCourseId);
+      if (!course) return;
+
+      const reminderOptions = [
+        { value: '課程當天 09:00', label: '課程當天早上 9:00' },
+        { value: '1天前', label: '1天前' },
+        { value: '3天前', label: '3天前' },
+        { value: '1週前', label: '1週前' }
+      ];
+
+      let optionsHtml = reminderOptions.map(opt =>
+        `<option value="${opt.value}" ${course.reminderTime === opt.value ? 'selected' : ''}>${opt.label}</option>`
+      ).join('');
+
+      const reminder = prompt(
+        `請選擇提醒時間：\n\n` +
+        `1. 課程當天早上 9:00\n` +
+        `2. 1天前\n` +
+        `3. 3天前\n` +
+        `4. 1週前\n` +
+        `5. 清除提醒\n\n` +
+        `請輸入選項編號 (1-5)：`
+      );
+
+      if (reminder === null) return;
+
+      const reminderMap = {
+        '1': '課程當天 09:00',
+        '2': '1天前',
+        '3': '3天前',
+        '4': '1週前',
+        '5': null
+      };
+
+      const selectedReminder = reminderMap[reminder];
+      if (selectedReminder === undefined) {
+        alert('無效的選項！');
+        return;
+      }
+
+      course.reminderTime = selectedReminder;
+      course.updatedAt = new Date().toISOString();
+
+      saveData();
+      logActivity(currentCourseId, selectedReminder ? `設定提醒：${selectedReminder}` : '清除提醒', 'reminder');
+      viewEvent(currentCourseId);
+      showMessage(selectedReminder ? `✅ 提醒已設定：${selectedReminder}` : '✅ 提醒已清除', 'success');
+    }
+
+    /**
+     * 記錄操作歷史
+     */
+    function logActivity(courseId, action, actionType = 'general') {
+      const activityLog = loadArray('activityLog');
+      activityLog.push({
+        id: Date.now(),
+        courseId: courseId,
+        userId: currentUserId || 'user_1',
+        userName: currentUserName || '管理員',
+        action: action,
+        actionType: actionType,
+        details: '',
+        timestamp: new Date().toISOString()
+      });
+
+      localStorage.setItem('activityLog', JSON.stringify(activityLog));
+    }
+
+    /**
+     * 格式化時間戳記
+     */
+    function formatTimestamp(timestamp) {
+      if (!timestamp) return '';
+
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return '剛剛';
+      if (diffMins < 60) return `${diffMins}分鐘前`;
+      if (diffHours < 24) return `${diffHours}小時前`;
+      if (diffDays < 7) return `${diffDays}天前`;
+
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hour = String(date.getHours()).padStart(2, '0');
+      const minute = String(date.getMinutes()).padStart(2, '0');
+
+      if (year === now.getFullYear()) {
+        return `${month}-${day} ${hour}:${minute}`;
+      }
+      return `${year}-${month}-${day}`;
     }
 
     // ==================== 問卷管理功能 ====================
