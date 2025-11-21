@@ -100,6 +100,260 @@
         0 2px 4px rgba(0, 0, 0, 0.15);
     }
 
+    /* ========== TimeTree 排版 + Apple 風格樣式 ========== */
+
+    /* Apple 風格的磨砂玻璃效果 */
+    .apple-glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* Apple 配色 - 系統顏色 */
+    :root {
+      --apple-blue: #007AFF;
+      --apple-green: #34C759;
+      --apple-orange: #FF9500;
+      --apple-red: #FF3B30;
+      --apple-purple: #AF52DE;
+      --apple-gray: #8E8E93;
+      --apple-gray-light: #F2F2F7;
+      --apple-gray-dark: #48484A;
+    }
+
+    /* TimeTree 風格的操作按鈕 */
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--apple-gray-light);
+      color: var(--apple-blue);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: #E5E5EA;
+      transform: translateY(-1px);
+    }
+
+    .action-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Apple 風格的資訊卡片 */
+    .info-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      border: 0.5px solid rgba(0, 0, 0, 0.04);
+    }
+
+    /* TimeTree 風格的功能區塊 */
+    .feature-block {
+      background: var(--apple-gray-light);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      border: 0.5px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .feature-block-blue {
+      background: linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(0, 122, 255, 0.04) 100%);
+      border: 1px solid rgba(0, 122, 255, 0.15);
+    }
+
+    .feature-block-green {
+      background: linear-gradient(135deg, rgba(52, 199, 89, 0.08) 0%, rgba(52, 199, 89, 0.04) 100%);
+      border: 1px solid rgba(52, 199, 89, 0.15);
+    }
+
+    /* Apple 風格的按鈕 */
+    .apple-btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: -0.02em;
+    }
+
+    .apple-btn-primary {
+      background: var(--apple-blue);
+      color: white;
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+    }
+
+    .apple-btn-primary:hover {
+      background: #0051D5;
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .apple-btn-secondary {
+      background: var(--apple-gray-light);
+      color: var(--apple-blue);
+    }
+
+    .apple-btn-secondary:hover {
+      background: #E5E5EA;
+      transform: translateY(-1px);
+    }
+
+    .apple-btn-success {
+      background: var(--apple-green);
+      color: white;
+      box-shadow: 0 2px 8px rgba(52, 199, 89, 0.25);
+    }
+
+    .apple-btn-success:hover {
+      background: #2AB04A;
+      transform: translateY(-1px);
+    }
+
+    .apple-btn-danger {
+      background: var(--apple-red);
+      color: white;
+      box-shadow: 0 2px 8px rgba(255, 59, 48, 0.25);
+    }
+
+    .apple-btn-danger:hover {
+      background: #E6342A;
+      transform: translateY(-1px);
+    }
+
+    /* TimeTree 風格的社交互動按鈕 */
+    .social-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: white;
+      border: 1px solid #E5E5EA;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .social-btn:hover {
+      background: var(--apple-gray-light);
+      border-color: var(--apple-gray);
+      transform: translateY(-1px);
+    }
+
+    .social-btn.liked {
+      background: rgba(255, 59, 48, 0.08);
+      border-color: var(--apple-red);
+      color: var(--apple-red);
+    }
+
+    /* 愛心動畫 */
+    @keyframes heartBeat {
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(1.3); }
+      50% { transform: scale(1.1); }
+    }
+
+    .heart-animation {
+      animation: heartBeat 0.6s ease;
+    }
+
+    /* TimeTree 風格的留言卡片 */
+    .comment-card {
+      background: white;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 8px 0;
+      border: 0.5px solid rgba(0, 0, 0, 0.06);
+      transition: all 0.2s ease;
+    }
+
+    .comment-card:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transform: translateY(-1px);
+    }
+
+    /* Apple 風格的頭像 */
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--apple-blue), var(--apple-purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* 操作歷史時間軸 */
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 13px;
+      color: var(--apple-gray-dark);
+    }
+
+    .timeline-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--apple-green);
+      box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.15);
+      flex-shrink: 0;
+    }
+
+    /* 區塊標題 */
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--apple-gray-dark);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 輸入框樣式 */
+    .apple-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #E5E5EA;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      background: white;
+    }
+
+    .apple-input:focus {
+      outline: none;
+      border-color: var(--apple-blue);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    /* 分隔線 */
+    .divider {
+      height: 0.5px;
+      background: linear-gradient(90deg, transparent, #E5E5EA, transparent);
+      margin: 16px 0;
+    }
+
     @media (max-width: 768px) {
       /* 隱藏桌面版行事曆，顯示手機版 */
       .calendar-grid-container {
@@ -642,32 +896,37 @@
 
       <!-- 按鈕區 -->
       <div id="viewModeButtons" class="pt-6">
-        <!-- 操作選單（複製、分享等） -->
+        <!-- TimeTree 風格的快速操作選單 -->
         <div class="flex flex-wrap gap-2 mb-4">
-          <button onclick="copyCourseToClipboard()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all" style="font-size: 14px;">
-            📋 複製
+          <button onclick="copyCourseToClipboard()" class="action-btn">
+            <span>📋</span>
+            <span>複製</span>
           </button>
-          <button onclick="openDuplicateDateModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all" style="font-size: 14px;">
-            📅 複製到其他日期
+          <button onclick="openDuplicateDateModal()" class="action-btn">
+            <span>📅</span>
+            <span>複製到其他日期</span>
           </button>
-          <button onclick="shareCourse()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all" style="font-size: 14px;">
-            📤 分享
+          <button onclick="shareCourse()" class="action-btn">
+            <span>📤</span>
+            <span>分享</span>
           </button>
         </div>
 
-        <!-- 主要操作按鈕 -->
-        <div class="flex justify-between">
-          <button id="surveyManageBtn" class="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <div class="divider"></div>
+
+        <!-- Apple 風格的主要操作按鈕 -->
+        <div class="flex flex-wrap gap-3 justify-between items-center">
+          <button id="surveyManageBtn" class="apple-btn apple-btn-secondary">
             📊 問卷管理
           </button>
-          <div class="flex space-x-4">
-            <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          <div class="flex flex-wrap gap-2">
+            <button onclick="closeViewEventModal()" class="apple-btn apple-btn-secondary">
               關閉
             </button>
-            <button onclick="enterEditMode()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            <button onclick="enterEditMode()" class="apple-btn apple-btn-primary">
               ✏️ 編輯
             </button>
-            <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            <button id="deleteEventBtn" class="apple-btn apple-btn-danger">
               🗑️ 刪除
             </button>
           </div>
@@ -1600,138 +1859,178 @@
       const userHasLiked = courseLikes.some(l => l.userId === currentUserId);
 
       document.getElementById('viewMode').innerHTML = `
+        <!-- TimeTree + Apple 風格的課程詳情 -->
+
         <!-- 課程基本資訊 -->
-        <div class="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
+        <div class="info-card space-y-4">
           <div>
-            <label class="text-xs font-medium text-gray-600">師資</label>
-            <p class="text-lg font-semibold text-gray-900">👨‍🏫 ${teacher ? teacher.name : '未知'}</p>
+            <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">授課教師</div>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">👨‍🏫</span>
+              <span class="text-lg font-semibold" style="color: var(--apple-gray-dark);">${teacher ? teacher.name : '未知'}</span>
+            </div>
           </div>
+
           <div>
-            <label class="text-xs font-medium text-gray-600">課程名稱</label>
-            <p class="text-lg font-semibold text-gray-900">${course.name}</p>
+            <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">課程名稱</div>
+            <div class="text-xl font-semibold" style="color: #1d1d1f;">${course.name}</div>
           </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-xs font-medium text-gray-600">日期</label>
-              <p class="text-sm text-gray-800">📅 ${course.date}</p>
+              <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">日期</div>
+              <div class="flex items-center gap-2">
+                <span>📅</span>
+                <span class="text-sm font-medium">${course.date}</span>
+              </div>
             </div>
             <div>
-              <label class="text-xs font-medium text-gray-600">時間</label>
-              <p class="text-sm text-gray-800">⏰ ${course.time}</p>
+              <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">時間</div>
+              <div class="flex items-center gap-2">
+                <span>⏰</span>
+                <span class="text-sm font-medium">${course.time}</span>
+              </div>
             </div>
           </div>
+
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-xs font-medium text-gray-600">課程類型</label>
-              <p class="text-sm text-gray-800">📚 ${course.type}</p>
+              <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">類型</div>
+              <div class="flex items-center gap-2">
+                <span>📚</span>
+                <span class="text-sm font-medium">${course.type}</span>
+              </div>
             </div>
             <div>
-              <label class="text-xs font-medium text-gray-600">狀態</label>
-              <p class="text-sm text-gray-800">💼 ${course.status || '上班'}</p>
+              <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">狀態</div>
+              <div class="flex items-center gap-2">
+                <span>💼</span>
+                <span class="text-sm font-medium">${course.status || '上班'}</span>
+              </div>
             </div>
           </div>
+
           ${course.note ? `
           <div>
-            <label class="text-xs font-medium text-gray-600">備註</label>
-            <p class="text-sm text-gray-800 whitespace-pre-wrap">${course.note}</p>
+            <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">備註</div>
+            <div class="text-sm whitespace-pre-wrap" style="color: var(--apple-gray-dark);">${course.note}</div>
           </div>
           ` : ''}
         </div>
 
         <!-- 提醒設定 -->
-        <div class="bg-blue-50 rounded-xl p-4 border border-blue-200 mt-4">
+        <div class="feature-block feature-block-blue">
           <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-              <span class="text-lg">🔔</span>
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🔔</span>
               <div>
-                <label class="text-sm font-medium text-gray-700">提醒設定</label>
-                <p class="text-xs text-gray-500">${course.reminderTime || '未設定'}</p>
+                <div class="text-sm font-semibold" style="color: var(--apple-gray-dark);">提醒設定</div>
+                <div class="text-xs" style="color: var(--apple-gray);">${course.reminderTime || '未設定提醒'}</div>
               </div>
             </div>
-            <button onclick="setReminder()" class="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600">
+            <button onclick="setReminder()" class="action-btn" style="flex-shrink: 0;">
               ${course.reminderTime ? '修改' : '設定'}
             </button>
           </div>
         </div>
 
         <!-- RSVP 確認狀態 -->
-        <div class="bg-green-50 rounded-xl p-4 border border-green-200 mt-4">
+        <div class="feature-block feature-block-green">
           <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-              <span class="text-lg">✓</span>
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">✓</span>
               <div>
-                <label class="text-sm font-medium text-gray-700">參加確認</label>
-                <p class="text-xs ${course.rsvpStatus === '已確認' ? 'text-green-600' : 'text-gray-500'}">
-                  ${course.rsvpStatus || '待確認'}
-                </p>
+                <div class="text-sm font-semibold" style="color: var(--apple-gray-dark);">參加確認</div>
+                <div class="text-xs font-medium" style="color: ${course.rsvpStatus === '已確認' ? 'var(--apple-green)' : 'var(--apple-gray)'};">
+                  ${course.rsvpStatus === '已確認' ? '✅ ' : ''}${course.rsvpStatus || '待確認'}
+                </div>
               </div>
             </div>
-            <button onclick="toggleRSVP()" class="px-3 py-1 ${course.rsvpStatus === '已確認' ? 'bg-gray-500' : 'bg-green-500'} text-white rounded-lg text-sm hover:opacity-80">
-              ${course.rsvpStatus === '已確認' ? '取消確認' : '確認參加'}
+            <button onclick="toggleRSVP()" class="apple-btn ${course.rsvpStatus === '已確認' ? 'apple-btn-secondary' : 'apple-btn-success'}" style="flex-shrink: 0; padding: 8px 16px; font-size: 13px;">
+              ${course.rsvpStatus === '已確認' ? '取消' : '確認'}
             </button>
           </div>
         </div>
 
-        <!-- 社交互動區 -->
-        <div class="flex items-center space-x-4 mt-4 pb-4 border-b border-gray-200">
-          <!-- 按讚 -->
-          <button onclick="toggleLike()" class="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all ${userHasLiked ? 'text-red-500' : 'text-gray-600'}">
-            <span class="text-xl">${userHasLiked ? '❤️' : '🤍'}</span>
-            <span class="text-sm font-medium">${courseLikes.length}</span>
+        <div class="divider"></div>
+
+        <!-- TimeTree 風格的社交互動區 -->
+        <div class="flex items-center gap-3">
+          <button onclick="toggleLike()" class="social-btn ${userHasLiked ? 'liked' : ''}" id="likeButton">
+            <span class="text-xl" id="likeIcon">${userHasLiked ? '❤️' : '🤍'}</span>
+            <span class="font-semibold">${courseLikes.length}</span>
           </button>
 
-          <!-- 留言 -->
-          <div class="flex items-center space-x-2 text-gray-600">
+          <div class="social-btn" style="cursor: default;">
             <span class="text-xl">💬</span>
-            <span class="text-sm font-medium">${courseComments.length}</span>
+            <span class="font-semibold">${courseComments.length}</span>
           </div>
         </div>
 
+        <div class="divider"></div>
+
         <!-- 留言討論區 -->
-        <div class="mt-4">
-          <h4 class="text-sm font-semibold text-gray-700 mb-3">💬 討論區</h4>
+        <div>
+          <div class="section-title">
+            <span>💬</span>
+            <span>討論區</span>
+          </div>
 
           <!-- 留言列表 -->
-          <div id="commentsList" class="space-y-3 mb-4 max-h-60 overflow-y-auto">
+          <div id="commentsList" class="space-y-2 mb-4 max-h-80 overflow-y-auto">
             ${courseComments.length > 0 ? courseComments.map(comment => `
-              <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div class="flex items-start space-x-2">
-                  <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">
+              <div class="comment-card">
+                <div class="flex items-start gap-3">
+                  <div class="avatar">
                     ${comment.userName.charAt(0)}
                   </div>
-                  <div class="flex-1">
+                  <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between mb-1">
-                      <span class="text-sm font-medium text-gray-900">${comment.userName}</span>
-                      <span class="text-xs text-gray-500">${formatTimestamp(comment.timestamp)}</span>
+                      <span class="text-sm font-semibold" style="color: var(--apple-gray-dark);">${comment.userName}</span>
+                      <span class="text-xs" style="color: var(--apple-gray);">${formatTimestamp(comment.timestamp)}</span>
                     </div>
-                    <p class="text-sm text-gray-700 whitespace-pre-wrap">${comment.content}</p>
+                    <p class="text-sm whitespace-pre-wrap" style="color: #1d1d1f; line-height: 1.5;">${comment.content}</p>
                   </div>
                 </div>
               </div>
-            `).join('') : '<p class="text-sm text-gray-400 text-center py-4">尚無留言，成為第一個留言的人！</p>'}
+            `).join('') : `
+              <div class="text-center py-8" style="color: var(--apple-gray);">
+                <div class="text-3xl mb-2">💬</div>
+                <div class="text-sm">尚無留言，成為第一個留言的人！</div>
+              </div>
+            `}
           </div>
 
           <!-- 新增留言 -->
-          <div class="flex space-x-2">
-            <textarea id="newCommentInput" rows="2" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="輸入留言..."></textarea>
-            <button onclick="addComment()" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 self-end">
+          <div class="flex gap-2">
+            <textarea id="newCommentInput" rows="2" class="apple-input flex-1" placeholder="輸入留言..." style="resize: none;"></textarea>
+            <button onclick="addComment()" class="apple-btn apple-btn-primary self-end" style="padding: 10px 16px; white-space: nowrap;">
               發送
             </button>
           </div>
         </div>
 
+        <div class="divider"></div>
+
         <!-- 操作歷史 -->
-        <div class="mt-4 pt-4 border-t border-gray-200">
-          <h4 class="text-sm font-semibold text-gray-700 mb-3">📜 操作歷史</h4>
-          <div class="space-y-2 max-h-40 overflow-y-auto">
+        <div>
+          <div class="section-title">
+            <span>📜</span>
+            <span>操作歷史</span>
+          </div>
+          <div class="space-y-1 max-h-48 overflow-y-auto">
             ${activityLogs.length > 0 ? activityLogs.slice().reverse().map(log => `
-              <div class="flex items-center space-x-2 text-xs text-gray-600">
-                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
                 <span class="font-medium">${log.userName}</span>
                 <span>${log.action}</span>
-                <span class="text-gray-400">${formatTimestamp(log.timestamp)}</span>
+                <span style="color: var(--apple-gray); margin-left: auto;">${formatTimestamp(log.timestamp)}</span>
               </div>
-            `).join('') : '<p class="text-xs text-gray-400 text-center py-2">尚無操作記錄</p>'}
+            `).join('') : `
+              <div class="text-center py-4" style="color: var(--apple-gray); font-size: 13px;">
+                尚無操作記錄
+              </div>
+            `}
           </div>
         </div>
       `;
@@ -2342,11 +2641,22 @@
     }
 
     /**
-     * 切換按讚
+     * 切換按讚（帶動畫效果）
      */
     function toggleLike() {
       let likes = loadArray('likes');
       const existingLike = likes.find(l => l.courseId === currentCourseId && l.userId === currentUserId);
+
+      // 觸發愛心動畫
+      const likeIcon = document.getElementById('likeIcon');
+      const likeButton = document.getElementById('likeButton');
+
+      if (likeIcon) {
+        likeIcon.classList.add('heart-animation');
+        setTimeout(() => {
+          likeIcon.classList.remove('heart-animation');
+        }, 600);
+      }
 
       if (existingLike) {
         // 取消按讚
