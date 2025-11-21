@@ -365,15 +365,71 @@
       -webkit-backdrop-filter: blur(10px);
     }
 
-    /* Modal 內容區域 - iOS 風格圓角 */
-    #viewEventModal > div,
-    #addCourseModal > div,
-    #duplicateDateModal > div {
+    /* Modal 卡片容器 - 使用 Flexbox 三層結構 */
+    .modal-card {
       background: rgba(255, 255, 255, 0.95) !important;
       backdrop-filter: blur(30px) saturate(180%);
       -webkit-backdrop-filter: blur(30px) saturate(180%);
       border: 0.5px solid rgba(255, 255, 255, 0.3);
       border-radius: 20px !important;
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.15);
+
+      /* 關鍵：Flexbox 佈局 */
+      display: flex;
+      flex-direction: column;
+      overflow: hidden; /* 保護圓角不被破壞 */
+
+      max-height: 85vh;
+      width: 90%;
+      max-width: 700px;
+    }
+
+    /* Modal 頭部 - 固定不滾動 */
+    .modal-header {
+      padding: 24px 32px;
+      background: rgba(249, 249, 249, 0.8);
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      flex-shrink: 0; /* 防止被擠壓 */
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: #1d1d1f;
+    }
+
+    /* Modal 內容區 - 可滾動 */
+    .modal-content {
+      padding: 24px 32px;
+      flex-grow: 1; /* 自動填滿剩餘空間 */
+      overflow-y: auto; /* 只有這裡會滾動 */
+
+      /* 美化捲軸 */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    }
+
+    .modal-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .modal-content::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.15);
+      border-radius: 10px;
+    }
+
+    .modal-content::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(0, 0, 0, 0.25);
+    }
+
+    /* Modal 底部按鈕區 - 固定不滾動 */
+    .modal-footer {
+      padding: 20px 32px;
+      background: rgba(255, 255, 255, 0.95);
+      border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+      flex-shrink: 0; /* 防止被擠壓或消失 */
     }
 
     /* iOS 風格的彈出式操作選單 */
@@ -937,9 +993,16 @@
 
   <!-- 新增課程 Modal -->
   <div id="addCourseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-    <div class="card p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" style="box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.15);">
-      <h3 class="text-gray-900 mb-6" style="font-size: 28px; font-weight: 600; letter-spacing: -0.015em;">📚 新增課程</h3>
-      <form id="courseForm" class="space-y-4">
+    <div class="modal-card">
+
+      <!-- Modal 頭部 -->
+      <div class="modal-header">
+        <h3>📚 新增課程</h3>
+      </div>
+
+      <!-- Modal 內容區（可滾動） -->
+      <div class="modal-content">
+        <form id="courseForm" class="space-y-4">
         <div>
           <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇師資</label>
           <select id="courseTeacherId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
@@ -993,16 +1056,21 @@
           <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">備註</label>
           <textarea id="courseNote" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="選填：課程相關備註..." style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);"></textarea>
         </div>
+        </form>
+      </div>
 
-        <div class="flex justify-end space-x-4 pt-4">
+      <!-- Modal 底部按鈕區（固定） -->
+      <div class="modal-footer">
+        <div class="flex justify-end space-x-4">
           <button type="button" onclick="closeAddCourseModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
             取消
           </button>
-          <button type="submit" class="modern-btn px-6 py-3 rounded-xl font-medium" style="font-size: 15px;">
+          <button type="button" onclick="document.getElementById('courseForm').requestSubmit()" class="modern-btn px-6 py-3 rounded-xl font-medium" style="font-size: 15px;">
             確認新增
           </button>
         </div>
-      </form>
+      </div>
+
     </div>
   </div>
 
@@ -1034,41 +1102,58 @@
 
   <!-- 複製到其他日期 Modal -->
   <div id="duplicateDateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[60] p-4">
-    <div class="card p-8 max-w-md w-full mx-4" style="box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);">
-      <h3 class="text-gray-900 mb-6" style="font-size: 24px; font-weight: 600;">📅 複製到其他日期</h3>
+    <div class="modal-card" style="max-width: 480px;">
 
-      <div class="space-y-4">
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇新日期</label>
-          <input type="date" id="duplicateNewDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px;" required>
-        </div>
+      <!-- Modal 頭部 -->
+      <div class="modal-header">
+        <h3>📅 複製到其他日期</h3>
+      </div>
 
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p class="text-sm text-blue-800">💡 課程將會保留所有資訊（師資、時間、備註等），僅更改日期。</p>
+      <!-- Modal 內容區（可滾動） -->
+      <div class="modal-content">
+        <div class="space-y-4">
+          <div>
+            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇新日期</label>
+            <input type="date" id="duplicateNewDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px;" required>
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-sm text-blue-800">💡 課程將會保留所有資訊（師資、時間、備註等），僅更改日期。</p>
+          </div>
         </div>
       </div>
 
-      <div class="flex justify-end space-x-4 pt-6">
-        <button onclick="closeDuplicateDateModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px;">
-          取消
-        </button>
-        <button onclick="confirmDuplicateCourse()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px;">
-          確認複製
-        </button>
+      <!-- Modal 底部按鈕區（固定） -->
+      <div class="modal-footer">
+        <div class="flex justify-end space-x-4">
+          <button onclick="closeDuplicateDateModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px;">
+            取消
+          </button>
+          <button onclick="confirmDuplicateCourse()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px;">
+            確認複製
+          </button>
+        </div>
       </div>
+
     </div>
   </div>
 
   <!-- 查看/編輯課程詳情 Modal -->
   <div id="viewEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-    <div class="card p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" style="box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.15);">
-      <h3 id="modalTitle" class="text-gray-900 mb-6" style="font-size: 28px; font-weight: 600; letter-spacing: -0.015em;">📅 課程詳情</h3>
+    <div class="modal-card">
 
-      <!-- 查看模式 -->
-      <div id="viewMode" class="space-y-4"></div>
+      <!-- Modal 頭部 -->
+      <div class="modal-header">
+        <h3 id="modalTitle">📅 課程詳情</h3>
+      </div>
 
-      <!-- 編輯模式 -->
-      <form id="editCourseForm" class="space-y-4" style="display: none;">
+      <!-- Modal 內容區（可滾動） -->
+      <div class="modal-content">
+        <!-- 查看模式 -->
+        <div id="viewMode" class="space-y-4"></div>
+
+        <!-- 編輯模式 -->
+        <form id="editCourseForm" class="space-y-4" style="display: none;">
         <div>
           <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇師資</label>
           <select id="editTeacherId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
@@ -1131,34 +1216,39 @@
             <div id="autoTagsContainer" class="flex flex-wrap gap-2"></div>
           </div>
         </div>
-      </form>
+        </form>
+      </div>
 
-      <!-- 按鈕區 -->
-      <div id="viewModeButtons" class="pt-6">
-        <!-- iOS 風格的主要操作按鈕 -->
-        <div class="flex flex-wrap gap-3 items-center">
-          <button onclick="toggleContextMenu()" class="apple-btn apple-btn-secondary" style="margin-right: auto;">
-            <span style="font-size: 18px; font-weight: bold;">⋯</span>
-            <span style="margin-left: 6px;">更多</span>
-          </button>
+      <!-- Modal 底部按鈕區（固定） -->
+      <div class="modal-footer">
+        <!-- 查看模式按鈕 -->
+        <div id="viewModeButtons">
+          <div class="flex flex-wrap gap-3 items-center">
+            <button onclick="toggleContextMenu()" class="apple-btn apple-btn-secondary" style="margin-right: auto;">
+              <span style="font-size: 18px; font-weight: bold;">⋯</span>
+              <span style="margin-left: 6px;">更多</span>
+            </button>
 
-          <button onclick="closeViewEventModal()" class="apple-btn apple-btn-secondary">
-            關閉
+            <button onclick="closeViewEventModal()" class="apple-btn apple-btn-secondary">
+              關閉
+            </button>
+            <button onclick="enterEditMode()" class="apple-btn apple-btn-primary">
+              ✏️ 編輯
+            </button>
+          </div>
+        </div>
+
+        <!-- 編輯模式按鈕 -->
+        <div id="editModeButtons" class="flex justify-end space-x-4" style="display: none;">
+          <button onclick="cancelEditMode()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            取消
           </button>
-          <button onclick="enterEditMode()" class="apple-btn apple-btn-primary">
-            ✏️ 編輯
+          <button onclick="saveEditedCourse()" class="modern-btn px-6 py-3 rounded-xl font-medium" style="font-size: 15px;">
+            💾 儲存變更
           </button>
         </div>
       </div>
 
-      <div id="editModeButtons" class="flex justify-end space-x-4 pt-6" style="display: none;">
-        <button onclick="cancelEditMode()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          取消
-        </button>
-        <button onclick="saveEditedCourse()" class="modern-btn px-6 py-3 rounded-xl font-medium" style="font-size: 15px;">
-          💾 儲存變更
-        </button>
-      </div>
     </div>
   </div>
 
