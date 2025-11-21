@@ -498,8 +498,23 @@
       color: var(--apple-red) !important;
     }
 
-    .menu-option i {
+    .menu-option .icon {
       font-size: 16px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-option svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
       opacity: 0.6;
     }
 
@@ -1079,23 +1094,48 @@
     <div class="context-menu-popup" onclick="event.stopPropagation()">
       <div class="menu-option" onclick="copyCourseToClipboard(); closeContextMenu();">
         <span>複製</span>
-        <span>📋</span>
+        <svg viewBox="0 0 24 24">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
       </div>
       <div class="menu-option" onclick="openDuplicateDateModal(); closeContextMenu();">
         <span>複製到其他日期</span>
-        <span>📅</span>
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+          <line x1="12" y1="14" x2="12" y2="18"></line>
+          <line x1="10" y1="16" x2="14" y2="16"></line>
+        </svg>
       </div>
       <div class="menu-option" onclick="shareCourse(); closeContextMenu();">
         <span>分享</span>
-        <span>📤</span>
+        <svg viewBox="0 0 24 24">
+          <circle cx="18" cy="5" r="3"></circle>
+          <circle cx="6" cy="12" r="3"></circle>
+          <circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
       </div>
       <div class="menu-option" onclick="openSurveyManagement(editingCourseId); closeContextMenu();">
         <span>問卷管理</span>
-        <span>📊</span>
+        <svg viewBox="0 0 24 24">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
       </div>
       <div class="menu-option menu-option-danger" onclick="confirmDeleteCourse(); closeContextMenu();">
         <span>刪除</span>
-        <span>🗑️</span>
+        <svg viewBox="0 0 24 24">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
       </div>
     </div>
   </div>
