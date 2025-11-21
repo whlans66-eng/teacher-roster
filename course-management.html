@@ -2299,7 +2299,7 @@
           ${course.note ? `
           <div>
             <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">備註</div>
-            <div class="text-sm whitespace-pre-wrap" style="color: var(--apple-gray-dark);">${course.note}</div>
+            <div class="text-sm" style="color: var(--apple-gray-dark); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">${course.note}</div>
             ${course.tags && course.tags.length > 0 ? `
               <div class="flex flex-wrap gap-2 mt-3">
                 ${course.tags.map(tag => {
