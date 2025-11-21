@@ -1057,7 +1057,8 @@
 
         <div>
           <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程名稱</label>
-          <input type="text" id="courseName" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
+          <input type="text" id="courseName" list="courseNameList" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" placeholder="輸入或選擇課程名稱" required>
+          <datalist id="courseNameList"></datalist>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -2199,7 +2200,34 @@
     // ==================== Modal 管理 ====================
     function openAddCourseModal() {
       document.getElementById('courseDate').value = getLocalDateString(new Date());
+
+      // 載入智慧派課的課程清單
+      loadMaritimeCoursesToDatalist();
+
       document.getElementById('addCourseModal').classList.remove('hidden');
+    }
+
+    // 載入智慧派課的課程名稱到 datalist
+    function loadMaritimeCoursesToDatalist() {
+      try {
+        const maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses')) || [];
+        const datalist = document.getElementById('courseNameList');
+
+        // 清空現有選項
+        datalist.innerHTML = '';
+
+        // 取得不重複的課程名稱
+        const uniqueCourseNames = [...new Set(maritimeCourses.map(c => c.name))];
+
+        // 加入到 datalist
+        uniqueCourseNames.forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          datalist.appendChild(option);
+        });
+      } catch (error) {
+        console.warn('無法載入智慧派課課程清單:', error);
+      }
     }
 
     function closeAddCourseModal() {
