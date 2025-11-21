@@ -2137,7 +2137,7 @@
                      onclick="viewEvent(${e.id}); event.stopPropagation();">
                   <div class="font-semibold">${teacherName}</div>
                   <div class="text-xs mt-1">⏰ ${e.time}</div>
-                  <div class="text-xs">${e.name}</div>
+                  <div class="text-xs" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${e.name}</div>
                 </div>
               `;
             }).join('')}
@@ -2178,7 +2178,7 @@
                   const teacherName = teacher ? teacher.name : '未知';
                   return `
                     <div class="mt-2 p-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600" onclick="viewEvent(${e.id})">
-                      <div class="font-semibold text-sm">${teacherName} - ${e.name}</div>
+                      <div class="font-semibold text-sm" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${teacherName} - ${e.name}</div>
                       <div class="text-xs mt-1">⏰ ${e.time} | 📚 ${e.type}</div>
                     </div>
                   `;
