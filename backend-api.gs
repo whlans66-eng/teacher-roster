@@ -22,7 +22,7 @@ const SHEETS_CONFIG = {
   },
   courseAssignments: {
     name: 'courseAssignments',
-    header: ['id','teacherId','name','date','time','type','status','note','rsvpStatus','reminderTime','createdBy','createdAt','updatedAt']
+    header: ['id','teacherId','name','date','time','type','status','note','tags','rsvpStatus','reminderTime','createdBy','createdAt','updatedAt']
   },
   maritimeCourses: {
     name: 'maritimeCourses',

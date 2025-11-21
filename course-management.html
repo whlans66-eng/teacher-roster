@@ -357,16 +357,24 @@
     /* ========== iOS 原生風格增強 ========== */
 
     /* 毛玻璃 Modal 背景 */
-    #viewEventModal {
+    /* Modal 背景模糊效果 */
+    #viewEventModal,
+    #addCourseModal,
+    #duplicateDateModal {
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
 
-    #viewEventModal > div {
+    /* Modal 內容區域 - iOS 風格圓角 */
+    #viewEventModal > div,
+    #addCourseModal > div,
+    #duplicateDateModal > div {
       background: rgba(255, 255, 255, 0.95) !important;
       backdrop-filter: blur(30px) saturate(180%);
       -webkit-backdrop-filter: blur(30px) saturate(180%);
       border: 0.5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px !important;
+      overflow: hidden;
     }
 
     /* iOS 風格的彈出式操作選單 */
@@ -482,6 +490,73 @@
 
     .fade-in-up {
       animation: fadeInUp 0.4s ease-out;
+    }
+
+    /* ========== 自動標籤樣式 ========== */
+    .auto-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .auto-tag:hover {
+      opacity: 0.8;
+      transform: translateY(-1px);
+    }
+
+    .auto-tag-remove {
+      margin-left: 4px;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .auto-tag:hover .auto-tag-remove {
+      opacity: 1;
+    }
+
+    /* 不同類型的標籤顏色 */
+    .tag-important {
+      background: rgba(255, 59, 48, 0.1);
+      color: var(--apple-red);
+      border-color: rgba(255, 59, 48, 0.3);
+    }
+
+    .tag-exam {
+      background: rgba(255, 149, 0, 0.1);
+      color: var(--apple-orange);
+      border-color: rgba(255, 149, 0, 0.3);
+    }
+
+    .tag-experiment {
+      background: rgba(175, 82, 222, 0.1);
+      color: var(--apple-purple);
+      border-color: rgba(175, 82, 222, 0.3);
+    }
+
+    .tag-project {
+      background: rgba(0, 122, 255, 0.1);
+      color: var(--apple-blue);
+      border-color: rgba(0, 122, 255, 0.3);
+    }
+
+    .tag-meeting {
+      background: rgba(52, 199, 89, 0.1);
+      color: var(--apple-green);
+      border-color: rgba(52, 199, 89, 0.3);
+    }
+
+    .tag-default {
+      background: rgba(142, 142, 147, 0.1);
+      color: var(--apple-gray);
+      border-color: rgba(142, 142, 147, 0.3);
     }
 
     @media (max-width: 768px) {
@@ -1046,7 +1121,16 @@
 
         <div>
           <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">備註</label>
-          <textarea id="editCourseNote" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="選填：課程相關備註..." style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);"></textarea>
+          <textarea id="editCourseNote" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="選填：課程相關備註..." style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onblur="autoGenerateTags()"></textarea>
+
+          <!-- 自動生成的標籤 -->
+          <div class="mt-3">
+            <div class="flex items-center justify-between mb-2">
+              <label class="block font-medium text-gray-700" style="font-size: 13px;">🏷️ 自動標籤</label>
+              <button type="button" onclick="autoGenerateTags()" class="text-xs" style="color: var(--apple-blue);">重新生成</button>
+            </div>
+            <div id="autoTagsContainer" class="flex flex-wrap gap-2"></div>
+          </div>
         </div>
       </form>
 
@@ -2049,6 +2133,23 @@
           <div>
             <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">備註</div>
             <div class="text-sm whitespace-pre-wrap" style="color: var(--apple-gray-dark);">${course.note}</div>
+            ${course.tags && course.tags.length > 0 ? `
+              <div class="flex flex-wrap gap-2 mt-3">
+                ${course.tags.map(tag => {
+                  // 判斷標籤類型並給予對應顏色
+                  let tagClass = 'tag-default';
+                  let tagIcon = '🏷️';
+                  for (const [key, rule] of Object.entries(TAG_RULES)) {
+                    if (rule.keywords.includes(tag)) {
+                      tagClass = rule.class;
+                      tagIcon = rule.icon;
+                      break;
+                    }
+                  }
+                  return `<span class="auto-tag ${tagClass}" style="cursor: default;"><span>${tagIcon}</span><span>${tag}</span></span>`;
+                }).join('')}
+              </div>
+            ` : ''}
           </div>
           ` : ''}
         </div>
@@ -2312,6 +2413,35 @@
       document.getElementById('editCourseStatus').value = course.status || '上班';
       document.getElementById('editCourseNote').value = course.note || '';
 
+      // 載入已有的標籤
+      if (course.tags && course.tags.length > 0) {
+        // 從現有標籤恢復
+        currentTags = course.tags.map(tagText => {
+          // 檢查標籤類型
+          for (const [key, rule] of Object.entries(TAG_RULES)) {
+            if (rule.keywords.includes(tagText)) {
+              return {
+                text: tagText,
+                class: rule.class,
+                icon: rule.icon,
+                type: key
+              };
+            }
+          }
+          // 預設標籤
+          return {
+            text: tagText,
+            class: 'tag-default',
+            icon: '🏷️',
+            type: 'custom'
+          };
+        });
+        renderTags();
+      } else {
+        // 沒有標籤時自動生成
+        autoGenerateTags();
+      }
+
       // 切換到編輯模式
       const modalTitle = document.getElementById('modalTitle');
       modalTitle.textContent = '✏️ 編輯課程';
@@ -2359,7 +2489,7 @@
         }
       }
 
-      // 更新課程資料
+      // 更新課程資料（包含自動生成的標籤）
       courseAssignments[courseIndex] = {
         ...oldCourse,
         teacherId: teacherId,
@@ -2368,7 +2498,9 @@
         time: newTime,
         type: document.getElementById('editCourseType').value,
         status: document.getElementById('editCourseStatus').value,
-        note: document.getElementById('editCourseNote').value.trim()
+        note: document.getElementById('editCourseNote').value.trim(),
+        tags: getCurrentTags(),
+        updatedAt: new Date().toISOString()
       };
 
       // 同步更新行事曆事件
@@ -2536,6 +2668,139 @@
         '專題': 'bg-red-500'
       };
       return colors[type] || 'bg-gray-500';
+    }
+
+    // ==================== 自動標籤生成系統 ====================
+
+    // 標籤關鍵字規則
+    const TAG_RULES = {
+      important: {
+        keywords: ['重要', '必須', '注意', '務必', '切記', '關鍵', '緊急'],
+        class: 'tag-important',
+        icon: '⚠️'
+      },
+      exam: {
+        keywords: ['考試', '測驗', '評量', '期中', '期末', '小考', '大考'],
+        class: 'tag-exam',
+        icon: '📝'
+      },
+      experiment: {
+        keywords: ['實驗', '實習', '實作', '實務', '操作', '練習'],
+        class: 'tag-experiment',
+        icon: '🔬'
+      },
+      project: {
+        keywords: ['專題', '報告', '作業', '習題', '繳交', '截止'],
+        class: 'tag-project',
+        icon: '📊'
+      },
+      meeting: {
+        keywords: ['會議', '討論', '說明', '講解', '演講', '座談'],
+        class: 'tag-meeting',
+        icon: '👥'
+      }
+    };
+
+    let currentTags = [];
+
+    /**
+     * 自動從備註生成標籤
+     */
+    function autoGenerateTags() {
+      const noteText = document.getElementById('editCourseNote').value.trim();
+
+      if (!noteText) {
+        currentTags = [];
+        renderTags();
+        return;
+      }
+
+      const detectedTags = [];
+
+      // 檢查每個規則
+      Object.entries(TAG_RULES).forEach(([key, rule]) => {
+        rule.keywords.forEach(keyword => {
+          if (noteText.includes(keyword)) {
+            // 避免重複
+            if (!detectedTags.find(t => t.text === keyword)) {
+              detectedTags.push({
+                text: keyword,
+                class: rule.class,
+                icon: rule.icon,
+                type: key
+              });
+            }
+          }
+        });
+      });
+
+      // 提取可能的自定義關鍵字（3-6個字的詞組）
+      const customKeywords = extractCustomKeywords(noteText);
+      customKeywords.forEach(keyword => {
+        if (!detectedTags.find(t => t.text === keyword)) {
+          detectedTags.push({
+            text: keyword,
+            class: 'tag-default',
+            icon: '🏷️',
+            type: 'custom'
+          });
+        }
+      });
+
+      // 限制標籤數量（最多6個）
+      currentTags = detectedTags.slice(0, 6);
+      renderTags();
+    }
+
+    /**
+     * 提取自定義關鍵字
+     */
+    function extractCustomKeywords(text) {
+      const keywords = [];
+
+      // 移除標點符號，按空格、逗號、句號分割
+      const words = text.replace(/[，。！？、；：""''（）《》【】]/g, ' ')
+                       .split(/\s+/)
+                       .filter(w => w.length >= 2 && w.length <= 8);
+
+      // 取前3個詞作為關鍵字
+      return words.slice(0, 3);
+    }
+
+    /**
+     * 渲染標籤
+     */
+    function renderTags() {
+      const container = document.getElementById('autoTagsContainer');
+      if (!container) return;
+
+      if (currentTags.length === 0) {
+        container.innerHTML = '<span class="text-xs" style="color: var(--apple-gray);">輸入備註後自動生成標籤...</span>';
+        return;
+      }
+
+      container.innerHTML = currentTags.map((tag, index) => `
+        <div class="auto-tag ${tag.class}">
+          <span>${tag.icon}</span>
+          <span>${tag.text}</span>
+          <span class="auto-tag-remove" onclick="removeTag(${index}); event.stopPropagation();">×</span>
+        </div>
+      `).join('');
+    }
+
+    /**
+     * 移除標籤
+     */
+    function removeTag(index) {
+      currentTags.splice(index, 1);
+      renderTags();
+    }
+
+    /**
+     * 獲取當前標籤（用於儲存）
+     */
+    function getCurrentTags() {
+      return currentTags.map(t => t.text);
     }
 
     // ==================== iOS 風格彈出式選單 ====================
