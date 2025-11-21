@@ -357,16 +357,24 @@
     /* ========== iOS 原生風格增強 ========== */
 
     /* 毛玻璃 Modal 背景 */
-    #viewEventModal {
+    /* Modal 背景模糊效果 */
+    #viewEventModal,
+    #addCourseModal,
+    #duplicateDateModal {
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
 
-    #viewEventModal > div {
+    /* Modal 內容區域 - iOS 風格圓角 */
+    #viewEventModal > div,
+    #addCourseModal > div,
+    #duplicateDateModal > div {
       background: rgba(255, 255, 255, 0.95) !important;
       backdrop-filter: blur(30px) saturate(180%);
       -webkit-backdrop-filter: blur(30px) saturate(180%);
       border: 0.5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px !important;
+      overflow: hidden;
     }
 
     /* iOS 風格的彈出式操作選單 */
