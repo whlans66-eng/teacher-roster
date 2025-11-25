@@ -18,15 +18,15 @@ const FOLDER_ID  = '1coJ2wsBu7I4qvM5eyViIu16POgEQL71n';
 const SHEETS_CONFIG = {
   teachers: {
     name: 'teachers',
-    header: ['id','name','email','teacherType','workLocation','photoUrl','experiences','certificates','subjects','tags']
+    header: ['id','name','email','teacherType','workLocation','photoUrl','experiences','certificates','subjects','tags','version','lastModifiedBy','lastModifiedAt']
   },
   courseAssignments: {
     name: 'courseAssignments',
-    header: ['id','teacherId','name','date','time','type','status','note','tags','rsvpStatus','reminderTime','createdBy','createdAt','updatedAt']
+    header: ['id','teacherId','name','date','time','type','status','note','tags','rsvpStatus','reminderTime','createdBy','createdAt','updatedAt','version','lastModifiedBy','lastModifiedAt']
   },
   maritimeCourses: {
     name: 'maritimeCourses',
-    header: ['id','name','category','method','description','keywords']
+    header: ['id','name','category','method','description','keywords','version','lastModifiedBy','lastModifiedAt']
   },
   surveyTemplates: {
     name: 'surveyTemplates',
@@ -55,6 +55,10 @@ const SHEETS_CONFIG = {
   activeSessions: {
     name: 'activeSessions',
     header: ['sessionId','userName','userEmail','pageUrl','lastActiveTime','userAgent','kicked']
+  },
+  editLocks: {
+    name: 'editLocks',
+    header: ['lockId','table','recordId','sessionId','userName','lockedAt']
   }
 };
 
@@ -108,6 +112,27 @@ function doGet(e) {
     if (action === 'session_check_kicked') {
       const kicked = _checkIfKicked(p.sessionId);
       return _json({ ok: true, kicked });
+    }
+
+    // 編輯鎖定 API
+    if (action === 'lock_acquire') {
+      const result = _acquireEditLock(p);
+      return _json({ ok: true, ...result });
+    }
+
+    if (action === 'lock_release') {
+      const result = _releaseEditLock(p);
+      return _json({ ok: true, ...result });
+    }
+
+    if (action === 'lock_list') {
+      const locks = _getEditLocks(p.table, p.recordId);
+      return _json({ ok: true, locks });
+    }
+
+    if (action === 'lock_check') {
+      const lock = _checkEditLock(p.table, p.recordId);
+      return _json({ ok: true, lock });
     }
 
     return _json({ ok: false, error: 'Unknown action or missing table parameter' });
@@ -710,5 +735,177 @@ function _cleanupStaleSessions() {
 
   if (rowsToDelete.length > 0) {
     Logger.log(`🧹 清理了 ${rowsToDelete.length} 個過期 sessions`);
+  }
+}
+
+/**
+ * ==================== 編輯鎖定系統 ====================
+ * 追蹤誰正在編輯哪筆資料，實現細粒度鎖定
+ */
+
+/**
+ * 取得編輯鎖定
+ */
+function _acquireEditLock(params) {
+  const table = params.table;
+  const recordId = params.recordId;
+  const sessionId = params.sessionId;
+  const userName = params.userName || '未知使用者';
+
+  if (!table || !recordId || !sessionId) {
+    throw new Error('Missing required parameters: table, recordId, sessionId');
+  }
+
+  _cleanupStaleLocks();
+
+  const sh = _getOrCreateSheet('editLocks', SHEETS_CONFIG.editLocks.header);
+  const data = sh.getDataRange().getValues();
+
+  // 檢查是否已有鎖定
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][1] === table && data[i][2] === String(recordId)) {
+      const existingSessionId = data[i][3];
+
+      // 如果是同一個 session，更新時間
+      if (existingSessionId === sessionId) {
+        sh.getRange(i + 1, 6).setValue(new Date().toISOString());
+        return { locked: true, ownLock: true };
+      }
+
+      // 已被其他人鎖定
+      return {
+        locked: true,
+        ownLock: false,
+        lockedBy: data[i][4],
+        lockedAt: data[i][5]
+      };
+    }
+  }
+
+  // 新增鎖定
+  const lockId = Utilities.getUuid();
+  sh.appendRow([lockId, table, String(recordId), sessionId, userName, new Date().toISOString()]);
+
+  Logger.log(`🔒 編輯鎖定: ${userName} 鎖定 ${table}/${recordId}`);
+  return { locked: true, ownLock: true, lockId };
+}
+
+/**
+ * 釋放編輯鎖定
+ */
+function _releaseEditLock(params) {
+  const table = params.table;
+  const recordId = params.recordId;
+  const sessionId = params.sessionId;
+
+  if (!table || !recordId) {
+    throw new Error('Missing required parameters: table, recordId');
+  }
+
+  const sh = _getOrCreateSheet('editLocks', SHEETS_CONFIG.editLocks.header);
+  const data = sh.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][1] === table && data[i][2] === String(recordId)) {
+      // 只有鎖定者本人才能釋放，或者不檢查 sessionId（強制釋放）
+      if (!sessionId || data[i][3] === sessionId) {
+        sh.deleteRow(i + 1);
+        Logger.log(`🔓 釋放鎖定: ${table}/${recordId}`);
+        return { released: true };
+      }
+    }
+  }
+
+  return { released: false, message: 'Lock not found or not owned' };
+}
+
+/**
+ * 取得特定資料的鎖定狀態
+ */
+function _checkEditLock(table, recordId) {
+  if (!table || !recordId) return null;
+
+  _cleanupStaleLocks();
+
+  const sh = _getOrCreateSheet('editLocks', SHEETS_CONFIG.editLocks.header);
+  const data = sh.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][1] === table && data[i][2] === String(recordId)) {
+      return {
+        lockId: data[i][0],
+        table: data[i][1],
+        recordId: data[i][2],
+        sessionId: data[i][3],
+        userName: data[i][4],
+        lockedAt: data[i][5]
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 取得所有編輯鎖定（可選過濾）
+ */
+function _getEditLocks(table, recordId) {
+  _cleanupStaleLocks();
+
+  const sh = _getOrCreateSheet('editLocks', SHEETS_CONFIG.editLocks.header);
+  const data = sh.getDataRange().getValues();
+
+  if (data.length < 2) return [];
+
+  const locks = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+
+    // 過濾條件
+    if (table && row[1] !== table) continue;
+    if (recordId && row[2] !== String(recordId)) continue;
+
+    locks.push({
+      lockId: row[0],
+      table: row[1],
+      recordId: row[2],
+      sessionId: row[3],
+      userName: row[4],
+      lockedAt: row[5]
+    });
+  }
+
+  return locks;
+}
+
+/**
+ * 清理過期的鎖定（超過 10 分鐘）
+ */
+function _cleanupStaleLocks() {
+  const sh = _getOrCreateSheet('editLocks', SHEETS_CONFIG.editLocks.header);
+  const data = sh.getDataRange().getValues();
+
+  if (data.length < 2) return;
+
+  const now = new Date();
+  const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+
+  const rowsToDelete = [];
+
+  for (let i = data.length - 1; i >= 1; i--) {
+    const lockedAt = new Date(data[i][5]);
+
+    if (lockedAt < tenMinutesAgo) {
+      rowsToDelete.push(i + 1);
+    }
+  }
+
+  rowsToDelete.forEach(rowIndex => {
+    sh.deleteRow(rowIndex);
+  });
+
+  if (rowsToDelete.length > 0) {
+    Logger.log(`🧹 清理了 ${rowsToDelete.length} 個過期鎖定`);
   }
 }

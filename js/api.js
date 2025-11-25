@@ -756,6 +756,137 @@ class SessionManager {
 const sessionManager = new SessionManager(api);
 
 /**
+ * 編輯鎖定管理器
+ * 實現細粒度鎖定，讓多人可以同時編輯不同資料
+ */
+class EditLockManager {
+  constructor(apiInstance, sessionManagerInstance) {
+    this.api = apiInstance;
+    this.sessionManager = sessionManagerInstance;
+    this.activeLocks = new Map(); // 追蹤目前持有的鎖定
+  }
+
+  /**
+   * 取得編輯鎖定
+   */
+  async acquireLock(table, recordId) {
+    try {
+      const response = await this.api._get({
+        action: 'lock_acquire',
+        table,
+        recordId: String(recordId),
+        sessionId: this.sessionManager.sessionId,
+        userName: this.sessionManager.userName
+      });
+
+      if (response.ok) {
+        if (response.ownLock) {
+          // 成功取得鎖定
+          const lockKey = `${table}:${recordId}`;
+          this.activeLocks.set(lockKey, {
+            table,
+            recordId,
+            lockedAt: new Date()
+          });
+          console.log(`🔒 已鎖定 ${table}/${recordId}`);
+          return { locked: true, ownLock: true };
+        } else {
+          // 已被其他人鎖定
+          console.warn(`⚠️ ${table}/${recordId} 已被 ${response.lockedBy} 鎖定`);
+          return {
+            locked: false,
+            lockedBy: response.lockedBy,
+            lockedAt: response.lockedAt
+          };
+        }
+      }
+
+      return { locked: false };
+    } catch (error) {
+      console.error('❌ 取得鎖定失敗:', error);
+      return { locked: false, error: error.message };
+    }
+  }
+
+  /**
+   * 釋放編輯鎖定
+   */
+  async releaseLock(table, recordId) {
+    try {
+      const response = await this.api._get({
+        action: 'lock_release',
+        table,
+        recordId: String(recordId),
+        sessionId: this.sessionManager.sessionId
+      });
+
+      if (response.ok && response.released) {
+        const lockKey = `${table}:${recordId}`;
+        this.activeLocks.delete(lockKey);
+        console.log(`🔓 已釋放 ${table}/${recordId}`);
+        return { released: true };
+      }
+
+      return { released: false };
+    } catch (error) {
+      console.error('❌ 釋放鎖定失敗:', error);
+      return { released: false, error: error.message };
+    }
+  }
+
+  /**
+   * 檢查特定資料的鎖定狀態
+   */
+  async checkLock(table, recordId) {
+    try {
+      const response = await this.api._get({
+        action: 'lock_check',
+        table,
+        recordId: String(recordId)
+      });
+
+      return response.lock || null;
+    } catch (error) {
+      console.error('❌ 檢查鎖定失敗:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 取得所有鎖定（可選過濾）
+   */
+  async getAllLocks(table = null) {
+    try {
+      const params = { action: 'lock_list' };
+      if (table) params.table = table;
+
+      const response = await this.api._get(params);
+      return response.locks || [];
+    } catch (error) {
+      console.error('❌ 取得鎖定列表失敗:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 釋放所有持有的鎖定
+   */
+  async releaseAllLocks() {
+    const promises = [];
+    for (const [lockKey, lock] of this.activeLocks.entries()) {
+      promises.push(this.releaseLock(lock.table, lock.recordId));
+    }
+
+    await Promise.all(promises);
+    this.activeLocks.clear();
+    console.log('🔓 已釋放所有鎖定');
+  }
+}
+
+// 建立全域 Edit Lock Manager 實例
+const editLockManager = new EditLockManager(api, sessionManager);
+
+/**
  * 便利函數：顯示同步狀態訊息
  */
 function showSyncStatus(message, type = 'info', options = {}) {
@@ -801,8 +932,12 @@ async function initializeDataSync() {
   }
 }
 
-// 頁面離開時取消註冊 session
+// 頁面離開時取消註冊 session 並釋放所有鎖定
 window.addEventListener('beforeunload', () => {
+  // 同步釋放鎖定（使用 Navigator.sendBeacon 確保請求送出）
+  editLockManager.releaseAllLocks().catch(err => {
+    console.warn('釋放鎖定失敗:', err);
+  });
   sessionManager.unregister();
 });
 
