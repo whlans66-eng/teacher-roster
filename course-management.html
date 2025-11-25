@@ -1578,6 +1578,11 @@
       if (courseAssignments.length === 0) {
         showMessage('目前尚無課程資料可供顯示', 'info', '請先設定後端同步或使用「新增課程」建立資料。');
       }
+
+      // 🔒 定期刷新鎖定狀態（每15秒）
+      setInterval(() => {
+        updateCoursesDisplay();
+      }, 15000);
     }
 
     function loadTeachers() {
@@ -1926,7 +1931,25 @@
     }
 
     // ==================== 今日課程總覽 ====================
-    function renderTodayCourses() {
+    // 輔助函數：更新課程顯示（用於鎖定狀態變化後刷新）
+    function updateCoursesDisplay() {
+      renderTodayCourses();
+    }
+
+    async function renderTodayCourses() {
+      // 🔒 獲取所有編輯鎖定狀態
+      let courseLocks = {};
+      try {
+        const locksResult = await editLockManager.getAllLocks('courseAssignments');
+        if (locksResult.ok && locksResult.locks) {
+          locksResult.locks.forEach(lock => {
+            courseLocks[lock.recordId] = lock;
+          });
+        }
+      } catch (error) {
+        console.warn('無法獲取鎖定狀態:', error);
+      }
+
       let titleText;
       let displayCourses;
 
@@ -2014,8 +2037,13 @@
                   };
                   const statusClass = statusColors[c.status] || statusColors['上班'];
 
+                  // 🔒 檢查鎖定狀態
+                  const lock = courseLocks[c.id];
+                  const isLocked = lock && lock.userName;
+                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200">🔒 ${lock.userName} 編輯中</span>` : '';
+
                   return `
-                    <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200" onclick="viewEvent(${c.id})">
+                    <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 ${isLocked ? 'border-red-300' : ''}" onclick="viewEvent(${c.id})">
                       <div class="flex justify-between items-start">
                         <div class="flex-1">
                           <p class="font-medium text-gray-800">${c.name}</p>
@@ -2023,6 +2051,7 @@
                             <span>🕐 ${c.time}</span>
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
                             <span class="px-2 py-0.5 ${statusClass} rounded border">${c.status || '上班'}</span>
+                            ${lockBadge}
                           </div>
                         </div>
                       </div>
@@ -2074,8 +2103,13 @@
                   };
                   const statusClass = statusColors[c.status] || statusColors['上班'];
 
+                  // 🔒 檢查鎖定狀態
+                  const lock = courseLocks[c.id];
+                  const isLocked = lock && lock.userName;
+                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200">🔒 ${lock.userName} 編輯中</span>` : '';
+
                   return `
-                    <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200" onclick="viewEvent(${c.id})">
+                    <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 ${isLocked ? 'border-red-300' : ''}" onclick="viewEvent(${c.id})">
                       <div class="flex justify-between items-start">
                         <div class="flex-1">
                           <p class="font-medium text-gray-800">${c.name}</p>
@@ -2083,6 +2117,7 @@
                             <span>🕐 ${c.time}</span>
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
                             <span class="px-2 py-0.5 ${statusClass} rounded border">${c.status || '上班'}</span>
+                            ${lockBadge}
                           </div>
                         </div>
                       </div>
@@ -2359,9 +2394,32 @@
       document.getElementById('courseForm').reset();
     }
 
-    function viewEvent(courseId) {
+    async function viewEvent(courseId) {
       const course = courseAssignments.find(c => c.id === courseId);
       if (!course) return;
+
+      // 🔒 嘗試取得編輯鎖定
+      const lockResult = await editLockManager.acquireLock('courseAssignments', courseId);
+
+      if (lockResult.locked && !lockResult.ownLock) {
+        // 已被其他人鎖定
+        const lockedBy = lockResult.lockedBy || '其他使用者';
+        const lockedTime = lockResult.lockedAt ? new Date(lockResult.lockedAt).toLocaleTimeString('zh-TW') : '';
+
+        if (confirm(`⚠️ 此課程正被 ${lockedBy} 編輯中\n鎖定時間：${lockedTime}\n\n是否要以「唯讀模式」查看？`)) {
+          // 以唯讀模式查看，不設定 editingCourseId
+          editingCourseId = null;
+        } else {
+          return; // 取消查看
+        }
+      } else if (lockResult.locked && lockResult.ownLock) {
+        // 成功取得鎖定
+        console.log(`🔒 已鎖定課程 ${courseId}`);
+        editingCourseId = courseId;
+      } else {
+        // 未能取得鎖定（其他錯誤）
+        editingCourseId = courseId;
+      }
 
       // 選擇該課程的日期並更新課程總覽
       selectDate(course.date);
@@ -2375,8 +2433,6 @@
           }
         }, 100);
       }
-
-      editingCourseId = courseId;
       const teacher = teachers.find(t => t.id === course.teacherId);
 
       // 顯示查看模式
@@ -2776,7 +2832,7 @@
       viewEvent(editingCourseId);
     }
 
-    function saveEditedCourse() {
+    async function saveEditedCourse() {
       const teacherId = Number(document.getElementById('editTeacherId').value);
       if (!teacherId) {
         alert('請選擇師資！');
@@ -2843,7 +2899,9 @@
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
-      closeViewEventModal();
+
+      // 🔓 關閉對話框並釋放鎖定
+      await closeViewEventModal();
       alert('✅ 課程已更新！');
     }
 
@@ -2873,9 +2931,18 @@
       return conflicts;
     }
 
-    function closeViewEventModal() {
+    async function closeViewEventModal() {
+      // 🔓 釋放編輯鎖定
+      if (editingCourseId) {
+        await editLockManager.releaseLock('courseAssignments', editingCourseId);
+        console.log(`🔓 已釋放課程 ${editingCourseId} 的鎖定`);
+      }
+
       document.getElementById('viewEventModal').classList.add('hidden');
       editingCourseId = null;
+
+      // 更新課程列表以反映鎖定狀態變化
+      updateCoursesDisplay();
     }
 
     // ==================== 課程管理 ====================
