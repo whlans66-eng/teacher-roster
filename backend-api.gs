@@ -51,6 +51,10 @@ const SHEETS_CONFIG = {
   likes: {
     name: 'likes',
     header: ['id','courseId','userId','userName','timestamp']
+  },
+  activeSessions: {
+    name: 'activeSessions',
+    header: ['sessionId','userName','userEmail','pageUrl','lastActiveTime','userAgent','kicked']
   }
 };
 
@@ -75,6 +79,35 @@ function doGet(e) {
         allData[tableName] = _readTable(tableName);
       });
       return _json({ ok: true, data: allData });
+    }
+
+    // Session 管理 API
+    if (action === 'session_register') {
+      _cleanupStaleSessions();
+      const result = _registerSession(p);
+      return _json({ ok: true, ...result });
+    }
+
+    if (action === 'session_heartbeat') {
+      _cleanupStaleSessions();
+      const result = _updateHeartbeat(p);
+      return _json({ ok: true, ...result });
+    }
+
+    if (action === 'session_list') {
+      _cleanupStaleSessions();
+      const sessions = _getActiveSessions();
+      return _json({ ok: true, sessions });
+    }
+
+    if (action === 'session_kick') {
+      const result = _kickSession(p);
+      return _json({ ok: true, ...result });
+    }
+
+    if (action === 'session_check_kicked') {
+      const kicked = _checkIfKicked(p.sessionId);
+      return _json({ ok: true, kicked });
     }
 
     return _json({ ok: false, error: 'Unknown action or missing table parameter' });
@@ -501,4 +534,181 @@ function testSendReminders() {
   const result = sendCourseReminders();
   Logger.log('測試結果:', JSON.stringify(result));
   return result;
+}
+
+/**
+ * ==================== Session 管理系統 ====================
+ * 用於追蹤線上使用者並支援踢人功能
+ */
+
+/**
+ * 註冊新 session
+ */
+function _registerSession(params) {
+  const sessionId = params.sessionId || Utilities.getUuid();
+  const userName = params.userName || '訪客';
+  const userEmail = params.userEmail || '';
+  const pageUrl = params.pageUrl || '';
+  const userAgent = params.userAgent || '';
+
+  const sh = _getOrCreateSheet('activeSessions', SHEETS_CONFIG.activeSessions.header);
+
+  // 檢查是否已存在相同 sessionId
+  const data = sh.getDataRange().getValues();
+  let rowIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === sessionId) {
+      rowIndex = i + 1;
+      break;
+    }
+  }
+
+  const now = new Date().toISOString();
+
+  if (rowIndex > 0) {
+    // 更新現有 session
+    sh.getRange(rowIndex, 1, 1, 7).setValues([[
+      sessionId, userName, userEmail, pageUrl, now, userAgent, false
+    ]]);
+  } else {
+    // 新增 session
+    sh.appendRow([sessionId, userName, userEmail, pageUrl, now, userAgent, false]);
+  }
+
+  Logger.log(`✅ Session 註冊: ${userName} (${sessionId})`);
+  return { sessionId, message: 'Session registered' };
+}
+
+/**
+ * 更新心跳
+ */
+function _updateHeartbeat(params) {
+  const sessionId = params.sessionId;
+  if (!sessionId) throw new Error('Missing sessionId');
+
+  const sh = _getOrCreateSheet('activeSessions', SHEETS_CONFIG.activeSessions.header);
+  const data = sh.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === sessionId) {
+      const now = new Date().toISOString();
+      sh.getRange(i + 1, 5).setValue(now); // 更新 lastActiveTime
+
+      // 檢查是否被踢出
+      const kicked = data[i][6];
+      return {
+        message: 'Heartbeat updated',
+        kicked: kicked === true || kicked === 'TRUE' || kicked === 'true'
+      };
+    }
+  }
+
+  throw new Error('Session not found');
+}
+
+/**
+ * 取得活躍的 sessions（5分鐘內有活動）
+ */
+function _getActiveSessions() {
+  const sh = _getOrCreateSheet('activeSessions', SHEETS_CONFIG.activeSessions.header);
+  const data = sh.getDataRange().getValues();
+
+  if (data.length < 2) return [];
+
+  const now = new Date();
+  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+
+  const activeSessions = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const lastActiveTime = new Date(row[4]);
+
+    // 只返回 5 分鐘內活躍的 session
+    if (lastActiveTime > fiveMinutesAgo) {
+      activeSessions.push({
+        sessionId: row[0],
+        userName: row[1],
+        userEmail: row[2],
+        pageUrl: row[3],
+        lastActiveTime: row[4],
+        userAgent: row[5],
+        kicked: row[6]
+      });
+    }
+  }
+
+  return activeSessions;
+}
+
+/**
+ * 踢出特定 session
+ */
+function _kickSession(params) {
+  const sessionId = params.sessionId;
+  if (!sessionId) throw new Error('Missing sessionId');
+
+  const sh = _getOrCreateSheet('activeSessions', SHEETS_CONFIG.activeSessions.header);
+  const data = sh.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === sessionId) {
+      sh.getRange(i + 1, 7).setValue(true); // 設定 kicked = true
+      Logger.log(`⚠️ Session 被踢出: ${data[i][1]} (${sessionId})`);
+      return { message: 'Session kicked', userName: data[i][1] };
+    }
+  }
+
+  throw new Error('Session not found');
+}
+
+/**
+ * 檢查 session 是否被踢出
+ */
+function _checkIfKicked(sessionId) {
+  if (!sessionId) return false;
+
+  const sh = _getOrCreateSheet('activeSessions', SHEETS_CONFIG.activeSessions.header);
+  const data = sh.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === sessionId) {
+      const kicked = data[i][6];
+      return kicked === true || kicked === 'TRUE' || kicked === 'true';
+    }
+  }
+
+  return false;
+}
+
+/**
+ * 清理過期的 sessions（超過 5 分鐘無活動）
+ */
+function _cleanupStaleSessions() {
+  const sh = _getOrCreateSheet('activeSessions', SHEETS_CONFIG.activeSessions.header);
+  const data = sh.getDataRange().getValues();
+
+  if (data.length < 2) return;
+
+  const now = new Date();
+  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+
+  const rowsToDelete = [];
+
+  for (let i = data.length - 1; i >= 1; i--) {
+    const lastActiveTime = new Date(data[i][4]);
+
+    if (lastActiveTime < fiveMinutesAgo) {
+      rowsToDelete.push(i + 1); // +1 because sheet rows are 1-indexed
+    }
+  }
+
+  // 從後往前刪除，避免索引錯位
+  rowsToDelete.forEach(rowIndex => {
+    sh.deleteRow(rowIndex);
+  });
+
+  if (rowsToDelete.length > 0) {
+    Logger.log(`🧹 清理了 ${rowsToDelete.length} 個過期 sessions`);
+  }
 }

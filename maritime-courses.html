@@ -1098,6 +1098,125 @@
       saveMaritimeCourses();
     }
 
+    // ==================== 衝突對話框 - 顯示在線使用者 ====================
+    function showConflictDialog(result) {
+      const activeSessions = result.activeSessions || [];
+
+      let userListHTML = '';
+      if (activeSessions.length === 0) {
+        userListHTML = '<p style="color: #666; margin: 10px 0;">目前沒有其他使用者在線</p>';
+      } else {
+        userListHTML = '<div style="margin: 15px 0;"><strong>目前在線的使用者：</strong><ul style="list-style: none; padding: 10px 0; margin: 0;">';
+
+        activeSessions.forEach(session => {
+          const timeAgo = getTimeAgo(session.lastActiveTime);
+          userListHTML += `
+            <li style="padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>${session.userName || '訪客'}</strong>
+                ${session.userEmail ? `<br><small style="color: #666;">${session.userEmail}</small>` : ''}
+                <br><small style="color: #999;">最後活動: ${timeAgo}</small>
+              </div>
+              <button
+                onclick="kickUser('${session.sessionId}', '${session.userName}')"
+                style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                踢出
+              </button>
+            </li>
+          `;
+        });
+
+        userListHTML += '</ul></div>';
+      }
+
+      const dialogHTML = `
+        <div id="conflictDialog" style="
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(0,0,0,0.5); display: flex; align-items: center;
+          justify-content: center; z-index: 10000;">
+          <div style="
+            background: white; padding: 30px; border-radius: 12px;
+            max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            <h2 style="margin: 0 0 15px 0; color: #d97706;">⚠️ 資料衝突警告</h2>
+            <p style="color: #374151; margin: 10px 0;">${result.message}</p>
+            ${userListHTML}
+            <div style="margin-top: 20px; text-align: right;">
+              <button
+                onclick="closeConflictDialog()"
+                style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-right: 10px;">
+                關閉
+              </button>
+              <button
+                onclick="window.location.reload()"
+                style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 16px;">
+                重新整理頁面
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 移除舊的對話框（如果存在）
+      const oldDialog = document.getElementById('conflictDialog');
+      if (oldDialog) {
+        oldDialog.remove();
+      }
+
+      // 加入新對話框
+      document.body.insertAdjacentHTML('beforeend', dialogHTML);
+    }
+
+    function closeConflictDialog() {
+      const dialog = document.getElementById('conflictDialog');
+      if (dialog) {
+        dialog.remove();
+      }
+    }
+
+    async function kickUser(sessionId, userName) {
+      if (!confirm(`確定要踢出使用者「${userName}」嗎？`)) {
+        return;
+      }
+
+      try {
+        await sessionManager.kickUser(sessionId);
+        alert(`✅ 已踢出使用者「${userName}」`);
+
+        // 重新整理對話框
+        closeConflictDialog();
+
+        // 等待一下讓被踢的使用者有時間反應
+        setTimeout(async () => {
+          const result = await syncManager.saveToBackendSafe();
+          if (result.conflict) {
+            showConflictDialog(result);
+          } else if (result.success) {
+            alert('✅ 儲存成功！');
+            window.location.reload();
+          }
+        }, 2000);
+      } catch (error) {
+        alert('❌ 踢出失敗: ' + error.message);
+      }
+    }
+
+    function getTimeAgo(timestamp) {
+      const now = new Date();
+      const time = new Date(timestamp);
+      const diffMs = now - time;
+      const diffSec = Math.floor(diffMs / 1000);
+      const diffMin = Math.floor(diffSec / 60);
+
+      if (diffSec < 60) {
+        return `${diffSec} 秒前`;
+      } else if (diffMin < 60) {
+        return `${diffMin} 分鐘前`;
+      } else {
+        const diffHour = Math.floor(diffMin / 60);
+        return `${diffHour} 小時前`;
+      }
+    }
+
     // 儲存課程資料
     function saveMaritimeCourses() {
       // 儲存到 localStorage
@@ -1110,7 +1229,7 @@
         // 使用安全儲存模式（檢查衝突）
         syncManager.saveToBackendSafe().then(result => {
           if (result.conflict) {
-            alert('⚠️ ' + result.message);
+            showConflictDialog(result);
             console.warn('發現資料衝突，請重新整理頁面');
           } else if (result.success) {
             console.log('✅ 資料已安全儲存到雲端');
