@@ -491,9 +491,15 @@ class DataSyncManager {
 
       if (backendHasMore) {
         console.warn('⚠️ 警告：後端有更新的資料！');
+
+        // 取得目前活躍的使用者列表
+        const activeSessions = await sessionManager.getActiveSessions();
+        const otherUsers = activeSessions.filter(s => s.sessionId !== sessionManager.sessionId);
+
         return {
           conflict: true,
-          message: '後端有其他人的更新，請重新整理頁面後再儲存'
+          message: '後端有其他人的更新，請重新整理頁面後再儲存',
+          activeSessions: otherUsers
         };
       }
 
@@ -527,6 +533,360 @@ class DataSyncManager {
 const syncManager = new DataSyncManager(api);
 
 /**
+ * Session 管理器
+ * 負責追蹤使用者在線狀態，支援踢人功能
+ */
+class SessionManager {
+  constructor(apiInstance) {
+    this.api = apiInstance;
+    this.sessionId = null;
+    this.userName = null;
+    this.userEmail = null;
+    this.heartbeatInterval = null;
+    this.checkKickedInterval = null;
+    this.isActive = false;
+  }
+
+  /**
+   * 註冊 session（頁面載入時呼叫）
+   */
+  async register(userName = null, userEmail = null) {
+    try {
+      // 從 localStorage 或提示取得使用者名稱
+      if (!userName) {
+        userName = localStorage.getItem('sessionUserName');
+        if (!userName) {
+          userName = prompt('請輸入您的名稱（用於識別）：', '使用者');
+          if (userName) {
+            localStorage.setItem('sessionUserName', userName);
+          }
+        }
+      }
+
+      if (!userEmail) {
+        userEmail = localStorage.getItem('sessionUserEmail') || '';
+      }
+
+      // 產生或取得 sessionId
+      this.sessionId = localStorage.getItem('sessionId') || this._generateSessionId();
+      localStorage.setItem('sessionId', this.sessionId);
+
+      this.userName = userName || '訪客';
+      this.userEmail = userEmail;
+
+      const response = await this.api._get({
+        action: 'session_register',
+        sessionId: this.sessionId,
+        userName: this.userName,
+        userEmail: this.userEmail,
+        pageUrl: window.location.href,
+        userAgent: navigator.userAgent
+      });
+
+      if (response.ok) {
+        this.isActive = true;
+        this._startHeartbeat();
+        this._startKickedCheck();
+        console.log('✅ Session 已註冊:', this.sessionId);
+      }
+
+      return response;
+    } catch (error) {
+      console.error('❌ Session 註冊失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新心跳
+   */
+  async heartbeat() {
+    if (!this.sessionId || !this.isActive) return;
+
+    try {
+      const response = await this.api._get({
+        action: 'session_heartbeat',
+        sessionId: this.sessionId
+      });
+
+      if (response.ok && response.kicked) {
+        this._handleKicked();
+      }
+
+      return response;
+    } catch (error) {
+      console.error('❌ Heartbeat 失敗:', error);
+    }
+  }
+
+  /**
+   * 取得目前活躍的 sessions
+   */
+  async getActiveSessions() {
+    try {
+      const response = await this.api._get({
+        action: 'session_list'
+      });
+
+      return response.sessions || [];
+    } catch (error) {
+      console.error('❌ 取得活躍 sessions 失敗:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 踢出特定使用者
+   */
+  async kickUser(targetSessionId) {
+    try {
+      const response = await this.api._get({
+        action: 'session_kick',
+        sessionId: targetSessionId
+      });
+
+      return response;
+    } catch (error) {
+      console.error('❌ 踢人失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 檢查自己是否被踢出
+   */
+  async checkKicked() {
+    if (!this.sessionId || !this.isActive) return false;
+
+    try {
+      const response = await this.api._get({
+        action: 'session_check_kicked',
+        sessionId: this.sessionId
+      });
+
+      if (response.ok && response.kicked) {
+        this._handleKicked();
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('❌ 檢查踢出狀態失敗:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 取消註冊（離開頁面時呼叫）
+   */
+  unregister() {
+    this.isActive = false;
+    this._stopHeartbeat();
+    this._stopKickedCheck();
+    console.log('👋 Session 已取消註冊');
+  }
+
+  /**
+   * 啟動心跳（每 30 秒）
+   */
+  _startHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
+
+    this.heartbeatInterval = setInterval(() => {
+      this.heartbeat();
+    }, 30 * 1000); // 30 秒
+  }
+
+  /**
+   * 停止心跳
+   */
+  _stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
+
+  /**
+   * 啟動踢出檢查（每 10 秒）
+   */
+  _startKickedCheck() {
+    if (this.checkKickedInterval) {
+      clearInterval(this.checkKickedInterval);
+    }
+
+    this.checkKickedInterval = setInterval(() => {
+      this.checkKicked();
+    }, 10 * 1000); // 10 秒
+  }
+
+  /**
+   * 停止踢出檢查
+   */
+  _stopKickedCheck() {
+    if (this.checkKickedInterval) {
+      clearInterval(this.checkKickedInterval);
+      this.checkKickedInterval = null;
+    }
+  }
+
+  /**
+   * 處理被踢出
+   */
+  _handleKicked() {
+    this.unregister();
+    alert('⚠️ 您已被管理員踢出，頁面即將重新載入。');
+    localStorage.removeItem('sessionId'); // 清除舊的 sessionId
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  }
+
+  /**
+   * 產生 sessionId
+   */
+  _generateSessionId() {
+    return 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+}
+
+// 建立全域 Session Manager 實例
+const sessionManager = new SessionManager(api);
+
+/**
+ * 編輯鎖定管理器
+ * 實現細粒度鎖定，讓多人可以同時編輯不同資料
+ */
+class EditLockManager {
+  constructor(apiInstance, sessionManagerInstance) {
+    this.api = apiInstance;
+    this.sessionManager = sessionManagerInstance;
+    this.activeLocks = new Map(); // 追蹤目前持有的鎖定
+  }
+
+  /**
+   * 取得編輯鎖定
+   */
+  async acquireLock(table, recordId) {
+    try {
+      const response = await this.api._get({
+        action: 'lock_acquire',
+        table,
+        recordId: String(recordId),
+        sessionId: this.sessionManager.sessionId,
+        userName: this.sessionManager.userName
+      });
+
+      if (response.ok) {
+        if (response.ownLock) {
+          // 成功取得鎖定
+          const lockKey = `${table}:${recordId}`;
+          this.activeLocks.set(lockKey, {
+            table,
+            recordId,
+            lockedAt: new Date()
+          });
+          console.log(`🔒 已鎖定 ${table}/${recordId}`);
+          return { locked: true, ownLock: true };
+        } else {
+          // 已被其他人鎖定
+          console.warn(`⚠️ ${table}/${recordId} 已被 ${response.lockedBy} 鎖定`);
+          return {
+            locked: false,
+            lockedBy: response.lockedBy,
+            lockedAt: response.lockedAt
+          };
+        }
+      }
+
+      return { locked: false };
+    } catch (error) {
+      console.error('❌ 取得鎖定失敗:', error);
+      return { locked: false, error: error.message };
+    }
+  }
+
+  /**
+   * 釋放編輯鎖定
+   */
+  async releaseLock(table, recordId) {
+    try {
+      const response = await this.api._get({
+        action: 'lock_release',
+        table,
+        recordId: String(recordId),
+        sessionId: this.sessionManager.sessionId
+      });
+
+      if (response.ok && response.released) {
+        const lockKey = `${table}:${recordId}`;
+        this.activeLocks.delete(lockKey);
+        console.log(`🔓 已釋放 ${table}/${recordId}`);
+        return { released: true };
+      }
+
+      return { released: false };
+    } catch (error) {
+      console.error('❌ 釋放鎖定失敗:', error);
+      return { released: false, error: error.message };
+    }
+  }
+
+  /**
+   * 檢查特定資料的鎖定狀態
+   */
+  async checkLock(table, recordId) {
+    try {
+      const response = await this.api._get({
+        action: 'lock_check',
+        table,
+        recordId: String(recordId)
+      });
+
+      return response.lock || null;
+    } catch (error) {
+      console.error('❌ 檢查鎖定失敗:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 取得所有鎖定（可選過濾）
+   */
+  async getAllLocks(table = null) {
+    try {
+      const params = { action: 'lock_list' };
+      if (table) params.table = table;
+
+      const response = await this.api._get(params);
+      return response.locks || [];
+    } catch (error) {
+      console.error('❌ 取得鎖定列表失敗:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 釋放所有持有的鎖定
+   */
+  async releaseAllLocks() {
+    const promises = [];
+    for (const [lockKey, lock] of this.activeLocks.entries()) {
+      promises.push(this.releaseLock(lock.table, lock.recordId));
+    }
+
+    await Promise.all(promises);
+    this.activeLocks.clear();
+    console.log('🔓 已釋放所有鎖定');
+  }
+}
+
+// 建立全域 Edit Lock Manager 實例
+const editLockManager = new EditLockManager(api, sessionManager);
+
+/**
  * 便利函數：顯示同步狀態訊息
  */
 function showSyncStatus(message, type = 'info', options = {}) {
@@ -554,6 +914,13 @@ async function initializeDataSync() {
     await syncManager.loadFromBackend();
     // showSyncStatus('資料已從雲端載入', 'success');
 
+    // 註冊 session（追蹤使用者在線狀態）
+    try {
+      await sessionManager.register();
+    } catch (sessionError) {
+      console.warn('⚠️ Session 註冊失敗:', sessionError);
+    }
+
     // 可選：啟用自動同步（每 5 分鐘）
     // syncManager.enableAutoSync(5);
 
@@ -564,6 +931,15 @@ async function initializeDataSync() {
     // });
   }
 }
+
+// 頁面離開時取消註冊 session 並釋放所有鎖定
+window.addEventListener('beforeunload', () => {
+  // 同步釋放鎖定（使用 Navigator.sendBeacon 確保請求送出）
+  editLockManager.releaseAllLocks().catch(err => {
+    console.warn('釋放鎖定失敗:', err);
+  });
+  sessionManager.unregister();
+});
 
 // 匯出給其他模組使用
 if (typeof module !== 'undefined' && module.exports) {
