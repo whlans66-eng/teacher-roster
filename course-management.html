@@ -1555,15 +1555,26 @@
       calendarEvents = loadArray('calendarEvents');
     }
 
+    function scheduleIdleTask(callback) {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(callback, { timeout: 500 });
+      } else {
+        setTimeout(callback, 0);
+      }
+    }
+
     function renderAllCourseViews() {
       loadTeachers();
       updateStatistics();
-      renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
       updateTodayDate();
       loadTeacherHoursAnalysisVisibility();
+
+      scheduleIdleTask(() => {
+        renderTeacherHoursAnalysis();
+        renderCourseTypeChart();
+      });
     }
 
     async function init() {
