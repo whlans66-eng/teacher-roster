@@ -567,15 +567,10 @@ class SessionManager {
    */
   async register(userName = null, userEmail = null) {
     try {
-      // 從 localStorage 或提示取得使用者名稱
+      // 從 localStorage 取得使用者名稱，若沒有就使用預設值避免彈跳視窗
       if (!userName) {
-        userName = localStorage.getItem('sessionUserName');
-        if (!userName) {
-          userName = prompt('請輸入您的名稱（用於識別）：', '使用者');
-          if (userName) {
-            localStorage.setItem('sessionUserName', userName);
-          }
-        }
+        userName = localStorage.getItem('sessionUserName') || '訪客';
+        localStorage.setItem('sessionUserName', userName);
       }
 
       if (!userEmail) {
