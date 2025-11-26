@@ -6,7 +6,7 @@
  */
 const API_CONFIG = {
   // 將此 URL 替換為你部署後的 Google Apps Script Web App URL
-  baseUrl: 'https://script.google.com/macros/s/AKfycbzixNLauJlMhKlsDaUzfKY6EWWAdDCmzL_IYB9mfuwFpSVaHMwDgqwHpBInY9ilufeidQ/exec',
+  baseUrl: 'https://script.google.com/macros/s/AKfycbyxMcxv2_6TABlz1G9NzU4yZpPFWaaLYkyvSi_XODR2Mxo4ipzS4tOm5CC18kTYPWM/exec',
   token: 'tr_demo_12345',  // 與後端 TOKEN 一致
   timeout: 30000,  // 30 秒超時
   debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
