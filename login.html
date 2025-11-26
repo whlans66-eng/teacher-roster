@@ -177,40 +177,6 @@
       75% { transform: translateX(10px); }
     }
 
-    .info-box {
-      background: #e5f3ff;
-      border: 2px solid #007aff;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 24px;
-    }
-
-    .info-box h3 {
-      color: #007aff;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .info-box ul {
-      list-style: none;
-      padding-left: 0;
-    }
-
-    .info-box li {
-      color: #0051d5;
-      font-size: 13px;
-      padding: 4px 0;
-      display: flex;
-      align-items: center;
-    }
-
-    .info-box li::before {
-      content: "→";
-      margin-right: 8px;
-      font-weight: bold;
-    }
-
     .remember-me {
       display: flex;
       align-items: center;
@@ -298,7 +264,7 @@
 
   </div>
 
- <script src="js/api.js"></script> 
+  <script src="js/api.js"></script>
 
   <script>
     // DOM 元素
@@ -326,7 +292,7 @@
       }, 3000);
     }
 
-    // 處理登入
+    // 處理登入 (改用後端 API 驗證)
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -339,14 +305,14 @@
       loginBtn.textContent = '驗證中...';
 
       try {
-        // 確保 API_CONFIG 已定義 (來自 js/api.js)
+        // 檢查 API 設定
         if (typeof API_CONFIG === 'undefined' || !API_CONFIG.baseUrl) {
              throw new Error("API 設定未找到，請確認 js/api.js 是否正確載入。");
         }
         
         const apiUrl = API_CONFIG.baseUrl;
 
-        // 呼叫後端 API
+        // 呼叫後端 API 進行登入驗證
         const response = await fetch(`${apiUrl}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
         const result = await response.json();
 
@@ -370,21 +336,23 @@
             sessionStorage.setItem('authData', JSON.stringify(authData));
           }
 
+          // 儲存使用者資訊供其他頁面使用
+          sessionStorage.setItem('currentUser', JSON.stringify({
+            username: userData.username,
+            role: userData.role,
+            displayName: userData.full_name
+          }));
+
           loginBtn.textContent = '✅ 登入成功！';
           loginBtn.style.background = 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)';
 
-          // 根據角色跳轉
+          // 登入後一律跳轉至首頁
           setTimeout(() => {
-             // 這裡可以根據需要修改跳轉邏輯
-             if (userData.role === 'admin') {
-                 window.location.href = 'index.html'; 
-             } else {
-                 window.location.href = 'index.html';
-             }
+             window.location.href = 'index.html';
           }, 800);
 
         } else {
-          // 登入失敗
+          // 登入失敗 (後端回傳錯誤訊息)
           throw new Error(result.error || '帳號或密碼錯誤');
         }
 
@@ -397,17 +365,20 @@
       }
     });
 
-    // 檢查是否已經登入 (這裡僅檢查本地狀態，Token 驗證交由後端 API 在各頁面進行)
+    // 檢查是否已經登入
     function checkExistingLogin() {
         const authData = localStorage.getItem('authData') || sessionStorage.getItem('authData');
         if (authData) {
             try {
                 const { timestamp } = JSON.parse(authData);
                 const expiryTime = 7 * 24 * 60 * 60 * 1000; // 7 天有效期
+                
+                // 如果還沒過期，直接跳轉
                 if (Date.now() - timestamp < expiryTime) {
-                    window.location.href = 'index.html'; // 若有效直接跳轉首頁
+                    window.location.href = 'index.html'; 
                     return true;
                 } else {
+                    // 過期了，清除狀態
                     localStorage.removeItem('authData');
                     sessionStorage.removeItem('authData');
                 }
@@ -422,145 +393,6 @@
     if (!checkExistingLogin()) {
       usernameInput.focus();
     }
-
-    // Enter 鍵快速登入 (在 form 內通常不需要額外寫，submit event 會抓到，但保留也無妨)
-    // usernameInput.addEventListener('keypress', (e) => { ... }); 
-  </script>
-    };
-
-    // DOM 元素
-    const loginForm = document.getElementById('loginForm');
-    const usernameInput = document.getElementById('username');
-    const passwordInput = document.getElementById('password');
-    const togglePasswordBtn = document.getElementById('togglePassword');
-    const rememberMeCheckbox = document.getElementById('rememberMe');
-    const errorMessage = document.getElementById('errorMessage');
-    const loginBtn = document.getElementById('loginBtn');
-
-    // 切換密碼顯示/隱藏
-    togglePasswordBtn.addEventListener('click', () => {
-      const type = passwordInput.type === 'password' ? 'text' : 'password';
-      passwordInput.type = type;
-      togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
-    });
-
-    // 檢查是否已經登入
-    function checkExistingLogin() {
-      const authData = localStorage.getItem('authData') || sessionStorage.getItem('authData');
-
-      if (authData) {
-        try {
-          const { username, role, timestamp } = JSON.parse(authData);
-          const expiryTime = 7 * 24 * 60 * 60 * 1000; // 7 天
-
-          // 檢查是否過期
-          if (Date.now() - timestamp < expiryTime) {
-            // 自動登入
-            const userData = PASSWORDS[username];
-            if (userData) {
-              window.location.href = userData.redirect;
-              return true;
-            }
-          } else {
-            // 過期，清除
-            localStorage.removeItem('authData');
-            sessionStorage.removeItem('authData');
-          }
-        } catch (error) {
-          console.error('檢查登入狀態失敗:', error);
-        }
-      }
-      return false;
-    }
-
-    // 顯示錯誤訊息
-    function showError(message) {
-      errorMessage.textContent = message;
-      errorMessage.classList.add('show');
-
-      setTimeout(() => {
-        errorMessage.classList.remove('show');
-      }, 3000);
-    }
-
-    // 處理登入
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const username = usernameInput.value.trim();
-      const password = passwordInput.value;
-      const rememberMe = rememberMeCheckbox.checked;
-
-      // 禁用登入按鈕
-      loginBtn.disabled = true;
-      loginBtn.textContent = '登入中...';
-
-      // 模擬網路延遲
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // 驗證帳號密碼
-      const userData = PASSWORDS[username];
-
-      if (!userData) {
-        showError('❌ 使用者名稱不存在');
-        loginBtn.disabled = false;
-        loginBtn.textContent = '登入系統';
-        return;
-      }
-
-      if (userData.password !== password) {
-        showError('❌ 密碼錯誤，請重新輸入');
-        loginBtn.disabled = false;
-        loginBtn.textContent = '登入系統';
-        passwordInput.value = '';
-        passwordInput.focus();
-        return;
-      }
-
-      // 登入成功
-      const authData = {
-        username: username,
-        role: userData.role,
-        displayName: userData.displayName,
-        timestamp: Date.now()
-      };
-
-      // 儲存登入狀態
-      if (rememberMe) {
-        localStorage.setItem('authData', JSON.stringify(authData));
-      } else {
-        sessionStorage.setItem('authData', JSON.stringify(authData));
-      }
-
-      // 儲存使用者資訊供其他頁面使用
-      sessionStorage.setItem('currentUser', JSON.stringify({
-        username: username,
-        role: userData.role,
-        displayName: userData.displayName
-      }));
-
-      // 成功訊息
-      loginBtn.textContent = '✅ 登入成功！';
-      loginBtn.style.background = 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)';
-
-      // 延遲後跳轉
-      setTimeout(() => {
-        window.location.href = userData.redirect;
-      }, 800);
-    });
-
-    // 頁面載入時檢查登入狀態
-    if (!checkExistingLogin()) {
-      // 沒有登入，聚焦到使用者名稱輸入框
-      usernameInput.focus();
-    }
-
-    // Enter 鍵快速登入
-    usernameInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        passwordInput.focus();
-      }
-    });
   </script>
 </body>
 </html>
