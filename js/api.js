@@ -9,6 +9,7 @@ const API_CONFIG = {
   baseUrl: 'https://script.google.com/macros/s/AKfycbyxMcxv2_6TABlz1G9NzU4yZpPFWaaLYkyvSi_XODR2Mxo4ipzS4tOm5CC18kTYPWM/exec',
   token: 'tr_demo_12345',  // 與後端 TOKEN 一致
   timeout: 30000,  // 30 秒超時
+  enableSessions: false, // 是否啟用 Session 追蹤與鎖定功能
   debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
 };
 
@@ -566,16 +567,18 @@ class SessionManager {
    * 註冊 session（頁面載入時呼叫）
    */
   async register(userName = null, userEmail = null) {
+    if (!API_CONFIG.enableSessions) {
+      if (this.api.debug) {
+        console.log('ℹ️ 已停用 Session 追蹤，略過註冊');
+      }
+      return { ok: true, disabled: true };
+    }
+
     try {
-      // 從 localStorage 或提示取得使用者名稱
+      // 從 localStorage 取得使用者名稱，若沒有就使用預設值避免彈跳視窗
       if (!userName) {
-        userName = localStorage.getItem('sessionUserName');
-        if (!userName) {
-          userName = prompt('請輸入您的名稱（用於識別）：', '使用者');
-          if (userName) {
-            localStorage.setItem('sessionUserName', userName);
-          }
-        }
+        userName = localStorage.getItem('sessionUserName') || '訪客';
+        localStorage.setItem('sessionUserName', userName);
       }
 
       if (!userEmail) {
@@ -789,6 +792,15 @@ class EditLockManager {
    * 取得編輯鎖定
    */
   async acquireLock(table, recordId) {
+    if (!API_CONFIG.enableSessions) {
+      return {
+        ok: true,
+        locked: true,
+        ownLock: true,
+        skipped: true
+      };
+    }
+
     try {
       const response = await this.api._get({
         action: 'lock_acquire',
@@ -833,6 +845,10 @@ class EditLockManager {
    * 釋放編輯鎖定
    */
   async releaseLock(table, recordId) {
+    if (!API_CONFIG.enableSessions) {
+      return { released: true, skipped: true };
+    }
+
     try {
       const response = await this.api._get({
         action: 'lock_release',
@@ -861,6 +877,10 @@ class EditLockManager {
    * 檢查特定資料的鎖定狀態
    */
   async checkLock(table, recordId) {
+    if (!API_CONFIG.enableSessions) {
+      return null;
+    }
+
     try {
       const response = await this.api._get({
         action: 'lock_check',
@@ -879,15 +899,19 @@ class EditLockManager {
    * 取得所有鎖定（可選過濾）
    */
   async getAllLocks(table = null) {
+    if (!API_CONFIG.enableSessions) {
+      return { ok: true, locks: [], skipped: true };
+    }
+
     try {
       const params = { action: 'lock_list' };
       if (table) params.table = table;
 
       const response = await this.api._get(params);
-      return response.locks || [];
+      return { ok: true, locks: response.locks || [] };
     } catch (error) {
       console.error('❌ 取得鎖定列表失敗:', error);
-      return [];
+      return { ok: false, error: error.message };
     }
   }
 
@@ -895,6 +919,10 @@ class EditLockManager {
    * 釋放所有持有的鎖定
    */
   async releaseAllLocks() {
+    if (!API_CONFIG.enableSessions) {
+      return { released: true, skipped: true };
+    }
+
     const promises = [];
     for (const [lockKey, lock] of this.activeLocks.entries()) {
       promises.push(this.releaseLock(lock.table, lock.recordId));
@@ -942,10 +970,14 @@ async function initializeDataSync() {
     // showSyncStatus('資料已從雲端載入', 'success');
 
     // 註冊 session（追蹤使用者在線狀態）
-    try {
-      await sessionManager.register();
-    } catch (sessionError) {
-      console.warn('⚠️ Session 註冊失敗:', sessionError);
+    if (API_CONFIG.enableSessions) {
+      try {
+        await sessionManager.register();
+      } catch (sessionError) {
+        console.warn('⚠️ Session 註冊失敗:', sessionError);
+      }
+    } else if (API_CONFIG.debug) {
+      console.log('ℹ️ Session 功能已停用，略過註冊。');
     }
 
     // 可選：啟用自動同步（每 5 分鐘）
@@ -965,7 +997,9 @@ window.addEventListener('beforeunload', () => {
   editLockManager.releaseAllLocks().catch(err => {
     console.warn('釋放鎖定失敗:', err);
   });
-  sessionManager.unregister();
+  if (API_CONFIG.enableSessions) {
+    sessionManager.unregister();
+  }
 });
 
 // 匯出給其他模組使用

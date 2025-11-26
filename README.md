@@ -258,6 +258,13 @@ console.log(result.url); // Google Drive URL
 
 ## 🌐 部署說明
 
+### 我需要重新佈署嗎？
+
+- **前端（HTML/JS/CSS）改動**：只要重新推送到 GitHub Pages 或你的靜態主機即可，**不需要**重新發布 Google Apps Script。
+- **`js/api.js` 內的 `API_CONFIG` 調整**：屬於前端設定，更新前端部署就能生效。如果更換了 `baseUrl` 或 `token`，請同步後端設定。
+- **`backend-api.gs` 或 Apps Script 代碼改動**：需要在 Apps Script 後台重新 **Deploy → New version → Execute as: Me → Who has access: Anyone** 取得新 Web App URL，並更新到前端的 `API_CONFIG.baseUrl`。
+- **Google Sheets / Drive 結構變更**：若後端有依賴欄位或資料夾 ID，請先更新後端程式並重新部署，再更新前端設定。
+
 ### 前端部署（GitHub Pages）
 
 ```bash
