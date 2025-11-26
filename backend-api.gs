@@ -441,3 +441,21 @@ function _getActiveSessions(){
 function _kickSession(p){ return {}; }
 function _checkIfKicked(p){ return false; }
 function _cleanupStaleSessions(){}
+
+function setupDatabase() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName('users');
+  if (sheet) return; // 如果有了就不做
+
+  sheet = ss.insertSheet('users');
+  const headers = ['id', 'username', 'password', 'role'];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#4285f4').setFontColor('#ffffff');
+
+  const defaultUsers = [
+    ['1', 'admin', 'admin123', 'admin'],
+    ['2', 'teacher', 'teacher123', 'teacher'],
+    ['3', 'guest', 'guest123', 'guest']
+  ];
+  sheet.getRange(2, 1, defaultUsers.length, defaultUsers[0].length).setValues(defaultUsers);
+}
