@@ -792,6 +792,15 @@ class EditLockManager {
    * 取得編輯鎖定
    */
   async acquireLock(table, recordId) {
+    if (!API_CONFIG.enableSessions) {
+      return {
+        ok: true,
+        locked: true,
+        ownLock: true,
+        skipped: true
+      };
+    }
+
     try {
       const response = await this.api._get({
         action: 'lock_acquire',
@@ -836,6 +845,10 @@ class EditLockManager {
    * 釋放編輯鎖定
    */
   async releaseLock(table, recordId) {
+    if (!API_CONFIG.enableSessions) {
+      return { released: true, skipped: true };
+    }
+
     try {
       const response = await this.api._get({
         action: 'lock_release',
@@ -864,6 +877,10 @@ class EditLockManager {
    * 檢查特定資料的鎖定狀態
    */
   async checkLock(table, recordId) {
+    if (!API_CONFIG.enableSessions) {
+      return null;
+    }
+
     try {
       const response = await this.api._get({
         action: 'lock_check',
@@ -882,15 +899,19 @@ class EditLockManager {
    * 取得所有鎖定（可選過濾）
    */
   async getAllLocks(table = null) {
+    if (!API_CONFIG.enableSessions) {
+      return { ok: true, locks: [], skipped: true };
+    }
+
     try {
       const params = { action: 'lock_list' };
       if (table) params.table = table;
 
       const response = await this.api._get(params);
-      return response.locks || [];
+      return { ok: true, locks: response.locks || [] };
     } catch (error) {
       console.error('❌ 取得鎖定列表失敗:', error);
-      return [];
+      return { ok: false, error: error.message };
     }
   }
 
@@ -898,6 +919,10 @@ class EditLockManager {
    * 釋放所有持有的鎖定
    */
   async releaseAllLocks() {
+    if (!API_CONFIG.enableSessions) {
+      return { released: true, skipped: true };
+    }
+
     const promises = [];
     for (const [lockKey, lock] of this.activeLocks.entries()) {
       promises.push(this.releaseLock(lock.table, lock.recordId));
