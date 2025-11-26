@@ -1053,6 +1053,7 @@
     // 課程資料儲存
     let maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses')) || [];
     let editingMaritimeCourseId = null;
+    let lastMaritimeDataSnapshot = '';
 
     // 分類對應表
     const maritimeCategoryNames = {
@@ -1095,7 +1096,15 @@
           keywords: ['緊急應變', '火災處理', '碰撞事故', '救生', '安全程序', '事故處理']
         }
       ];
-      saveMaritimeCourses();
+
+      // 僅為本地展示載入示例，不觸發後端同步以免覆蓋真實資料
+      try {
+        localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+        lastMaritimeDataSnapshot = JSON.stringify(maritimeCourses);
+        console.info('ℹ️ 已載入本地海事課程示例資料（不會同步到後端）');
+      } catch (error) {
+        console.warn('⚠️ 無法緩存海事課程示例資料:', error);
+      }
     }
 
     // ==================== 衝突對話框 - 顯示在線使用者 ====================
@@ -1822,18 +1831,53 @@
       }, 3000);
     }
 
+    function reloadMaritimeCoursesFromStorage() {
+      maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+    }
+
+    function createMaritimeDataSnapshot() {
+      return JSON.stringify(maritimeCourses);
+    }
+
+    function renderAllMaritimeViews() {
+      displayMaritimeCourses();
+      displayManageMaritimeCourses();
+      displayMaritimeStats();
+      lastMaritimeDataSnapshot = createMaritimeDataSnapshot();
+    }
+
+    function hydrateMaritimeFromStorageIfChanged(event) {
+      if (event && event.key !== 'maritimeCourses') return;
+
+      const previousSnapshot = lastMaritimeDataSnapshot;
+      reloadMaritimeCoursesFromStorage();
+      const latestSnapshot = createMaritimeDataSnapshot();
+
+      if (latestSnapshot !== previousSnapshot) {
+        renderAllMaritimeViews();
+        lastMaritimeDataSnapshot = latestSnapshot;
+      }
+    }
+
     // 初始化海事課程系統事件監聽器
     async function initMaritimeCourseSystem() {
-      // 從後端同步資料
+      // 先用本地資料呈現畫面，避免等待網路
+      reloadMaritimeCoursesFromStorage();
+      lastMaritimeDataSnapshot = createMaritimeDataSnapshot();
+      renderAllMaritimeViews();
+
+      // 後端同步改為背景進行
       if (typeof initializeDataSync !== 'undefined') {
-        try {
-          await initializeDataSync();
-          // 重新載入同步後的資料
-          maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
-        } catch (err) {
-          console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
-        }
+        initializeDataSync()
+          .then(() => {
+            hydrateMaritimeFromStorageIfChanged();
+          })
+          .catch(err => {
+            console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
+          });
       }
+
+      window.addEventListener('storage', hydrateMaritimeFromStorageIfChanged);
 
       // 課程表單處理
       const courseForm = document.getElementById('maritimeCourseForm');
