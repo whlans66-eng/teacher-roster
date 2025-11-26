@@ -2435,8 +2435,10 @@
         const lockedTime = lockResult.lockedAt ? new Date(lockResult.lockedAt).toLocaleTimeString('zh-TW') : '';
 
         if (confirm(`⚠️ 此課程正被 ${lockedBy} 編輯中\n鎖定時間：${lockedTime}\n\n是否要以「唯讀模式」查看？`)) {
-          // 以唯讀模式查看，不設定 editingCourseId
-          editingCourseId = null;
+          // 以唯讀模式查看，保存 courseId 用於查看和刪除
+          editingCourseId = courseId;
+          // 標記為唯讀模式
+          window.isReadOnlyMode = true;
         } else {
           return; // 取消查看
         }
@@ -2444,9 +2446,11 @@
         // 成功取得鎖定
         // 已鎖定課程
         editingCourseId = courseId;
+        window.isReadOnlyMode = false;
       } else {
         // 未能取得鎖定（其他錯誤）
         editingCourseId = courseId;
+        window.isReadOnlyMode = false;
       }
 
       // 選擇該課程的日期並更新課程總覽
@@ -2961,13 +2965,14 @@
 
     async function closeViewEventModal() {
       // 🔓 釋放編輯鎖定
-      if (editingCourseId) {
+      if (editingCourseId && !window.isReadOnlyMode) {
         await editLockManager.releaseLock('courseAssignments', editingCourseId);
         // 已釋放課程鎖定
       }
 
       document.getElementById('viewEventModal').classList.add('hidden');
       editingCourseId = null;
+      window.isReadOnlyMode = false;
 
       // 更新課程列表以反映鎖定狀態變化
       updateCoursesDisplay();
@@ -3239,6 +3244,18 @@
      * 確認刪除課程（從選單觸發）
      */
     function confirmDeleteCourse() {
+      // 檢查是否有有效的課程 ID
+      if (!editingCourseId) {
+        alert('❌ 無法刪除：未選擇有效的課程');
+        return;
+      }
+
+      // 檢查是否為唯讀模式
+      if (window.isReadOnlyMode) {
+        alert('❌ 無法刪除：此課程正被其他人編輯中，無法在唯讀模式下刪除');
+        return;
+      }
+
       if (confirm('確定要刪除此課程嗎？此操作無法復原。')) {
         deleteCourse(editingCourseId);
         closeViewEventModal();
