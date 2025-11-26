@@ -8,7 +8,8 @@ const API_CONFIG = {
   // 將此 URL 替換為你部署後的 Google Apps Script Web App URL
   baseUrl: 'https://script.google.com/macros/s/AKfycbzV_SS7xyNySyYGjAXGp6ya6MBqJHoAiwDGK7sVTeWnAZJmNDoSRXUUhDG-K0izeu3-wQ/exec',
   token: 'tr_demo_12345',  // 與後端 TOKEN 一致
-  timeout: 30000  // 30 秒超時
+  timeout: 30000,  // 30 秒超時
+  debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
 };
 
 /**
@@ -19,6 +20,7 @@ class TeacherRosterAPI {
     this.baseUrl = config.baseUrl;
     this.token = config.token;
     this.timeout = config.timeout;
+    this.debug = config.debug || false;
   }
 
   /**
@@ -136,8 +138,10 @@ class TeacherRosterAPI {
       url.searchParams.append(key, params[key]);
     });
 
-    console.log('🌐 發送 GET 請求:', url.toString());
-    console.log('🌐 請求參數:', params);
+    if (this.debug) {
+      console.log('🌐 發送 GET 請求:', url.toString());
+      console.log('🌐 請求參數:', params);
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -150,7 +154,9 @@ class TeacherRosterAPI {
 
       clearTimeout(timeoutId);
 
-      console.log('📡 收到響應，狀態碼:', response.status);
+      if (this.debug) {
+        console.log('📡 收到響應，狀態碼:', response.status);
+      }
 
       if (!response.ok) {
         throw new Error(`後端回傳狀態碼 ${response.status}`);
@@ -159,14 +165,18 @@ class TeacherRosterAPI {
       let result;
       try {
         const responseText = await response.text();
-        console.log('📄 響應內容 (前500字):', responseText.substring(0, 500));
+        if (this.debug) {
+          console.log('📄 響應內容 (前500字):', responseText.substring(0, 500));
+        }
         result = JSON.parse(responseText);
       } catch (parseError) {
         console.error('❌ JSON 解析失敗:', parseError);
         throw new Error('後端回應不是 JSON 格式，請確認 Apps Script 是否有回傳 JSON');
       }
 
-      console.log('✅ JSON 解析成功:', result);
+      if (this.debug) {
+        console.log('✅ JSON 解析成功:', result);
+      }
 
       if (!result.ok) {
         throw new Error(result.error || '請求失敗');
@@ -319,17 +329,21 @@ class DataSyncManager {
    */
   async loadFromBackend() {
     try {
-      console.log('📥 從後端載入資料...');
-      console.log('🔍 API URL:', this.api.baseUrl);
-      console.log('🔍 Token:', this.api.token ? '已設置' : '未設置');
+      if (this.api.debug) {
+        console.log('📥 從後端載入資料...');
+        console.log('🔍 API URL:', this.api.baseUrl);
+        console.log('🔍 Token:', this.api.token ? '已設置' : '未設置');
+      }
 
       const allData = await this.api.listAll();
 
       // 詳細日誌
-      console.log('🔍 後端返回的原始資料:', allData);
-      console.log('🔍 teachers 數量:', allData.teachers?.length || 0);
-      console.log('🔍 courseAssignments 數量:', allData.courseAssignments?.length || 0);
-      console.log('🔍 maritimeCourses 數量:', allData.maritimeCourses?.length || 0);
+      if (this.api.debug) {
+        console.log('🔍 後端返回的原始資料:', allData);
+        console.log('🔍 teachers 數量:', allData.teachers?.length || 0);
+        console.log('🔍 courseAssignments 數量:', allData.courseAssignments?.length || 0);
+        console.log('🔍 maritimeCourses 數量:', allData.maritimeCourses?.length || 0);
+      }
 
       const normalizedTeachers = Array.isArray(allData.teachers)
         ? allData.teachers.map(normalizeTeacherRecord)
@@ -341,7 +355,9 @@ class DataSyncManager {
         ? allData.maritimeCourses
         : [];
 
-      console.log('🔍 歸一化後的課程數據:', normalizedCourses);
+      if (this.api.debug) {
+        console.log('🔍 歸一化後的課程數據:', normalizedCourses);
+      }
 
       // 儲存到 localStorage
       localStorage.setItem('teachers', JSON.stringify(normalizedTeachers));
@@ -351,10 +367,12 @@ class DataSyncManager {
       // 更新最後同步時間
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
-      console.log('✅ 資料載入完成');
-      console.log('✅ teachers:', normalizedTeachers.length, '筆');
-      console.log('✅ courseAssignments:', normalizedCourses.length, '筆');
-      console.log('✅ maritimeCourses:', maritimeCourses.length, '筆');
+      if (this.api.debug) {
+        console.log('✅ 資料載入完成');
+        console.log('✅ teachers:', normalizedTeachers.length, '筆');
+        console.log('✅ courseAssignments:', normalizedCourses.length, '筆');
+        console.log('✅ maritimeCourses:', maritimeCourses.length, '筆');
+      }
 
       return {
         ...allData,
@@ -375,7 +393,9 @@ class DataSyncManager {
    */
   async saveToBackend() {
     try {
-      console.log('📤 儲存資料到後端...');
+      if (this.api.debug) {
+        console.log('📤 儲存資料到後端...');
+      }
 
       const teachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
       const courseAssignments = loadArrayFromStorage('courseAssignments', normalizeCourseAssignment);
@@ -389,7 +409,9 @@ class DataSyncManager {
       // 更新最後同步時間
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
-      console.log('✅ 資料儲存完成');
+      if (this.api.debug) {
+        console.log('✅ 資料儲存完成');
+      }
       return true;
     } catch (error) {
       console.error('❌ 儲存資料失敗:', error);
@@ -410,7 +432,9 @@ class DataSyncManager {
       const data = loadArrayFromStorage(tableName, normalizer);
       await this.api.save(tableName, data);
       localStorage.setItem('lastSyncTime', new Date().toISOString());
-      console.log(`✅ ${tableName} 儲存完成`);
+      if (this.api.debug) {
+        console.log(`✅ ${tableName} 儲存完成`);
+      }
       return true;
     } catch (error) {
       console.error(`❌ 儲存 ${tableName} 失敗:`, error);
@@ -430,13 +454,17 @@ class DataSyncManager {
     this.syncInterval = setInterval(async () => {
       try {
         await this.saveToBackend();
-        console.log('🔄 自動同步完成');
+        if (this.api.debug) {
+          console.log('🔄 自動同步完成');
+        }
       } catch (error) {
         console.error('🔄 自動同步失敗:', error);
       }
     }, intervalMinutes * 60 * 1000);
 
-    console.log(`🔄 已啟用自動同步（每 ${intervalMinutes} 分鐘）`);
+    if (this.api.debug) {
+      console.log(`🔄 已啟用自動同步（每 ${intervalMinutes} 分鐘）`);
+    }
   }
 
   /**
@@ -448,7 +476,9 @@ class DataSyncManager {
       this.syncInterval = null;
     }
     this.autoSyncEnabled = false;
-    console.log('🔄 已停用自動同步');
+    if (this.api.debug) {
+      console.log('🔄 已停用自動同步');
+    }
   }
 
   /**
@@ -465,7 +495,9 @@ class DataSyncManager {
    */
   async saveToBackendSafe() {
     try {
-      console.log('📤 安全儲存模式：檢查資料衝突...');
+      if (this.api.debug) {
+        console.log('📤 安全儲存模式：檢查資料衝突...');
+      }
 
       // 先從後端載入最新資料
       const backendData = await this.api.listAll();
@@ -479,7 +511,9 @@ class DataSyncManager {
       const hasLocalChanges = localStorage.getItem('hasLocalChanges') === 'true';
 
       if (!hasLocalChanges) {
-        console.log('⏭️ 本地無修改，跳過儲存');
+        if (this.api.debug) {
+          console.log('⏭️ 本地無修改，跳過儲存');
+        }
         return { skipped: true, reason: 'no_local_changes' };
       }
 
@@ -512,7 +546,9 @@ class DataSyncManager {
       localStorage.removeItem('hasLocalChanges');
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
-      console.log('✅ 安全儲存完成');
+      if (this.api.debug) {
+        console.log('✅ 安全儲存完成');
+      }
       return { success: true };
     } catch (error) {
       console.error('❌ 安全儲存失敗:', error);
@@ -525,7 +561,9 @@ class DataSyncManager {
    */
   markAsChanged() {
     localStorage.setItem('hasLocalChanges', 'true');
-    console.log('🔖 標記資料已修改');
+    if (this.api.debug) {
+      console.log('🔖 標記資料已修改');
+    }
   }
 }
 
@@ -587,7 +625,9 @@ class SessionManager {
         this.isActive = true;
         this._startHeartbeat();
         this._startKickedCheck();
-        console.log('✅ Session 已註冊:', this.sessionId);
+        if (this.api.debug) {
+          console.log('✅ Session 已註冊:', this.sessionId);
+        }
       }
 
       return response;
@@ -683,7 +723,9 @@ class SessionManager {
     this.isActive = false;
     this._stopHeartbeat();
     this._stopKickedCheck();
-    console.log('👋 Session 已取消註冊');
+    if (this.api.debug) {
+      console.log('👋 Session 已取消註冊');
+    }
   }
 
   /**
@@ -788,7 +830,9 @@ class EditLockManager {
             recordId,
             lockedAt: new Date()
           });
-          console.log(`🔒 已鎖定 ${table}/${recordId}`);
+          if (this.api.debug) {
+            console.log(`🔒 已鎖定 ${table}/${recordId}`);
+          }
           return { locked: true, ownLock: true };
         } else {
           // 已被其他人鎖定
@@ -823,7 +867,9 @@ class EditLockManager {
       if (response.ok && response.released) {
         const lockKey = `${table}:${recordId}`;
         this.activeLocks.delete(lockKey);
-        console.log(`🔓 已釋放 ${table}/${recordId}`);
+        if (this.api.debug) {
+          console.log(`🔓 已釋放 ${table}/${recordId}`);
+        }
         return { released: true };
       }
 
@@ -879,7 +925,9 @@ class EditLockManager {
 
     await Promise.all(promises);
     this.activeLocks.clear();
-    console.log('🔓 已釋放所有鎖定');
+    if (this.api.debug) {
+      console.log('🔓 已釋放所有鎖定');
+    }
   }
 }
 
@@ -908,7 +956,9 @@ async function initializeDataSync() {
   try {
     // 測試連線
     await api.ping();
-    console.log('✅ 後端連線成功');
+    if (API_CONFIG.debug) {
+      console.log('✅ 後端連線成功');
+    }
 
     // 載入資料
     await syncManager.loadFromBackend();
