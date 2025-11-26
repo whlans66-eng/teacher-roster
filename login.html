@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登入 - 萬海智慧航安訓練管理系統</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 48px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    }
+
+    h1 {
+      color: #1d1d1f;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #6e6e73;
+      font-size: 15px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      color: #1d1d1f;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e5e7;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .password-wrapper {
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: #6e6e73;
+      font-size: 20px;
+      transition: color 0.3s ease;
+    }
+
+    .toggle-password:hover {
+      color: #1d1d1f;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+    }
+
+    .login-btn:active {
+      transform: translateY(0);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error-message {
+      background: #ffe5e5;
+      color: #d70015;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 20px;
+      border: 2px solid #ff3b30;
+      display: none;
+      animation: shake 0.5s ease;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .info-box {
+      background: #e5f3ff;
+      border: 2px solid #007aff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 24px;
+    }
+
+    .info-box h3 {
+      color: #007aff;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .info-box ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .info-box li {
+      color: #0051d5;
+      font-size: 13px;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .info-box li::before {
+      content: "→";
+      margin-right: 8px;
+      font-weight: bold;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .remember-me input[type="checkbox"] {
+      width: auto;
+      margin-right: 8px;
+    }
+
+    .remember-me label {
+      margin: 0;
+      font-weight: 400;
+      font-size: 14px;
+      color: #6e6e73;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 32px 24px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .logo-icon {
+        width: 64px;
+        height: 64px;
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">
+      <div class="logo-icon">🚢</div>
+      <h1>系統登入</h1>
+      <p class="subtitle">萬海智慧航安訓練管理系統</p>
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">使用者名稱</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="請輸入使用者名稱"
+          required
+          autocomplete="username"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password">密碼</label>
+        <div class="password-wrapper">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="請輸入密碼"
+            required
+            autocomplete="current-password"
+          >
+          <button type="button" class="toggle-password" id="togglePassword">
+            👁️
+          </button>
+        </div>
+      </div>
+
+      <div class="remember-me">
+        <input type="checkbox" id="rememberMe" name="rememberMe">
+        <label for="rememberMe">記住我（7天內自動登入）</label>
+      </div>
+
+      <button type="submit" class="login-btn" id="loginBtn">
+        登入系統
+      </button>
+    </form>
+
+    <div class="info-box">
+      <h3>🔐 測試帳號</h3>
+      <ul>
+        <li>管理員：admin / admin123</li>
+        <li>教師：teacher / teacher123</li>
+        <li>訪客：guest / guest123</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // 密碼配置
+    const PASSWORDS = {
+      'admin': {
+        password: 'admin123',
+        role: 'admin',
+        displayName: '系統管理員',
+        redirect: 'teacher-management.html'
+      },
+      'teacher': {
+        password: 'teacher123',
+        role: 'teacher',
+        displayName: '教師',
+        redirect: 'index.html'
+      },
+      'guest': {
+        password: 'guest123',
+        role: 'guest',
+        displayName: '訪客',
+        redirect: 'index.html'
+      }
+    };
+
+    // DOM 元素
+    const loginForm = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const rememberMeCheckbox = document.getElementById('rememberMe');
+    const errorMessage = document.getElementById('errorMessage');
+    const loginBtn = document.getElementById('loginBtn');
+
+    // 切換密碼顯示/隱藏
+    togglePasswordBtn.addEventListener('click', () => {
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
+    });
+
+    // 檢查是否已經登入
+    function checkExistingLogin() {
+      const authData = localStorage.getItem('authData') || sessionStorage.getItem('authData');
+
+      if (authData) {
+        try {
+          const { username, role, timestamp } = JSON.parse(authData);
+          const expiryTime = 7 * 24 * 60 * 60 * 1000; // 7 天
+
+          // 檢查是否過期
+          if (Date.now() - timestamp < expiryTime) {
+            // 自動登入
+            const userData = PASSWORDS[username];
+            if (userData) {
+              window.location.href = userData.redirect;
+              return true;
+            }
+          } else {
+            // 過期，清除
+            localStorage.removeItem('authData');
+            sessionStorage.removeItem('authData');
+          }
+        } catch (error) {
+          console.error('檢查登入狀態失敗:', error);
+        }
+      }
+      return false;
+    }
+
+    // 顯示錯誤訊息
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.add('show');
+
+      setTimeout(() => {
+        errorMessage.classList.remove('show');
+      }, 3000);
+    }
+
+    // 處理登入
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+      const rememberMe = rememberMeCheckbox.checked;
+
+      // 禁用登入按鈕
+      loginBtn.disabled = true;
+      loginBtn.textContent = '登入中...';
+
+      // 模擬網路延遲
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 驗證帳號密碼
+      const userData = PASSWORDS[username];
+
+      if (!userData) {
+        showError('❌ 使用者名稱不存在');
+        loginBtn.disabled = false;
+        loginBtn.textContent = '登入系統';
+        return;
+      }
+
+      if (userData.password !== password) {
+        showError('❌ 密碼錯誤，請重新輸入');
+        loginBtn.disabled = false;
+        loginBtn.textContent = '登入系統';
+        passwordInput.value = '';
+        passwordInput.focus();
+        return;
+      }
+
+      // 登入成功
+      const authData = {
+        username: username,
+        role: userData.role,
+        displayName: userData.displayName,
+        timestamp: Date.now()
+      };
+
+      // 儲存登入狀態
+      if (rememberMe) {
+        localStorage.setItem('authData', JSON.stringify(authData));
+      } else {
+        sessionStorage.setItem('authData', JSON.stringify(authData));
+      }
+
+      // 儲存使用者資訊供其他頁面使用
+      sessionStorage.setItem('currentUser', JSON.stringify({
+        username: username,
+        role: userData.role,
+        displayName: userData.displayName
+      }));
+
+      // 成功訊息
+      loginBtn.textContent = '✅ 登入成功！';
+      loginBtn.style.background = 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)';
+
+      // 延遲後跳轉
+      setTimeout(() => {
+        window.location.href = userData.redirect;
+      }, 800);
+    });
+
+    // 頁面載入時檢查登入狀態
+    if (!checkExistingLogin()) {
+      // 沒有登入，聚焦到使用者名稱輸入框
+      usernameInput.focus();
+    }
+
+    // Enter 鍵快速登入
+    usernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        passwordInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>
