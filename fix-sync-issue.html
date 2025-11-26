@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>資料同步修復工具</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      color: #1d1d1f;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      color: #6e6e73;
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+
+    .info-box {
+      background: #f5f5f7;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .info-box h3 {
+      color: #1d1d1f;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e5e7;
+    }
+
+    .info-item:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: #6e6e73;
+      font-size: 14px;
+    }
+
+    .info-value {
+      color: #1d1d1f;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 12px;
+    }
+
+    .btn-primary {
+      background: #007aff;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #0051d5;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,122,255,0.3);
+    }
+
+    .btn-secondary {
+      background: #34c759;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #248a3d;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(52,199,89,0.3);
+    }
+
+    .btn-danger {
+      background: #ff3b30;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #d70015;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(255,59,48,0.3);
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status.success {
+      background: #d1f4e0;
+      color: #248a3d;
+      border: 2px solid #34c759;
+    }
+
+    .status.error {
+      background: #ffe5e5;
+      color: #d70015;
+      border: 2px solid #ff3b30;
+    }
+
+    .status.info {
+      background: #e5f3ff;
+      color: #0051d5;
+      border: 2px solid #007aff;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 資料同步修復工具</h1>
+    <p class="subtitle">解決資料衝突和同步問題</p>
+
+    <div class="info-box" id="dataInfo">
+      <h3>📊 當前資料狀態</h3>
+      <div class="info-item">
+        <span class="info-label">本地教師資料</span>
+        <span class="info-value" id="localTeachers">載入中...</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">本地排程資料</span>
+        <span class="info-value" id="localCourses">載入中...</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">本地海事課程</span>
+        <span class="info-value" id="localMaritime">載入中...</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">最後同步時間</span>
+        <span class="info-value" id="lastSync">載入中...</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">localStorage 使用量</span>
+        <span class="info-value" id="storageSize">載入中...</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="diagnose()">
+      🔍 診斷問題
+    </button>
+
+    <button class="btn btn-secondary" onclick="forceClearAndReload()">
+      🔄 清除快取並重新載入
+    </button>
+
+    <button class="btn btn-danger" onclick="clearAllData()">
+      ⚠️ 清除所有本地資料
+    </button>
+
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    // 載入資料狀態
+    function loadDataStatus() {
+      try {
+        const teachers = JSON.parse(localStorage.getItem('teachers') || '[]');
+        const courses = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+        const maritime = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+        const lastSync = localStorage.getItem('lastSyncTime');
+
+        document.getElementById('localTeachers').textContent = `${teachers.length} 筆`;
+        document.getElementById('localCourses').textContent = `${courses.length} 筆`;
+        document.getElementById('localMaritime').textContent = `${maritime.length} 筆`;
+        document.getElementById('lastSync').textContent = lastSync
+          ? new Date(lastSync).toLocaleString('zh-TW')
+          : '從未同步';
+
+        // 計算 localStorage 使用量
+        let totalSize = 0;
+        for (let key in localStorage) {
+          if (localStorage.hasOwnProperty(key)) {
+            totalSize += localStorage[key].length + key.length;
+          }
+        }
+        const sizeInKB = (totalSize / 1024).toFixed(2);
+        document.getElementById('storageSize').textContent = `${sizeInKB} KB`;
+
+      } catch (error) {
+        showStatus('載入資料狀態失敗：' + error.message, 'error');
+      }
+    }
+
+    // 診斷問題
+    function diagnose() {
+      showStatus('正在診斷...', 'info');
+
+      const issues = [];
+
+      // 檢查 1：是否有資料
+      const teachers = JSON.parse(localStorage.getItem('teachers') || '[]');
+      const courses = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+
+      if (teachers.length === 0) {
+        issues.push('❌ 沒有教師資料');
+      }
+
+      if (courses.length === 0) {
+        issues.push('⚠️ 沒有排程資料');
+      }
+
+      // 檢查 2：是否有同步標記
+      const hasChanges = localStorage.getItem('hasLocalChanges');
+      if (hasChanges === 'true') {
+        issues.push('⚠️ 有未同步的本地修改');
+      }
+
+      // 檢查 3：localStorage 是否過大
+      let totalSize = 0;
+      for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+          totalSize += localStorage[key].length + key.length;
+        }
+      }
+      const sizeInMB = totalSize / (1024 * 1024);
+      if (sizeInMB > 5) {
+        issues.push('❌ localStorage 超過 5MB，可能導致性能問題');
+      }
+
+      // 顯示結果
+      if (issues.length === 0) {
+        showStatus('✅ 沒有發現問題！資料狀態正常。', 'success');
+      } else {
+        showStatus('發現以下問題：\n' + issues.join('\n'), 'error');
+      }
+    }
+
+    // 強制清除並重新載入
+    function forceClearAndReload() {
+      if (confirm('⚠️ 這將清除所有本地快取並重新從後端載入資料。\n\n確定要繼續嗎？')) {
+        showStatus('正在清除快取...', 'info');
+
+        setTimeout(() => {
+          localStorage.clear();
+          showStatus('✅ 快取已清除，即將重新載入頁面...', 'success');
+
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        }, 500);
+      }
+    }
+
+    // 清除所有本地資料
+    function clearAllData() {
+      if (confirm('⚠️ 危險操作！\n\n這將刪除所有本地資料，包括：\n- 教師資料\n- 排程資料\n- 海事課程\n- 所有設定\n\n確定要繼續嗎？')) {
+        if (confirm('❗ 最後確認：真的要刪除所有本地資料嗎？此操作無法復原！')) {
+          localStorage.clear();
+          showStatus('✅ 所有資料已清除！即將重新載入...', 'success');
+
+          setTimeout(() => {
+            location.reload();
+          }, 2000);
+        }
+      }
+    }
+
+    // 顯示狀態訊息
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status ${type}`;
+      status.style.display = 'block';
+    }
+
+    // 頁面載入時顯示資料狀態
+    loadDataStatus();
+  </script>
+</body>
+</html>
