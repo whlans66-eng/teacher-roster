@@ -5,14 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>派課管理系統</title>
 
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 預連接到資源服務器 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 字體樣式表 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+
+  <!-- Tailwind CDN - 使用 defer 避免阻塞渲染 -->
+  <script defer src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js - 延遲加載，僅在需要時加載 -->
+  <script>
+    // 延遲加載 Chart.js - 僅在需要圖表時才加載
+    window.loadChartJS = function() {
+      return new Promise((resolve, reject) => {
+        if (window.Chart) {
+          resolve();
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    };
+  </script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     * {
       margin: 0;
@@ -1371,10 +1394,7 @@
       const iconElement = document.getElementById('syncStatusIcon');
 
       if (!banner || !textElement || !iconElement) {
-        console.log(`[${type.toUpperCase()}] ${message}`);
-        if (hint) {
-          console.log('↳', hint);
-        }
+        // 顯示狀態訊息（已透過 UI 顯示）
         return;
       }
 
@@ -1761,7 +1781,15 @@
     }
 
     // ==================== 課程類型分佈圖 ====================
-    function renderCourseTypeChart() {
+    async function renderCourseTypeChart() {
+      // 延遲加載 Chart.js
+      try {
+        await window.loadChartJS();
+      } catch (error) {
+        console.error('無法加載 Chart.js:', error);
+        return;
+      }
+
       // 根據選擇的師資和日期過濾課程
       let filteredCourses = courseAssignments;
 
@@ -2414,7 +2442,7 @@
         }
       } else if (lockResult.locked && lockResult.ownLock) {
         // 成功取得鎖定
-        console.log(`🔒 已鎖定課程 ${courseId}`);
+        // 已鎖定課程
         editingCourseId = courseId;
       } else {
         // 未能取得鎖定（其他錯誤）
@@ -2935,7 +2963,7 @@
       // 🔓 釋放編輯鎖定
       if (editingCourseId) {
         await editLockManager.releaseLock('courseAssignments', editingCourseId);
-        console.log(`🔓 已釋放課程 ${editingCourseId} 的鎖定`);
+        // 已釋放課程鎖定
       }
 
       document.getElementById('viewEventModal').classList.add('hidden');
@@ -3695,7 +3723,7 @@
               showConflictDialog(result);
               console.warn('發現資料衝突，請重新整理頁面');
             } else if (result.success) {
-              console.log('✅ 資料已安全儲存到雲端');
+              // 資料已安全儲存到雲端
             }
           }).catch(err => {
             console.warn('⚠️ 後端同步失敗，資料已保存在本地:', err.message);

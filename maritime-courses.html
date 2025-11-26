@@ -5,11 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>海事專業訓練課程系統</title>
 
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 預連接到資源服務器 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+
+  <!-- 字體樣式表 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+
+  <!-- Tailwind CDN - 使用 defer 避免阻塞渲染 -->
+  <script defer src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     * {
       margin: 0;
@@ -1232,7 +1239,7 @@
             showConflictDialog(result);
             console.warn('發現資料衝突，請重新整理頁面');
           } else if (result.success) {
-            console.log('✅ 資料已安全儲存到雲端');
+            // 資料已安全儲存到雲端
           }
         }).catch(err => {
           console.warn('⚠️ 後端同步失敗，資料已保存在本地:', err.message);
