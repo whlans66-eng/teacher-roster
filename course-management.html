@@ -1584,6 +1584,20 @@
       lastCourseDataSnapshot = createCourseDataSnapshot();
     }
 
+    function hydrateFromStorageIfChanged(event) {
+      const watchedKeys = new Set(['teachers', 'courseAssignments', 'calendarEvents']);
+      if (event && !watchedKeys.has(event.key)) return;
+
+      const previousSnapshot = lastCourseDataSnapshot;
+      reloadCourseDataFromStorage();
+      const latestSnapshot = createCourseDataSnapshot();
+
+      if (latestSnapshot !== previousSnapshot) {
+        renderAllCourseViews();
+        lastCourseDataSnapshot = latestSnapshot;
+      }
+    }
+
     async function init() {
       // 先用本地資料快速呈現畫面
       reloadCourseDataFromStorage();
@@ -1599,18 +1613,15 @@
       if (typeof initializeDataSync !== 'undefined') {
         initializeDataSync()
           .then(() => {
-            reloadCourseDataFromStorage();
-            const syncedSnapshot = createCourseDataSnapshot();
-            if (syncedSnapshot !== lastCourseDataSnapshot) {
-              renderAllCourseViews();
-              lastCourseDataSnapshot = syncedSnapshot;
-            }
+            hydrateFromStorageIfChanged();
           })
           .catch(err => {
             console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
             showMessage('目前使用離線資料', 'warning', '請確認 Google Apps Script API 設定是否正確，或稍後再試。');
           });
       }
+
+      window.addEventListener('storage', hydrateFromStorageIfChanged);
 
       // 🔒 定期刷新鎖定狀態（每15秒）
       setInterval(() => {

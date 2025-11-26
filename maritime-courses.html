@@ -1838,6 +1838,19 @@
       lastMaritimeDataSnapshot = createMaritimeDataSnapshot();
     }
 
+    function hydrateMaritimeFromStorageIfChanged(event) {
+      if (event && event.key !== 'maritimeCourses') return;
+
+      const previousSnapshot = lastMaritimeDataSnapshot;
+      reloadMaritimeCoursesFromStorage();
+      const latestSnapshot = createMaritimeDataSnapshot();
+
+      if (latestSnapshot !== previousSnapshot) {
+        renderAllMaritimeViews();
+        lastMaritimeDataSnapshot = latestSnapshot;
+      }
+    }
+
     // 初始化海事課程系統事件監聽器
     async function initMaritimeCourseSystem() {
       // 先用本地資料呈現畫面，避免等待網路
@@ -1849,17 +1862,14 @@
       if (typeof initializeDataSync !== 'undefined') {
         initializeDataSync()
           .then(() => {
-            reloadMaritimeCoursesFromStorage();
-            const syncedSnapshot = createMaritimeDataSnapshot();
-            if (syncedSnapshot !== lastMaritimeDataSnapshot) {
-              renderAllMaritimeViews();
-              lastMaritimeDataSnapshot = syncedSnapshot;
-            }
+            hydrateMaritimeFromStorageIfChanged();
           })
           .catch(err => {
             console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
           });
       }
+
+      window.addEventListener('storage', hydrateMaritimeFromStorageIfChanged);
 
       // 課程表單處理
       const courseForm = document.getElementById('maritimeCourseForm');
