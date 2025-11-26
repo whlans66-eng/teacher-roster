@@ -9,7 +9,7 @@ const API_CONFIG = {
   baseUrl: 'https://script.google.com/macros/s/AKfycbzV_SS7xyNySyYGjAXGp6ya6MBqJHoAiwDGK7sVTeWnAZJmNDoSRXUUhDG-K0izeu3-wQ/exec',
   token: 'tr_demo_12345',  // 與後端 TOKEN 一致
   timeout: 30000,  // 30 秒超時
-  debug: true  // 開啟/關閉調試日誌（生產環境請設為 false）
+  debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
 };
 
 /**
@@ -490,17 +490,14 @@ class DataSyncManager {
   }
 
   /**
-   * 安全儲存：檢查是否有衝突再儲存
-   * 防止舊資料覆蓋新資料
+   * 安全儲存：直接儲存到後端（已移除衝突檢查）
+   * 注意：此模式下不檢查其他使用者的更新，直接覆蓋後端資料
    */
   async saveToBackendSafe() {
     try {
       if (this.api.debug) {
-        console.log('📤 安全儲存模式：檢查資料衝突...');
+        console.log('📤 儲存資料到後端（無衝突檢查）...');
       }
-
-      // 先從後端載入最新資料
-      const backendData = await this.api.listAll();
 
       // 取得本地資料
       const localTeachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
@@ -517,27 +514,7 @@ class DataSyncManager {
         return { skipped: true, reason: 'no_local_changes' };
       }
 
-      // 比對資料長度，如果後端資料比本地新，警告用戶
-      const backendHasMore =
-        (backendData.teachers?.length || 0) > localTeachers.length ||
-        (backendData.courseAssignments?.length || 0) > localCourses.length ||
-        (backendData.maritimeCourses?.length || 0) > localMaritime.length;
-
-      if (backendHasMore) {
-        console.warn('⚠️ 警告：後端有更新的資料！');
-
-        // 取得目前活躍的使用者列表
-        const activeSessions = await sessionManager.getActiveSessions();
-        const otherUsers = activeSessions.filter(s => s.sessionId !== sessionManager.sessionId);
-
-        return {
-          conflict: true,
-          message: '後端有其他人的更新，請重新整理頁面後再儲存',
-          activeSessions: otherUsers
-        };
-      }
-
-      // 沒有衝突，安全儲存
+      // 直接儲存（不檢查衝突）
       await this.api.save('teachers', localTeachers);
       await this.api.save('courseAssignments', localCourses);
       await this.api.save('maritimeCourses', localMaritime);
@@ -547,11 +524,11 @@ class DataSyncManager {
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
       if (this.api.debug) {
-        console.log('✅ 安全儲存完成');
+        console.log('✅ 資料已儲存完成');
       }
       return { success: true };
     } catch (error) {
-      console.error('❌ 安全儲存失敗:', error);
+      console.error('❌ 儲存資料失敗:', error);
       throw error;
     }
   }
