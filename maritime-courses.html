@@ -741,6 +741,13 @@
   <script src="js/api.js"></script>
 </head>
 <body>
+  <!-- Authentication -->
+  <script src="js/auth.js"></script>
+  <script>
+    // Protect this page - admin and teacher can access
+    protectPage(['admin', 'teacher']);
+  </script>
+
   <div class="container">
     <!-- 返回首頁按鈕 -->
     <div style="margin-bottom: 30px;">
