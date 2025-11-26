@@ -1353,6 +1353,7 @@
     let teachers = loadArray('teachers', typeof normalizeTeacherRecord === 'function' ? normalizeTeacherRecord : undefined);
     let courseAssignments = loadArray('courseAssignments', typeof normalizeCourseAssignment === 'function' ? normalizeCourseAssignment : undefined);
     let calendarEvents = loadArray('calendarEvents');
+    let lastCourseDataSnapshot = '';
 
     let currentDate = new Date();
     let viewMode = 'month';
@@ -1549,34 +1550,66 @@
     }
 
     // ==================== 初始化 ====================
-    async function init() {
-      // 從後端同步資料
-      if (typeof initializeDataSync !== 'undefined') {
-        try {
-          await initializeDataSync();
-          // 重新載入同步後的資料
-          teachers = loadArray('teachers', typeof normalizeTeacherRecord === 'function' ? normalizeTeacherRecord : undefined);
-          courseAssignments = loadArray('courseAssignments', typeof normalizeCourseAssignment === 'function' ? normalizeCourseAssignment : undefined);
-          calendarEvents = loadArray('calendarEvents');
-        } catch (err) {
-          console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
-          showMessage('目前使用離線資料', 'warning', '請確認 Google Apps Script API 設定是否正確，或稍後再試。');
-        }
-      }
+    function createCourseDataSnapshot() {
+      return JSON.stringify({ teachers, courseAssignments, calendarEvents });
+    }
 
-      // 原有的初始化邏輯
+    function reloadCourseDataFromStorage() {
+      teachers = loadArray('teachers', typeof normalizeTeacherRecord === 'function' ? normalizeTeacherRecord : undefined);
+      courseAssignments = loadArray('courseAssignments', typeof normalizeCourseAssignment === 'function' ? normalizeCourseAssignment : undefined);
+      calendarEvents = loadArray('calendarEvents');
+    }
+
+    function scheduleIdleTask(callback) {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(callback, { timeout: 500 });
+      } else {
+        setTimeout(callback, 0);
+      }
+    }
+
+    function renderAllCourseViews() {
       loadTeachers();
       updateStatistics();
-      renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
       updateTodayDate();
       loadTeacherHoursAnalysisVisibility();
+
+      scheduleIdleTask(() => {
+        renderTeacherHoursAnalysis();
+        renderCourseTypeChart();
+      });
+
+      lastCourseDataSnapshot = createCourseDataSnapshot();
+    }
+
+    async function init() {
+      // 先用本地資料快速呈現畫面
+      reloadCourseDataFromStorage();
+      lastCourseDataSnapshot = createCourseDataSnapshot();
+      renderAllCourseViews();
       document.getElementById('courseForm').addEventListener('submit', handleAddCourse);
 
       if (courseAssignments.length === 0) {
         showMessage('目前尚無課程資料可供顯示', 'info', '請先設定後端同步或使用「新增課程」建立資料。');
+      }
+
+      // 後端同步改為背景進行，避免載入被網路延遲阻塞
+      if (typeof initializeDataSync !== 'undefined') {
+        initializeDataSync()
+          .then(() => {
+            reloadCourseDataFromStorage();
+            const syncedSnapshot = createCourseDataSnapshot();
+            if (syncedSnapshot !== lastCourseDataSnapshot) {
+              renderAllCourseViews();
+              lastCourseDataSnapshot = syncedSnapshot;
+            }
+          })
+          .catch(err => {
+            console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
+            showMessage('目前使用離線資料', 'warning', '請確認 Google Apps Script API 設定是否正確，或稍後再試。');
+          });
       }
 
       // 🔒 定期刷新鎖定狀態（每15秒）
@@ -3013,10 +3046,18 @@
 
     // ==================== 工具函數 ====================
     function calculateHours(timeRange) {
+      if (!timeRange || !timeRange.includes('-')) return 0;
+
       const [start, end] = timeRange.split('-');
       const startTime = new Date(`2024-01-01 ${start}`);
       const endTime = new Date(`2024-01-01 ${end}`);
-      return (endTime - startTime) / (1000 * 60 * 60);
+
+      if (Number.isNaN(startTime.getTime()) || Number.isNaN(endTime.getTime())) {
+        return 0;
+      }
+
+      const hours = (endTime - startTime) / (1000 * 60 * 60);
+      return Number.isFinite(hours) && hours >= 0 ? hours : 0;
     }
 
     function checkConflict(newCourse) {
