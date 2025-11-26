@@ -9,7 +9,7 @@ const API_CONFIG = {
   baseUrl: 'https://script.google.com/macros/s/AKfycbzV_SS7xyNySyYGjAXGp6ya6MBqJHoAiwDGK7sVTeWnAZJmNDoSRXUUhDG-K0izeu3-wQ/exec',
   token: 'tr_demo_12345',  // 與後端 TOKEN 一致
   timeout: 30000,  // 30 秒超時
-  debug: true  // 開啟/關閉調試日誌（生產環境請設為 false）
+  debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
 };
 
 /**
