@@ -9,6 +9,7 @@ const API_CONFIG = {
   baseUrl: 'https://script.google.com/macros/s/AKfycbyxMcxv2_6TABlz1G9NzU4yZpPFWaaLYkyvSi_XODR2Mxo4ipzS4tOm5CC18kTYPWM/exec',
   token: 'tr_demo_12345',  // 與後端 TOKEN 一致
   timeout: 30000,  // 30 秒超時
+  enableSessions: false, // 是否啟用 Session 追蹤與鎖定功能
   debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
 };
 
@@ -566,6 +567,13 @@ class SessionManager {
    * 註冊 session（頁面載入時呼叫）
    */
   async register(userName = null, userEmail = null) {
+    if (!API_CONFIG.enableSessions) {
+      if (this.api.debug) {
+        console.log('ℹ️ 已停用 Session 追蹤，略過註冊');
+      }
+      return { ok: true, disabled: true };
+    }
+
     try {
       // 從 localStorage 取得使用者名稱，若沒有就使用預設值避免彈跳視窗
       if (!userName) {
@@ -937,10 +945,14 @@ async function initializeDataSync() {
     // showSyncStatus('資料已從雲端載入', 'success');
 
     // 註冊 session（追蹤使用者在線狀態）
-    try {
-      await sessionManager.register();
-    } catch (sessionError) {
-      console.warn('⚠️ Session 註冊失敗:', sessionError);
+    if (API_CONFIG.enableSessions) {
+      try {
+        await sessionManager.register();
+      } catch (sessionError) {
+        console.warn('⚠️ Session 註冊失敗:', sessionError);
+      }
+    } else if (API_CONFIG.debug) {
+      console.log('ℹ️ Session 功能已停用，略過註冊。');
     }
 
     // 可選：啟用自動同步（每 5 分鐘）
@@ -960,7 +972,9 @@ window.addEventListener('beforeunload', () => {
   editLockManager.releaseAllLocks().catch(err => {
     console.warn('釋放鎖定失敗:', err);
   });
-  sessionManager.unregister();
+  if (API_CONFIG.enableSessions) {
+    sessionManager.unregister();
+  }
 });
 
 // 匯出給其他模組使用
