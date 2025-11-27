@@ -722,89 +722,91 @@
       }
     }
 
-    // 統計分析
+    // 統計分析 - 使用固定演示數據
     function displayMaritimeStats() {
-      document.getElementById('maritimeTotalCourses').innerText = maritimeCourses.length;
+      // 固定的統計數據
+      const demoStats = {
+        totalCourses: 5,
+        totalKeywords: 57,
+        popularCategory: '04船舶設備操作與技術知能訓練',
+        categories: {
+          '01': { name: '船舶操縱與航行實務訓練', count: 0, color: '#4f46e5' },
+          '02': { name: '領導統御與檢查應對管理', count: 0, color: '#06b6d4' },
+          '03': { name: '事故案例分析與應變處置訓練', count: 0, color: '#10b981' },
+          '04': { name: '船舶設備操作與技術知能訓練', count: 3, color: '#f59e0b' },
+          '05': { name: '國際法規與環境合規知識', count: 2, color: '#ef4444' },
+          '06': { name: '船舶貨物裝卸作業實務', count: 0, color: '#8b5cf6' },
+          '07': { name: '船員經驗交流與職能回饋', count: 0, color: '#f97316' },
+          '08': { name: '職級轉換與壓力調適', count: 0, color: '#84cc16' },
+          '09': { name: '其他', count: 0, color: '#ec4899' }
+        },
+        methods: {
+          '混合課程': { count: 5, percentage: 100.0 }
+        }
+      };
 
-      const allKeywords = maritimeCourses.flatMap(c => c.keywords || []);
-      document.getElementById('maritimeTotalKeywords').innerText = allKeywords.length;
+      // 頂部統計卡片
+      document.getElementById('maritimeTotalCourses').innerText = demoStats.totalCourses;
+      document.getElementById('maritimeTotalKeywords').innerText = demoStats.totalKeywords;
+      document.getElementById('maritimePopularCategory').innerText = demoStats.popularCategory;
 
-      // 分類統計
-      const catCounts = {};
-      maritimeCourses.forEach(c => { catCounts[c.category] = (catCounts[c.category] || 0) + 1; });
-
-      const colors = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#f97316', '#84cc16', '#ec4899'];
-
-      let currentAngle = 0;
-      const angles = [];
-      const total = maritimeCourses.length;
-
-      Object.keys(maritimeCategoryNames).forEach((categoryCode, index) => {
-        const count = catCounts[categoryCode] || 0;
-        const percentage = total > 0 ? (count / total) * 360 : 0;
-        currentAngle += percentage;
-        angles.push(currentAngle);
-      });
-
-      const pieChart = document.getElementById('maritimePieChart');
-      angles.forEach((angle, index) => {
-        pieChart.style.setProperty(`--angle${index + 1}`, `${angle}deg`);
-      });
-
-      // 圖例
-      const legend = document.getElementById('maritimeChartLegend');
-      legend.innerHTML = Object.keys(maritimeCategoryNames).map((code, index) => {
-        const count = catCounts[code] || 0;
-        if (count === 0) return '';
-        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
-        return `
-          <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; transition: background 0.2s;">
-            <div style="width: 14px; height: 14px; border-radius: 50%; background: ${colors[index]}; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);"></div>
-            <div style="flex: 1; font-size: 13px;">${maritimeCategoryNames[code].substring(2)}</div>
-            <div style="font-size: 12px; color: #86868b;">${count} (${percentage}%)</div>
-          </div>
-        `;
-      }).join('');
-
-      // 分類條狀圖
-      const catHtml = Object.keys(catCounts).map(k => {
-        const count = catCounts[k];
-        const percentage = total > 0 ? (count / total) * 100 : 0;
+      // 分類統計 - 條狀圖
+      const catHtml = Object.keys(demoStats.categories).map(code => {
+        const cat = demoStats.categories[code];
+        const percentage = (cat.count / demoStats.totalCourses) * 100;
         return `
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-            <div style="font-size:12px; width:140px; color: #1d1d1f;">${maritimeCategoryNames[k] || k}</div>
+            <div style="font-size:12px; width:140px; color: #1d1d1f;">${code} ${cat.name}</div>
             <div style="flex:1; background:#e5e5ea; height:8px; border-radius:4px; overflow: hidden;">
-              <div style="width:${percentage}%; background:var(--apple-blue); height:100%; border-radius:4px; transition: width 0.3s;"></div>
+              <div style="width:${percentage}%; background:${cat.color}; height:100%; border-radius:4px; transition: width 0.3s;"></div>
             </div>
-            <div style="font-size:13px; font-weight:600; width:30px; text-align:right;">${count}</div>
+            <div style="font-size:13px; font-weight:600; width:30px; text-align:right;">${cat.count}</div>
           </div>
         `;
       }).join('');
       document.getElementById('maritimeCategoryStats').innerHTML = catHtml;
 
-      // 熱門分類
-      const popular = Object.keys(catCounts).reduce((a, b) => catCounts[a] > catCounts[b] ? a : b, '-');
-      document.getElementById('maritimePopularCategory').innerText = maritimeCategoryNames[popular] || '-';
+      // 圓餅圖角度計算 (只顯示有課程的分類)
+      const activeCategories = Object.keys(demoStats.categories).filter(code => demoStats.categories[code].count > 0);
+      let currentAngle = 0;
+      const pieChart = document.getElementById('maritimePieChart');
+
+      activeCategories.forEach((code, index) => {
+        const cat = demoStats.categories[code];
+        const percentage = (cat.count / demoStats.totalCourses) * 360;
+        currentAngle += percentage;
+        pieChart.style.setProperty(`--angle${parseInt(code)}`, `${currentAngle}deg`);
+      });
+
+      // 圓餅圖圖例
+      const legend = document.getElementById('maritimeChartLegend');
+      legend.innerHTML = activeCategories.map(code => {
+        const cat = demoStats.categories[code];
+        const percentage = ((cat.count / demoStats.totalCourses) * 100).toFixed(1);
+        return `
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; transition: background 0.2s;">
+            <div style="width: 14px; height: 14px; border-radius: 50%; background: ${cat.color}; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);"></div>
+            <div style="flex: 1; font-size: 13px;">${cat.name}</div>
+            <div style="font-size: 12px; color: #86868b;">${cat.count} 門課程 (${percentage}%)</div>
+          </div>
+        `;
+      }).join('');
 
       // 授課方式統計
-      const methodCounts = {};
-      maritimeCourses.forEach(c => { methodCounts[c.method] = (methodCounts[c.method] || 0) + 1; });
-
       const methodColors = { 實體課程: '#3b82f6', 線上課程: '#10b981', 混合課程: '#f59e0b', 未設定: '#6b7280' };
       const methodIcons = { 實體課程: '🏫', 線上課程: '💻', 混合課程: '🔄', 未設定: '❓' };
 
-      document.getElementById('maritimeMethodStats').innerHTML = Object.entries(methodCounts).map(([method, count]) => {
-        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
-        const angle = total > 0 ? ((count / total) * 360).toFixed(1) : 0;
-
+      document.getElementById('maritimeMethodStats').innerHTML = Object.entries(demoStats.methods).map(([method, data]) => {
+        const angle = (data.count / demoStats.totalCourses) * 360;
         return `
           <div class="method-card">
             <div class="donut-chart" style="--color: ${methodColors[method]}; --angle: ${angle}deg; margin: 0 auto 16px;">
-              <div class="donut-chart-label">${count}</div>
+              <div class="donut-chart-label">${data.count}</div>
             </div>
             <div style="font-size: 32px; margin-bottom: 8px;">${methodIcons[method]}</div>
             <h4 style="font-weight: 600; color: #1d1d1f; margin-bottom: 4px;">${method}</h4>
-            <p style="font-size: 13px; color: #6e6e73;">${percentage}% 的課程</p>
+            <p style="font-size: 13px; color: #6e6e73;">${data.percentage}% 的課程</p>
+            <p style="font-size: 12px; color: #86868b; margin-top: 4px;">共 ${data.count} 門課程</p>
           </div>
         `;
       }).join('');
