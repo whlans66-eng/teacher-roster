@@ -5,107 +5,123 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>登入 - 萬海智慧航安訓練管理系統</title>
   <style>
+    :root {
+      --apple-blue: #0071e3;
+      --apple-blue-hover: #0077ed;
+      --glass-bg: rgba(255, 255, 255, 0.72);
+      --glass-border: rgba(255, 255, 255, 0.5);
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --input-bg: rgba(230, 230, 235, 0.4);
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      /* Apple 風格的多彩漸層背景 */
+      background: 
+        radial-gradient(circle at 0% 0%, #e0f2fe 0%, transparent 50%),
+        radial-gradient(circle at 100% 0%, #f0e7ff 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, #ffe4e6 0%, transparent 50%),
+        radial-gradient(circle at 0% 100%, #ecfeff 0%, transparent 50%),
+        #ffffff;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
+      color: var(--text-primary);
     }
 
     .login-container {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 24px;
-      padding: 48px;
-      max-width: 420px;
+      /* 毛玻璃特效核心代碼 */
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      animation: slideUp 0.6s ease-out;
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .logo {
+      max-width: 440px;
+      padding: 60px 40px;
+      border-radius: 24px;
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(0, 0, 0, 0.02);
+      
+      /* 進場動畫 */
+      animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
       text-align: center;
-      margin-bottom: 32px;
+    }
+
+    @keyframes floatUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .logo-icon {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 20px;
-      display: inline-flex;
+      width: 84px;
+      height: 84px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #007aff, #00c6ff);
+      border-radius: 22px;
+      display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+      font-size: 42px;
+      color: white;
+      box-shadow: 0 10px 20px rgba(0, 122, 255, 0.25);
     }
 
     h1 {
-      color: #1d1d1f;
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 700;
-      margin-bottom: 8px;
-      text-align: center;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
     }
 
     .subtitle {
-      color: #6e6e73;
-      font-size: 15px;
-      text-align: center;
-      margin-bottom: 32px;
+      color: var(--text-secondary);
+      font-size: 17px;
+      font-weight: 400;
+      margin-bottom: 48px;
+      line-height: 1.4;
     }
 
     .form-group {
       margin-bottom: 24px;
+      text-align: left;
     }
 
-    label {
-      display: block;
-      color: #1d1d1f;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 8px;
+    /* Apple 風格輸入框 */
+    .input-wrapper {
+      position: relative;
     }
 
     input {
       width: 100%;
-      padding: 14px 16px;
-      border: 2px solid #e5e5e7;
+      padding: 18px 20px;
+      font-size: 17px;
+      background: var(--input-bg);
+      border: 1px solid transparent;
       border-radius: 12px;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      background: white;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
     }
 
     input:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      background: #fff;
+      border-color: var(--apple-blue);
+      box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
     }
 
-    .password-wrapper {
-      position: relative;
+    input::placeholder {
+      color: #a1a1a6;
     }
 
     .toggle-password {
@@ -116,137 +132,132 @@
       background: none;
       border: none;
       cursor: pointer;
-      padding: 4px;
-      color: #6e6e73;
-      font-size: 20px;
-      transition: color 0.3s ease;
+      color: var(--text-secondary);
+      font-size: 18px;
+      padding: 8px;
+      transition: color 0.2s;
     }
 
     .toggle-password:hover {
-      color: #1d1d1f;
-    }
-
-    .login-btn {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
-    }
-
-    .login-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
-    }
-
-    .login-btn:active {
-      transform: translateY(0);
-    }
-
-    .login-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .error-message {
-      background: #ffe5e5;
-      color: #d70015;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      margin-bottom: 20px;
-      border: 2px solid #ff3b30;
-      display: none;
-      animation: shake 0.5s ease;
-    }
-
-    .error-message.show {
-      display: block;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-10px); }
-      75% { transform: translateX(10px); }
+      color: var(--text-primary);
     }
 
     .remember-me {
       display: flex;
       align-items: center;
-      margin-bottom: 20px;
+      justify-content: center;
+      margin-bottom: 32px;
+      gap: 8px;
     }
 
     .remember-me input[type="checkbox"] {
-      width: auto;
-      margin-right: 8px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--apple-blue);
+      margin: 0;
     }
 
     .remember-me label {
-      margin: 0;
-      font-weight: 400;
+      color: var(--text-secondary);
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    /* Apple 風格按鈕 */
+    .login-btn {
+      width: 100%;
+      padding: 18px;
+      font-size: 17px;
+      font-weight: 600;
+      color: white;
+      background: var(--apple-blue);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .login-btn:hover {
+      background: var(--apple-blue-hover);
+      transform: scale(1.01);
+    }
+
+    .login-btn:active {
+      transform: scale(0.98);
+    }
+
+    .login-btn:disabled {
+      background: #d2d2d7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* 錯誤訊息 */
+    .error-message {
+      background: rgba(255, 59, 48, 0.1);
+      color: #ff3b30;
+      padding: 12px;
+      border-radius: 12px;
       font-size: 14px;
-      color: #6e6e73;
+      margin-bottom: 24px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
     }
 
     @media (max-width: 480px) {
       .login-container {
-        padding: 32px 24px;
+        padding: 40px 24px;
       }
-
-      h1 {
-        font-size: 24px;
-      }
-
-      .logo-icon {
-        width: 64px;
-        height: 64px;
-        font-size: 32px;
-      }
+      h1 { font-size: 28px; }
+      .logo-icon { width: 72px; height: 72px; font-size: 36px; }
     }
   </style>
 </head>
 <body>
+
   <div class="login-container">
-    <div class="logo">
-      <div class="logo-icon">🚢</div>
-      <h1>系統登入</h1>
-      <p class="subtitle">萬海智慧航安訓練管理系統</p>
-    </div>
+    <div class="logo-icon">⚓</div>
+    <h1>歡迎回來</h1>
+    <p class="subtitle">登入萬海智慧航安訓練管理系統<br>開始您的排課與管理工作</p>
 
     <div id="errorMessage" class="error-message"></div>
 
     <form id="loginForm">
       <div class="form-group">
-        <label for="username">使用者名稱</label>
-        <input
-          type="text"
-          id="username"
-          name="username"
-          placeholder="請輸入使用者名稱"
-          required
-          autocomplete="username"
-        >
+        <div class="input-wrapper">
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            placeholder="使用者名稱" 
+            required 
+            autocomplete="username"
+            spellcheck="false"
+          >
+        </div>
       </div>
 
       <div class="form-group">
-        <label for="password">密碼</label>
-        <div class="password-wrapper">
-          <input
-            type="password"
-            id="password"
-            name="password"
-            placeholder="請輸入密碼"
-            required
+        <div class="input-wrapper">
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            placeholder="密碼" 
+            required 
             autocomplete="current-password"
           >
-          <button type="button" class="toggle-password" id="togglePassword">
+          <button type="button" class="toggle-password" id="togglePassword" aria-label="顯示密碼">
             👁️
           </button>
         </div>
@@ -254,20 +265,17 @@
 
       <div class="remember-me">
         <input type="checkbox" id="rememberMe" name="rememberMe">
-        <label for="rememberMe">記住我（7天內自動登入）</label>
+        <label for="rememberMe">保持登入狀態</label>
       </div>
 
       <button type="submit" class="login-btn" id="loginBtn">
         登入系統
       </button>
     </form>
-
   </div>
 
   <script src="js/api.js"></script>
-
   <script>
-    // DOM 元素
     const loginForm = document.getElementById('loginForm');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -276,48 +284,53 @@
     const errorMessage = document.getElementById('errorMessage');
     const loginBtn = document.getElementById('loginBtn');
 
-    // 切換密碼顯示/隱藏
+    // 密碼顯示切換
     togglePasswordBtn.addEventListener('click', () => {
-      const type = passwordInput.type === 'password' ? 'text' : 'password';
-      passwordInput.type = type;
-      togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      togglePasswordBtn.textContent = isPassword ? '🙈' : '👁️';
     });
 
-    // 顯示錯誤訊息
     function showError(message) {
-      errorMessage.textContent = message;
-      errorMessage.classList.add('show');
-      setTimeout(() => {
-        errorMessage.classList.remove('show');
-      }, 3000);
+      errorMessage.innerHTML = `<span>⚠️</span> ${message}`;
+      errorMessage.style.display = 'flex';
+      // 震動效果後移除 animation class 以便下次觸發
+      setTimeout(() => errorMessage.style.animation = 'none', 500);
     }
 
-    // 處理登入 (改用後端 API 驗證)
+    function hideError() {
+      errorMessage.style.display = 'none';
+    }
+
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      hideError();
 
       const username = usernameInput.value.trim();
       const password = passwordInput.value;
       const rememberMe = rememberMeCheckbox.checked;
 
-      // 禁用登入按鈕
       loginBtn.disabled = true;
-      loginBtn.textContent = '驗證中...';
+      loginBtn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite">↻</span> 驗證中...';
+
+      // 加入一個簡單的 CSS spin 動畫
+      if (!document.getElementById('spin-style')) {
+        const style = document.createElement('style');
+        style.id = 'spin-style';
+        style.innerHTML = '@keyframes spin { 100% { transform: rotate(360deg); } }';
+        document.head.appendChild(style);
+      }
 
       try {
-        // 檢查 API 設定
         if (typeof API_CONFIG === 'undefined' || !API_CONFIG.baseUrl) {
-             throw new Error("API 設定未找到，請確認 js/api.js 是否正確載入。");
+             throw new Error("系統設定錯誤：無法連接 API (js/api.js)");
         }
         
         const apiUrl = API_CONFIG.baseUrl;
-
-        // 呼叫後端 API 進行登入驗證
         const response = await fetch(`${apiUrl}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
         const result = await response.json();
 
         if (result.ok) {
-          // 登入成功
           const userData = result.data.user;
           const token = result.data.token;
 
@@ -329,67 +342,56 @@
             timestamp: Date.now()
           };
 
-          // 儲存登入狀態
           if (rememberMe) {
             localStorage.setItem('authData', JSON.stringify(authData));
           } else {
             sessionStorage.setItem('authData', JSON.stringify(authData));
           }
-
-          // 儲存使用者資訊供其他頁面使用
           sessionStorage.setItem('currentUser', JSON.stringify({
             username: userData.username,
             role: userData.role,
             displayName: userData.full_name
           }));
 
-          loginBtn.textContent = '✅ 登入成功！';
-          loginBtn.style.background = 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)';
+          loginBtn.innerHTML = '✅ 登入成功';
+          loginBtn.style.background = '#34c759'; // Apple Green
 
-          // 登入後一律跳轉至首頁
           setTimeout(() => {
              window.location.href = 'index.html';
-          }, 800);
+          }, 600);
 
         } else {
-          // 登入失敗 (後端回傳錯誤訊息)
           throw new Error(result.error || '帳號或密碼錯誤');
         }
 
       } catch (error) {
-        console.error('登入錯誤:', error);
-        showError('❌ ' + (error.message || '登入失敗，請檢查網路'));
+        console.error(error);
+        showError(error.message || '無法連線到伺服器，請檢查網路');
         loginBtn.disabled = false;
         loginBtn.textContent = '登入系統';
+        loginBtn.style.background = ''; // Reset color
         passwordInput.value = '';
       }
     });
 
-    // 檢查是否已經登入
     function checkExistingLogin() {
         const authData = localStorage.getItem('authData') || sessionStorage.getItem('authData');
         if (authData) {
             try {
                 const { timestamp } = JSON.parse(authData);
-                const expiryTime = 7 * 24 * 60 * 60 * 1000; // 7 天有效期
-                
-                // 如果還沒過期，直接跳轉
+                const expiryTime = 7 * 24 * 60 * 60 * 1000;
                 if (Date.now() - timestamp < expiryTime) {
                     window.location.href = 'index.html'; 
                     return true;
                 } else {
-                    // 過期了，清除狀態
                     localStorage.removeItem('authData');
                     sessionStorage.removeItem('authData');
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) {}
         }
         return false;
     }
 
-    // 頁面載入時檢查
     if (!checkExistingLogin()) {
       usernameInput.focus();
     }
