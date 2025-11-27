@@ -367,6 +367,16 @@
         <h3 style="margin-bottom: 20px; font-size: 16px; font-weight: 600;">授課方式統計</h3>
         <div id="maritimeMethodStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;"></div>
       </div>
+
+      <!-- 熱門關鍵字 -->
+      <div class="glass-panel" style="margin-top: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h3 style="font-size: 16px; font-weight: 600; display: flex; align-items: center;">
+            🔑 熱門關鍵字
+          </h3>
+        </div>
+        <div id="maritimeKeywordsCloud" style="display: flex; flex-wrap: wrap; gap: 12px;"></div>
+      </div>
     </div>
   </div>
 
@@ -810,6 +820,55 @@
           </div>
         `;
       }).join('');
+
+      // 熱門關鍵字
+      const keywords = [
+        { text: 'CO2鋼瓶', count: 2 },
+        { text: 'Black out', count: 2 },
+        { text: 'BVS', count: 2 },
+        { text: '氣象導航', count: 2 },
+        { text: '跨洋', count: 2 },
+        { text: 'PFOS', count: 1 },
+        { text: 'BWM', count: 1 },
+        { text: 'OWS', count: 1 },
+        { text: '壓艙水', count: 1 },
+        { text: '壓艙水', count: 1 },
+        { text: 'CC', count: 1 },
+        { text: '泡沫滅火器', count: 1 },
+        { text: '液位計', count: 1 },
+        { text: '剩餘風險', count: 1 },
+        { text: 'Residue risk', count: 1 },
+        { text: 'Condition of Class', count: 1 },
+        { text: '棘', count: 1 },
+        { text: 'BWMS', count: 1 },
+        { text: '電子紀錄簿', count: 1 }
+      ];
+
+      document.getElementById('maritimeKeywordsCloud').innerHTML = keywords.map(kw => `
+        <div style="
+          background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+          color: white;
+          padding: 10px 16px;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0, 122, 255, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 122, 255, 0.3)'">
+          <span>${kw.text}</span>
+          <span style="
+            background: rgba(255, 255, 255, 0.25);
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+          ">${kw.count}</span>
+        </div>
+      `).join('');
     }
 
     // 訊息提示
