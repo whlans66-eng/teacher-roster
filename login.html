@@ -3,279 +3,306 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WHL MARITRAIN | 登入</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Sign in - WHL MARITRAIN</title>
   <style>
     :root {
-      --primary-color: #2563EB; /* 鮮明的科技藍 */
-      --primary-hover: #1D4ED8;
-      --bg-color: #F3F4F6;
-      --text-main: #111827;
-      --text-sub: #6B7280;
-      --border-color: #E5E7EB;
+      --apple-blue: #0071e3;
+      --apple-blue-hover: #0077ed;
+      --apple-gray: #86868b;
+      --apple-light-gray: #d2d2d7;
+      --text-primary: #1d1d1f;
+      --input-focus-shadow: 0 0 0 4px rgba(0, 113, 227, 0.2);
     }
 
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+      font-family: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
     }
 
     body {
-      height: 100vh;
-      width: 100vw;
-      display: flex;
-      background-color: #fff;
-      overflow: hidden;
-    }
-
-    /* 左側：品牌形象區 */
-    .brand-section {
-      flex: 1;
-      background-color: #1e293b;
-      background-image: url('https://images.unsplash.com/photo-1559297434-fae8a1916a79?q=80&w=2070&auto=format&fit=crop');
-      background-size: cover;
-      background-position: center;
-      position: relative;
+      background-color: #ffffff; /* 純白背景 */
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
-      padding: 60px;
-      color: white;
+      align-items: center;
+      padding-top: 80px; /* Apple 風格通常上方留白 */
     }
 
-    /* 圖片遮罩，讓文字更清楚 */
-    .brand-section::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
+    .login-wrapper {
       width: 100%;
-      height: 100%;
-      background: linear-gradient(to top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.4));
+      max-width: 460px; /* Apple 登入框的標準寬度 */
+      padding: 0 40px;
+      text-align: center;
     }
 
-    .brand-content {
-      position: relative;
-      z-index: 1;
-      max-width: 480px;
-    }
-
-    .brand-content h1 {
-      font-size: 36px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      line-height: 1.2;
-    }
-
-    .brand-content p {
-      font-size: 16px;
-      opacity: 0.9;
-      line-height: 1.6;
-    }
-
-    /* 右側：登入表單區 */
-    .login-section {
-      width: 480px; /* 固定寬度 */
-      background: white;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 60px;
-      box-shadow: -10px 0 40px rgba(0,0,0,0.03);
-      position: relative;
-    }
-
-    .login-header {
+    /* 標題區域 */
+    .header {
       margin-bottom: 40px;
     }
 
-    .app-logo {
-      font-size: 32px;
-      margin-bottom: 24px;
-      display: inline-block;
+    .logo {
+      font-size: 60px;
+      margin-bottom: 10px;
     }
 
-    .login-title {
+    h1 {
       font-size: 28px;
-      font-weight: 700;
-      color: var(--text-main);
+      font-weight: 700; /* 粗體 */
+      color: var(--text-primary);
       margin-bottom: 8px;
+      letter-spacing: 0.01em;
     }
 
-    .login-subtitle {
-      color: var(--text-sub);
-      font-size: 15px;
+    .subtitle {
+      font-size: 17px;
+      color: var(--text-primary);
+      font-weight: 400;
     }
 
-    /* 表單樣式 */
+    /* 表單區域 */
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 18px;
+      position: relative;
     }
 
-    .form-label {
-      display: block;
-      font-size: 14px;
-      font-weight: 500;
-      color: #374151;
-      margin-bottom: 8px;
-    }
-
+    /* Apple 風格輸入框 */
     .input-container {
       position: relative;
     }
 
     input {
       width: 100%;
-      padding: 12px 16px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 15px;
-      transition: all 0.2s;
-      background: #F9FAFB;
+      height: 56px; /* 高度較高 */
+      padding: 18px 16px;
+      font-size: 17px;
+      border: 1px solid var(--apple-light-gray);
+      border-radius: 12px;
+      background-color: #fff;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
     }
 
     input:focus {
       outline: none;
-      border-color: var(--primary-color);
-      background: white;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+      border-color: var(--apple-blue);
+      box-shadow: var(--input-focus-shadow);
+      z-index: 2;
+    }
+    
+    /* 輸入框上的標籤浮動效果 (如果需要可加，這裡保持簡潔 placeholder) */
+    input::placeholder {
+      color: var(--apple-gray);
     }
 
-    .submit-btn {
-      width: 100%;
-      padding: 14px;
-      background-color: var(--primary-color);
+    /* 密碼眼睛按鈕 */
+    .toggle-password {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--apple-gray);
+      padding: 5px;
+    }
+
+    /* 記住我 */
+    .remember-me {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+      justify-content: flex-start;
+    }
+
+    .remember-me input {
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+      accent-color: var(--apple-blue);
+    }
+
+    .remember-me label {
+      font-size: 15px;
+      color: var(--text-primary);
+    }
+
+    /* 分隔線 */
+    .divider {
+      margin: 30px 0;
+      border-top: 1px solid #e5e5e5;
+    }
+
+    /* Apple 風格按鈕 - 帶箭頭 */
+    .login-btn-container {
+      display: flex;
+      justify-content: flex-end; /* 靠右 */
+      align-items: center;
+      margin-top: 40px;
+    }
+    
+    /* 這裡我做成寬按鈕比較好點，類似 iOS */
+    .login-btn {
+      background-color: var(--apple-blue);
       color: white;
       border: none;
-      border-radius: 8px;
-      font-size: 15px;
+      border-radius: 12px;
+      font-size: 17px;
       font-weight: 600;
+      padding: 12px 24px;
+      width: 100%; /* 全寬 */
+      height: 52px;
       cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 12px;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
-    .submit-btn:hover {
-      background-color: var(--primary-hover);
+    .login-btn:hover {
+      background-color: var(--apple-blue-hover);
     }
 
-    .submit-btn:disabled {
-      background-color: #9CA3AF;
+    .login-btn:disabled {
+      background-color: rgba(0, 0, 0, 0.1);
+      color: rgba(0, 0, 0, 0.3);
       cursor: not-allowed;
     }
-
-    /* 錯誤提示 */
-    .alert-box {
-      background: #FEE2E2;
-      border: 1px solid #FECACA;
-      color: #991B1B;
-      padding: 12px 16px;
-      border-radius: 8px;
+    
+    /* 錯誤訊息 Toast */
+    .error-popover {
+      position: absolute;
+      top: 20px;
+      background: #fff2f2;
+      color: #d70015;
+      border: 1px solid #ff3b30;
+      padding: 12px 20px;
+      border-radius: 12px;
       font-size: 14px;
-      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+      z-index: 100;
       display: flex;
       align-items: center;
       gap: 8px;
-      opacity: 0;
-      transform: translateY(-10px);
-      transition: all 0.3s;
-      display: none; /* 預設隱藏 */
     }
     
-    .alert-box.show {
-      display: flex;
+    .error-popover.show {
       opacity: 1;
       transform: translateY(0);
     }
 
-    .extra-options {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
+    /* 底部連結 */
+    .footer-links {
+      margin-top: 60px;
+      font-size: 13px;
+      color: var(--apple-gray);
+    }
+    
+    .footer-links a {
+      color: var(--apple-blue);
+      text-decoration: none;
+      margin: 0 8px;
     }
 
-    .remember-me {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
+    .footer-links a:hover {
+      text-decoration: underline;
     }
 
-    .remember-me input {
-      width: 16px;
-      height: 16px;
-      margin: 0;
-      accent-color: var(--primary-color);
+    /* 旋轉動畫 */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
     }
 
-    .remember-me span {
-      font-size: 14px;
-      color: var(--text-sub);
-    }
-
-    /* 手機版響應式 */
-    @media (max-width: 768px) {
-      .brand-section {
-        display: none; /* 手機版隱藏圖片區，專注登入 */
-      }
-      .login-section {
-        width: 100%;
-        padding: 40px 24px;
-      }
-    }
   </style>
 </head>
 <body>
 
-  <div class="brand-section">
-    <div class="brand-content">
-      <h1>智慧航安，<br>引領未來航運。</h1>
-      <p>Wan Hai Smart Maritime Training System<br>提供最專業的船員培訓與課程管理解決方案。</p>
-    </div>
+  <div id="errorToast" class="error-popover">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <span id="errorText">Error message</span>
   </div>
 
-  <div class="login-section">
-    <div class="login-header">
-      <div class="app-logo">⚓</div>
-      <h2 class="login-title">歡迎回來</h2>
-      <p class="login-subtitle">請輸入您的帳號密碼以存取系統</p>
-    </div>
-
-    <div id="errorAlert" class="alert-box">
-      <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
-      <span id="errorText">帳號或密碼錯誤</span>
+  <div class="login-wrapper">
+    <div class="header">
+      <div class="logo">🚢</div>
+      <h1>Sign in to Maritrain</h1>
+      <div class="subtitle">WHL 智慧航安訓練管理系統</div>
     </div>
 
     <form id="loginForm">
       <div class="form-group">
-        <label class="form-label" for="username">使用者帳號</label>
         <div class="input-container">
-          <input type="text" id="username" placeholder="例如：admin" required autocomplete="username">
+          <input 
+            type="text" 
+            id="username" 
+            placeholder="帳號" 
+            required 
+            autocomplete="username"
+            spellcheck="false"
+          >
         </div>
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="password">密碼</label>
         <div class="input-container">
-          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+          <input 
+            type="password" 
+            id="password" 
+            placeholder="密碼" 
+            required 
+            autocomplete="current-password"
+          >
+          <button type="button" class="toggle-password" id="togglePwd" title="顯示密碼">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
         </div>
       </div>
 
-      <div class="extra-options">
-        <label class="remember-me">
-          <input type="checkbox" id="rememberMe">
-          <span>保持登入狀態</span>
-        </label>
+      <div class="remember-me">
+        <input type="checkbox" id="rememberMe">
+        <label for="rememberMe">保持登入狀態</label>
       </div>
 
-      <button type="submit" class="submit-btn" id="loginBtn">立即登入</button>
+      <div class="login-btn-container">
+        <button type="submit" class="login-btn" id="loginBtn">
+          <span id="btnText">登入</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
     </form>
-    
-    <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #9CA3AF;">
-      &copy; 2025 萬海航運股份有限公司
+
+    <div class="footer-links">
+      <a href="#">忘記密碼？</a> | <a href="#">建立帳號</a>
+      <div style="margin-top: 20px; color: #86868b;">
+        &copy; 2025 Wan Hai Lines Ltd.
+      </div>
     </div>
   </div>
 
@@ -285,35 +312,45 @@
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
-    const errorAlert = document.getElementById('errorAlert');
+    const btnText = document.getElementById('btnText');
+    const errorToast = document.getElementById('errorToast');
     const errorText = document.getElementById('errorText');
+    const togglePwd = document.getElementById('togglePwd');
+
+    // 密碼切換
+    togglePwd.addEventListener('click', () => {
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      // 切換圖示樣式 (簡單處理)
+      togglePwd.style.opacity = type === 'text' ? '1' : '0.5';
+    });
 
     function showError(msg) {
       errorText.textContent = msg;
-      errorAlert.classList.add('show');
-      errorAlert.style.display = 'flex';
-      setTimeout(() => errorAlert.classList.remove('show'), 3000);
-    }
-
-    function hideError() {
-      errorAlert.style.display = 'none';
+      errorToast.classList.add('show');
+      // 震動輸入框
+      passwordInput.style.borderColor = '#ff3b30';
+      setTimeout(() => {
+        errorToast.classList.remove('show');
+        passwordInput.style.borderColor = '#d2d2d7';
+      }, 3000);
     }
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      hideError();
-
       const username = usernameInput.value.trim();
       const password = passwordInput.value;
       const rememberMe = document.getElementById('rememberMe').checked;
 
+      // 載入狀態
       loginBtn.disabled = true;
-      loginBtn.textContent = '驗證中...';
-      loginBtn.style.opacity = '0.7';
+      btnText.textContent = '驗證中...';
+      // 移除箭頭，換成 spinner
+      loginBtn.innerHTML = '<div class="spinner"></div>';
 
       try {
         if (typeof API_CONFIG === 'undefined' || !API_CONFIG.baseUrl) {
-             throw new Error("API 設定缺失，請檢查 js/api.js");
+             throw new Error("系統設定錯誤：無法連接 API");
         }
         
         const apiUrl = API_CONFIG.baseUrl;
@@ -338,8 +375,9 @@
             displayName: userData.full_name
           }));
 
-          loginBtn.textContent = '登入成功，跳轉中...';
-          loginBtn.style.backgroundColor = '#10B981'; // Success Green
+          // 成功狀態
+          loginBtn.style.backgroundColor = '#34c759'; // Apple Green
+          loginBtn.innerHTML = '登入成功';
           
           setTimeout(() => {
             window.location.href = 'index.html';
@@ -349,37 +387,19 @@
           throw new Error(result.error || '帳號或密碼錯誤');
         }
       } catch (error) {
-        showError(error.message || '連線失敗，請稍後再試');
+        showError(error.message || '連線失敗');
+        
+        // 恢復按鈕
         loginBtn.disabled = false;
-        loginBtn.textContent = '立即登入';
-        loginBtn.style.opacity = '1';
-        loginBtn.style.backgroundColor = ''; // Reset color
+        loginBtn.style.backgroundColor = '';
+        loginBtn.innerHTML = '<span id="btnText">登入</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
         passwordInput.value = '';
+        passwordInput.focus();
       }
     });
 
-    // 頁面載入時檢查是否已登入
-    function checkExistingLogin() {
-        const authData = localStorage.getItem('authData') || sessionStorage.getItem('authData');
-        if (authData) {
-            try {
-                const { timestamp } = JSON.parse(authData);
-                const expiryTime = 7 * 24 * 60 * 60 * 1000;
-                if (Date.now() - timestamp < expiryTime) {
-                    window.location.href = 'index.html'; 
-                    return true;
-                } else {
-                    localStorage.removeItem('authData');
-                    sessionStorage.removeItem('authData');
-                }
-            } catch (e) {}
-        }
-        return false;
-    }
-
-    if (!checkExistingLogin()) {
-      usernameInput.focus();
-    }
+    // 自動聚焦
+    usernameInput.focus();
   </script>
 </body>
 </html>
