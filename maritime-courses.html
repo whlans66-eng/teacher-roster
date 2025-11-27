@@ -17,724 +17,425 @@
   <script defer src="https://cdn.tailwindcss.com"></script>
 
   <style>
+  :root {
+    --apple-blue: #0071e3;
+    --apple-blue-hover: #0077ed;
+    --apple-text: #1d1d1f;
+    --apple-gray: #86868b;
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --card-radius: 20px;
+    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.05);
+  }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+  * { box-sizing: border-box; font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif; }
+
+  body {
+    background-color: #f0f2f5;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(225,39%,30%,0) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(339,49%,30%,0) 0, transparent 50%);
+    background-image:
+      radial-gradient(at 80% 0%, hsla(189,100%,56%,1) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(355,100%,93%,1) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsla(340,100%,76%,1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(22,100%,77%,1) 0px, transparent 50%),
+      radial-gradient(at 0% 0%, hsla(343,100%,76%,1) 0px, transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: var(--apple-text);
+    padding-bottom: 40px;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+  /* 頂部導航 */
+  .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+  .back-btn, .back-button {
+    display: flex; align-items: center; gap: 6px; color: var(--apple-text);
+    text-decoration: none; font-weight: 500; font-size: 15px; padding: 10px 20px;
+    background: var(--glass-bg); backdrop-filter: blur(20px); border-radius: 30px;
+    border: 1px solid var(--glass-border); transition: all 0.3s ease;
+  }
+  .back-btn:hover, .back-button:hover { background: rgba(255, 255, 255, 0.9); transform: scale(1.05); }
+  .page-title h1 { font-size: 28px; font-weight: 700; margin: 0; text-align: center; }
+  .page-title p { font-size: 13px; color: var(--apple-gray); margin-top: 4px; text-align: center; }
+
+  /* iOS 分頁切換 */
+  .segmented-control {
+    background: rgba(118, 118, 128, 0.12); backdrop-filter: blur(10px); padding: 4px;
+    border-radius: 12px; display: flex; margin: 0 auto 40px auto; width: 100%; max-width: 400px;
+  }
+  .segment-btn {
+    flex: 1; border: none; background: transparent; padding: 8px 0; border-radius: 9px;
+    font-size: 13px; font-weight: 500; color: var(--apple-text); cursor: pointer; transition: all 0.3s ease;
+  }
+  .segment-btn.active { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.12); font-weight: 600; }
+
+  /* 兼容舊的 nav-tabs 樣式 */
+  .nav-tabs {
+    background: rgba(118, 118, 128, 0.12); backdrop-filter: blur(10px); padding: 4px;
+    border-radius: 12px; display: flex; margin: 0 auto 40px auto; width: fit-content; max-width: 400px;
+  }
+  .nav-tab {
+    flex: 1; border: none; background: transparent; padding: 8px 16px; border-radius: 9px;
+    font-size: 13px; font-weight: 500; color: var(--apple-text); cursor: pointer; transition: all 0.3s ease;
+  }
+  .nav-tab.active { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.12); font-weight: 600; }
+
+  /* 毛玻璃卡片 */
+  .glass-panel, .card {
+    background: var(--glass-bg); backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border); border-radius: var(--card-radius);
+    box-shadow: var(--shadow-soft); padding: 30px; margin-bottom: 24px;
+  }
+
+  /* 統計卡片 */
+  .stat-card {
+    background: #f5f5f7;
+    border-radius: 18px;
+    padding: 28px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    transition: all 0.4s ease;
+  }
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 48px rgba(0, 122, 255, 0.3);
+  }
+  .stat-card:hover::before {
+    top: -30%;
+    right: -30%;
+  }
+  .stat-card.purple {
+    background: linear-gradient(135deg, #5856d6 0%, #3634a3 100%);
+  }
+  .stat-card.purple:hover {
+    box-shadow: 0 16px 48px rgba(88, 86, 214, 0.3);
+  }
+  .stat-card.green {
+    background: linear-gradient(135deg, #34c759 0%, #248a3d 100%);
+  }
+  .stat-card.green:hover {
+    box-shadow: 0 16px 48px rgba(52, 199, 89, 0.3);
+  }
+  .stat-card.blue {
+    background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+  }
+  .stat-card.blue:hover {
+    box-shadow: 0 16px 48px rgba(0, 122, 255, 0.3);
+  }
+
+  /* 輸入框與按鈕 */
+  .ios-input, .input-field {
+    width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.5); font-size: 15px; transition: all 0.2s;
+  }
+  .ios-input:focus, .input-field:focus { outline: none; background: #fff; box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15); border-color: transparent; }
+
+  .primary-btn, .btn-primary {
+    background: var(--apple-blue); color: white; border: none; border-radius: 12px;
+    padding: 12px 24px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .primary-btn:hover, .btn-primary:hover { background: var(--apple-blue-hover); transform: scale(1.02); }
+
+  .secondary-btn, .btn-secondary {
+    background: rgba(0, 0, 0, 0.05); color: var(--apple-text); border: none;
+    border-radius: 12px; padding: 12px 24px; font-weight: 600; cursor: pointer;
+  }
+
+  /* 課程卡片 */
+  .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; }
+  .course-card {
+    background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 20px; padding: 24px;
+    transition: all 0.3s; cursor: pointer;
+  }
+  .course-card:hover {
+    transform: translateY(-8px); background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+  .course-title { font-size: 19px; font-weight: 700; margin-bottom: 8px; }
+  .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-blue { background: rgba(0, 113, 227, 0.1); color: #0071e3; }
+
+  /* 海事課程系統樣式 */
+  .highlight {
+    background-color: #fef3c7;
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+
+  .chart-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .pie-chart {
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      #4f46e5 0deg,
+      #4f46e5 var(--angle1, 0deg),
+      #06b6d4 var(--angle1, 0deg),
+      #06b6d4 var(--angle2, 0deg),
+      #10b981 var(--angle2, 0deg),
+      #10b981 var(--angle3, 0deg),
+      #f59e0b var(--angle3, 0deg),
+      #f59e0b var(--angle4, 0deg),
+      #ef4444 var(--angle4, 0deg),
+      #ef4444 var(--angle5, 0deg),
+      #8b5cf6 var(--angle5, 0deg),
+      #8b5cf6 var(--angle6, 0deg),
+      #f97316 var(--angle6, 0deg),
+      #f97316 var(--angle7, 0deg),
+      #84cc16 var(--angle7, 0deg),
+      #84cc16 var(--angle8, 0deg),
+      #ec4899 var(--angle8, 0deg),
+      #ec4899 360deg
+    );
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .pie-chart:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .pie-chart::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 130px;
+    height: 130px;
+    background: #ffffff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .pie-chart::after {
+    content: '📊\A課程分布';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d1d1f;
+    z-index: 1;
+    text-align: center;
+    white-space: pre;
+    line-height: 1.4;
+  }
+
+  .legend-item {
+    transition: all 0.2s ease;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .legend-item:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    transform: translateX(2px);
+  }
+
+  .legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+
+  .bar-chart {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .bar-fill {
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      left: -100%;
     }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-      background: #f5f5f7;
-      color: #1d1d1f;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      min-height: 100vh;
+    100% {
+      left: 100%;
     }
+  }
 
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
+  .donut-chart {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(
+      from 0deg,
+      var(--color) 0deg,
+      var(--color) var(--angle, 0deg),
+      rgba(0, 0, 0, 0.06) var(--angle, 0deg),
+      rgba(0, 0, 0, 0.06) 360deg
+    );
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .donut-chart::before {
+    content: '';
+    position: absolute;
+    width: 75px;
+    height: 75px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  .donut-chart-label {
+    position: absolute;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+    z-index: 1;
+  }
+
+  .method-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+  }
+
+  .method-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      transform: scale(1);
     }
-
-    .header {
-      text-align: center;
-      margin-bottom: 64px;
-      animation: fadeInDown 0.8s ease-out;
+    50% {
+      transform: scale(1.05);
     }
+  }
 
-    .header h1 {
-      font-size: 40px;
-      font-weight: 600;
-      letter-spacing: -0.015em;
-      color: #1d1d1f;
-      margin-bottom: 12px;
-    }
+  .pulse-animation {
+    animation: pulse 2s infinite;
+  }
 
-    .header p {
-      font-size: 17px;
-      color: #86868b;
-      font-weight: 400;
-    }
-
-    .back-button {
-      display: inline-flex;
-      align-items: center;
-      padding: 12px 24px;
-      background: #ffffff;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 12px;
-      color: #1d1d1f;
-      text-decoration: none;
-      font-size: 15px;
-      font-weight: 500;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    }
-
-    .back-button:hover {
-      background: #f5f5f7;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-      transform: translateX(-4px);
-    }
-
-    .card {
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 40px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 0, 0, 0.06);
-      border: 0.5px solid rgba(0, 0, 0, 0.06);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      margin-bottom: 32px;
-    }
-
-    .card:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 16px 40px rgba(0, 0, 0, 0.08);
-      transform: translateY(-2px);
-    }
-
-    .stat-card {
-      background: #f5f5f7;
-      border-radius: 18px;
-      padding: 28px;
-      color: white;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-      transition: all 0.4s ease;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 16px 48px rgba(0, 122, 255, 0.3);
-    }
-
-    .stat-card:hover::before {
-      top: -30%;
-      right: -30%;
-    }
-
-    .stat-card.purple {
-      background: linear-gradient(135deg, #5856d6 0%, #3634a3 100%);
-    }
-
-    .stat-card.purple:hover {
-      box-shadow: 0 16px 48px rgba(88, 86, 214, 0.3);
-    }
-
-    .stat-card.green {
-      background: linear-gradient(135deg, #34c759 0%, #248a3d 100%);
-    }
-
-    .stat-card.green:hover {
-      box-shadow: 0 16px 48px rgba(52, 199, 89, 0.3);
-    }
-
-    .stat-card.blue {
-      background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-    }
-
-    .stat-card.blue:hover {
-      box-shadow: 0 16px 48px rgba(0, 122, 255, 0.3);
-    }
-
-    .btn-primary {
-      background: #007aff;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 10px;
-      border: none;
-      font-size: 15px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-    }
-
-    .btn-primary:hover {
-      background: #0051d5;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16), 0 4px 8px rgba(0, 0, 0, 0.12);
-    }
-
-    .btn-primary:active {
-      transform: translateY(0);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-    }
-
-    .btn-secondary {
-      background: rgba(0, 0, 0, 0.04);
-      color: #1d1d1f;
-      padding: 12px 24px;
-      border-radius: 10px;
-      border: none;
-      font-size: 15px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(0, 0, 0, 0.08);
-    }
-
-    .input-field {
-      width: 100%;
-      padding: 12px 16px;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 10px;
-      font-size: 15px;
-      transition: all 0.3s ease;
-      background: #ffffff;
-    }
-
-    .input-field:focus {
-      outline: none;
-      border-color: #007aff;
-      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.08);
-    }
-
-    .input-field::placeholder {
-      color: #86868b;
-    }
-
-    .nav-tabs {
-      display: inline-flex;
-      justify-content: center;
-      gap: 8px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
-      border-radius: 16px;
-      padding: 6px;
-      margin: 0 auto 48px auto;
-      display: flex;
-      width: fit-content;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .nav-tab {
-      padding: 12px 28px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      background: transparent;
-      color: #6b7280;
-      border: none;
-      white-space: nowrap;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .nav-tab::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, rgba(0, 122, 255, 0.1) 0%, rgba(88, 86, 214, 0.1) 100%);
+  @keyframes fadeIn {
+    from {
       opacity: 0;
-      transition: opacity 0.3s ease;
-      border-radius: 12px;
     }
-
-    .nav-tab:hover::before {
+    to {
       opacity: 1;
     }
+  }
 
-    .nav-tab:hover {
-      color: #007aff;
-      transform: translateY(-1px);
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
     }
-
-    .nav-tab.active {
-      background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
-      color: #ffffff;
-      box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3), 0 2px 8px rgba(88, 86, 214, 0.2);
+    to {
+      opacity: 1;
       transform: translateY(0);
     }
-
-    .nav-tab.active::before {
-      display: none;
-    }
-
-    .nav-tab.active:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4), 0 3px 10px rgba(88, 86, 214, 0.3);
-    }
-
-    .course-card {
-      background: white;
-      border-radius: 16px;
-      padding: 28px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
-      border: 0.5px solid rgba(0, 0, 0, 0.06);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .course-card:hover {
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.1);
-      transform: translateY(-4px);
-    }
-
-    /* 海事課程系統樣式 */
-    .highlight {
-      background-color: #fef3c7;
-      padding: 2px 4px;
-      border-radius: 3px;
-    }
-
-    .chart-container {
-      position: relative;
-      width: 280px;
-      height: 280px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .pie-chart {
-      width: 280px;
-      height: 280px;
-      border-radius: 50%;
-      background: conic-gradient(
-        from 0deg,
-        #4f46e5 0deg,
-        #4f46e5 var(--angle1, 0deg),
-        #06b6d4 var(--angle1, 0deg),
-        #06b6d4 var(--angle2, 0deg),
-        #10b981 var(--angle2, 0deg),
-        #10b981 var(--angle3, 0deg),
-        #f59e0b var(--angle3, 0deg),
-        #f59e0b var(--angle4, 0deg),
-        #ef4444 var(--angle4, 0deg),
-        #ef4444 var(--angle5, 0deg),
-        #8b5cf6 var(--angle5, 0deg),
-        #8b5cf6 var(--angle6, 0deg),
-        #f97316 var(--angle6, 0deg),
-        #f97316 var(--angle7, 0deg),
-        #84cc16 var(--angle7, 0deg),
-        #84cc16 var(--angle8, 0deg),
-        #ec4899 var(--angle8, 0deg),
-        #ec4899 360deg
-      );
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-      position: relative;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .pie-chart:hover {
-      transform: scale(1.02);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
-    }
-
-    .pie-chart::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 130px;
-      height: 130px;
-      background: #ffffff;
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .pie-chart::after {
-      content: '📊\A課程分布';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 13px;
-      font-weight: 600;
-      color: #1d1d1f;
-      z-index: 1;
-      text-align: center;
-      white-space: pre;
-      line-height: 1.4;
-    }
-
-    .legend-item {
-      transition: all 0.2s ease;
-      padding: 10px 12px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    .legend-item:hover {
-      background-color: rgba(0, 0, 0, 0.04);
-      transform: translateX(2px);
-    }
-
-    .legend-color {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-    }
-
-    .bar-chart {
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      border-radius: 8px;
-      padding: 4px;
-    }
-
-    .bar-fill {
-      border-radius: 4px;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .bar-fill::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-      animation: shimmer 2s infinite;
-    }
-
-    @keyframes shimmer {
-      0% {
-        left: -100%;
-      }
-      100% {
-        left: 100%;
-      }
-    }
-
-    .donut-chart {
-      position: relative;
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: conic-gradient(
-        from 0deg,
-        var(--color) 0deg,
-        var(--color) var(--angle, 0deg),
-        rgba(0, 0, 0, 0.06) var(--angle, 0deg),
-        rgba(0, 0, 0, 0.06) 360deg
-      );
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    }
-
-    .donut-chart::before {
-      content: '';
-      position: absolute;
-      width: 75px;
-      height: 75px;
-      background: white;
-      border-radius: 50%;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-    }
-
-    .donut-chart-label {
-      position: absolute;
-      font-size: 16px;
-      font-weight: 600;
-      color: #1d1d1f;
-      z-index: 1;
-    }
-
-    .method-card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 28px 20px;
-      text-align: center;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 0.5px solid rgba(0, 0, 0, 0.06);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
-    }
-
-    .method-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.1);
-    }
-
-    @keyframes pulse {
-      0%,
-      100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.05);
-      }
-    }
-
-    .pulse-animation {
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .fade-in {
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    /* 微妙的背景紋理 */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-image:  radial-gradient(circle at 20% 30%, rgba(0, 122, 255, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(88, 86, 214, 0.03) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.2s ease;
-    }
-
-    .tag-category {
-      background: rgba(88, 86, 214, 0.08);
-      color: #5856d6;
-      border: 1px solid rgba(88, 86, 214, 0.12);
-    }
-
-    .tag-method-physical {
-      background: rgba(0, 122, 255, 0.08);
-      color: #007aff;
-      border: 1px solid rgba(0, 122, 255, 0.12);
-    }
-
-    .tag-method-online {
-      background: rgba(52, 199, 89, 0.08);
-      color: #34c759;
-      border: 1px solid rgba(52, 199, 89, 0.12);
-    }
-
-    .tag-method-hybrid {
-      background: rgba(255, 149, 0, 0.08);
-      color: #ff9500;
-      border: 1px solid rgba(255, 149, 0, 0.12);
-    }
-
-    .tag-keyword {
-      background: rgba(142, 142, 147, 0.08);
-      color: #3c3c43;
-      border: 1px solid rgba(142, 142, 147, 0.12);
-    }
-
-    .tag:hover {
-      opacity: 0.8;
-      transform: translateY(-1px);
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* 手機版響應式設計 */
-    @media (max-width: 768px) {
-      /* 容器內邊距 */
-      .container {
-        padding: 16px !important;
-      }
-
-      /* 標題區域 */
-      .header h1 {
-        font-size: 32px !important;
-      }
-
-      .header p {
-        font-size: 15px !important;
-      }
-
-      /* 導航選單 */
-      .nav-tabs {
-        flex-direction: column;
-        width: 100%;
-        margin-bottom: 24px !important;
-        gap: 6px;
-        padding: 8px;
-      }
-
-      .nav-tab {
-        width: 100%;
-        text-align: center;
-        padding: 14px 16px;
-        font-size: 14px;
-      }
-
-      .nav-tab.active {
-        box-shadow: 0 3px 12px rgba(0, 122, 255, 0.3), 0 1px 6px rgba(88, 86, 214, 0.2);
-      }
-
-      /* 卡片 */
-      .card {
-        padding: 24px !important;
-      }
-
-      /* 搜尋欄和篩選器 */
-      .card > div[style*="grid-template-columns"] {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 12px !important;
-      }
-
-      .card #maritimeSearchInput {
-        width: 100% !important;
-      }
-
-      .card #maritimeCategoryFilter {
-        width: 100% !important;
-      }
-
-      /* 課程卡片網格 */
-      #maritimeCourseResults {
-        grid-template-columns: 1fr !important;
-        gap: 16px !important;
-      }
-
-      /* 課程卡片 */
-      .course-card {
-        padding: 20px !important;
-      }
-
-      /* 課程管理表單 */
-      #maritimeEditPage .card > form > div[style*="grid-template-columns"] {
-        grid-template-columns: 1fr !important;
-        gap: 16px !important;
-      }
-
-      /* 按鈕 */
-      .btn-primary,
-      .btn-secondary {
-        width: 100%;
-        padding: 12px 20px !important;
-      }
-
-      /* 統計頁面 */
-      #maritimeStatsPage .card {
-        padding: 24px !important;
-      }
-
-      /* 圖表容器 */
-      .chart-container {
-        width: 100% !important;
-        max-width: 280px;
-      }
-
-      .pie-chart {
-        width: 240px !important;
-        height: 240px !important;
-      }
-
-      .pie-chart::before {
-        width: 110px !important;
-        height: 110px !important;
-      }
-
-      .pie-chart::after {
-        font-size: 12px !important;
-      }
-
-      /* 標籤 */
-      .tag {
-        font-size: 12px !important;
-        padding: 5px 12px !important;
-      }
-
-      /* 課程表單輸入欄位 */
-      .input-field {
-        font-size: 14px !important;
-        padding: 10px 14px !important;
-      }
-
-      /* 統計卡片 */
-      .stat-card {
-        padding: 20px !important;
-      }
-    }
-
-    /* 小手機螢幕 (< 480px) */
-    @media (max-width: 480px) {
-      .header h1 {
-        font-size: 28px !important;
-      }
-
-      .header p {
-        font-size: 14px !important;
-      }
-
-      .card {
-        padding: 20px !important;
-      }
-
-      .course-card {
-        padding: 16px !important;
-      }
-
-      .nav-tab {
-        font-size: 13px !important;
-        padding: 10px 12px !important;
-      }
-
-      .pie-chart {
-        width: 200px !important;
-        height: 200px !important;
-      }
-
-      .pie-chart::before {
-        width: 90px !important;
-        height: 90px !important;
-      }
-
-      .pie-chart::after {
-        font-size: 11px !important;
-      }
-    }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .tag-category {
+    background: rgba(88, 86, 214, 0.08);
+    color: #5856d6;
+    border: 1px solid rgba(88, 86, 214, 0.12);
+  }
+
+  .tag-method-physical {
+    background: rgba(0, 122, 255, 0.08);
+    color: #007aff;
+    border: 1px solid rgba(0, 122, 255, 0.12);
+  }
+
+  .tag-method-online {
+    background: rgba(52, 199, 89, 0.08);
+    color: #34c759;
+    border: 1px solid rgba(52, 199, 89, 0.12);
+  }
+
+  .tag-method-hybrid {
+    background: rgba(255, 149, 0, 0.08);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.12);
+  }
+
+  .tag-keyword {
+    background: rgba(142, 142, 147, 0.08);
+    color: #3c3c43;
+    border: 1px solid rgba(142, 142, 147, 0.12);
+  }
+
+  .tag:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+  }
+
+  .hidden { display: none !important; }
   </style>
 
   <!-- API 層：與後端通訊 -->
@@ -749,30 +450,19 @@
   </script>
 
   <div class="container">
-    <!-- 返回首頁按鈕 -->
-    <div style="margin-bottom: 30px;">
-      <a href="index.html" class="back-button">
-        <span style="margin-right: 8px;">←</span> 返回首頁
-      </a>
+    <div class="header-nav">
+      <a href="index.html" class="back-btn">← 首頁</a>
+      <div class="page-title">
+        <h1>智慧派課</h1>
+        <p>Smart Course Assignment System</p>
+      </div>
+      <div style="width: 80px;"></div>
     </div>
 
-    <!-- 標題 -->
-    <div class="header">
-      <h1>智慧派課</h1>
-      <p>---------</p>
-    </div>
-
-    <!-- 導航選單 -->
-    <div class="nav-tabs">
-      <button id="maritimeViewTab" class="nav-tab active" onclick="switchMaritimeTab('view')">
-        課程瀏覽
-      </button>
-      <button id="maritimeEditTab" class="nav-tab" onclick="switchMaritimeTab('edit')">
-        課程管理
-      </button>
-      <button id="maritimeStatsTab" class="nav-tab" onclick="switchMaritimeTab('stats')">
-        統計分析
-      </button>
+    <div class="segmented-control">
+      <button id="maritimeViewTab" class="segment-btn active" onclick="switchMaritimeTab('view')">課程瀏覽</button>
+      <button id="maritimeEditTab" class="segment-btn" onclick="switchMaritimeTab('edit')">課程管理</button>
+      <button id="maritimeStatsTab" class="segment-btn" onclick="switchMaritimeTab('stats')">統計分析</button>
     </div>
 
     <!-- 課程瀏覽頁面 -->
@@ -1253,100 +943,75 @@
 
     // 顯示課程列表
     function displayMaritimeCourses() {
-      const searchTerm = document.getElementById('maritimeSearchInput').value.toLowerCase();
-      const categoryFilter = document.getElementById('maritimeCategoryFilter').value;
-      const resultsContainer = document.getElementById('maritimeCourseResults');
+      const search = document.getElementById('maritimeSearchInput').value.toLowerCase();
+      const catFilter = document.getElementById('maritimeCategoryFilter').value;
+      const container = document.getElementById('maritimeCourseResults');
 
+      // 保持原有的過濾邏輯
       let filteredCourses;
       let isKeywordMatch = false;
 
-      // 如果有搜尋字串
-      if (searchTerm) {
-        // 🎯 優先搜尋：先嘗試只在 keywords 中搜尋
+      if (search) {
         let keywordMatchedCourses = maritimeCourses.filter(course => {
           if (!course || typeof course.name !== 'string') return false;
-
           const matchesKeyword = Array.isArray(course.keywords)
-            ? course.keywords.some(keyword =>
-                typeof keyword === 'string' && keyword.toLowerCase().includes(searchTerm)
-              )
+            ? course.keywords.some(keyword => typeof keyword === 'string' && keyword.toLowerCase().includes(search))
             : false;
-          const matchesCategory = !categoryFilter || course.category === categoryFilter;
+          const matchesCategory = !catFilter || course.category === catFilter;
           return matchesKeyword && matchesCategory;
         });
 
-        // 如果 keywords 有找到結果，就只顯示 keywords 的結果
         if (keywordMatchedCourses.length > 0) {
           filteredCourses = keywordMatchedCourses;
           isKeywordMatch = true;
         } else {
-          // 如果 keywords 沒有找到，才搜尋所有欄位（課程名稱、描述）
           filteredCourses = maritimeCourses.filter(course => {
             if (!course || typeof course.name !== 'string') return false;
-
-            const matchesSearch =
-              course.name.toLowerCase().includes(searchTerm) ||
-              (course.description && typeof course.description === 'string'
-                ? course.description.toLowerCase().includes(searchTerm)
-                : false);
-            const matchesCategory = !categoryFilter || course.category === categoryFilter;
+            const matchesSearch = course.name.toLowerCase().includes(search) ||
+              (course.description && typeof course.description === 'string' ? course.description.toLowerCase().includes(search) : false);
+            const matchesCategory = !catFilter || course.category === catFilter;
             return matchesSearch && matchesCategory;
           });
         }
       } else {
-        // 沒有搜尋字串，只按分類過濾
         filteredCourses = maritimeCourses.filter(course => {
           if (!course) return false;
-          return !categoryFilter || course.category === categoryFilter;
+          return !catFilter || course.category === catFilter;
         });
       }
 
-      resultsContainer.innerHTML = '';
-
       if (filteredCourses.length === 0) {
-        resultsContainer.innerHTML =
-          '<div style="grid-column: 1 / -1; text-align: center; padding: 48px 0; color: #6e6e73;">找不到符合條件的課程</div>';
+        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#86868b; padding:40px;">沒有找到相關課程</div>';
         return;
       }
 
       // 如果是透過關鍵字找到的，顯示提示訊息
-      if (isKeywordMatch && searchTerm) {
-        const hint = document.createElement('div');
-        hint.style.cssText = 'grid-column: 1 / -1; padding: 16px; background: linear-gradient(135deg, #e6f3ff 0%, #f0f5ff 100%); border-radius: 12px; margin-bottom: 16px; text-align: center; border: 1px solid #007aff30;';
-        hint.innerHTML = `<span style="color: #007aff; font-weight: 600;">🏷️ 找到 ${filteredCourses.length} 個符合關鍵字「${searchTerm}」的課程</span>`;
-        resultsContainer.appendChild(hint);
+      let html = '';
+      if (isKeywordMatch && search) {
+        html += `<div style="grid-column: 1 / -1; padding: 16px; background: linear-gradient(135deg, #e6f3ff 0%, #f0f5ff 100%); border-radius: 12px; margin-bottom: 16px; text-align: center; border: 1px solid #007aff30;">
+          <span style="color: #007aff; font-weight: 600;">🏷️ 找到 ${filteredCourses.length} 個符合關鍵字「${search}」的課程</span>
+        </div>`;
       }
 
-      filteredCourses.forEach(course => {
-        const courseCard = document.createElement('div');
-        courseCard.className = 'course-card fade-in';
-        courseCard.style.cursor = 'pointer';
-
-        // 點擊字卡開啟編輯彈跳視窗
-        courseCard.onclick = function(e) {
-          editMaritimeCourse(course.id);
-        };
-
-        const highlightedName = highlightMaritimeText(course.name, searchTerm);
-        const highlightedDescription = highlightMaritimeText(course.description, searchTerm);
-        const highlightedKeywords = course.keywords.map(keyword => highlightMaritimeText(keyword, searchTerm));
-
-        const methodClass = getMaritimeMethodClass(course.method);
-
-        courseCard.innerHTML = `
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-            <span class="tag tag-category">${maritimeCategoryNames[course.category]}</span>
-            <span class="tag ${methodClass}">${course.method || '未設定'}</span>
+      html += filteredCourses.map(c => `
+        <div class="course-card" onclick="editMaritimeCourse(${c.id})">
+          <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+            <span class="badge badge-blue">${c.method || '未設定'}</span>
+            <span style="font-size:12px; color:#86868b;">${c.category}</span>
           </div>
-          <h3 style="font-size: 18px; font-weight: 600; color: #1d1d1f; margin-bottom: 12px;">${highlightedName}</h3>
-          <p style="color: #6e6e73; font-size: 14px; margin-bottom: 16px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${highlightedDescription}</p>
-          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-            ${highlightedKeywords.map(keyword => `<span class="tag tag-keyword">${keyword}</span>`).join('')}
+          <div class="course-title">${highlightMaritimeText(c.name, search)}</div>
+          <div style="font-size:14px; color:#86868b; margin-bottom:20px; line-height:1.6;">
+            ${highlightMaritimeText(c.description || '無描述', search)}
           </div>
-        `;
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${(c.keywords || []).map(k =>
+              `<span style="font-size:11px; padding:4px 10px; background:rgba(0,0,0,0.05); color:#86868b; border-radius:6px;">#${highlightMaritimeText(k, search)}</span>`
+            ).join('')}
+          </div>
+        </div>
+      `).join('');
 
-        resultsContainer.appendChild(courseCard);
-      });
+      container.innerHTML = html;
     }
 
     // 高亮顯示搜尋關鍵字
@@ -1372,68 +1037,36 @@
 
     // 顯示管理課程列表
     function displayManageMaritimeCourses() {
-      const searchTerm = document.getElementById('maritimeManageSearchInput').value.toLowerCase();
+      const search = document.getElementById('maritimeManageSearchInput').value.toLowerCase();
       const container = document.getElementById('maritimeManageCourseList');
 
-      let filteredCourses = maritimeCourses.filter(
-        course => {
-          // 確保資料完整性
-          if (!course || typeof course.name !== 'string') return false;
+      // 保持原有的過濾邏輯
+      const filtered = maritimeCourses.filter(course => {
+        if (!course || typeof course.name !== 'string') return false;
+        const matchName = course.name.toLowerCase().includes(search);
+        const matchDescription = course.description && typeof course.description === 'string'
+          ? course.description.toLowerCase().includes(search)
+          : false;
+        const matchKeywords = Array.isArray(course.keywords)
+          ? course.keywords.some(keyword => typeof keyword === 'string' && keyword.toLowerCase().includes(search))
+          : false;
+        return matchName || matchDescription || matchKeywords;
+      });
 
-          const matchName = course.name.toLowerCase().includes(searchTerm);
-          const matchDescription = course.description && typeof course.description === 'string'
-            ? course.description.toLowerCase().includes(searchTerm)
-            : false;
-          const matchKeywords = Array.isArray(course.keywords)
-            ? course.keywords.some(keyword =>
-                typeof keyword === 'string' && keyword.toLowerCase().includes(searchTerm)
-              )
-            : false;
-
-          return matchName || matchDescription || matchKeywords;
-        }
-      );
-
-      container.innerHTML = '';
-
-      if (filteredCourses.length === 0) {
+      if (filtered.length === 0) {
         container.innerHTML = '<div style="text-align: center; padding: 32px 0; color: #6e6e73;">沒有找到課程</div>';
         return;
       }
 
-      filteredCourses.forEach(course => {
-        const courseItem = document.createElement('div');
-        courseItem.style.cssText =
-          'border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 14px; padding: 24px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #fafafa;';
-        courseItem.onmouseover = function () {
-          this.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
-          this.style.background = '#ffffff';
-          this.style.transform = 'translateY(-2px)';
-        };
-        courseItem.onmouseout = function () {
-          this.style.boxShadow = 'none';
-          this.style.background = '#fafafa';
-          this.style.transform = 'translateY(0)';
-        };
-
-        courseItem.innerHTML = `
-          <div style="flex: 1;">
-            <h4 style="font-size: 17px; font-weight: 600; color: #1d1d1f; margin-bottom: 6px; letter-spacing: -0.01em;">${course.name}</h4>
-            <p style="font-size: 14px; color: #6e6e73; margin-bottom: 8px; font-weight: 500;">${maritimeCategoryNames[course.category]}</p>
-            <p style="font-size: 13px; color: #86868b;">關鍵字: ${course.keywords.join(', ')}</p>
+      container.innerHTML = filtered.map(c => `
+        <div style="background:white; padding:16px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+          <div>
+            <div style="font-weight:600; font-size:15px; color:#1d1d1f;">${c.name}</div>
+            <div style="font-size:12px; color:#86868b;">${maritimeCategoryNames[c.category] || c.category}</div>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <button onclick="editMaritimeCourse(${course.id})" style="background: #007aff; color: white; padding: 10px 24px; border-radius: 10px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);" onmouseover="this.style.background='#0051d5'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(0, 122, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15)';" onmouseout="this.style.background='#007aff'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)';">
-              編輯
-            </button>
-            <button onclick="deleteMaritimeCourse(${course.id})" style="background: #ff3b30; color: white; padding: 10px 24px; border-radius: 10px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);" onmouseover="this.style.background='#c9002e'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(255, 59, 48, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15)';" onmouseout="this.style.background='#ff3b30'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)';">
-              刪除
-            </button>
-          </div>
-        `;
-
-        container.appendChild(courseItem);
-      });
+          <button onclick="editMaritimeCourse(${c.id})" class="secondary-btn" style="padding:6px 16px; font-size:13px;">編輯</button>
+        </div>
+      `).join('');
     }
 
     // 新增關鍵字（課程管理頁面）
