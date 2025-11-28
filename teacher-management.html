@@ -306,15 +306,13 @@
             </button>
           </div>
 
-          <!-- 系所篩選下拉 -->
-          <div class="w-full md:w-64 relative">
-            <select class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer bg-white pr-10">
-              <option>所有系所</option>
-              <option>航海系</option>
-              <option>輪機系</option>
-            </select>
-            <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"></i>
-          </div>
+          <!-- 新增師資按鈕 (編輯模式顯示) -->
+          <button onclick="addNewTeacher()" id="addTeacherBtn"
+            class="w-full md:w-auto whitespace-nowrap text-white px-6 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            style="background-color:#007aff">
+            <i class="ph ph-plus-circle"></i>
+            <span>新增師資</span>
+          </button>
 
           <!-- 編輯模式按鈕 -->
           <button onclick="switchMode('display')" id="editModeBtn"
@@ -334,16 +332,6 @@
       <div id="modeDescription" class="mb-6 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
         <i class="ph ph-info" style="font-size: 16px;"></i>
         <span>編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
-      </div>
-
-      <!-- 新增師資按鈕 (編輯模式顯示) -->
-      <div id="addButtonContainer" class="mb-6">
-        <button onclick="addNewTeacher()" id="addTeacherBtn"
-          class="w-full md:w-auto text-white px-6 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-          style="background-color:#007aff">
-          <i class="ph ph-plus-circle"></i>
-          <span>新增師資</span>
-        </button>
       </div>
 
       <!-- 搜尋提示 -->
@@ -1506,7 +1494,7 @@
       window.currentMode = mode;
       const editBtn = document.getElementById('editModeBtn');
       const displayBtn = document.getElementById('displayModeBtn');
-      const addBtnContainer = document.getElementById('addButtonContainer');
+      const addTeacherBtn = document.getElementById('addTeacherBtn');
       const modeDescription = document.getElementById('modeDescription');
 
       if (mode === 'edit') {
@@ -1518,7 +1506,7 @@
 
         displayBtn.classList.add('hidden');
 
-        addBtnContainer.classList.remove('hidden');
+        addTeacherBtn.classList.remove('hidden');
         modeDescription.classList.remove('hidden');
         modeDescription.innerHTML = `
           <i class="ph ph-info" style="font-size: 16px;"></i>
@@ -1533,7 +1521,7 @@
 
         editBtn.classList.add('hidden');
 
-        addBtnContainer.classList.add('hidden');
+        addTeacherBtn.classList.add('hidden');
         modeDescription.innerHTML = `
           <i class="ph ph-info" style="font-size: 16px;"></i>
           <span>呈現模式：以美觀的方式展示師資陣容，適合對外展示</span>`;
