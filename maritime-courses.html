@@ -111,6 +111,28 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
     border-color: rgba(0, 122, 255, 0.1);
   }
+  .course-card.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+  .course-card.drag-over {
+    border-color: rgba(0, 122, 255, 0.5);
+    background: rgba(0, 122, 255, 0.05);
+  }
+  .drag-handle {
+    cursor: grab;
+    color: #86868b;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s;
+  }
+  .drag-handle:hover {
+    color: #007aff;
+  }
+  .drag-handle:active {
+    cursor: grabbing;
+  }
   .course-title { font-size: 19px; font-weight: 700; margin-bottom: 8px; line-height: 1.3; }
   .badge {
     padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
@@ -578,15 +600,20 @@
         </div>`;
       }
 
-      html += filteredCourses.map(c => {
+      html += filteredCourses.map((c, index) => {
         let badgeColor = 'badge-blue';
         if (c.method === '線上課程') badgeColor = 'badge-green';
         if (c.method === '混合課程') badgeColor = 'badge-orange';
 
         return `
-          <div class="course-card" onclick="editMaritimeCourse(${c.id})">
-            <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
-              <span class="badge ${badgeColor}">${c.method || '未設定'}</span>
+          <div class="course-card" draggable="true" data-course-id="${c.id}" data-index="${index}" onclick="onCourseCardClick(event, ${c.id})">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="drag-handle" onmousedown="event.stopPropagation()">
+                  <i class="ph ph-dots-six-vertical" style="font-size:20px;"></i>
+                </span>
+                <span class="badge ${badgeColor}">${c.method || '未設定'}</span>
+              </div>
               <span style="
                 background: rgba(139, 92, 246, 0.15);
                 color: #7c3aed;
@@ -637,6 +664,118 @@
       }).join('');
 
       container.innerHTML = html;
+
+      // 為所有卡片添加拖放事件監聽器
+      const cards = container.querySelectorAll('.course-card');
+      cards.forEach(card => {
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('drop', handleDrop);
+        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragleave', handleDragLeave);
+      });
+    }
+
+    // 拖放變量
+    let draggedCard = null;
+    let isDragging = false;
+
+    // 處理卡片點擊（區分拖動和普通點擊）
+    function onCourseCardClick(event, courseId) {
+      if (!isDragging) {
+        editMaritimeCourse(courseId);
+      }
+    }
+
+    // 拖動開始
+    function handleDragStart(e) {
+      isDragging = true;
+      draggedCard = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', this.innerHTML);
+    }
+
+    // 拖動經過
+    function handleDragOver(e) {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      e.dataTransfer.dropEffect = 'move';
+
+      const afterElement = getDragAfterElement(this.parentElement, e.clientY);
+      const dragging = document.querySelector('.dragging');
+
+      if (afterElement == null) {
+        this.parentElement.appendChild(dragging);
+      } else {
+        this.parentElement.insertBefore(dragging, afterElement);
+      }
+
+      return false;
+    }
+
+    // 放下
+    function handleDrop(e) {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      }
+
+      if (draggedCard !== this) {
+        // 獲取所有卡片的新順序
+        const container = document.getElementById('maritimeCourseResults');
+        const cards = Array.from(container.querySelectorAll('.course-card'));
+        const newOrder = cards.map(card => parseInt(card.dataset.courseId));
+
+        // 重新排列 maritimeCourses 陣列
+        const reorderedCourses = newOrder.map(id =>
+          maritimeCourses.find(c => c.id === id)
+        ).filter(c => c !== undefined);
+
+        // 保留未在顯示列表中的課程
+        const displayedIds = new Set(newOrder);
+        const hiddenCourses = maritimeCourses.filter(c => !displayedIds.has(c.id));
+
+        maritimeCourses = [...reorderedCourses, ...hiddenCourses];
+        saveMaritimeCourses();
+      }
+
+      return false;
+    }
+
+    // 拖動結束
+    function handleDragEnd(e) {
+      setTimeout(() => {
+        isDragging = false;
+      }, 100);
+
+      this.classList.remove('dragging');
+
+      const cards = document.querySelectorAll('.course-card');
+      cards.forEach(card => {
+        card.classList.remove('drag-over');
+      });
+    }
+
+    // 離開拖動區域
+    function handleDragLeave(e) {
+      this.classList.remove('drag-over');
+    }
+
+    // 獲取拖動後的位置
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll('.course-card:not(.dragging)')];
+
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
     function highlightMaritimeText(text, searchTerm) {
