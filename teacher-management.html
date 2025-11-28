@@ -251,82 +251,104 @@
   </script>
 
   <div class="container mx-auto px-4 py-8">
-    <!-- 返回首頁按鈕 -->
-    <div class="mb-6">
-      <a href="index.html" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-        <span class="mr-2">←</span> 返回首頁
+    <!-- 標題區域 - 置中設計 -->
+    <div class="relative pb-4 max-w-7xl mx-auto">
+      <!-- 返回按鈕 (左上角) -->
+      <a href="index.html" class="absolute left-0 top-0 flex items-center gap-2 bg-white text-gray-600 px-5 py-2 rounded-full shadow-sm hover:shadow-md hover:text-gray-900 transition-all text-sm font-medium border border-gray-100">
+        <i class="ph ph-arrow-left"></i>
+        <span>首頁</span>
       </a>
+
+      <!-- 置中標題 -->
+      <div class="text-center pt-4">
+        <h1 class="text-3xl font-bold text-gray-800 tracking-tight">師資陣容管理</h1>
+        <p class="text-gray-500 text-sm mt-1">Faculty Management System</p>
+      </div>
     </div>
 
-    <!-- 標題區域 -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-gray-900 mb-2" style="letter-spacing:-0.02em">師資陣容管理</h1>
-      <p class="text-gray-600">管理您的教師團隊資訊</p>
+    <!-- 置中膠囊導航 -->
+    <div class="flex justify-center mb-8 px-4">
+      <div class="bg-white p-1.5 rounded-full shadow-sm border border-gray-200 flex items-center gap-1">
+        <button onclick="setActiveTab('list')" id="tabList"
+          class="nav-tab px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 text-white shadow-md" style="background-color: #5B8DEF;">
+          <span><i class="ph ph-user-list"></i></span><span>師資列表</span>
+        </button>
+        <button onclick="setActiveTab('stats')" id="tabStats"
+          class="nav-tab px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700">
+          <span><i class="ph ph-chart-bar"></i></span><span>統計分析</span>
+        </button>
+        <button onclick="setActiveTab('calendar')" id="tabCalendar"
+          class="nav-tab px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700">
+          <span><i class="ph ph-calendar"></i></span><span>行事曆</span>
+        </button>
+      </div>
     </div>
 
     <!-- 師資列表頁面 -->
-    <div id="teacherList" class="fade-in">
-      <div class="flex flex-col space-y-4 mb-6">
-        <!-- 標題和模式切換 -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-          <div class="flex items-center space-x-4">
-            <h2 class="text-2xl font-semibold text-gray-800">師資陣容管理</h2>
-            <p class="text-sm text-gray-500">Faculty Management System</p>
-          </div>
+    <div id="teacherList" class="fade-in max-w-7xl mx-auto px-4 sm:px-6">
 
-          <!-- 標籤式導航 -->
-          <div class="flex bg-white rounded-xl p-1.5 shadow-sm border border-gray-200">
-            <button onclick="setActiveTab('list')" id="tabList"
-              class="nav-tab px-6 py-2.5 rounded-lg font-medium transition-all flex items-center space-x-2 text-white" style="background-color: #5B8DEF;">
-              <span><i class="ph ph-user-list"></i></span><span>師資列表</span>
-            </button>
-            <button onclick="setActiveTab('stats')" id="tabStats"
-              class="nav-tab px-6 py-2.5 rounded-lg font-medium transition-all flex items-center space-x-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50">
-              <span><i class="ph ph-chart-line"></i></span><span>統計分析</span>
-            </button>
-            <button onclick="setActiveTab('calendar')" id="tabCalendar"
-              class="nav-tab px-6 py-2.5 rounded-lg font-medium transition-all flex items-center space-x-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50">
-              <span><i class="ph ph-calendar"></i></span><span>行事曆</span>
-            </button>
-          </div>
+      <!-- 搜尋與篩選卡片 -->
+      <div class="bg-white rounded-3xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="ph ph-magnifying-glass text-blue-600" style="font-size: 20px;"></i>
+          <h2 class="text-lg font-bold text-gray-800">搜尋與篩選</h2>
         </div>
 
-        <!-- 模式切換和操作按鈕（僅在師資列表時顯示） -->
-        <div id="listControls" class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-          <div class="flex items-center space-x-4">
-            <!-- 模式切換 -->
-            <div class="flex bg-gray-100 rounded-lg p-1">
-              <button onclick="switchMode('edit')" id="editModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white" style="background-color:#007aff">編輯模式</button>
-              <button onclick="switchMode('display')" id="displayModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800">呈現模式</button>
-            </div>
-          </div>
-
-          <!-- 搜尋 + 新增 -->
-          <div class="flex flex-col md:flex-row items-stretch md:items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto">
-            <div class="relative">
-              <input id="searchInput" type="text" placeholder="搜尋所有欄位（支援多個關鍵字，用空格分隔）" class="w-full md:w-80 px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 transition-all" style="outline:none;--tw-ring-color:#007aff" oninput="searchTeachers()">
-              <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="ph ph-magnifying-glass"></i></div>
-              <button onclick="clearSearch()" id="clearBtn" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">✕</button>
-            </div>
-            <button onclick="addNewTeacher()" id="addTeacherBtn" class="text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 shadow-sm whitespace-nowrap" style="background-color:#007aff">
-              新增師資
+        <div class="flex flex-col md:flex-row gap-4 items-center">
+          <!-- 搜尋輸入框 -->
+          <div class="flex-grow w-full relative">
+            <input id="searchInput" type="text" placeholder="輸入教師姓名、職稱關鍵字..."
+              class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 pl-11 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400"
+              oninput="searchTeachers()">
+            <i class="ph ph-magnifying-glass absolute left-3.5 top-3.5 text-gray-400" style="font-size: 20px;"></i>
+            <button onclick="clearSearch()" id="clearBtn" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">
+              <i class="ph ph-x"></i>
             </button>
           </div>
-        </div>
 
-        <!-- 模式說明 -->
-        <div id="modeDescription" class="bg-blue-50 border border-blue-100 rounded-lg p-3">
-          <div class="flex items-center space-x-2">
-            <span style="color:#007aff"><i class="ph ph-info"></i></span>
-            <span class="text-sm font-medium" style="color:#007aff">編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
+          <!-- 系所篩選下拉 -->
+          <div class="w-full md:w-64 relative">
+            <select class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer bg-white pr-10">
+              <option>所有系所</option>
+              <option>航海系</option>
+              <option>輪機系</option>
+            </select>
+            <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"></i>
           </div>
-        </div>
 
+          <!-- 編輯模式按鈕 -->
+          <button onclick="switchMode('edit')" id="editModeBtn"
+            class="w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700">
+            <i class="ph ph-pencil-simple"></i>
+            <span>編輯中</span>
+          </button>
+          <button onclick="switchMode('display')" id="displayModeBtn"
+            class="w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hidden">
+            <i class="ph ph-pencil-simple"></i>
+            <span>進入編輯</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 模式說明提示 -->
+      <div id="modeDescription" class="mb-6 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
+        <i class="ph ph-info" style="font-size: 16px;"></i>
+        <span>編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
+      </div>
+
+      <!-- 新增師資按鈕 (編輯模式顯示) -->
+      <div id="addButtonContainer" class="mb-6">
+        <button onclick="addNewTeacher()" id="addTeacherBtn"
+          class="w-full md:w-auto text-white px-6 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          style="background-color:#007aff">
+          <i class="ph ph-plus-circle"></i>
+          <span>新增師資</span>
+        </button>
       </div>
 
       <!-- 搜尋提示 -->
-      <div id="searchResults" class="hidden mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-        <span class="font-medium" style="color:#007aff"></span>
+      <div id="searchResults" class="hidden mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+        <span class="font-medium text-blue-700"></span>
       </div>
 
       <!-- 卡片網格 -->
@@ -1484,28 +1506,38 @@
       window.currentMode = mode;
       const editBtn = document.getElementById('editModeBtn');
       const displayBtn = document.getElementById('displayModeBtn');
-      const addBtn = document.getElementById('addTeacherBtn');
+      const addBtnContainer = document.getElementById('addButtonContainer');
       const modeDescription = document.getElementById('modeDescription');
 
       if (mode === 'edit') {
-        editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white';
-        displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
-        addBtn.classList.remove('hidden');
+        // 切換到編輯模式
+        editBtn.classList.remove('hidden');
+        editBtn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+        editBtn.classList.remove('bg-white', 'border', 'border-gray-200', 'text-gray-600', 'hover:bg-gray-50');
+        editBtn.innerHTML = '<i class="ph ph-pencil-simple"></i><span>編輯中</span>';
+
+        displayBtn.classList.add('hidden');
+
+        addBtnContainer.classList.remove('hidden');
+        modeDescription.classList.remove('hidden');
         modeDescription.innerHTML = `
-          <div class="flex items-center space-x-2">
-            <span class="text-blue-600"><i class="ph ph-info"></i></span>
-            <span class="text-blue-700 text-sm font-medium">編輯模式：可以新增、編輯、刪除、複製和排序師資</span>
-          </div>`;
-        modeDescription.className = 'bg-blue-50 border border-blue-200 rounded-lg p-3';
+          <i class="ph ph-info" style="font-size: 16px;"></i>
+          <span>編輯模式：可以新增、編輯、刪除、複製和排序師資</span>`;
+        modeDescription.className = 'mb-6 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm';
       } else {
-        editBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800';
-        displayBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all bg-green-600 text-white';
-        addBtn.classList.add('hidden');
+        // 切換到呈現模式
+        displayBtn.classList.remove('hidden');
+        displayBtn.classList.add('bg-white', 'border', 'border-gray-200', 'text-gray-600', 'hover:bg-gray-50');
+        displayBtn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+        displayBtn.innerHTML = '<i class="ph ph-pencil-simple"></i><span>進入編輯</span>';
+
+        editBtn.classList.add('hidden');
+
+        addBtnContainer.classList.add('hidden');
         modeDescription.innerHTML = `
-          <div class="flex items-center space-x-2">
-            <span class="text-green-700 text-sm font-medium">呈現模式：以美觀的方式展示師資陣容，適合對外展示</span>
-          </div>`;
-        modeDescription.className = 'bg-green-50 border border-green-200 rounded-lg p-3';
+          <i class="ph ph-info" style="font-size: 16px;"></i>
+          <span>呈現模式：以美觀的方式展示師資陣容，適合對外展示</span>`;
+        modeDescription.className = 'mb-6 bg-green-50 border border-green-100 text-green-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm';
       }
       renderTeacherGrid();
     }
@@ -2112,40 +2144,33 @@
 
     // 標籤切換函數
     function setActiveTab(tab) {
-      // 更新標籤樣式
+      // 更新標籤樣式 - 圓形膠囊樣式
       const tabs = document.querySelectorAll('.nav-tab');
       tabs.forEach(t => {
-        t.classList.remove('text-white');
-        t.classList.add('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
+        t.classList.remove('text-white', 'shadow-md');
+        t.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50');
         t.style.backgroundColor = '';
       });
 
       // 根據標籤執行對應動作
       if (tab === 'list') {
-        document.getElementById('tabList').classList.add('text-white');
-        document.getElementById('tabList').classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
-        document.getElementById('tabList').style.backgroundColor = '#5B8DEF';
+        const listTab = document.getElementById('tabList');
+        listTab.classList.add('text-white', 'shadow-md');
+        listTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50');
+        listTab.style.backgroundColor = '#5B8DEF';
         setRoute('list');
       } else if (tab === 'stats') {
-        document.getElementById('tabStats').classList.add('text-white');
-        document.getElementById('tabStats').classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
-        document.getElementById('tabStats').style.backgroundColor = '#5B8DEF';
+        const statsTab = document.getElementById('tabStats');
+        statsTab.classList.add('text-white', 'shadow-md');
+        statsTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50');
+        statsTab.style.backgroundColor = '#5B8DEF';
         showStatisticsView();
       } else if (tab === 'calendar') {
-        document.getElementById('tabCalendar').classList.add('text-white');
-        document.getElementById('tabCalendar').classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
-        document.getElementById('tabCalendar').style.backgroundColor = '#5B8DEF';
+        const calendarTab = document.getElementById('tabCalendar');
+        calendarTab.classList.add('text-white', 'shadow-md');
+        calendarTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50');
+        calendarTab.style.backgroundColor = '#5B8DEF';
         showCalendarView();
-      }
-
-      // 控制列表控制項的顯示
-      const listControls = document.getElementById('listControls');
-      if (listControls) {
-        if (tab === 'list') {
-          listControls.classList.remove('hidden');
-        } else {
-          listControls.classList.add('hidden');
-        }
       }
     }
 
