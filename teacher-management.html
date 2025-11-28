@@ -270,24 +270,34 @@
         <!-- 標題和模式切換 -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
           <div class="flex items-center space-x-4">
-            <h2 class="text-2xl font-semibold text-gray-800">師資列表</h2>
+            <h2 class="text-2xl font-semibold text-gray-800">師資陣容管理</h2>
+            <p class="text-sm text-gray-500">Faculty Management System</p>
+          </div>
 
+          <!-- 標籤式導航 -->
+          <div class="flex bg-white rounded-xl p-1.5 shadow-sm border border-gray-200">
+            <button onclick="setActiveTab('list')" id="tabList"
+              class="nav-tab px-6 py-2.5 rounded-lg font-medium transition-all flex items-center space-x-2 text-white" style="background-color: #5B8DEF;">
+              <span><i class="ph ph-user-list"></i></span><span>師資列表</span>
+            </button>
+            <button onclick="setActiveTab('stats')" id="tabStats"
+              class="nav-tab px-6 py-2.5 rounded-lg font-medium transition-all flex items-center space-x-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+              <span><i class="ph ph-chart-line"></i></span><span>統計分析</span>
+            </button>
+            <button onclick="setActiveTab('calendar')" id="tabCalendar"
+              class="nav-tab px-6 py-2.5 rounded-lg font-medium transition-all flex items-center space-x-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+              <span><i class="ph ph-calendar"></i></span><span>行事曆</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 模式切換和操作按鈕（僅在師資列表時顯示） -->
+        <div id="listControls" class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+          <div class="flex items-center space-x-4">
             <!-- 模式切換 -->
             <div class="flex bg-gray-100 rounded-lg p-1">
               <button onclick="switchMode('edit')" id="editModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-blue-600 text-white" style="background-color:#007aff">編輯模式</button>
               <button onclick="switchMode('display')" id="displayModeBtn" class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800">呈現模式</button>
-            </div>
-
-            <div class="flex space-x-3">
-             <!-- 統計 + 行事曆 -->
-              <button onclick="showStatisticsView()" class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm border border-gray-200 flex items-center space-x-2">
-                <span><i class="ph ph-chart-line"></i></span><span>統計分析</span>
-              </button>
-
-              <button onclick="showCalendarView()"
-                class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm border border-gray-200 flex items-center space-x-2">
-                  <span><i class="ph ph-calendar"></i></span><span>行事曆</span>
-                 </button>
             </div>
           </div>
 
@@ -2100,8 +2110,54 @@
       renderTeacherGrid();
     }
 
-    function showStatisticsView(){ document.getElementById('teacherList').classList.add('hidden'); document.getElementById('executiveView').classList.remove('hidden'); renderStatisticsView(); }
-    function backToListFromExecutive(){ setRoute('list'); }
+    // 標籤切換函數
+    function setActiveTab(tab) {
+      // 更新標籤樣式
+      const tabs = document.querySelectorAll('.nav-tab');
+      tabs.forEach(t => {
+        t.classList.remove('text-white');
+        t.classList.add('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
+        t.style.backgroundColor = '';
+      });
+
+      // 根據標籤執行對應動作
+      if (tab === 'list') {
+        document.getElementById('tabList').classList.add('text-white');
+        document.getElementById('tabList').classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
+        document.getElementById('tabList').style.backgroundColor = '#5B8DEF';
+        setRoute('list');
+      } else if (tab === 'stats') {
+        document.getElementById('tabStats').classList.add('text-white');
+        document.getElementById('tabStats').classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
+        document.getElementById('tabStats').style.backgroundColor = '#5B8DEF';
+        showStatisticsView();
+      } else if (tab === 'calendar') {
+        document.getElementById('tabCalendar').classList.add('text-white');
+        document.getElementById('tabCalendar').classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
+        document.getElementById('tabCalendar').style.backgroundColor = '#5B8DEF';
+        showCalendarView();
+      }
+
+      // 控制列表控制項的顯示
+      const listControls = document.getElementById('listControls');
+      if (listControls) {
+        if (tab === 'list') {
+          listControls.classList.remove('hidden');
+        } else {
+          listControls.classList.add('hidden');
+        }
+      }
+    }
+
+    function showStatisticsView(){
+      document.getElementById('teacherList').classList.add('hidden');
+      document.getElementById('executiveView').classList.remove('hidden');
+      renderStatisticsView();
+    }
+
+    function backToListFromExecutive(){
+      setActiveTab('list');
+    }
 
     function renderStatisticsView(){
       const total = teachers.length;
@@ -2240,7 +2296,7 @@
   }
   function backToListFromCalendar(){
     stopReminderCheck();
-    setRoute('list');
+    setActiveTab('list');
   }
 
   function setViewMode(mode){
@@ -3609,7 +3665,7 @@
 
   window.backToListFromCalendar = function() {
     if (typeof stopReminderCheck === 'function') stopReminderCheck();
-    setRoute('list');
+    setActiveTab('list');
   };
 
   window.backToListFromCourseManagement = function() {
