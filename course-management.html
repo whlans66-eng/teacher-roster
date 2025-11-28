@@ -14,6 +14,9 @@
   <!-- 字體樣式表 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
 
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
   <!-- Tailwind CDN - 使用 defer 避免阻塞渲染 -->
   <script defer src="https://cdn.tailwindcss.com"></script>
 
@@ -881,17 +884,17 @@
       <!-- 課程行事曆 -->
       <div class="card p-6 fade-in" style="animation-delay: 0.1s">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h2 style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;" class="text-gray-900">📅 課程行事曆</h2>
+          <h2 style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;" class="text-gray-900"><i class="ph ph-calendar"></i> 課程行事曆</h2>
           <div class="flex items-center gap-3">
             <button onclick="openAddCourseModal()" class="modern-btn px-6 py-2 rounded-xl font-medium" style="font-size: 15px;">
-              ✨ 新增課程
+              <i class="ph ph-plus-circle"></i> 新增課程
             </button>
             <div class="flex rounded-xl p-1" style="background: rgba(118, 118, 128, 0.12);">
               <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-900" style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);">
-                📅 月
+                <i class="ph ph-calendar"></i> 月
               </button>
               <button id="weekViewBtn" onclick="setViewMode('week')" class="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600" style="background: transparent;">
-                📊 週
+                <i class="ph ph-chart-bar"></i> 週
               </button>
             </div>
           </div>
@@ -938,14 +941,14 @@
       <div id="selectedTeacherBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <div class="text-2xl">👨‍🏫</div>
+            <div class="text-2xl"><i class="ph ph-chalkboard-teacher"></i></div>
             <div class="text-white">
               <p class="text-sm opacity-90">目前檢視師資（再次點選師資可取消）</p>
               <p id="selectedTeacherName" class="text-xl font-bold"></p>
             </div>
           </div>
           <button onclick="clearTeacherSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
-            ✕ 清除
+            <i class="ph ph-x"></i> 清除
           </button>
         </div>
       </div>
@@ -953,7 +956,7 @@
       <div id="selectedDateBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <div class="text-2xl">📅</div>
+            <div class="text-2xl"><i class="ph ph-calendar"></i></div>
             <div class="text-white">
               <p class="text-sm opacity-90">目前檢視日期（再次點選日期可取消）</p>
               <p id="selectedDateText" class="text-xl font-bold"></p>
@@ -973,7 +976,7 @@
               <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">總課程數</p>
               <p id="totalCoursesCount" class="font-bold text-gray-900" style="font-size: 32px; letter-spacing: -0.02em;">0</p>
             </div>
-            <div style="font-size: 36px;">📚</div>
+            <div style="font-size: 36px;"><i class="ph ph-books"></i></div>
           </div>
         </div>
 
@@ -1003,7 +1006,7 @@
       <!-- 師資時數分析 -->
       <div id="teacherHoursAnalysisCard" class="card p-6 fade-in" style="animation-delay: 0.3s">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;">👨‍🏫 師資時數分析</h2>
+          <h2 class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-chalkboard-teacher"></i> 師資時數分析</h2>
           <button onclick="toggleTeacherHoursAnalysis()" class="px-4 py-2 font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" style="font-size: 14px;">
             <span id="toggleAnalysisIcon">👁️</span> <span id="toggleAnalysisText">隱藏</span>
           </button>
@@ -1056,7 +1059,7 @@
       <!-- 課程總覽 -->
       <div class="card p-6 fade-in" style="animation-delay: 0.5s">
         <div class="flex items-center justify-between mb-6">
-          <h2 id="courseOverviewTitle" class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;">📅 今日課程總覽</h2>
+          <h2 id="courseOverviewTitle" class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-calendar"></i> 今日課程總覽</h2>
           <div class="text-gray-600" id="todayDate" style="font-size: 14px;"></div>
         </div>
         <div id="todayCoursesContainer" class="space-y-3">
@@ -1072,7 +1075,7 @@
 
       <!-- Modal 頭部 -->
       <div class="modal-header">
-        <h3>📚 新增課程</h3>
+        <h3><i class="ph ph-books"></i> 新增課程</h3>
       </div>
 
       <!-- Modal 內容區（可滾動） -->
@@ -1208,7 +1211,7 @@
 
       <!-- Modal 頭部 -->
       <div class="modal-header">
-        <h3>📅 複製到其他日期</h3>
+        <h3><i class="ph ph-calendar"></i> 複製到其他日期</h3>
       </div>
 
       <!-- Modal 內容區（可滾動） -->
@@ -1249,7 +1252,7 @@
 
       <!-- Modal 頭部 -->
       <div class="modal-header">
-        <h3 id="modalTitle">📅 課程詳情</h3>
+        <h3 id="modalTitle"><i class="ph ph-calendar"></i> 課程詳情</h3>
       </div>
 
       <!-- Modal 內容區（可滾動） -->
@@ -1412,7 +1415,7 @@
         },
         success: {
           wrapper: 'bg-green-50 border-green-200 text-green-700',
-          icon: '✅'
+          icon: '✓'
         },
         warning: {
           wrapper: 'bg-amber-50 border-amber-200 text-amber-700',
@@ -1420,7 +1423,7 @@
         },
         error: {
           wrapper: 'bg-red-50 border-red-200 text-red-700',
-          icon: '❌'
+          icon: '✗'
         }
       };
 
@@ -1530,7 +1533,7 @@
 
       try {
         await sessionManager.kickUser(sessionId);
-        alert(`✅ 已踢出使用者「${userName}」`);
+        alert(`✓ 已踢出使用者「${userName}」`);
 
         // 重新整理對話框
         closeConflictDialog();
@@ -1541,12 +1544,12 @@
           if (result.conflict) {
             showConflictDialog(result);
           } else if (result.success) {
-            alert('✅ 儲存成功！');
+            alert('✓ 儲存成功！');
             window.location.reload();
           }
         }, 2000);
       } catch (error) {
-        alert('❌ 踢出失敗: ' + error.message);
+        alert('✗ 踢出失敗: ' + error.message);
       }
     }
 
@@ -2002,7 +2005,7 @@
       if (selectedTeacherId !== null && selectedDate === null) {
         // 情況1：選擇了老師但沒選日期 → 顯示該老師的所有課程
         const teacher = teachers.find(t => t.id === selectedTeacherId);
-        titleText = `👨‍🏫 ${teacher ? teacher.name : '未知師資'} 的所有課程`;
+        titleText = `${teacher ? teacher.name : '未知師資'} 的所有課程`;
         displayCourses = courseAssignments.filter(c => c.teacherId === selectedTeacherId);
       } else if (selectedDate !== null) {
         // 情況2：選擇了日期（可能同時選擇了老師）
@@ -2011,16 +2014,16 @@
 
         if (selectedTeacherId !== null) {
           const teacher = teachers.find(t => t.id === selectedTeacherId);
-          titleText = `📅 ${dateText} - ${teacher ? teacher.name : '未知師資'} 的課程`;
+          titleText = `${dateText} - ${teacher ? teacher.name : '未知師資'} 的課程`;
           displayCourses = courseAssignments.filter(c => c.date === selectedDate && c.teacherId === selectedTeacherId);
         } else {
-          titleText = `📅 ${dateText} 課程總覽`;
+          titleText = `${dateText} 課程總覽`;
           displayCourses = courseAssignments.filter(c => c.date === selectedDate);
         }
       } else {
         // 情況3：都沒選擇 → 顯示今天的課程
         const todayDate = getLocalDateString(new Date());
-        titleText = '📅 今日課程總覽';
+        titleText = '今日課程總覽';
         displayCourses = courseAssignments.filter(c => c.date === todayDate);
       }
 
@@ -2070,7 +2073,7 @@
           return `
             <div class="bg-white rounded-xl p-4 border border-gray-200">
               <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
-                <h4 class="font-semibold text-gray-800">📅 ${dateText}</h4>
+                <h4 class="font-semibold text-gray-800"><i class="ph ph-calendar"></i> ${dateText}</h4>
                 <span class="text-xs text-gray-500">${courses.length} 堂課</span>
               </div>
               <div class="space-y-2">
@@ -2085,7 +2088,7 @@
                   // 🔒 檢查鎖定狀態
                   const lock = courseLocks[c.id];
                   const isLocked = lock && lock.userName;
-                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200">🔒 ${lock.userName} 編輯中</span>` : '';
+                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200"><i class="ph ph-lock"></i> ${lock.userName} 編輯中</span>` : '';
 
                   return `
                     <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 ${isLocked ? 'border-red-300' : ''}" onclick="viewEvent(${c.id})">
@@ -2151,7 +2154,7 @@
                   // 🔒 檢查鎖定狀態
                   const lock = courseLocks[c.id];
                   const isLocked = lock && lock.userName;
-                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200">🔒 ${lock.userName} 編輯中</span>` : '';
+                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200"><i class="ph ph-lock"></i> ${lock.userName} 編輯中</span>` : '';
 
                   return `
                     <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 ${isLocked ? 'border-red-300' : ''}" onclick="viewEvent(${c.id})">
@@ -2337,7 +2340,7 @@
                 <div class="event-item bg-blue-500 text-white p-3 rounded-xl cursor-pointer hover:bg-blue-600"
                      onclick="viewEvent(${e.id}); event.stopPropagation();">
                   <div class="font-semibold">${teacherName}</div>
-                  <div class="text-xs mt-1">⏰ ${e.time}</div>
+                  <div class="text-xs mt-1"><i class="ph ph-clock"></i> ${e.time}</div>
                   <div class="text-xs" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${e.name}</div>
                 </div>
               `;
@@ -2380,7 +2383,7 @@
                   return `
                     <div class="mt-2 p-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600" onclick="viewEvent(${e.id})">
                       <div class="font-semibold text-sm" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${teacherName} - ${e.name}</div>
-                      <div class="text-xs mt-1">⏰ ${e.time} | 📚 ${e.type}</div>
+                      <div class="text-xs mt-1"><i class="ph ph-clock"></i> ${e.time} | <i class="ph ph-books"></i> ${e.type}</div>
                     </div>
                   `;
                 }).join('')
@@ -2486,7 +2489,7 @@
 
       // 顯示查看模式
       const modalTitle = document.getElementById('modalTitle');
-      modalTitle.textContent = '📅 課程詳情';
+      modalTitle.innerHTML = '<i class="ph ph-calendar"></i> 課程詳情';
       modalTitle.style.cssText = 'font-size: 28px; font-weight: 600; letter-spacing: -0.015em;';
       document.getElementById('viewMode').style.display = 'block';
       document.getElementById('editCourseForm').style.display = 'none';
@@ -2509,7 +2512,7 @@
           <div>
             <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">授課教師</div>
             <div class="flex items-center gap-2">
-              <span class="text-2xl">👨‍🏫</span>
+              <span class="text-2xl"><i class="ph ph-chalkboard-teacher"></i></span>
               <span class="text-lg font-semibold" style="color: var(--apple-gray-dark);">${teacher ? teacher.name : '未知'}</span>
             </div>
           </div>
@@ -2523,14 +2526,14 @@
             <div>
               <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">日期</div>
               <div class="flex items-center gap-2">
-                <span>📅</span>
+                <span><i class="ph ph-calendar"></i></span>
                 <span class="text-sm font-medium">${course.date}</span>
               </div>
             </div>
             <div>
               <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">時間</div>
               <div class="flex items-center gap-2">
-                <span>⏰</span>
+                <span><i class="ph ph-clock"></i></span>
                 <span class="text-sm font-medium">${course.time}</span>
               </div>
             </div>
@@ -2540,14 +2543,14 @@
             <div>
               <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">類型</div>
               <div class="flex items-center gap-2">
-                <span>📚</span>
+                <span><i class="ph ph-books"></i></span>
                 <span class="text-sm font-medium">${course.type}</span>
               </div>
             </div>
             <div>
               <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">狀態</div>
               <div class="flex items-center gap-2">
-                <span>💼</span>
+                <span><i class="ph ph-briefcase"></i></span>
                 <span class="text-sm font-medium">${course.status || '上班'}</span>
               </div>
             </div>
@@ -2602,7 +2605,7 @@
               <div>
                 <div class="text-sm font-semibold" style="color: var(--apple-gray-dark);">參加確認</div>
                 <div class="text-xs font-medium" style="color: ${course.rsvpStatus === '已確認' ? 'var(--apple-green)' : 'var(--apple-gray)'};">
-                  ${course.rsvpStatus === '已確認' ? '✅ ' : ''}${course.rsvpStatus || '待確認'}
+                  ${course.rsvpStatus === '已確認' ? '✓ ' : ''}${course.rsvpStatus || '待確認'}
                 </div>
               </div>
             </div>
@@ -2951,7 +2954,7 @@
 
       // 🔓 關閉對話框並釋放鎖定
       await closeViewEventModal();
-      alert('✅ 課程已更新！');
+      alert('✓ 課程已更新！');
     }
 
     function checkConflictExcludingSelf(excludeId, teacherId, date, time) {
@@ -3046,7 +3049,7 @@
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
-      alert('✅ 課程新增成功！');
+      alert('✓ 課程新增成功！');
     }
 
     function deleteCourse(id) {
@@ -3058,7 +3061,7 @@
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
-      alert('✅ 課程已刪除！');
+      alert('✓ 課程已刪除！');
     }
 
     // ==================== 工具函數 ====================
@@ -3263,13 +3266,13 @@
     function confirmDeleteCourse() {
       // 檢查是否有有效的課程 ID
       if (!editingCourseId) {
-        alert('❌ 無法刪除：未選擇有效的課程');
+        alert('✗ 無法刪除：未選擇有效的課程');
         return;
       }
 
       // 檢查是否為唯讀模式
       if (window.isReadOnlyMode) {
-        alert('❌ 無法刪除：此課程正被其他人編輯中，無法在唯讀模式下刪除');
+        alert('✗ 無法刪除：此課程正被其他人編輯中，無法在唯讀模式下刪除');
         return;
       }
 
@@ -3289,18 +3292,18 @@
       if (!course) return;
 
       const teacher = teachers.find(t => t.id === course.teacherId);
-      const courseText = `📅 ${course.name}\n` +
-                        `👨‍🏫 教師：${teacher ? teacher.name : '未知'}\n` +
-                        `📆 日期：${course.date}\n` +
-                        `⏰ 時間：${course.time}\n` +
-                        `📍 類型：${course.type}\n` +
-                        `${course.note ? '📝 備註：' + course.note : ''}`;
+      const courseText = `課程：${course.name}\n` +
+                        `教師：${teacher ? teacher.name : '未知'}\n` +
+                        `日期：${course.date}\n` +
+                        `時間：${course.time}\n` +
+                        `類型：${course.type}\n` +
+                        `${course.note ? '備註：' + course.note : ''}`;
 
       try {
         // 使用現代 Clipboard API
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(courseText);
-          showMessage('✅ 課程資訊已複製到剪貼簿！', 'success');
+          showMessage('課程資訊已複製到剪貼簿！', 'success');
         } else {
           // 降級方案：使用傳統方式
           const textarea = document.createElement('textarea');
@@ -3311,11 +3314,11 @@
           textarea.select();
           document.execCommand('copy');
           document.body.removeChild(textarea);
-          showMessage('✅ 課程資訊已複製！', 'success');
+          showMessage('課程資訊已複製！', 'success');
         }
       } catch (err) {
         console.error('複製失敗:', err);
-        showMessage('❌ 複製失敗，請手動複製', 'error');
+        showMessage('複製失敗，請手動複製', 'error');
       }
     }
 
@@ -3401,7 +3404,7 @@
       renderTodayCourses();
       closeDuplicateDateModal();
 
-      showMessage(`✅ 課程已成功複製到 ${newDate}！`, 'success');
+      showMessage(`課程已成功複製到 ${newDate}！`, 'success');
     }
 
     /**
@@ -3441,7 +3444,7 @@
       if (!course) return;
 
       const teacher = teachers.find(t => t.id === course.teacherId);
-      const shareText = `📅 課程資訊\n\n` +
+      const shareText = `課程資訊\n\n` +
                        `課程：${course.name}\n` +
                        `教師：${teacher ? teacher.name : '未知'}\n` +
                        `日期：${course.date}\n` +
@@ -3458,14 +3461,14 @@
             text: shareText,
             url: shareUrl
           });
-          showMessage('✅ 課程已分享！', 'success');
+          showMessage('課程已分享！', 'success');
         } else {
           // 降級方案：複製分享文字到剪貼簿
           const fullText = shareText + `\n\n連結：${shareUrl}`;
 
           if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(fullText);
-            showMessage('✅ 分享連結已複製到剪貼簿！', 'success', '您可以貼到 Line、Email 或其他地方分享');
+            showMessage('分享連結已複製到剪貼簿！', 'success', '您可以貼到 Line、Email 或其他地方分享');
           } else {
             // 最後降級方案
             const textarea = document.createElement('textarea');
@@ -3476,7 +3479,7 @@
             textarea.select();
             document.execCommand('copy');
             document.body.removeChild(textarea);
-            showMessage('✅ 分享連結已複製！', 'success');
+            showMessage('分享連結已複製！', 'success');
           }
         }
       } catch (err) {
@@ -3485,7 +3488,7 @@
           // 使用者取消分享，不顯示錯誤
           return;
         }
-        showMessage('❌ 分享失敗', 'error');
+        showMessage('分享失敗', 'error');
       }
     }
 
@@ -3587,7 +3590,7 @@
       saveData();
       logActivity(currentCourseId, newStatus === '已確認' ? '確認參加課程' : '取消參加確認', 'rsvp');
       viewEvent(currentCourseId); // 重新渲染
-      showMessage(`✅ 已${newStatus === '已確認' ? '確認' : '取消'}參加！`, 'success');
+      showMessage(`已${newStatus === '已確認' ? '確認' : '取消'}參加！`, 'success');
     }
 
     /**
@@ -3640,7 +3643,7 @@
       saveData();
       logActivity(currentCourseId, selectedReminder ? `設定提醒：${selectedReminder}` : '清除提醒', 'reminder');
       viewEvent(currentCourseId);
-      showMessage(selectedReminder ? `✅ 提醒已設定：${selectedReminder}` : '✅ 提醒已清除', 'success');
+      showMessage(selectedReminder ? `提醒已設定：${selectedReminder}` : '提醒已清除', 'success');
     }
 
     /**
@@ -3723,7 +3726,7 @@
         courseSurveys.forEach((survey, index) => {
           const template = surveyTemplates.find(t => t.id === survey.templateId);
           const responses = surveyResponses.filter(r => r.surveyId === survey.id);
-          const statusText = survey.status === 'active' ? '✅ 開放中' : '🔒 已關閉';
+          const statusText = survey.status === 'active' ? '✓ 開放中' : '✗ 已關閉';
 
           message += `${index + 1}. ${template ? template.name : '未知模板'}\n`;
           message += `   狀態：${statusText}\n`;
