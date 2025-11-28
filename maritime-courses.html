@@ -229,6 +229,9 @@
   .method-card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.08); }
   </style>
 
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
   <script src="js/api.js"></script>
 </head>
 <body>
@@ -509,7 +512,7 @@
         };
         maritimeCourses.push(course);
         await saveMaritimeCourses();
-        showMaritimeMessage('✅ 課程新增成功', 'success');
+        showMaritimeMessage('✓ 課程新增成功', 'success');
         document.getElementById('maritimeCourseForm').reset();
         document.getElementById('maritimeKeywordList').innerHTML = '';
         addMaritimeKeyword();
@@ -733,7 +736,7 @@
       if (idx >= 0) {
         maritimeCourses[idx] = { ...maritimeCourses[idx], ...newData };
         await saveMaritimeCourses();
-        showMaritimeMessage('✅ 課程更新成功', 'success');
+        showMaritimeMessage('✓ 課程更新成功', 'success');
         closeMaritimeCourseModal();
         displayMaritimeCourses();
         displayManageMaritimeCourses();
@@ -744,7 +747,7 @@
       if (confirm('確定要刪除這個課程嗎？')) {
         maritimeCourses = maritimeCourses.filter(x => x.id !== editingMaritimeCourseId);
         await saveMaritimeCourses();
-        showMaritimeMessage('✅ 課程已刪除', 'success');
+        showMaritimeMessage('✓ 課程已刪除', 'success');
         closeMaritimeCourseModal();
         displayMaritimeCourses();
         displayManageMaritimeCourses();
@@ -838,7 +841,7 @@
 
       // 授課方式統計
       const methodColors = { 實體課程: '#3b82f6', 線上課程: '#10b981', 混合課程: '#f59e0b', 未設定: '#6b7280' };
-      const methodIcons = { 實體課程: '🏫', 線上課程: '💻', 混合課程: '🔄', 未設定: '❓' };
+      const methodIcons = { 實體課程: '<i class="ph ph-buildings"></i>', 線上課程: '<i class="ph ph-laptop"></i>', 混合課程: '<i class="ph ph-arrows-clockwise"></i>', 未設定: '<i class="ph ph-question"></i>' };
 
       document.getElementById('maritimeMethodStats').innerHTML = Object.entries(demoStats.methods).map(([method, data]) => {
         const angle = (data.count / demoStats.totalCourses) * 360;
@@ -954,9 +957,9 @@
       if(confirm(`確定踢出 ${name}?`)) {
         try {
           await sessionManager.kickUser(sid);
-          showMaritimeMessage('✅ 已踢出使用者', 'success');
+          showMaritimeMessage('✓ 已踢出使用者', 'success');
         } catch(e) {
-          showMaritimeMessage('❌ 踢出失敗', 'error');
+          showMaritimeMessage('✗ 踢出失敗', 'error');
         }
       }
     }
