@@ -316,16 +316,11 @@
             <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"></i>
           </div>
 
-          <!-- 編輯模式按鈕 -->
-          <button onclick="switchMode('edit')" id="editModeBtn"
+          <!-- 編輯/預覽模式切換按鈕 -->
+          <button onclick="toggleMode()" id="modeToggleBtn"
             class="w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700">
-            <i class="ph ph-pencil-simple"></i>
-            <span>編輯中</span>
-          </button>
-          <button onclick="switchMode('display')" id="displayModeBtn"
-            class="w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hidden">
-            <i class="ph ph-pencil-simple"></i>
-            <span>進入編輯</span>
+            <i class="ph ph-eye"></i>
+            <span>預覽模式</span>
           </button>
         </div>
       </div>
@@ -1502,21 +1497,25 @@
       });
     }
 
+    // 切換模式函數
+    window.toggleMode = function() {
+      if (window.currentMode === 'edit') {
+        switchMode('display');
+      } else {
+        switchMode('edit');
+      }
+    }
+
     window.switchMode = function switchMode(mode){
       window.currentMode = mode;
-      const editBtn = document.getElementById('editModeBtn');
-      const displayBtn = document.getElementById('displayModeBtn');
+      const toggleBtn = document.getElementById('modeToggleBtn');
       const addBtnContainer = document.getElementById('addButtonContainer');
       const modeDescription = document.getElementById('modeDescription');
 
       if (mode === 'edit') {
-        // 切換到編輯模式
-        editBtn.classList.remove('hidden');
-        editBtn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-        editBtn.classList.remove('bg-white', 'border', 'border-gray-200', 'text-gray-600', 'hover:bg-gray-50');
-        editBtn.innerHTML = '<i class="ph ph-pencil-simple"></i><span>編輯中</span>';
-
-        displayBtn.classList.add('hidden');
+        // 編輯模式：按鈕顯示"預覽模式"（點擊後切換到預覽）
+        toggleBtn.className = 'w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700';
+        toggleBtn.innerHTML = '<i class="ph ph-eye"></i><span>預覽模式</span>';
 
         addBtnContainer.classList.remove('hidden');
         modeDescription.classList.remove('hidden');
@@ -1525,18 +1524,14 @@
           <span>編輯模式：可以新增、編輯、刪除、複製和排序師資</span>`;
         modeDescription.className = 'mb-6 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm';
       } else {
-        // 切換到呈現模式
-        displayBtn.classList.remove('hidden');
-        displayBtn.classList.add('bg-white', 'border', 'border-gray-200', 'text-gray-600', 'hover:bg-gray-50');
-        displayBtn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-        displayBtn.innerHTML = '<i class="ph ph-pencil-simple"></i><span>進入編輯</span>';
-
-        editBtn.classList.add('hidden');
+        // 預覽模式：按鈕顯示"進入編輯"（點擊後切換到編輯）
+        toggleBtn.className = 'w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50';
+        toggleBtn.innerHTML = '<i class="ph ph-pencil-simple"></i><span>進入編輯</span>';
 
         addBtnContainer.classList.add('hidden');
         modeDescription.innerHTML = `
           <i class="ph ph-info" style="font-size: 16px;"></i>
-          <span>呈現模式：以美觀的方式展示師資陣容，適合對外展示</span>`;
+          <span>預覽模式：以美觀的方式展示師資陣容，適合對外展示</span>`;
         modeDescription.className = 'mb-6 bg-green-50 border border-green-100 text-green-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm';
       }
       renderTeacherGrid();
