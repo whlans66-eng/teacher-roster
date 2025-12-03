@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>派課管理系統</title>
+  <title>派課管理系統 - 现代化训练排程</title>
 
   <!-- 預連接到資源服務器 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,17 +12,16 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
 
   <!-- 字體樣式表 -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
 
   <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-  <!-- Tailwind CDN - 使用 defer 避免阻塞渲染 -->
+  <!-- Tailwind CDN -->
   <script defer src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Chart.js - 延遲加載，僅在需要時加載 -->
+  <!-- Chart.js - 延遲加載 -->
   <script>
-    // 延遲加載 Chart.js - 僅在需要圖表時才加載
     window.loadChartJS = function() {
       return new Promise((resolve, reject) => {
         if (window.Chart) {
@@ -39,7 +38,6 @@
   </script>
 
   <style>
-
     * {
       margin: 0;
       padding: 0;
@@ -47,394 +45,338 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-      background: #f5f5f7;
-      color: #1d1d1f;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
+    /* ========== Slate 色系设计系统 ========== */
+    :root {
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      
+      --blue-500: #3b82f6;
+      --blue-600: #2563eb;
+      --emerald-500: #10b981;
+      --emerald-600: #059669;
+      --amber-500: #f59e0b;
+      --purple-500: #a855f7;
+      --red-500: #ef4444;
+    }
+
+    /* ========== 现代化卡片设计 ========== */
     .card {
       background: #ffffff;
-      border-radius: 18px;
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      box-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.04),
-        0 1px 2px rgba(0, 0, 0, 0.06);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 20px;
+      border: 1px solid var(--slate-200);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .card-hover:hover {
       transform: translateY(-2px);
-      box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.08),
-        0 2px 6px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.08);
     }
 
-    .calendar-day {
-      min-height: 120px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 10px;
-    }
-
-    .calendar-day:hover {
-      transform: translateY(-1px);
-      box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.06),
-        0 1px 3px rgba(0, 0, 0, 0.08);
-    }
-
-    .today-highlight {
-      background: rgba(0, 122, 255, 0.06) !important;
-      border: 2px solid #007aff !important;
-      box-shadow:
-        0 0 0 1px rgba(0, 122, 255, 0.1),
-        0 4px 12px rgba(0, 122, 255, 0.15) !important;
-    }
-
-    .event-item {
-      padding: 8px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      font-size: 12px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-    .event-item:hover {
-      opacity: 0.88;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .modern-btn {
-      background: #007aff;
-      color: white;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.12),
-        0 1px 2px rgba(0, 0, 0, 0.24);
-    }
-
-    .modern-btn:hover {
-      background: #0051d5;
-      transform: translateY(-1px);
-      box-shadow:
-        0 4px 12px rgba(0, 122, 255, 0.25),
-        0 2px 4px rgba(0, 0, 0, 0.15);
-    }
-
-    /* ========== TimeTree 排版 + Apple 風格樣式 ========== */
-
-    /* Apple 風格的磨砂玻璃效果 */
-    .apple-glass {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-
-    /* Apple 配色 - 系統顏色 */
-    :root {
-      --apple-blue: #007AFF;
-      --apple-green: #34C759;
-      --apple-orange: #FF9500;
-      --apple-red: #FF3B30;
-      --apple-purple: #AF52DE;
-      --apple-gray: #8E8E93;
-      --apple-gray-light: #F2F2F7;
-      --apple-gray-dark: #48484A;
-    }
-
-    /* TimeTree 風格的操作按鈕 */
-    .action-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      background: var(--apple-gray-light);
-      color: var(--apple-blue);
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .action-btn:hover {
-      background: #E5E5EA;
-      transform: translateY(-1px);
-    }
-
-    .action-btn:active {
-      transform: scale(0.98);
-    }
-
-    /* Apple 風格的資訊卡片 */
-    .info-card {
-      background: #FFFFFF;
+    /* ========== 师资侧边栏卡片 ========== */
+    .teacher-card {
+      background: white;
+      border: 1.5px solid var(--slate-200);
       border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-      border: 0.5px solid rgba(0, 0, 0, 0.04);
-    }
-
-    /* TimeTree 風格的功能區塊 */
-    .feature-block {
-      background: var(--apple-gray-light);
-      border-radius: 14px;
-      padding: 14px 16px;
-      margin: 12px 0;
-      border: 0.5px solid rgba(0, 0, 0, 0.04);
-    }
-
-    .feature-block-blue {
-      background: linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(0, 122, 255, 0.04) 100%);
-      border: 1px solid rgba(0, 122, 255, 0.15);
-    }
-
-    .feature-block-green {
-      background: linear-gradient(135deg, rgba(52, 199, 89, 0.08) 0%, rgba(52, 199, 89, 0.04) 100%);
-      border: 1px solid rgba(52, 199, 89, 0.15);
-    }
-
-    /* Apple 風格的按鈕 */
-    .apple-btn {
-      padding: 10px 20px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      border: none;
+      padding: 14px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
-      transition: all 0.2s ease;
-      letter-spacing: -0.02em;
     }
 
-    .apple-btn-primary {
-      background: var(--apple-blue);
-      color: white;
-      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+    .teacher-card:hover {
+      border-color: var(--blue-500);
+      background: var(--slate-50);
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
     }
 
-    .apple-btn-primary:hover {
-      background: #0051D5;
-      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
-      transform: translateY(-1px);
+    .teacher-card.selected {
+      border-color: var(--blue-500);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.08));
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
     }
 
-    .apple-btn-secondary {
-      background: var(--apple-gray-light);
-      color: var(--apple-blue);
-    }
-
-    .apple-btn-secondary:hover {
-      background: #E5E5EA;
-      transform: translateY(-1px);
-    }
-
-    .apple-btn-success {
-      background: var(--apple-green);
-      color: white;
-      box-shadow: 0 2px 8px rgba(52, 199, 89, 0.25);
-    }
-
-    .apple-btn-success:hover {
-      background: #2AB04A;
-      transform: translateY(-1px);
-    }
-
-    .apple-btn-danger {
-      background: var(--apple-red);
-      color: white;
-      box-shadow: 0 2px 8px rgba(255, 59, 48, 0.25);
-    }
-
-    .apple-btn-danger:hover {
-      background: #E6342A;
-      transform: translateY(-1px);
-    }
-
-    /* TimeTree 風格的社交互動按鈕 */
-    .social-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      background: white;
-      border: 1px solid #E5E5EA;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .social-btn:hover {
-      background: var(--apple-gray-light);
-      border-color: var(--apple-gray);
-      transform: translateY(-1px);
-    }
-
-    .social-btn.liked {
-      background: rgba(255, 59, 48, 0.08);
-      border-color: var(--apple-red);
-      color: var(--apple-red);
-    }
-
-    /* 愛心動畫 */
-    @keyframes heartBeat {
-      0%, 100% { transform: scale(1); }
-      25% { transform: scale(1.3); }
-      50% { transform: scale(1.1); }
-    }
-
-    .heart-animation {
-      animation: heartBeat 0.6s ease;
-    }
-
-    /* TimeTree 風格的留言卡片 */
-    .comment-card {
-      background: white;
-      border-radius: 12px;
-      padding: 12px;
-      margin: 8px 0;
-      border: 0.5px solid rgba(0, 0, 0, 0.06);
-      transition: all 0.2s ease;
-    }
-
-    .comment-card:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      transform: translateY(-1px);
-    }
-
-    /* Apple 風格的頭像 */
-    .avatar {
-      width: 36px;
-      height: 36px;
+    .teacher-avatar {
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--apple-blue), var(--apple-purple));
+      background: linear-gradient(135deg, var(--blue-500), var(--purple-500));
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
-      font-weight: 600;
-      font-size: 14px;
+      font-weight: 700;
+      font-size: 16px;
       flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
 
-    /* 操作歷史時間軸 */
-    .timeline-item {
+    /* ========== 动态统计卡片 ========== */
+    .stat-card {
+      background: linear-gradient(135deg, #ffffff 0%, var(--slate-50) 100%);
+      border-radius: 20px;
+      padding: 24px;
+      border: 1.5px solid var(--slate-200);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      transform: translate(30%, -30%);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+      border-color: var(--blue-500);
+    }
+
+    .stat-card.blue {
+      border-color: var(--blue-500);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(96, 165, 250, 0.05));
+    }
+
+    .stat-card.emerald {
+      border-color: var(--emerald-500);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(52, 211, 153, 0.05));
+    }
+
+    .stat-card.amber {
+      border-color: var(--amber-500);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(251, 191, 36, 0.05));
+    }
+
+    /* ========== SVG 甜甜圈图样式 ========== */
+    .donut-chart-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .donut-segment {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .donut-segment:hover {
+      opacity: 0.8;
+      filter: brightness(1.1);
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .legend-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 8px 0;
-      font-size: 13px;
-      color: var(--apple-gray-dark);
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--slate-50);
+      border-radius: 12px;
+      border: 1px solid var(--slate-200);
+      transition: all 0.2s ease;
     }
 
-    .timeline-dot {
-      width: 8px;
-      height: 8px;
+    .legend-item:hover {
+      background: white;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
-      background: var(--apple-green);
-      box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.15);
       flex-shrink: 0;
     }
 
-    /* 區塊標題 */
-    .section-title {
-      font-size: 15px;
+    /* ========== 个人剩余时数卡片（渐变背景）========== */
+    .hours-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 24px;
+      padding: 28px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+    }
+
+    .hours-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hours-progress-ring {
+      width: 120px;
+      height: 120px;
+    }
+
+    /* ========== 行事历增强动画 ========== */
+    .calendar-day {
+      min-height: 120px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      background: white;
+    }
+
+    .calendar-day:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+      border-color: var(--blue-500);
+    }
+
+    .today-highlight {
+      background: rgba(59, 130, 246, 0.08) !important;
+      border: 2px solid var(--blue-500) !important;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2) !important;
+    }
+
+    /* 行事历展开/收合动画 */
+    .calendar-collapsed {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transform: scaleY(0);
+      transform-origin: top;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.6, 1);
+    }
+
+    .calendar-expanded {
+      max-height: 2000px;
+      opacity: 1;
+      transform: scaleY(1);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ========== 现代化课程列表 ========== */
+    .course-item {
+      background: white;
+      border: 1.5px solid var(--slate-200);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .course-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--blue-500);
+      transition: width 0.3s ease;
+    }
+
+    .course-item:hover {
+      border-color: var(--blue-500);
+      transform: translateX(4px);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    }
+
+    .course-item:hover::before {
+      width: 6px;
+    }
+
+    .course-badge {
+      padding: 6px 14px;
+      border-radius: 10px;
+      font-size: 12px;
       font-weight: 600;
-      color: var(--apple-gray-dark);
-      margin-bottom: 12px;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
     }
 
-    /* 輸入框樣式 */
-    .apple-input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #E5E5EA;
-      border-radius: 10px;
-      font-size: 14px;
-      font-family: inherit;
-      transition: all 0.2s ease;
-      background: white;
+    .badge-blue {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--blue-600);
     }
 
-    .apple-input:focus {
-      outline: none;
-      border-color: var(--apple-blue);
-      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    .badge-emerald {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--emerald-600);
     }
 
-    /* 分隔線 */
-    .divider {
-      height: 0.5px;
-      background: linear-gradient(90deg, transparent, #E5E5EA, transparent);
-      margin: 16px 0;
+    .badge-amber {
+      background: rgba(245, 158, 11, 0.1);
+      color: #d97706;
     }
 
-    /* ========== iOS 原生風格增強 ========== */
-
-    /* 毛玻璃 Modal 背景 */
-    /* Modal 背景模糊效果 */
-    #viewEventModal,
-    #addCourseModal,
-    #duplicateDateModal {
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    /* Modal 卡片容器 - 使用 Flexbox 三層結構 */
+    /* ========== Modal 现代化设计 ========== */
     .modal-card {
-      background: rgba(255, 255, 255, 0.95) !important;
+      background: rgba(255, 255, 255, 0.98) !important;
       backdrop-filter: blur(30px) saturate(180%);
       -webkit-backdrop-filter: blur(30px) saturate(180%);
-      border: 0.5px solid rgba(255, 255, 255, 0.3);
-      border-radius: 20px !important;
-      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.15);
-
-      /* 關鍵：Flexbox 佈局 */
+      border: 1px solid var(--slate-200);
+      border-radius: 24px !important;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
       display: flex;
       flex-direction: column;
-      overflow: hidden; /* 保護圓角不被破壞 */
-
-      max-height: 85vh;
+      overflow: hidden;
+      max-height: 90vh;
       width: 90%;
-      max-width: 700px;
+      max-width: 800px;
     }
 
-    /* Modal 頭部 - 固定不滾動 */
     .modal-header {
-      padding: 24px 32px;
-      background: rgba(249, 249, 249, 0.8);
-      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
-      flex-shrink: 0; /* 防止被擠壓 */
+      padding: 28px 32px;
+      background: linear-gradient(135deg, var(--slate-50), white);
+      border-bottom: 1px solid var(--slate-200);
+      flex-shrink: 0;
     }
 
     .modal-header h3 {
       margin: 0;
       font-size: 28px;
-      font-weight: 600;
-      letter-spacing: -0.015em;
-      color: #1d1d1f;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--slate-900);
     }
 
-    /* Modal 內容區 - 可滾動 */
     .modal-content {
-      padding: 24px 32px;
-      flex-grow: 1; /* 自動填滿剩餘空間 */
-      overflow-y: auto; /* 只有這裡會滾動 */
-
-      /* 美化捲軸 */
+      padding: 28px 32px;
+      flex-grow: 1;
+      overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+      scrollbar-color: var(--slate-300) transparent;
     }
 
     .modal-content::-webkit-scrollbar {
@@ -442,377 +384,134 @@
     }
 
     .modal-content::-webkit-scrollbar-thumb {
-      background-color: rgba(0, 0, 0, 0.15);
+      background-color: var(--slate-300);
       border-radius: 10px;
     }
 
-    .modal-content::-webkit-scrollbar-thumb:hover {
-      background-color: rgba(0, 0, 0, 0.25);
-    }
-
-    /* Modal 底部按鈕區 - 固定不滾動 */
     .modal-footer {
-      padding: 20px 32px;
-      background: rgba(255, 255, 255, 0.95);
-      border-top: 0.5px solid rgba(0, 0, 0, 0.1);
-      flex-shrink: 0; /* 防止被擠壓或消失 */
+      padding: 24px 32px;
+      background: var(--slate-50);
+      border-top: 1px solid var(--slate-200);
+      flex-shrink: 0;
     }
 
-    /* iOS 風格的彈出式操作選單 */
-    .context-menu-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.2);
-      z-index: 9999;
-      display: none;
-      opacity: 0;
-      transition: opacity 0.2s ease-in-out;
+    /* ========== 课程评鉴表单 ========== */
+    .rating-stars {
+      display: flex;
+      gap: 8px;
+      font-size: 32px;
     }
 
-    .context-menu-overlay.show {
-      display: block;
-      opacity: 1;
+    .rating-star {
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--slate-300);
     }
 
-    .context-menu-popup {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.95);
-      width: 90%;
-      max-width: 320px;
-      background-color: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(25px) saturate(180%);
-      -webkit-backdrop-filter: blur(25px) saturate(180%);
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-      overflow: hidden;
-      opacity: 0;
-      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .rating-star:hover,
+    .rating-star.active {
+      color: #fbbf24;
+      transform: scale(1.1);
     }
 
-    .context-menu-overlay.show .context-menu-popup {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
+    .evaluation-section {
+      background: var(--slate-50);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 1px solid var(--slate-200);
     }
 
-    .menu-option {
-      padding: 16px 20px;
-      font-size: 17px;
-      color: var(--apple-gray-dark);
-      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+    .evaluation-criteria {
+      display: grid;
+      gap: 20px;
+    }
+
+    .criteria-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      cursor: pointer;
-      background: transparent;
-      transition: background-color 0.1s;
+      padding: 16px;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--slate-200);
     }
 
-    .menu-option:last-child {
-      border-bottom: none;
+    .criteria-label {
+      font-weight: 600;
+      color: var(--slate-700);
     }
 
-    .menu-option:active {
-      background-color: rgba(0, 0, 0, 0.08);
-    }
-
-    .menu-option-danger {
-      color: var(--apple-red) !important;
-    }
-
-    .menu-option .icon {
-      font-size: 16px;
-      width: 20px;
-      height: 20px;
+    .criteria-score {
       display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .menu-option svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      opacity: 0.6;
-    }
-
-    /* iOS 大標題樣式 */
-    .ios-large-title {
-      font-size: 34px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      color: #000;
-      margin-bottom: 8px;
-      line-height: 1.1;
-    }
-
-    /* iOS 極細分隔線 */
-    .ios-separator {
-      height: 0.5px;
-      background: rgba(0, 0, 0, 0.1);
-      margin: 16px 0;
-    }
-
-    /* iOS 標準按鈕增強 */
-    .apple-btn {
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    .apple-btn:active {
-      opacity: 0.6;
-      transform: scale(0.98);
-    }
-
-    /* 淡入動畫 */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .fade-in-up {
-      animation: fadeInUp 0.4s ease-out;
-    }
-
-    /* ========== Modal 內 SVG Icon 樣式 ========== */
-    .modal-icon {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      vertical-align: -3px;
-      margin-right: 6px;
-    }
-
-    .modal-icon-sm {
-      width: 14px;
-      height: 14px;
-      vertical-align: -2px;
-    }
-
-    /* ========== 自動標籤樣式 ========== */
-    .auto-tag {
-      display: inline-flex;
-      align-items: center;
       gap: 6px;
-      padding: 6px 12px;
-      border-radius: 16px;
-      font-size: 13px;
-      font-weight: 500;
-      border: 1px solid;
+    }
+
+    .score-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--slate-300);
+      background: white;
+      color: var(--slate-600);
+      font-weight: 700;
       cursor: pointer;
       transition: all 0.2s ease;
-      user-select: none;
     }
 
-    .auto-tag svg {
-      width: 14px;
-      height: 14px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+    .score-btn:hover {
+      border-color: var(--blue-500);
+      background: var(--blue-50);
+      color: var(--blue-600);
+      transform: scale(1.1);
     }
 
-    .auto-tag:hover {
-      opacity: 0.8;
-      transform: translateY(-1px);
+    .score-btn.selected {
+      border-color: var(--blue-500);
+      background: var(--blue-500);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
 
-    .auto-tag-remove {
-      margin-left: 4px;
-      opacity: 0.6;
-      transition: opacity 0.2s;
+    /* ========== 按钮系统 ========== */
+    .modern-btn {
+      background: var(--blue-500);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .auto-tag:hover .auto-tag-remove {
-      opacity: 1;
+    .modern-btn:hover {
+      background: var(--blue-600);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
     }
 
-    /* 不同類型的標籤顏色 */
-    .tag-important {
-      background: rgba(255, 59, 48, 0.1);
-      color: var(--apple-red);
-      border-color: rgba(255, 59, 48, 0.3);
+    .modern-btn:active {
+      transform: translateY(0);
     }
 
-    .tag-exam {
-      background: rgba(255, 149, 0, 0.1);
-      color: var(--apple-orange);
-      border-color: rgba(255, 149, 0, 0.3);
+    .btn-secondary {
+      background: var(--slate-100);
+      color: var(--slate-700);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
     }
 
-    .tag-experiment {
-      background: rgba(175, 82, 222, 0.1);
-      color: var(--apple-purple);
-      border-color: rgba(175, 82, 222, 0.3);
+    .btn-secondary:hover {
+      background: var(--slate-200);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
     }
 
-    .tag-project {
-      background: rgba(0, 122, 255, 0.1);
-      color: var(--apple-blue);
-      border-color: rgba(0, 122, 255, 0.3);
-    }
-
-    .tag-meeting {
-      background: rgba(52, 199, 89, 0.1);
-      color: var(--apple-green);
-      border-color: rgba(52, 199, 89, 0.3);
-    }
-
-    .tag-default {
-      background: rgba(142, 142, 147, 0.1);
-      color: var(--apple-gray);
-      border-color: rgba(142, 142, 147, 0.3);
-    }
-
-    @media (max-width: 768px) {
-      /* 隱藏桌面版行事曆，顯示手機版 */
-      .calendar-grid-container {
-        display: none;
-      }
-
-      .mobile-calendar-view {
-        display: block !important;
-      }
-
-      /* 容器內邊距 */
-      .container {
-        padding-left: 16px !important;
-        padding-right: 16px !important;
-      }
-
-      /* 標題區域 */
-      h1 {
-        font-size: 32px !important;
-      }
-
-      h2 {
-        font-size: 20px !important;
-      }
-
-      /* 卡片內邊距 */
-      .card {
-        padding: 20px !important;
-      }
-
-      /* 課程行事曆標題和按鈕 */
-      .flex.flex-col.md\\:flex-row {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-      }
-
-      .flex.items-center.gap-3 {
-        flex-direction: column !important;
-        width: 100%;
-        gap: 12px !important;
-      }
-
-      .flex.items-center.gap-3 button {
-        width: 100%;
-      }
-
-      .flex.rounded-xl.p-1 {
-        width: 100%;
-      }
-
-      /* 導航控制 */
-      .flex.items-center.justify-between.mb-6 {
-        flex-direction: column !important;
-        gap: 12px;
-      }
-
-      .flex.items-center.space-x-4 {
-        flex-direction: column !important;
-        width: 100%;
-        gap: 8px !important;
-      }
-
-      .flex.items-center.space-x-4 button {
-        width: 100%;
-        justify-content: center;
-      }
-
-      #currentMonth {
-        min-width: auto !important;
-        width: 100%;
-        text-align: center;
-        font-size: 16px !important;
-      }
-
-      /* 今天按鈕 */
-      button[onclick="goToToday()"] {
-        width: 100%;
-      }
-
-      /* 按鈕 */
-      .modern-btn {
-        width: 100%;
-        padding: 12px 20px !important;
-        font-size: 14px !important;
-      }
-
-      /* 統計卡片 */
-      .grid.grid-cols-2,
-      .grid.grid-cols-3,
-      .grid.grid-cols-4 {
-        grid-template-columns: 1fr !important;
-      }
-
-      /* 調整文字大小 */
-      button {
-        font-size: 14px !important;
-      }
-    }
-
-    /* 小手機螢幕 (< 480px) */
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 28px !important;
-      }
-
-      h2 {
-        font-size: 18px !important;
-      }
-
-      .card {
-        padding: 16px !important;
-      }
-
-      button {
-        font-size: 13px !important;
-        padding: 10px 16px !important;
-      }
-    }
-
-    .mobile-calendar-view {
-      display: none;
-    }
-
-    .fade-in {
-      animation: fadeIn 0.6s ease-out;
-    }
-
-    @keyframes fadeIn {
+    /* ========== 动画 ========== */
+    @keyframes fadeInUp {
       from {
         opacity: 0;
         transform: translateY(30px);
@@ -823,7 +522,45 @@
       }
     }
 
-    /* 微妙的背景紋理 */
+    .fade-in {
+      animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .slide-in {
+      animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ========== 响应式设计 ========== */
+    @media (max-width: 1024px) {
+      .lg\\:col-span-1, .lg\\:col-span-3 {
+        grid-column: span 1 !important;
+      }
+
+      .calendar-grid-container {
+        display: none;
+      }
+
+      .mobile-calendar-view {
+        display: block !important;
+      }
+    }
+
+    .mobile-calendar-view {
+      display: none;
+    }
+
+    /* ========== 微妙的背景纹理 ========== */
     body::before {
       content: '';
       position: fixed;
@@ -832,8 +569,8 @@
       right: 0;
       bottom: 0;
       background-image:
-        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.35) 0%, transparent 55%),
-        radial-gradient(circle at 80% 70%, rgba(252, 246, 222, 0.35) 0%, transparent 55%);
+        radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
       pointer-events: none;
       z-index: -1;
     }
@@ -846,539 +583,693 @@
   <!-- Authentication -->
   <script src="js/auth.js"></script>
   <script>
-    // Protect this page - admin and teacher can access
     protectPage(['admin', 'teacher']);
   </script>
 
-  <div class="container mx-auto px-4 py-8">
-    <!-- 返回首頁 -->
-    <div class="mb-6">
-      <a href="index.html" class="inline-flex items-center px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
-        <span class="mr-2">←</span> 返回首頁
-      </a>
-    </div>
+  <!-- 全屏容器：4 栏布局 -->
+  <div class="min-h-screen bg-slate-50">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-0 min-h-screen">
 
-    <!-- 標題區域 -->
-    <div class="text-center mb-12">
-      <h1 class="font-bold text-gray-900 mb-2" style="font-size: 40px; letter-spacing: -0.015em; font-weight: 600;">訓練排程</h1>
-      <p class="text-gray-600" style="font-size: 17px; font-weight: 400;">智能管理平台</p>
-    </div>
-
-    <!-- 同步狀態提示 -->
-    <div id="syncStatusBanner" class="card p-4 mb-6 hidden border border-transparent" role="alert" aria-live="polite">
-      <div class="flex items-start justify-between gap-4">
-        <div class="flex items-start gap-3">
-          <span id="syncStatusIcon" class="text-2xl">ℹ️</span>
-          <div>
-            <p id="syncStatusText" class="font-semibold text-gray-800"></p>
-            <p id="syncStatusHint" class="text-sm text-gray-600 mt-1" style="display: none;"></p>
-          </div>
-        </div>
-        <button type="button" onclick="dismissSyncStatus()" class="text-gray-400 hover:text-gray-600 transition" aria-label="關閉提醒">
-          ✕
-        </button>
-      </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto space-y-6">
-      <!-- 課程行事曆 -->
-      <div class="card p-6 fade-in" style="animation-delay: 0.1s">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h2 style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;" class="text-gray-900"><i class="ph ph-calendar"></i> 課程行事曆</h2>
-          <div class="flex items-center gap-3">
-            <button onclick="openAddCourseModal()" class="modern-btn px-6 py-2 rounded-xl font-medium" style="font-size: 15px;">
-              <i class="ph ph-plus-circle"></i> 新增課程
+      <!-- ==================== 左侧师资列表侧边栏 (1/4) ==================== -->
+      <aside class="lg:col-span-1 bg-white border-r border-slate-200 overflow-y-auto" style="max-height: 100vh;">
+        <!-- 固定顶部：标题和搜索 -->
+        <div class="sticky top-0 bg-white z-10 border-b border-slate-200 p-6">
+          <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <i class="ph ph-users-three text-2xl"></i>
+            师资列表
+          </h2>
+          <input
+            type="text"
+            id="sidebarTeacherSearch"
+            placeholder="🔍 搜索师资姓名..."
+            oninput="filterSidebarTeachers()"
+            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+          
+          <!-- 快速过滤按钮 -->
+          <div class="mt-3 flex gap-2">
+            <button onclick="filterByStatus('all')" class="flex-1 px-3 py-1.5 text-xs bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-all">
+              全部
             </button>
-            <div class="flex rounded-xl p-1" style="background: rgba(118, 118, 128, 0.12);">
-              <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-900" style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);">
-                <i class="ph ph-calendar"></i> 月
-              </button>
-              <button id="weekViewBtn" onclick="setViewMode('week')" class="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600" style="background: transparent;">
-                <i class="ph ph-chart-bar"></i> 週
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between mb-6">
-          <div class="flex items-center space-x-4">
-            <button onclick="previousPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
-              ← <span id="prevLabel">上個月</span>
+            <button onclick="filterByStatus('达标')" class="flex-1 px-3 py-1.5 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-all">
+              已达标
             </button>
-            <h3 id="currentMonth" class="font-semibold text-gray-800 min-w-[200px] text-center" style="font-size: 19px; font-weight: 600;"></h3>
-            <button onclick="nextPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
-              <span id="nextLabel">下個月</span> →
+            <button onclick="filterByStatus('未达标')" class="flex-1 px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-all">
+              未达标
             </button>
           </div>
-          <button onclick="goToToday()" class="modern-btn px-4 py-2 rounded-xl font-medium" style="font-size: 15px;">
-            🎯 今天
-          </button>
         </div>
 
-        <!-- 行事曆網格 (桌面版) -->
-        <div class="calendar-grid-container bg-white rounded-xl overflow-hidden border border-gray-200" style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);">
-          <!-- 星期標題 -->
-          <div class="grid grid-cols-7" style="background: #007aff;">
-            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">日</div>
-            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">一</div>
-            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">二</div>
-            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">三</div>
-            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">四</div>
-            <div class="p-3 text-center font-semibold text-white border-r border-white/10" style="font-size: 14px;">五</div>
-            <div class="p-3 text-center font-semibold text-white" style="font-size: 14px;">六</div>
-          </div>
-          <!-- 日期網格 -->
-          <div id="calendarGrid" class="grid grid-cols-7"></div>
+        <!-- 师资卡片列表 -->
+        <div id="sidebarTeacherList" class="p-4 space-y-3">
+          <!-- 师资卡片将在这里动态渲染 -->
+        </div>
+      </aside>
+
+      <!-- ==================== 主内容区 (3/4) ==================== -->
+      <main class="lg:col-span-3 overflow-y-auto p-6 pb-20" style="max-height: 100vh;">
+        <!-- 返回首页 -->
+        <div class="mb-6">
+          <a href="index.html" class="inline-flex items-center px-4 py-2.5 font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 shadow-sm hover:shadow transition-all">
+            <i class="ph ph-arrow-left mr-2"></i> 返回首页
+          </a>
         </div>
 
-        <!-- 手機版行事曆列表 -->
-        <div class="mobile-calendar-view bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 p-4">
-          <div id="mobileEventsList" class="space-y-3"></div>
+        <!-- 标题区域 -->
+        <div class="mb-8">
+          <h1 class="text-5xl font-bold text-slate-900 mb-2 tracking-tight">训练排程</h1>
+          <p class="text-lg text-slate-600">智能管理平台 - 现代化设计</p>
         </div>
-      </div>
 
-      <!-- 統計分析區 -->
-      <div id="selectedTeacherBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="text-2xl"><i class="ph ph-chalkboard-teacher"></i></div>
-            <div class="text-white">
-              <p class="text-sm opacity-90">目前檢視師資（再次點選師資可取消）</p>
-              <p id="selectedTeacherName" class="text-xl font-bold"></p>
+        <!-- 同步状态提示 -->
+        <div id="syncStatusBanner" class="card p-4 mb-6 hidden border border-transparent" role="alert" aria-live="polite">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <span id="syncStatusIcon" class="text-2xl">ℹ️</span>
+              <div>
+                <p id="syncStatusText" class="font-semibold text-slate-800"></p>
+                <p id="syncStatusHint" class="text-sm text-slate-600 mt-1" style="display: none;"></p>
+              </div>
             </div>
-          </div>
-          <button onclick="clearTeacherSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
-            <i class="ph ph-x"></i> 清除
-          </button>
-        </div>
-      </div>
-
-      <div id="selectedDateBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="text-2xl"><i class="ph ph-calendar"></i></div>
-            <div class="text-white">
-              <p class="text-sm opacity-90">目前檢視日期（再次點選日期可取消）</p>
-              <p id="selectedDateText" class="text-xl font-bold"></p>
-            </div>
-          </div>
-          <button onclick="clearDateSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
-            ✕ 清除
-          </button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- 總課程數 -->
-        <div class="card p-6 card-hover fade-in">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">總課程數</p>
-              <p id="totalCoursesCount" class="font-bold text-gray-900" style="font-size: 32px; letter-spacing: -0.02em;">0</p>
-            </div>
-            <div style="font-size: 36px;"><i class="ph ph-books"></i></div>
+            <button type="button" onclick="dismissSyncStatus()" class="text-slate-400 hover:text-slate-600 transition" aria-label="关闭提醒">
+              <i class="ph ph-x"></i>
+            </button>
           </div>
         </div>
 
-        <!-- 總時數 -->
-        <div class="card p-6 card-hover fade-in" style="animation-delay: 0.1s">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">總授課時數</p>
-              <p id="totalHoursCount" class="font-bold text-gray-900" style="font-size: 32px; letter-spacing: -0.02em;">0</p>
-            </div>
-            <div style="font-size: 36px;">⏱️</div>
-          </div>
-        </div>
+        <!-- 主内容容器 -->
+        <div class="max-w-7xl mx-auto space-y-6">
 
-        <!-- 本月時數 -->
-        <div class="card p-6 card-hover fade-in" style="animation-delay: 0.2s">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">本月總時數</p>
-              <p id="monthlyHoursCount" class="font-bold text-blue-600" style="font-size: 32px; letter-spacing: -0.02em;">0</p>
-            </div>
-            <div style="font-size: 36px;">📊</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 師資時數分析 -->
-      <div id="teacherHoursAnalysisCard" class="card p-6 fade-in" style="animation-delay: 0.3s">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-chalkboard-teacher"></i> 師資時數分析</h2>
-          <button onclick="toggleTeacherHoursAnalysis()" class="px-4 py-2 font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" style="font-size: 14px;">
-            <span id="toggleAnalysisIcon">👁️</span> <span id="toggleAnalysisText">隱藏</span>
-          </button>
-        </div>
-        <div id="teacherHoursAnalysis">
-          <!-- 達標提醒 -->
-          <div id="targetAchievedAlert" class="mb-4" style="display: none;">
-            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <span class="text-2xl">🎉</span>
+          <!-- ==================== 动态统计卡片区 ==================== -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in">
+            <!-- 总课程数 -->
+            <div class="stat-card card-hover">
+              <div class="flex items-center justify-between">
+                <div class="relative z-10">
+                  <p class="text-slate-600 mb-1 text-sm font-medium">总课程数</p>
+                  <p id="totalCoursesCount" class="text-4xl font-bold text-slate-900">0</p>
                 </div>
-                <div class="ml-3">
-                  <p class="text-sm font-medium text-green-800">
-                    恭喜！本月有 <span id="targetAchievedCount" class="font-bold text-green-900"></span> 位師資已達標 12 小時
-                  </p>
+                <div class="text-5xl opacity-60">
+                  <i class="ph ph-books"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- 总授课时数 -->
+            <div class="stat-card card-hover emerald">
+              <div class="flex items-center justify-between">
+                <div class="relative z-10">
+                  <p class="text-emerald-700 mb-1 text-sm font-medium">总授课时数</p>
+                  <p id="totalHoursCount" class="text-4xl font-bold text-emerald-900">0</p>
+                </div>
+                <div class="text-5xl text-emerald-500 opacity-60">
+                  <i class="ph ph-clock"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- 本月时数 -->
+            <div class="stat-card card-hover blue">
+              <div class="flex items-center justify-between">
+                <div class="relative z-10">
+                  <p class="text-blue-700 mb-1 text-sm font-medium">本月总时数</p>
+                  <p id="monthlyHoursCount" class="text-4xl font-bold text-blue-900">0</p>
+                </div>
+                <div class="text-5xl text-blue-500 opacity-60">
+                  <i class="ph ph-chart-bar"></i>
                 </div>
               </div>
             </div>
           </div>
-          <!-- 搜尋框 -->
-          <div class="mb-4">
-            <input type="text" id="teacherSearchInput"
-                   placeholder="🔍 搜尋師資姓名..."
-                   oninput="filterTeachers()"
-                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                   style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          </div>
-          <!-- 師資列表 -->
-          <div id="teacherHoursList" class="space-y-4">
-            <!-- 師資時數條將在這裡顯示 -->
-          </div>
-          <!-- 顯示更多按鈕 -->
-          <div id="showMoreContainer" class="mt-4 text-center" style="display: none;">
-            <button onclick="toggleShowAllTeachers()" class="px-6 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
-              <span id="showMoreText">顯示更多</span> <span id="showMoreIcon">▼</span>
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <!-- 課程類型分佈 -->
-      <div class="card p-6 fade-in" style="animation-delay: 0.4s">
-        <h2 class="text-gray-900 mb-6" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;">📊 課程類型分佈</h2>
-        <div style="position: relative; height: 300px; max-width: 600px; margin: 0 auto;">
-          <canvas id="courseTypeChart"></canvas>
-        </div>
-      </div>
+          <!-- ==================== 师资筛选横幅 ==================== -->
+          <div id="selectedTeacherBanner" class="card p-5 fade-in" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="text-3xl text-white">
+                  <i class="ph ph-funnel"></i>
+                </div>
+                <div class="text-white">
+                  <p class="text-sm opacity-90">筛选师资</p>
+                  <p id="selectedTeacherName" class="text-xl font-bold"></p>
+                </div>
+              </div>
+              <button onclick="clearTeacherSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-all backdrop-blur-sm">
+                <i class="ph ph-x"></i> 清除
+              </button>
+            </div>
+          </div>
 
-      <!-- 課程總覽 -->
-      <div class="card p-6 fade-in" style="animation-delay: 0.5s">
-        <div class="flex items-center justify-between mb-6">
-          <h2 id="courseOverviewTitle" class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-calendar"></i> 今日課程總覽</h2>
-          <div class="text-gray-600" id="todayDate" style="font-size: 14px;"></div>
+          <!-- 日期筛选横幅 -->
+          <div id="selectedDateBanner" class="card p-5 fade-in" style="display: none; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="text-3xl text-white">
+                  <i class="ph ph-calendar-check"></i>
+                </div>
+                <div class="text-white">
+                  <p class="text-sm opacity-90">筛选日期</p>
+                  <p id="selectedDateText" class="text-xl font-bold"></p>
+                </div>
+              </div>
+              <button onclick="clearDateSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-all backdrop-blur-sm">
+                <i class="ph ph-x"></i> 清除
+              </button>
+            </div>
+          </div>
+
+          <!-- ==================== 课程行事历 ==================== -->
+          <div class="card p-6 fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+              <div class="flex items-center gap-3">
+                <h2 class="text-2xl font-bold text-slate-900">
+                  <i class="ph ph-calendar"></i> 课程行事历
+                </h2>
+                <button id="calendarToggleBtn" onclick="toggleCalendar()" class="p-2 hover:bg-slate-100 rounded-lg transition-all">
+                  <i id="calendarToggleIcon" class="ph ph-caret-up text-slate-600"></i>
+                </button>
+              </div>
+              <div class="flex items-center gap-3">
+                <button onclick="openAddCourseModal()" class="modern-btn">
+                  <i class="ph ph-plus-circle"></i> 新增课程
+                </button>
+                <div class="flex rounded-xl p-1 bg-slate-100">
+                  <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-slate-900 shadow-sm">
+                    <i class="ph ph-calendar"></i> 月
+                  </button>
+                  <button id="weekViewBtn" onclick="setViewMode('week')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600">
+                    <i class="ph ph-chart-bar"></i> 周
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 行事历容器（可展开/收合）-->
+            <div id="calendarContainer" class="calendar-expanded">
+              <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                  <button onclick="previousPeriod()" class="btn-secondary px-4 py-2 rounded-xl font-medium">
+                    <i class="ph ph-caret-left"></i> <span id="prevLabel">上个月</span>
+                  </button>
+                  <h3 id="currentMonth" class="font-semibold text-slate-800 min-w-[200px] text-center text-lg"></h3>
+                  <button onclick="nextPeriod()" class="btn-secondary px-4 py-2 rounded-xl font-medium">
+                    <span id="nextLabel">下个月</span> <i class="ph ph-caret-right"></i>
+                  </button>
+                </div>
+                <button onclick="goToToday()" class="modern-btn">
+                  <i class="ph ph-crosshair"></i> 今天
+                </button>
+              </div>
+
+              <!-- 行事历网格 (桌面版) -->
+              <div class="calendar-grid-container bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                <!-- 星期标题 -->
+                <div class="grid grid-cols-7 bg-gradient-to-r from-blue-500 to-blue-600">
+                  <div class="p-3 text-center font-semibold text-white border-r border-white/10">日</div>
+                  <div class="p-3 text-center font-semibold text-white border-r border-white/10">一</div>
+                  <div class="p-3 text-center font-semibold text-white border-r border-white/10">二</div>
+                  <div class="p-3 text-center font-semibold text-white border-r border-white/10">三</div>
+                  <div class="p-3 text-center font-semibold text-white border-r border-white/10">四</div>
+                  <div class="p-3 text-center font-semibold text-white border-r border-white/10">五</div>
+                  <div class="p-3 text-center font-semibold text-white">六</div>
+                </div>
+                <!-- 日期网格 -->
+                <div id="calendarGrid" class="grid grid-cols-7"></div>
+              </div>
+
+              <!-- 手机版行事历列表 -->
+              <div class="mobile-calendar-view bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 p-4">
+                <div id="mobileEventsList" class="space-y-3"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== 课程类型分布（SVG 甜甜圈图）==================== -->
+          <div class="card p-6 fade-in">
+            <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <i class="ph ph-chart-donut"></i> 课程类型分布
+            </h2>
+            <div class="flex flex-col md:flex-row items-center justify-center gap-8">
+              <!-- SVG 甜甜圈图 -->
+              <div class="donut-chart-container">
+                <svg id="donutChart" width="280" height="280" viewBox="0 0 280 280">
+                  <!-- 甜甜圈图将在这里动态渲染 -->
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div class="text-center">
+                    <div id="donutCenterCount" class="text-4xl font-bold text-slate-900">0</div>
+                    <div class="text-sm text-slate-600">总课程</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 图例 -->
+              <div id="donutLegend" class="chart-legend flex-col">
+                <!-- 图例将在这里动态渲染 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== 个人剩余时数卡片（渐变背景）==================== -->
+          <div id="remainingHoursCard" class="hours-card fade-in" style="display: none;">
+            <div class="flex items-center justify-between relative z-10">
+              <div>
+                <p class="text-white/80 text-sm mb-2">本月剩余时数</p>
+                <h3 id="remainingHoursTeacher" class="text-2xl font-bold text-white mb-1"></h3>
+                <p id="remainingHoursValue" class="text-5xl font-bold text-white"></p>
+                <p class="text-white/70 text-sm mt-2">目标：12 小时/月</p>
+              </div>
+
+              <!-- 环形进度图 -->
+              <svg class="hours-progress-ring" viewBox="0 0 120 120">
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.2)"
+                  stroke-width="8"
+                />
+                <circle
+                  id="progressCircle"
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="8"
+                  stroke-linecap="round"
+                  stroke-dasharray="326.7"
+                  stroke-dashoffset="326.7"
+                  transform="rotate(-90 60 60)"
+                  style="transition: stroke-dashoffset 1s ease;"
+                />
+                <text x="60" y="65" text-anchor="middle" fill="white" font-size="24" font-weight="bold" id="progressPercent">0%</text>
+              </svg>
+            </div>
+          </div>
+
+          <!-- ==================== 现代化课程列表 ==================== -->
+          <div class="card p-6 fade-in">
+            <div class="flex items-center justify-between mb-6">
+              <h2 id="courseOverviewTitle" class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <i class="ph ph-list-bullets"></i> 今日课程总览
+              </h2>
+              <div class="text-slate-600" id="todayDate"></div>
+            </div>
+            <div id="todayCoursesContainer" class="space-y-3">
+              <!-- 课程项将在这里显示 -->
+            </div>
+          </div>
+
         </div>
-        <div id="todayCoursesContainer" class="space-y-3">
-          <!-- 課程將在這裡顯示 -->
-        </div>
-      </div>
+      </main>
+
     </div>
   </div>
 
-  <!-- 新增課程 Modal -->
-  <div id="addCourseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-    <div class="modal-card">
+  <!-- ==================== Modals ==================== -->
 
-      <!-- Modal 頭部 -->
+  <!-- 新增课程 Modal -->
+  <div id="addCourseModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+    <div class="modal-card">
+      <!-- Modal 头部 -->
       <div class="modal-header">
-        <h3><i class="ph ph-books"></i> 新增課程</h3>
+        <h3><i class="ph ph-plus-circle"></i> 新增课程</h3>
       </div>
 
-      <!-- Modal 內容區（可滾動） -->
+      <!-- Modal 内容区 -->
       <div class="modal-content">
         <form id="courseForm" class="space-y-4">
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇師資</label>
-          <select id="courseTeacherId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-            <option value="">請選擇師資</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程名稱</label>
-          <select id="courseName" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-            <option value="">請選擇課程</option>
-          </select>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程日期</label>
-            <input type="date" id="courseDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-          </div>
-          <div>
-            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程類型</label>
-            <select id="courseType" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-              <option value="正課">正課</option>
-              <option value="補課">補課</option>
-              <option value="實驗課">實驗課</option>
-              <option value="實作課">實作課</option>
-              <option value="專題">專題</option>
+            <label class="block font-semibold text-slate-700 mb-2">选择师资</label>
+            <select id="courseTeacherId" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+              <option value="">请选择师资</option>
             </select>
           </div>
-        </div>
 
-        <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">開始時間</label>
-            <input type="time" id="startTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
+            <label class="block font-semibold text-slate-700 mb-2">课程名称</label>
+            <select id="courseName" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+              <option value="">请选择课程</option>
+            </select>
           </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-2">课程日期</label>
+              <input type="date" id="courseDate" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-2">课程类型</label>
+              <select id="courseType" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                <option value="正课">正课</option>
+                <option value="补课">补课</option>
+                <option value="实验课">实验课</option>
+                <option value="实作课">实作课</option>
+                <option value="专题">专题</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-2">开始时间</label>
+              <input type="time" id="startTime" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-2">结束时间</label>
+              <input type="time" id="endTime" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+            </div>
+          </div>
+
           <div>
-            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">結束時間</label>
-            <input type="time" id="endTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
+            <label class="block font-semibold text-slate-700 mb-2">状态</label>
+            <select id="courseStatus" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+              <option value="上班">上班</option>
+              <option value="休假">休假</option>
+              <option value="出差">出差</option>
+            </select>
           </div>
-        </div>
 
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">狀態</label>
-          <select id="courseStatus" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-            <option value="上班">上班</option>
-            <option value="休假">休假</option>
-            <option value="出差">出差</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">備註</label>
-          <textarea id="courseNote" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="選填：課程相關備註..." style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);"></textarea>
-        </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-2">备注</label>
+            <textarea id="courseNote" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="选填：课程相关备注..."></textarea>
+          </div>
         </form>
       </div>
 
-      <!-- Modal 底部按鈕區（固定） -->
+      <!-- Modal 底部 -->
       <div class="modal-footer">
-        <div class="flex justify-end space-x-4">
-          <button type="button" onclick="closeAddCourseModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <div class="flex justify-end gap-3">
+          <button type="button" onclick="closeAddCourseModal()" class="btn-secondary px-6 py-3 rounded-xl font-semibold">
             取消
           </button>
-          <button type="button" onclick="document.getElementById('courseForm').requestSubmit()" class="modern-btn px-6 py-3 rounded-xl font-medium" style="font-size: 15px;">
-            確認新增
+          <button type="button" onclick="document.getElementById('courseForm').requestSubmit()" class="modern-btn px-6 py-3">
+            <i class="ph ph-check-circle"></i> 确认新增
           </button>
         </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- iOS 風格的彈出式操作選單 -->
-  <div class="context-menu-overlay" id="contextMenuOverlay" onclick="closeContextMenu()">
-    <div class="context-menu-popup" onclick="event.stopPropagation()">
-      <div class="menu-option" onclick="copyCourseToClipboard(); closeContextMenu();">
-        <span>複製</span>
-        <svg viewBox="0 0 24 24">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-        </svg>
-      </div>
-      <div class="menu-option" onclick="openDuplicateDateModal(); closeContextMenu();">
-        <span>複製到其他日期</span>
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="16" y1="2" x2="16" y2="6"></line>
-          <line x1="8" y1="2" x2="8" y2="6"></line>
-          <line x1="3" y1="10" x2="21" y2="10"></line>
-          <line x1="12" y1="14" x2="12" y2="18"></line>
-          <line x1="10" y1="16" x2="14" y2="16"></line>
-        </svg>
-      </div>
-      <div class="menu-option" onclick="shareCourse(); closeContextMenu();">
-        <span>分享</span>
-        <svg viewBox="0 0 24 24">
-          <circle cx="18" cy="5" r="3"></circle>
-          <circle cx="6" cy="12" r="3"></circle>
-          <circle cx="18" cy="19" r="3"></circle>
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-        </svg>
-      </div>
-      <div class="menu-option" onclick="openSurveyManagement(editingCourseId); closeContextMenu();">
-        <span>問卷管理</span>
-        <svg viewBox="0 0 24 24">
-          <line x1="18" y1="20" x2="18" y2="10"></line>
-          <line x1="12" y1="20" x2="12" y2="4"></line>
-          <line x1="6" y1="20" x2="6" y2="14"></line>
-        </svg>
-      </div>
-      <div class="menu-option menu-option-danger" onclick="confirmDeleteCourse(); closeContextMenu();">
-        <span>刪除</span>
-        <svg viewBox="0 0 24 24">
-          <polyline points="3 6 5 6 21 6"></polyline>
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          <line x1="10" y1="11" x2="10" y2="17"></line>
-          <line x1="14" y1="11" x2="14" y2="17"></line>
-        </svg>
       </div>
     </div>
   </div>
 
-  <!-- 複製到其他日期 Modal -->
-  <div id="duplicateDateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[60] p-4">
-    <div class="modal-card" style="max-width: 480px;">
-
-      <!-- Modal 頭部 -->
-      <div class="modal-header">
-        <h3><i class="ph ph-calendar"></i> 複製到其他日期</h3>
-      </div>
-
-      <!-- Modal 內容區（可滾動） -->
-      <div class="modal-content">
-        <div class="space-y-4">
-          <div>
-            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇新日期</label>
-            <input type="date" id="duplicateNewDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px;" required>
-          </div>
-
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p class="text-sm text-blue-800">
-              <svg class="modal-icon modal-icon-sm"><use href="#icon-lightbulb"></use></svg>
-              課程將會保留所有資訊（師資、時間、備註等），僅更改日期。
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal 底部按鈕區（固定） -->
-      <div class="modal-footer">
-        <div class="flex justify-end space-x-4">
-          <button onclick="closeDuplicateDateModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px;">
-            取消
-          </button>
-          <button onclick="confirmDuplicateCourse()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px;">
-            確認複製
-          </button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- 查看/編輯課程詳情 Modal -->
-  <div id="viewEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+  <!-- 查看/编辑课程 Modal -->
+  <div id="viewEventModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
     <div class="modal-card">
-
-      <!-- Modal 頭部 -->
+      <!-- Modal 头部 -->
       <div class="modal-header">
-        <h3 id="modalTitle"><i class="ph ph-calendar"></i> 課程詳情</h3>
+        <h3 id="modalTitle"><i class="ph ph-info"></i> 课程详情</h3>
       </div>
 
-      <!-- Modal 內容區（可滾動） -->
+      <!-- Modal 内容区 -->
       <div class="modal-content">
         <!-- 查看模式 -->
         <div id="viewMode" class="space-y-4"></div>
 
-        <!-- 編輯模式 -->
+        <!-- 编辑模式 -->
         <form id="editCourseForm" class="space-y-4" style="display: none;">
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇師資</label>
-          <select id="editTeacherId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-            <option value="">請選擇師資</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程名稱</label>
-          <input type="text" id="editCourseName" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程日期</label>
-            <input type="date" id="editCourseDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-          </div>
-          <div>
-            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程類型</label>
-            <select id="editCourseType" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-              <option value="正課">正課</option>
-              <option value="補課">補課</option>
-              <option value="實驗課">實驗課</option>
-              <option value="實作課">實作課</option>
-              <option value="專題">專題</option>
+            <label class="block font-semibold text-slate-700 mb-2">选择师资</label>
+            <select id="editTeacherId" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+              <option value="">请选择师资</option>
             </select>
           </div>
-        </div>
 
-        <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">開始時間</label>
-            <input type="time" id="editStartTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
+            <label class="block font-semibold text-slate-700 mb-2">课程名称</label>
+            <input type="text" id="editCourseName" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
           </div>
-          <div>
-            <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">結束時間</label>
-            <input type="time" id="editEndTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-          </div>
-        </div>
 
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">狀態</label>
-          <select id="editCourseStatus" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-            <option value="上班">上班</option>
-            <option value="休假">休假</option>
-            <option value="出差">出差</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">備註</label>
-          <textarea id="editCourseNote" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="選填：課程相關備註..." style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onblur="autoGenerateTags()"></textarea>
-
-          <!-- 自動生成的標籤 -->
-          <div class="mt-3">
-            <div class="flex items-center justify-between mb-2">
-              <label class="block font-medium text-gray-700" style="font-size: 13px;">
-                <svg class="modal-icon modal-icon-sm"><use href="#icon-tag"></use></svg>
-                自動標籤
-              </label>
-              <button type="button" onclick="autoGenerateTags()" class="text-xs" style="color: var(--apple-blue);">重新生成</button>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-2">课程日期</label>
+              <input type="date" id="editCourseDate" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
             </div>
-            <div id="autoTagsContainer" class="flex flex-wrap gap-2"></div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-2">课程类型</label>
+              <select id="editCourseType" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                <option value="正课">正课</option>
+                <option value="补课">补课</option>
+                <option value="实验课">实验课</option>
+                <option value="实作课">实作课</option>
+                <option value="专题">专题</option>
+              </select>
+            </div>
           </div>
-        </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-2">开始时间</label>
+              <input type="time" id="editStartTime" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-2">结束时间</label>
+              <input type="time" id="editEndTime" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-2">状态</label>
+            <select id="editCourseStatus" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+              <option value="上班">上班</option>
+              <option value="休假">休假</option>
+              <option value="出差">出差</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-2">备注</label>
+            <textarea id="editCourseNote" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="选填：课程相关备注..."></textarea>
+          </div>
         </form>
       </div>
 
-      <!-- Modal 底部按鈕區（固定） -->
+      <!-- Modal 底部 -->
       <div class="modal-footer">
-        <!-- 查看模式按鈕 -->
-        <div id="viewModeButtons">
-          <div class="flex flex-wrap gap-3 items-center">
-            <button onclick="toggleContextMenu()" class="apple-btn apple-btn-secondary" style="margin-right: auto;">
-              <svg class="modal-icon"><use href="#icon-more"></use></svg>
-              更多
-            </button>
-
-            <button onclick="closeViewEventModal()" class="apple-btn apple-btn-secondary">
-              關閉
-            </button>
-            <button onclick="enterEditMode()" class="apple-btn apple-btn-primary">
-              <svg class="modal-icon"><use href="#icon-edit"></use></svg>
-              編輯
-            </button>
-          </div>
+        <!-- 查看模式按钮 -->
+        <div id="viewModeButtons" class="flex flex-wrap gap-3 items-center">
+          <button onclick="openEvaluationModal()" class="btn-secondary flex-1">
+            <i class="ph ph-star"></i> 课程评鉴
+          </button>
+          <button onclick="closeViewEventModal()" class="btn-secondary">
+            关闭
+          </button>
+          <button onclick="enterEditMode()" class="modern-btn">
+            <i class="ph ph-pencil"></i> 编辑
+          </button>
         </div>
 
-        <!-- 編輯模式按鈕 -->
-        <div id="editModeButtons" class="flex justify-end space-x-4" style="display: none;">
-          <button onclick="cancelEditMode()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <!-- 编辑模式按钮 -->
+        <div id="editModeButtons" class="flex justify-end gap-3" style="display: none;">
+          <button onclick="cancelEditMode()" class="btn-secondary px-6 py-3">
             取消
           </button>
-          <button onclick="saveEditedCourse()" class="modern-btn px-6 py-3 rounded-xl font-medium" style="font-size: 15px;">
-            <svg class="modal-icon"><use href="#icon-save"></use></svg>
-            儲存變更
+          <button onclick="saveEditedCourse()" class="modern-btn px-6 py-3">
+            <i class="ph ph-check-circle"></i> 保存变更
           </button>
         </div>
       </div>
+    </div>
+  </div>
 
+  <!-- ==================== 课程评鉴 Modal ==================== -->
+  <div id="evaluationModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+    <div class="modal-card">
+      <!-- Modal 头部 -->
+      <div class="modal-header">
+        <h3><i class="ph ph-star"></i> 课程评鉴</h3>
+      </div>
+
+      <!-- Modal 内容区 -->
+      <div class="modal-content">
+        <!-- 整体评分 -->
+        <div class="evaluation-section">
+          <h4 class="text-lg font-bold text-slate-900 mb-3">整体评分</h4>
+          <div class="flex items-center justify-center gap-2 mb-4">
+            <div class="rating-stars" id="overallRating">
+              <span class="rating-star" data-value="1">★</span>
+              <span class="rating-star" data-value="2">★</span>
+              <span class="rating-star" data-value="3">★</span>
+              <span class="rating-star" data-value="4">★</span>
+              <span class="rating-star" data-value="5">★</span>
+            </div>
+          </div>
+          <p id="ratingText" class="text-center text-slate-600 text-sm">请选择评分</p>
+        </div>
+
+        <!-- 详细评分标准 -->
+        <div class="evaluation-section">
+          <h4 class="text-lg font-bold text-slate-900 mb-4">详细评分（1-5分）</h4>
+          <div class="evaluation-criteria">
+            <!-- 教学内容 -->
+            <div class="criteria-item">
+              <span class="criteria-label">教学内容充实度</span>
+              <div class="criteria-score" id="contentScore">
+                <button class="score-btn" data-criteria="content" data-score="1">1</button>
+                <button class="score-btn" data-criteria="content" data-score="2">2</button>
+                <button class="score-btn" data-criteria="content" data-score="3">3</button>
+                <button class="score-btn" data-criteria="content" data-score="4">4</button>
+                <button class="score-btn" data-criteria="content" data-score="5">5</button>
+              </div>
+            </div>
+
+            <!-- 教学方法 -->
+            <div class="criteria-item">
+              <span class="criteria-label">教学方法有效性</span>
+              <div class="criteria-score" id="methodScore">
+                <button class="score-btn" data-criteria="method" data-score="1">1</button>
+                <button class="score-btn" data-criteria="method" data-score="2">2</button>
+                <button class="score-btn" data-criteria="method" data-score="3">3</button>
+                <button class="score-btn" data-criteria="method" data-score="4">4</button>
+                <button class="score-btn" data-criteria="method" data-score="5">5</button>
+              </div>
+            </div>
+
+            <!-- 师生互动 -->
+            <div class="criteria-item">
+              <span class="criteria-label">师生互动质量</span>
+              <div class="criteria-score" id="interactionScore">
+                <button class="score-btn" data-criteria="interaction" data-score="1">1</button>
+                <button class="score-btn" data-criteria="interaction" data-score="2">2</button>
+                <button class="score-btn" data-criteria="interaction" data-score="3">3</button>
+                <button class="score-btn" data-criteria="interaction" data-score="4">4</button>
+                <button class="score-btn" data-criteria="interaction" data-score="5">5</button>
+              </div>
+            </div>
+
+            <!-- 教材使用 -->
+            <div class="criteria-item">
+              <span class="criteria-label">教材使用适当性</span>
+              <div class="criteria-score" id="materialScore">
+                <button class="score-btn" data-criteria="material" data-score="1">1</button>
+                <button class="score-btn" data-criteria="material" data-score="2">2</button>
+                <button class="score-btn" data-criteria="material" data-score="3">3</button>
+                <button class="score-btn" data-criteria="material" data-score="4">4</button>
+                <button class="score-btn" data-criteria="material" data-score="5">5</button>
+              </div>
+            </div>
+
+            <!-- 时间管理 -->
+            <div class="criteria-item">
+              <span class="criteria-label">时间管理能力</span>
+              <div class="criteria-score" id="timeScore">
+                <button class="score-btn" data-criteria="time" data-score="1">1</button>
+                <button class="score-btn" data-criteria="time" data-score="2">2</button>
+                <button class="score-btn" data-criteria="time" data-score="3">3</button>
+                <button class="score-btn" data-criteria="time" data-score="4">4</button>
+                <button class="score-btn" data-criteria="time" data-score="5">5</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 文字评语 -->
+        <div class="evaluation-section">
+          <h4 class="text-lg font-bold text-slate-900 mb-3">文字评语</h4>
+          <textarea
+            id="evaluationComment"
+            rows="4"
+            class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+            placeholder="请输入您对本次课程的建议和评语..."></textarea>
+        </div>
+
+        <!-- 评鉴结果摘要 -->
+        <div id="evaluationSummary" class="evaluation-section" style="display: none;">
+          <h4 class="text-lg font-bold text-slate-900 mb-3">评鉴摘要</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200">
+              <p class="text-sm text-slate-600 mb-1">综合得分</p>
+              <p id="summaryAverage" class="text-3xl font-bold text-blue-600">-</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200">
+              <p class="text-sm text-slate-600 mb-1">评鉴等级</p>
+              <p id="summaryGrade" class="text-3xl font-bold text-emerald-600">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal 底部 -->
+      <div class="modal-footer">
+        <div class="flex justify-end gap-3">
+          <button onclick="closeEvaluationModal()" class="btn-secondary px-6 py-3">
+            取消
+          </button>
+          <button onclick="submitEvaluation()" class="modern-btn px-6 py-3">
+            <i class="ph ph-check-circle"></i> 提交评鉴
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 复制到其他日期 Modal -->
+  <div id="duplicateDateModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3><i class="ph ph-copy"></i> 复制到其他日期</h3>
+      </div>
+      <div class="modal-content">
+        <div class="space-y-4">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-2">选择新日期</label>
+            <input type="date" id="duplicateNewDate" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
+          </div>
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <p class="text-sm text-blue-800">
+              <i class="ph ph-info mr-2"></i>
+              课程将会保留所有信息（师资、时间、备注等），仅更改日期。
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="flex justify-end gap-3">
+          <button onclick="closeDuplicateDateModal()" class="btn-secondary px-6 py-3">
+            取消
+          </button>
+          <button onclick="confirmDuplicateCourse()" class="modern-btn px-6 py-3">
+            <i class="ph ph-check-circle"></i> 确认复制
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS 风格的弹出式操作菜单 -->
+  <div class="context-menu-overlay" id="contextMenuOverlay" onclick="closeContextMenu()" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 9999; display: none; opacity: 0; transition: opacity 0.2s;">
+    <div class="context-menu-popup" onclick="event.stopPropagation()" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 320px; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+      <div class="menu-option" onclick="copyCourseToClipboard(); closeContextMenu();" style="padding: 16px 20px; border-bottom: 1px solid var(--slate-200); cursor: pointer; transition: background 0.1s;">
+        <span>复制</span>
+        <i class="ph ph-copy"></i>
+      </div>
+      <div class="menu-option" onclick="openDuplicateDateModal(); closeContextMenu();" style="padding: 16px 20px; border-bottom: 1px solid var(--slate-200); cursor: pointer; transition: background 0.1s;">
+        <span>复制到其他日期</span>
+        <i class="ph ph-calendar-plus"></i>
+      </div>
+      <div class="menu-option" onclick="shareCourse(); closeContextMenu();" style="padding: 16px 20px; border-bottom: 1px solid var(--slate-200); cursor: pointer; transition: background 0.1s;">
+        <span>分享</span>
+        <i class="ph ph-share-network"></i>
+      </div>
+      <div class="menu-option" onclick="confirmDeleteCourse(); closeContextMenu();" style="padding: 16px 20px; cursor: pointer; transition: background 0.1s; color: var(--red-500);">
+        <span>删除</span>
+        <i class="ph ph-trash"></i>
+      </div>
     </div>
   </div>
 
   <script>
-    // ==================== 資料管理 ====================
+    // ==================== 数据管理 ====================
     const loadArray = typeof loadArrayFromStorage === 'function'
       ? loadArrayFromStorage
       : function fallbackLoadArray(key, normalizer) {
           const raw = localStorage.getItem(key);
           if (!raw) return [];
-
           try {
             const parsed = JSON.parse(raw);
             if (!Array.isArray(parsed)) return [];
             return typeof normalizer === 'function' ? parsed.map(normalizer) : parsed;
           } catch (error) {
-            console.warn(`⚠️ 無法解析 ${key}：`, error);
+            console.warn('⚠️ 无法解析 ' + key + '：', error);
             return [];
           }
         };
@@ -1395,7 +1286,448 @@
     let selectedTeacherId = null;
     let editingCourseId = null;
     let selectedDate = null;
+    let currentCourseId = null;
+    let sidebarFilterStatus = 'all';
+    let isCalendarExpanded = true;
+    let evaluationData = {};
 
+    function saveData() {
+      try {
+        localStorage.setItem('teachers', JSON.stringify(teachers));
+        localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+        localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+        if (typeof syncToServer === 'function') {
+          syncToServer();
+        }
+      } catch (error) {
+        console.error('保存数据失败:', error);
+      }
+    }
+
+    // ==================== 新功能：师资侧边栏渲染 ====================
+    function renderSidebarTeachers() {
+      const container = document.getElementById('sidebarTeacherList');
+      if (!container) return;
+
+      const thisMonth = new Date().toISOString().slice(0, 7);
+      const teachersWithHours = teachers.map(teacher => {
+        const courses = courseAssignments.filter(c =>
+          c.teacherId === teacher.id &&
+          c.date.startsWith(thisMonth)
+        );
+        const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
+        const targetHours = teacher.targetHours || 12;
+        const remainingHours = Math.max(0, targetHours - hours);
+        const status = hours >= targetHours ? '达标' : '未达标';
+        
+        return { teacher, hours, courses: courses.length, remainingHours, status };
+      });
+
+      const searchQuery = (document.getElementById('sidebarTeacherSearch')?.value || '').toLowerCase();
+      let filteredTeachers = teachersWithHours.filter(item =>
+        item.teacher.name.toLowerCase().includes(searchQuery)
+      );
+
+      if (sidebarFilterStatus !== 'all') {
+        filteredTeachers = filteredTeachers.filter(item => item.status === sidebarFilterStatus);
+      }
+
+      filteredTeachers.sort((a, b) => {
+        if (a.status !== b.status) {
+          return a.status === '未达标' ? -1 : 1;
+        }
+        return b.remainingHours - a.remainingHours;
+      });
+
+      if (filteredTeachers.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-8 text-sm">未找到匹配的师资</p>';
+        return;
+      }
+
+      container.innerHTML = filteredTeachers.map(item => {
+        const isSelected = selectedTeacherId === item.teacher.id;
+        const percentage = Math.min((item.hours / (item.teacher.targetHours || 12)) * 100, 100);
+        const statusColor = item.status === '达标' ? 'emerald' : 'red';
+        const initials = item.teacher.name.charAt(0);
+
+        return '<div class="teacher-card ' + (isSelected ? 'selected' : '') + '" onclick="selectTeacher(' + item.teacher.id + ')">' +
+          '<div class="flex items-center gap-3 mb-2">' +
+            '<div class="teacher-avatar">' + initials + '</div>' +
+            '<div class="flex-1 min-w-0">' +
+              '<h4 class="font-bold text-slate-900 truncate">' + item.teacher.name + '</h4>' +
+              '<p class="text-xs text-slate-600">' + item.courses + ' 门课程</p>' +
+            '</div>' +
+            '<span class="px-2 py-1 text-xs font-semibold rounded-lg bg-' + statusColor + '-100 text-' + statusColor + '-700">' +
+              item.status +
+            '</span>' +
+          '</div>' +
+          '<div class="space-y-1.5">' +
+            '<div class="flex justify-between text-xs text-slate-600">' +
+              '<span>本月时数</span>' +
+              '<span class="font-bold text-slate-900">' + item.hours.toFixed(1) + 'h / ' + (item.teacher.targetHours || 12) + 'h</span>' +
+            '</div>' +
+            '<div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">' +
+              '<div class="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full transition-all duration-500" style="width: ' + percentage + '%"></div>' +
+            '</div>' +
+            (item.status === '未达标' ? '<p class="text-xs text-slate-600 mt-1"><i class="ph ph-clock"></i> 还需 ' + item.remainingHours.toFixed(1) + ' 小时</p>' : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function filterSidebarTeachers() {
+      renderSidebarTeachers();
+    }
+
+    function filterByStatus(status) {
+      sidebarFilterStatus = status;
+      renderSidebarTeachers();
+    }
+
+    // ==================== 新功能：SVG 甜甜圈图 ====================
+    function renderDonutChart() {
+      const svg = document.getElementById('donutChart');
+      const legendContainer = document.getElementById('donutLegend');
+      const centerCount = document.getElementById('donutCenterCount');
+      
+      if (!svg || !legendContainer || !centerCount) return;
+
+      let filteredCourses = courseAssignments;
+      if (selectedTeacherId) {
+        filteredCourses = courseAssignments.filter(c => c.teacherId === selectedTeacherId);
+      }
+      if (selectedDate) {
+        filteredCourses = filteredCourses.filter(c => c.date === selectedDate);
+      }
+
+      const typeCount = {};
+      const typeColors = {
+        '正课': '#3b82f6',
+        '补课': '#f59e0b',
+        '实验课': '#a855f7',
+        '实作课': '#10b981',
+        '专题': '#ef4444'
+      };
+
+      filteredCourses.forEach(course => {
+        const type = course.type || '其他';
+        typeCount[type] = (typeCount[type] || 0) + 1;
+      });
+
+      const total = filteredCourses.length;
+      centerCount.textContent = total;
+
+      if (total === 0) {
+        svg.innerHTML = '<text x="140" y="140" text-anchor="middle" fill="#94a3b8" font-size="14">暂无数据</text>';
+        legendContainer.innerHTML = '<p class="text-slate-500 text-sm">暂无课程数据</p>';
+        return;
+      }
+
+      const radius = 100;
+      const innerRadius = 70;
+      const cx = 140;
+      const cy = 140;
+      let currentAngle = -90;
+      let segments = '';
+      let legends = '';
+
+      Object.entries(typeCount).forEach(([type, count]) => {
+        const percentage = (count / total) * 100;
+        const angle = (count / total) * 360;
+        const endAngle = currentAngle + angle;
+
+        const startX = cx + radius * Math.cos((currentAngle * Math.PI) / 180);
+        const startY = cy + radius * Math.sin((currentAngle * Math.PI) / 180);
+        const endX = cx + radius * Math.cos((endAngle * Math.PI) / 180);
+        const endY = cy + radius * Math.sin((endAngle * Math.PI) / 180);
+
+        const innerStartX = cx + innerRadius * Math.cos((currentAngle * Math.PI) / 180);
+        const innerStartY = cy + innerRadius * Math.sin((currentAngle * Math.PI) / 180);
+        const innerEndX = cx + innerRadius * Math.cos((endAngle * Math.PI) / 180);
+        const innerEndY = cy + innerRadius * Math.sin((endAngle * Math.PI) / 180);
+
+        const largeArcFlag = angle > 180 ? 1 : 0;
+
+        const pathData = 'M ' + startX + ' ' + startY +
+          ' A ' + radius + ' ' + radius + ' 0 ' + largeArcFlag + ' 1 ' + endX + ' ' + endY +
+          ' L ' + innerEndX + ' ' + innerEndY +
+          ' A ' + innerRadius + ' ' + innerRadius + ' 0 ' + largeArcFlag + ' 0 ' + innerStartX + ' ' + innerStartY +
+          ' Z';
+
+        const color = typeColors[type] || '#64748b';
+        segments += '<path d="' + pathData + '" fill="' + color + '" class="donut-segment" opacity="0.9"><title>' + type + ': ' + count + ' 门 (' + percentage.toFixed(1) + '%)</title></path>';
+
+        legends += '<div class="legend-item">' +
+          '<div class="legend-color" style="background: ' + color + ';"></div>' +
+          '<span class="text-sm text-slate-700 font-medium">' + type + '</span>' +
+          '<span class="text-sm font-bold text-slate-900">' + count + '</span>' +
+        '</div>';
+
+        currentAngle = endAngle;
+      });
+
+      svg.innerHTML = segments;
+      legendContainer.innerHTML = legends;
+    }
+
+    // ==================== 新功能：行事历展开/收合 ====================
+    function toggleCalendar() {
+      const container = document.getElementById('calendarContainer');
+      const icon = document.getElementById('calendarToggleIcon');
+      
+      if (!container || !icon) return;
+
+      isCalendarExpanded = !isCalendarExpanded;
+
+      if (isCalendarExpanded) {
+        container.classList.remove('calendar-collapsed');
+        container.classList.add('calendar-expanded');
+        icon.className = 'ph ph-caret-up text-slate-600';
+      } else {
+        container.classList.remove('calendar-expanded');
+        container.classList.add('calendar-collapsed');
+        icon.className = 'ph ph-caret-down text-slate-600';
+      }
+    }
+
+    // ==================== 新功能：个人剩余时数卡片 ====================
+    function renderRemainingHoursCard() {
+      const card = document.getElementById('remainingHoursCard');
+      if (!card || !selectedTeacherId) {
+        if (card) card.style.display = 'none';
+        return;
+      }
+
+      const teacher = teachers.find(t => t.id === selectedTeacherId);
+      if (!teacher) {
+        card.style.display = 'none';
+        return;
+      }
+
+      const thisMonth = new Date().toISOString().slice(0, 7);
+      const courses = courseAssignments.filter(c =>
+        c.teacherId === teacher.id &&
+        c.date.startsWith(thisMonth)
+      );
+      const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
+      const targetHours = teacher.targetHours || 12;
+      const remainingHours = Math.max(0, targetHours - hours);
+      const percentage = Math.min((hours / targetHours) * 100, 100);
+
+      document.getElementById('remainingHoursTeacher').textContent = teacher.name;
+      document.getElementById('remainingHoursValue').textContent = remainingHours.toFixed(1) + 'h';
+      document.getElementById('progressPercent').textContent = percentage.toFixed(0) + '%';
+
+      const circle = document.getElementById('progressCircle');
+      const circumference = 2 * Math.PI * 52;
+      const offset = circumference - (percentage / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+
+      card.style.display = 'block';
+    }
+
+    // ==================== 新功能：课程评鉴 ====================
+    function openEvaluationModal() {
+      const modal = document.getElementById('evaluationModal');
+      if (!modal) return;
+
+      evaluationData = {
+        courseId: editingCourseId,
+        overallRating: 0,
+        contentScore: 0,
+        methodScore: 0,
+        interactionScore: 0,
+        materialScore: 0,
+        timeScore: 0,
+        comment: ''
+      };
+
+      document.querySelectorAll('.rating-star').forEach(star => star.classList.remove('active'));
+      document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('selected'));
+      document.getElementById('evaluationComment').value = '';
+      document.getElementById('evaluationSummary').style.display = 'none';
+      document.getElementById('ratingText').textContent = '请选择评分';
+
+      modal.classList.remove('hidden');
+
+      document.querySelectorAll('.rating-star').forEach(star => {
+        star.onclick = function() {
+          const value = parseInt(this.dataset.value);
+          evaluationData.overallRating = value;
+          
+          document.querySelectorAll('.rating-star').forEach((s, index) => {
+            if (index < value) {
+              s.classList.add('active');
+            } else {
+              s.classList.remove('active');
+            }
+          });
+
+          const texts = ['', '很差', '较差', '一般', '良好', '优秀'];
+          document.getElementById('ratingText').textContent = texts[value] || '';
+        };
+      });
+
+      document.querySelectorAll('.score-btn').forEach(btn => {
+        btn.onclick = function() {
+          const criteria = this.dataset.criteria;
+          const score = parseInt(this.dataset.score);
+          evaluationData[criteria + 'Score'] = score;
+
+          const container = this.parentElement;
+          container.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+          this.classList.add('selected');
+
+          updateEvaluationSummary();
+        };
+      });
+    }
+
+    function updateEvaluationSummary() {
+      const scores = [
+        evaluationData.contentScore,
+        evaluationData.methodScore,
+        evaluationData.interactionScore,
+        evaluationData.materialScore,
+        evaluationData.timeScore
+      ].filter(s => s > 0);
+
+      if (scores.length === 0) return;
+
+      const average = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2);
+      let grade = 'C';
+      if (average >= 4.5) grade = 'A+';
+      else if (average >= 4.0) grade = 'A';
+      else if (average >= 3.5) grade = 'B+';
+      else if (average >= 3.0) grade = 'B';
+      else if (average >= 2.5) grade = 'C+';
+
+      document.getElementById('summaryAverage').textContent = average;
+      document.getElementById('summaryGrade').textContent = grade;
+      document.getElementById('evaluationSummary').style.display = 'block';
+    }
+
+    function submitEvaluation() {
+      if (evaluationData.overallRating === 0) {
+        alert('请选择整体评分！');
+        return;
+      }
+
+      const requiredScores = ['contentScore', 'methodScore', 'interactionScore', 'materialScore', 'timeScore'];
+      const missingScores = requiredScores.filter(score => evaluationData[score] === 0);
+      
+      if (missingScores.length > 0) {
+        alert('请完成所有详细评分！');
+        return;
+      }
+
+      evaluationData.comment = document.getElementById('evaluationComment').value.trim();
+      evaluationData.timestamp = new Date().toISOString();
+
+      let evaluations = loadArray('courseEvaluations');
+      evaluations.push(evaluationData);
+      localStorage.setItem('courseEvaluations', JSON.stringify(evaluations));
+
+      closeEvaluationModal();
+      showMessage('课程评鉴已提交成功！', 'success');
+    }
+
+    function closeEvaluationModal() {
+
+    // 动态统计卡片颜色更新
+    function updateStatCardColors() {
+      const totalCard = document.querySelector('.stat-card:nth-child(1)');
+      const hoursCard = document.querySelector('.stat-card:nth-child(2)');
+      const monthlyCard = document.querySelector('.stat-card:nth-child(3)');
+
+      if (selectedTeacherId || selectedDate) {
+        if (totalCard) totalCard.classList.add('amber');
+        if (hoursCard) hoursCard.classList.add('blue');
+        if (monthlyCard) monthlyCard.classList.add('amber');
+      } else {
+        if (totalCard) totalCard.classList.remove('blue', 'emerald', 'amber');
+        if (hoursCard) {
+          hoursCard.classList.remove('blue', 'amber');
+          hoursCard.classList.add('emerald');
+        }
+        if (monthlyCard) {
+          monthlyCard.classList.remove('emerald', 'amber');
+          monthlyCard.classList.add('blue');
+        }
+      }
+    }
+      const modal = document.getElementById('evaluationModal');
+
+    // 动态统计卡片颜色更新
+    function updateStatCardColors() {
+      const totalCard = document.querySelector('.stat-card:nth-child(1)');
+      const hoursCard = document.querySelector('.stat-card:nth-child(2)');
+      const monthlyCard = document.querySelector('.stat-card:nth-child(3)');
+
+      if (selectedTeacherId || selectedDate) {
+        if (totalCard) totalCard.classList.add('amber');
+        if (hoursCard) hoursCard.classList.add('blue');
+        if (monthlyCard) monthlyCard.classList.add('amber');
+      } else {
+        if (totalCard) totalCard.classList.remove('blue', 'emerald', 'amber');
+        if (hoursCard) {
+          hoursCard.classList.remove('blue', 'amber');
+          hoursCard.classList.add('emerald');
+        }
+        if (monthlyCard) {
+          monthlyCard.classList.remove('emerald', 'amber');
+          monthlyCard.classList.add('blue');
+        }
+      }
+    }
+      if (modal) modal.classList.add('hidden');
+
+    // 动态统计卡片颜色更新
+    function updateStatCardColors() {
+      const totalCard = document.querySelector('.stat-card:nth-child(1)');
+      const hoursCard = document.querySelector('.stat-card:nth-child(2)');
+      const monthlyCard = document.querySelector('.stat-card:nth-child(3)');
+
+      if (selectedTeacherId || selectedDate) {
+        if (totalCard) totalCard.classList.add('amber');
+        if (hoursCard) hoursCard.classList.add('blue');
+        if (monthlyCard) monthlyCard.classList.add('amber');
+      } else {
+        if (totalCard) totalCard.classList.remove('blue', 'emerald', 'amber');
+        if (hoursCard) {
+          hoursCard.classList.remove('blue', 'amber');
+          hoursCard.classList.add('emerald');
+        }
+        if (monthlyCard) {
+          monthlyCard.classList.remove('emerald', 'amber');
+          monthlyCard.classList.add('blue');
+        }
+      }
+    }
+    }
+
+    // 动态统计卡片颜色更新
+    function updateStatCardColors() {
+      const totalCard = document.querySelector('.stat-card:nth-child(1)');
+      const hoursCard = document.querySelector('.stat-card:nth-child(2)');
+      const monthlyCard = document.querySelector('.stat-card:nth-child(3)');
+
+      if (selectedTeacherId || selectedDate) {
+        if (totalCard) totalCard.classList.add('amber');
+        if (hoursCard) hoursCard.classList.add('blue');
+        if (monthlyCard) monthlyCard.classList.add('amber');
+      } else {
+        if (totalCard) totalCard.classList.remove('blue', 'emerald', 'amber');
+        if (hoursCard) {
+          hoursCard.classList.remove('blue', 'amber');
+          hoursCard.classList.add('emerald');
+        }
+        if (monthlyCard) {
+          monthlyCard.classList.remove('emerald', 'amber');
+          monthlyCard.classList.add('blue');
+        }
+      }
+    }
     // ==================== 通用訊息顯示 ====================
     function showMessage(message, type = 'info', hint = '') {
       const banner = document.getElementById('syncStatusBanner');
@@ -1592,6 +1924,11 @@
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
+      renderDonutChart();
+      renderSidebarTeachers();
+      renderSidebarTeachers();
+      renderDonutChart();
+      renderRemainingHoursCard();
       updateTodayDate();
       loadTeacherHoursAnalysisVisibility();
     }
@@ -1659,6 +1996,8 @@
 
       // 總課程數
       document.getElementById('totalCoursesCount').textContent = filteredCourses.length;
+      // Update dynamic stat cards colors
+      updateStatCardColors();
 
       // 總時數
       const totalHours = filteredCourses.reduce((sum, c) => sum + calculateHours(c.time), 0);
@@ -2202,6 +2541,9 @@
       }
 
       renderCalendar();
+      renderSidebarTeachers();
+      renderDonutChart();
+      renderRemainingHoursCard();
     }
 
     function previousPeriod() {
@@ -2211,6 +2553,9 @@
         currentDate.setDate(currentDate.getDate() - 7);
       }
       renderCalendar();
+      renderSidebarTeachers();
+      renderDonutChart();
+      renderRemainingHoursCard();
     }
 
     function nextPeriod() {
@@ -2220,11 +2565,17 @@
         currentDate.setDate(currentDate.getDate() + 7);
       }
       renderCalendar();
+      renderSidebarTeachers();
+      renderDonutChart();
+      renderRemainingHoursCard();
     }
 
     function goToToday() {
       currentDate = new Date();
       renderCalendar();
+      renderSidebarTeachers();
+      renderDonutChart();
+      renderRemainingHoursCard();
     }
 
     function renderCalendar() {
@@ -2951,6 +3302,9 @@
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
+      renderSidebarTeachers();
+      renderDonutChart();
+      renderRemainingHoursCard();
 
       // 🔓 關閉對話框並釋放鎖定
       await closeViewEventModal();
@@ -3049,6 +3403,9 @@
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
+      renderSidebarTeachers();
+      renderDonutChart();
+      renderRemainingHoursCard();
       alert('✓ 課程新增成功！');
     }
 
@@ -3061,6 +3418,9 @@
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
+      renderSidebarTeachers();
+      renderDonutChart();
+      renderRemainingHoursCard();
       alert('✓ 課程已刪除！');
     }
 
@@ -3401,6 +3761,9 @@
       saveData();
       updateStatistics();
       renderCalendar();
+      renderSidebarTeachers();
+      renderDonutChart();
+      renderRemainingHoursCard();
       renderTodayCourses();
       closeDuplicateDateModal();
 
@@ -3828,5 +4191,6 @@
     </defs>
   </svg>
 
+  </script>
 </body>
 </html>
