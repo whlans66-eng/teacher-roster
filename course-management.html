@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>派課管理系統 - 现代化训练排程</title>
+  <title>派課管理系統 - 現代化訓練排程</title>
 
   <!-- 預連接到資源服務器 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,7 +53,7 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* ========== Slate 色系设计系统 ========== */
+    /* ========== Slate 色系設計系統 ========== */
     :root {
       --slate-50: #f8fafc;
       --slate-100: #f1f5f9;
@@ -75,7 +75,7 @@
       --red-500: #ef4444;
     }
 
-    /* ========== 现代化卡片设计 ========== */
+    /* ========== 現代化卡片設計 ========== */
     .card {
       background: #ffffff;
       border-radius: 20px;
@@ -89,7 +89,7 @@
       box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.08);
     }
 
-    /* ========== 师资侧边栏卡片 ========== */
+    /* ========== 師資側邊欄卡片 ========== */
     .teacher-card {
       background: white;
       border: 1.5px solid var(--slate-200);
@@ -127,7 +127,7 @@
       box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
 
-    /* ========== 动态统计卡片 ========== */
+    /* ========== 動態統計卡片 ========== */
     .stat-card {
       background: linear-gradient(135deg, #ffffff 0%, var(--slate-50) 100%);
       border-radius: 20px;
@@ -171,7 +171,7 @@
       background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(251, 191, 36, 0.05));
     }
 
-    /* ========== SVG 甜甜圈图样式 ========== */
+    /* ========== SVG 甜甜圈圖樣式 ========== */
     .donut-chart-container {
       position: relative;
       display: inline-block;
@@ -217,7 +217,7 @@
       flex-shrink: 0;
     }
 
-    /* ========== 个人剩余时数卡片（渐变背景）========== */
+    /* ========== 個人剩餘時數卡片（漸變背景）========== */
     .hours-card {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 24px;
@@ -244,7 +244,7 @@
       height: 120px;
     }
 
-    /* ========== 行事历增强动画 ========== */
+    /* ========== 行事曆增強動畫 ========== */
     .calendar-day {
       min-height: 120px;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -265,7 +265,7 @@
       box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2) !important;
     }
 
-    /* 行事历展开/收合动画 */
+    /* 行事曆展開/收合動畫 */
     .calendar-collapsed {
       max-height: 0;
       overflow: hidden;
@@ -282,7 +282,7 @@
       transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* ========== 现代化课程列表 ========== */
+    /* ========== 現代化課程列表 ========== */
     .course-item {
       background: white;
       border: 1.5px solid var(--slate-200);
@@ -340,7 +340,7 @@
       color: #d97706;
     }
 
-    /* ========== Modal 现代化设计 ========== */
+    /* ========== Modal 現代化設計 ========== */
     .modal-card {
       background: rgba(255, 255, 255, 0.98) !important;
       backdrop-filter: blur(30px) saturate(180%);
@@ -395,7 +395,7 @@
       flex-shrink: 0;
     }
 
-    /* ========== 课程评鉴表单 ========== */
+    /* ========== 課程評鑑表單 ========== */
     .rating-stars {
       display: flex;
       gap: 8px;
@@ -473,7 +473,7 @@
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
 
-    /* ========== 按钮系统 ========== */
+    /* ========== 按鈕系統 ========== */
     .modern-btn {
       background: var(--blue-500);
       color: white;
@@ -510,7 +510,7 @@
       box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
     }
 
-    /* ========== 动画 ========== */
+    /* ========== 動畫 ========== */
     @keyframes fadeInUp {
       from {
         opacity: 0;
@@ -541,7 +541,7 @@
       animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* ========== 响应式设计 ========== */
+    /* ========== 響應式設計 ========== */
     @media (max-width: 1024px) {
       .lg\\:col-span-1, .lg\\:col-span-3 {
         grid-column: span 1 !important;
@@ -560,7 +560,7 @@
       display: none;
     }
 
-    /* ========== 微妙的背景纹理 ========== */
+    /* ========== 微妙的背景紋理 ========== */
     body::before {
       content: '';
       position: fixed;
@@ -590,57 +590,57 @@
   <div class="min-h-screen bg-slate-50">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-0 min-h-screen">
 
-      <!-- ==================== 左侧师资列表侧边栏 (1/4) ==================== -->
+      <!-- ==================== 左側師資列表側邊欄 (1/4) ==================== -->
       <aside class="lg:col-span-1 bg-white border-r border-slate-200 overflow-y-auto" style="max-height: 100vh;">
-        <!-- 固定顶部：标题和搜索 -->
+        <!-- 固定頂部：標題和搜尋 -->
         <div class="sticky top-0 bg-white z-10 border-b border-slate-200 p-6">
           <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <i class="ph ph-users-three text-2xl"></i>
-            师资列表
+            師資列表
           </h2>
           <input
             type="text"
             id="sidebarTeacherSearch"
-            placeholder="🔍 搜索师资姓名..."
+            placeholder="🔍 搜尋師資姓名..."
             oninput="filterSidebarTeachers()"
             class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-          
-          <!-- 快速过滤按钮 -->
+
+          <!-- 快速過濾按鈕 -->
           <div class="mt-3 flex gap-2">
             <button onclick="filterByStatus('all')" class="flex-1 px-3 py-1.5 text-xs bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-all">
               全部
             </button>
-            <button onclick="filterByStatus('达标')" class="flex-1 px-3 py-1.5 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-all">
-              已达标
+            <button onclick="filterByStatus('達標')" class="flex-1 px-3 py-1.5 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-all">
+              已達標
             </button>
-            <button onclick="filterByStatus('未达标')" class="flex-1 px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-all">
-              未达标
+            <button onclick="filterByStatus('未達標')" class="flex-1 px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-all">
+              未達標
             </button>
           </div>
         </div>
 
-        <!-- 师资卡片列表 -->
+        <!-- 師資卡片列表 -->
         <div id="sidebarTeacherList" class="p-4 space-y-3">
-          <!-- 师资卡片将在这里动态渲染 -->
+          <!-- 師資卡片將在這裡動態渲染 -->
         </div>
       </aside>
 
-      <!-- ==================== 主内容区 (3/4) ==================== -->
+      <!-- ==================== 主內容區 (3/4) ==================== -->
       <main class="lg:col-span-3 overflow-y-auto p-6 pb-20" style="max-height: 100vh;">
-        <!-- 返回首页 -->
+        <!-- 返回首頁 -->
         <div class="mb-6">
           <a href="index.html" class="inline-flex items-center px-4 py-2.5 font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 shadow-sm hover:shadow transition-all">
-            <i class="ph ph-arrow-left mr-2"></i> 返回首页
+            <i class="ph ph-arrow-left mr-2"></i> 返回首頁
           </a>
         </div>
 
-        <!-- 标题区域 -->
+        <!-- 標題區域 -->
         <div class="mb-8">
-          <h1 class="text-5xl font-bold text-slate-900 mb-2 tracking-tight">训练排程</h1>
-          <p class="text-lg text-slate-600">智能管理平台 - 现代化设计</p>
+          <h1 class="text-5xl font-bold text-slate-900 mb-2 tracking-tight">訓練排程</h1>
+          <p class="text-lg text-slate-600">智能管理平台 - 現代化設計</p>
         </div>
 
-        <!-- 同步状态提示 -->
+        <!-- 同步狀態提示 -->
         <div id="syncStatusBanner" class="card p-4 mb-6 hidden border border-transparent" role="alert" aria-live="polite">
           <div class="flex items-start justify-between gap-4">
             <div class="flex items-start gap-3">
@@ -650,22 +650,22 @@
                 <p id="syncStatusHint" class="text-sm text-slate-600 mt-1" style="display: none;"></p>
               </div>
             </div>
-            <button type="button" onclick="dismissSyncStatus()" class="text-slate-400 hover:text-slate-600 transition" aria-label="关闭提醒">
+            <button type="button" onclick="dismissSyncStatus()" class="text-slate-400 hover:text-slate-600 transition" aria-label="關閉提醒">
               <i class="ph ph-x"></i>
             </button>
           </div>
         </div>
 
-        <!-- 主内容容器 -->
+        <!-- 主內容容器 -->
         <div class="max-w-7xl mx-auto space-y-6">
 
-          <!-- ==================== 动态统计卡片区 ==================== -->
+          <!-- ==================== 動態統計卡片區 ==================== -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in">
-            <!-- 总课程数 -->
+            <!-- 總課程數 -->
             <div class="stat-card card-hover">
               <div class="flex items-center justify-between">
                 <div class="relative z-10">
-                  <p class="text-slate-600 mb-1 text-sm font-medium">总课程数</p>
+                  <p class="text-slate-600 mb-1 text-sm font-medium">總課程數</p>
                   <p id="totalCoursesCount" class="text-4xl font-bold text-slate-900">0</p>
                 </div>
                 <div class="text-5xl opacity-60">
@@ -674,11 +674,11 @@
               </div>
             </div>
 
-            <!-- 总授课时数 -->
+            <!-- 總授課時數 -->
             <div class="stat-card card-hover emerald">
               <div class="flex items-center justify-between">
                 <div class="relative z-10">
-                  <p class="text-emerald-700 mb-1 text-sm font-medium">总授课时数</p>
+                  <p class="text-emerald-700 mb-1 text-sm font-medium">總授課時數</p>
                   <p id="totalHoursCount" class="text-4xl font-bold text-emerald-900">0</p>
                 </div>
                 <div class="text-5xl text-emerald-500 opacity-60">
@@ -687,11 +687,11 @@
               </div>
             </div>
 
-            <!-- 本月时数 -->
+            <!-- 本月時數 -->
             <div class="stat-card card-hover blue">
               <div class="flex items-center justify-between">
                 <div class="relative z-10">
-                  <p class="text-blue-700 mb-1 text-sm font-medium">本月总时数</p>
+                  <p class="text-blue-700 mb-1 text-sm font-medium">本月總時數</p>
                   <p id="monthlyHoursCount" class="text-4xl font-bold text-blue-900">0</p>
                 </div>
                 <div class="text-5xl text-blue-500 opacity-60">
@@ -701,7 +701,7 @@
             </div>
           </div>
 
-          <!-- ==================== 师资筛选横幅 ==================== -->
+          <!-- ==================== 師資篩選橫幅 ==================== -->
           <div id="selectedTeacherBanner" class="card p-5 fade-in" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
@@ -709,7 +709,7 @@
                   <i class="ph ph-funnel"></i>
                 </div>
                 <div class="text-white">
-                  <p class="text-sm opacity-90">筛选师资</p>
+                  <p class="text-sm opacity-90">篩選師資</p>
                   <p id="selectedTeacherName" class="text-xl font-bold"></p>
                 </div>
               </div>
@@ -719,7 +719,7 @@
             </div>
           </div>
 
-          <!-- 日期筛选横幅 -->
+          <!-- 日期篩選橫幅 -->
           <div id="selectedDateBanner" class="card p-5 fade-in" style="display: none; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
@@ -727,7 +727,7 @@
                   <i class="ph ph-calendar-check"></i>
                 </div>
                 <div class="text-white">
-                  <p class="text-sm opacity-90">筛选日期</p>
+                  <p class="text-sm opacity-90">篩選日期</p>
                   <p id="selectedDateText" class="text-xl font-bold"></p>
                 </div>
               </div>
@@ -737,12 +737,12 @@
             </div>
           </div>
 
-          <!-- ==================== 课程行事历 ==================== -->
+          <!-- ==================== 課程行事曆 ==================== -->
           <div class="card p-6 fade-in">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div class="flex items-center gap-3">
                 <h2 class="text-2xl font-bold text-slate-900">
-                  <i class="ph ph-calendar"></i> 课程行事历
+                  <i class="ph ph-calendar"></i> 課程行事曆
                 </h2>
                 <button id="calendarToggleBtn" onclick="toggleCalendar()" class="p-2 hover:bg-slate-100 rounded-lg transition-all">
                   <i id="calendarToggleIcon" class="ph ph-caret-up text-slate-600"></i>
@@ -750,7 +750,7 @@
               </div>
               <div class="flex items-center gap-3">
                 <button onclick="openAddCourseModal()" class="modern-btn">
-                  <i class="ph ph-plus-circle"></i> 新增课程
+                  <i class="ph ph-plus-circle"></i> 新增課程
                 </button>
                 <div class="flex rounded-xl p-1 bg-slate-100">
                   <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-slate-900 shadow-sm">
@@ -763,16 +763,16 @@
               </div>
             </div>
 
-            <!-- 行事历容器（可展开/收合）-->
+            <!-- 行事曆容器（可展開/收合）-->
             <div id="calendarContainer" class="calendar-expanded">
               <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center space-x-4">
                   <button onclick="previousPeriod()" class="btn-secondary px-4 py-2 rounded-xl font-medium">
-                    <i class="ph ph-caret-left"></i> <span id="prevLabel">上个月</span>
+                    <i class="ph ph-caret-left"></i> <span id="prevLabel">上個月</span>
                   </button>
                   <h3 id="currentMonth" class="font-semibold text-slate-800 min-w-[200px] text-center text-lg"></h3>
                   <button onclick="nextPeriod()" class="btn-secondary px-4 py-2 rounded-xl font-medium">
-                    <span id="nextLabel">下个月</span> <i class="ph ph-caret-right"></i>
+                    <span id="nextLabel">下個月</span> <i class="ph ph-caret-right"></i>
                   </button>
                 </div>
                 <button onclick="goToToday()" class="modern-btn">
@@ -780,9 +780,9 @@
                 </button>
               </div>
 
-              <!-- 行事历网格 (桌面版) -->
+              <!-- 行事曆網格 (桌面版) -->
               <div class="calendar-grid-container bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                <!-- 星期标题 -->
+                <!-- 星期標題 -->
                 <div class="grid grid-cols-7 bg-gradient-to-r from-blue-500 to-blue-600">
                   <div class="p-3 text-center font-semibold text-white border-r border-white/10">日</div>
                   <div class="p-3 text-center font-semibold text-white border-r border-white/10">一</div>
@@ -792,54 +792,54 @@
                   <div class="p-3 text-center font-semibold text-white border-r border-white/10">五</div>
                   <div class="p-3 text-center font-semibold text-white">六</div>
                 </div>
-                <!-- 日期网格 -->
+                <!-- 日期網格 -->
                 <div id="calendarGrid" class="grid grid-cols-7"></div>
               </div>
 
-              <!-- 手机版行事历列表 -->
+              <!-- 手機版行事曆列表 -->
               <div class="mobile-calendar-view bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 p-4">
                 <div id="mobileEventsList" class="space-y-3"></div>
               </div>
             </div>
           </div>
 
-          <!-- ==================== 课程类型分布（SVG 甜甜圈图）==================== -->
+          <!-- ==================== 課程類型分布（SVG 甜甜圈圖）==================== -->
           <div class="card p-6 fade-in">
             <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <i class="ph ph-chart-donut"></i> 课程类型分布
+              <i class="ph ph-chart-donut"></i> 課程類型分布
             </h2>
             <div class="flex flex-col md:flex-row items-center justify-center gap-8">
-              <!-- SVG 甜甜圈图 -->
+              <!-- SVG 甜甜圈圖 -->
               <div class="donut-chart-container">
                 <svg id="donutChart" width="280" height="280" viewBox="0 0 280 280">
-                  <!-- 甜甜圈图将在这里动态渲染 -->
+                  <!-- 甜甜圈圖將在這裡動態渲染 -->
                 </svg>
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div class="text-center">
                     <div id="donutCenterCount" class="text-4xl font-bold text-slate-900">0</div>
-                    <div class="text-sm text-slate-600">总课程</div>
+                    <div class="text-sm text-slate-600">總課程</div>
                   </div>
                 </div>
               </div>
 
-              <!-- 图例 -->
+              <!-- 圖例 -->
               <div id="donutLegend" class="chart-legend flex-col">
-                <!-- 图例将在这里动态渲染 -->
+                <!-- 圖例將在這裡動態渲染 -->
               </div>
             </div>
           </div>
 
-          <!-- ==================== 个人剩余时数卡片（渐变背景）==================== -->
+          <!-- ==================== 個人剩餘時數卡片（漸變背景）==================== -->
           <div id="remainingHoursCard" class="hours-card fade-in" style="display: none;">
             <div class="flex items-center justify-between relative z-10">
               <div>
-                <p class="text-white/80 text-sm mb-2">本月剩余时数</p>
+                <p class="text-white/80 text-sm mb-2">本月剩餘時數</p>
                 <h3 id="remainingHoursTeacher" class="text-2xl font-bold text-white mb-1"></h3>
                 <p id="remainingHoursValue" class="text-5xl font-bold text-white"></p>
-                <p class="text-white/70 text-sm mt-2">目标：12 小时/月</p>
+                <p class="text-white/70 text-sm mt-2">目標：12 小時/月</p>
               </div>
 
-              <!-- 环形进度图 -->
+              <!-- 環形進度圖 -->
               <svg class="hours-progress-ring" viewBox="0 0 120 120">
                 <circle
                   cx="60"
@@ -868,16 +868,16 @@
             </div>
           </div>
 
-          <!-- ==================== 现代化课程列表 ==================== -->
+          <!-- ==================== 現代化課程列表 ==================== -->
           <div class="card p-6 fade-in">
             <div class="flex items-center justify-between mb-6">
               <h2 id="courseOverviewTitle" class="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <i class="ph ph-list-bullets"></i> 今日课程总览
+                <i class="ph ph-list-bullets"></i> 今日課程總覽
               </h2>
               <div class="text-slate-600" id="todayDate"></div>
             </div>
             <div id="todayCoursesContainer" class="space-y-3">
-              <!-- 课程项将在这里显示 -->
+              <!-- 課程項將在這裡顯示 -->
             </div>
           </div>
 
@@ -889,61 +889,61 @@
 
   <!-- ==================== Modals ==================== -->
 
-  <!-- 新增课程 Modal -->
+  <!-- 新增課程 Modal -->
   <div id="addCourseModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
     <div class="modal-card">
-      <!-- Modal 头部 -->
+      <!-- Modal 頭部 -->
       <div class="modal-header">
-        <h3><i class="ph ph-plus-circle"></i> 新增课程</h3>
+        <h3><i class="ph ph-plus-circle"></i> 新增課程</h3>
       </div>
 
-      <!-- Modal 内容区 -->
+      <!-- Modal 內容區 -->
       <div class="modal-content">
         <form id="courseForm" class="space-y-4">
           <div>
-            <label class="block font-semibold text-slate-700 mb-2">选择师资</label>
+            <label class="block font-semibold text-slate-700 mb-2">選擇師資</label>
             <select id="courseTeacherId" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
-              <option value="">请选择师资</option>
+              <option value="">請選擇師資</option>
             </select>
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-2">课程名称</label>
+            <label class="block font-semibold text-slate-700 mb-2">課程名稱</label>
             <select id="courseName" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
-              <option value="">请选择课程</option>
+              <option value="">請選擇課程</option>
             </select>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block font-semibold text-slate-700 mb-2">课程日期</label>
+              <label class="block font-semibold text-slate-700 mb-2">課程日期</label>
               <input type="date" id="courseDate" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
             </div>
             <div>
-              <label class="block font-semibold text-slate-700 mb-2">课程类型</label>
+              <label class="block font-semibold text-slate-700 mb-2">課程類型</label>
               <select id="courseType" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                <option value="正课">正课</option>
-                <option value="补课">补课</option>
-                <option value="实验课">实验课</option>
-                <option value="实作课">实作课</option>
-                <option value="专题">专题</option>
+                <option value="正課">正課</option>
+                <option value="補課">補課</option>
+                <option value="實驗課">實驗課</option>
+                <option value="實作課">實作課</option>
+                <option value="專題">專題</option>
               </select>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block font-semibold text-slate-700 mb-2">开始时间</label>
+              <label class="block font-semibold text-slate-700 mb-2">開始時間</label>
               <input type="time" id="startTime" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
             </div>
             <div>
-              <label class="block font-semibold text-slate-700 mb-2">结束时间</label>
+              <label class="block font-semibold text-slate-700 mb-2">結束時間</label>
               <input type="time" id="endTime" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
             </div>
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-2">状态</label>
+            <label class="block font-semibold text-slate-700 mb-2">狀態</label>
             <select id="courseStatus" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
               <option value="上班">上班</option>
               <option value="休假">休假</option>
@@ -952,8 +952,8 @@
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-2">备注</label>
-            <textarea id="courseNote" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="选填：课程相关备注..."></textarea>
+            <label class="block font-semibold text-slate-700 mb-2">備註</label>
+            <textarea id="courseNote" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="選填：課程相關備註..."></textarea>
           </div>
         </form>
       </div>
@@ -965,70 +965,70 @@
             取消
           </button>
           <button type="button" onclick="document.getElementById('courseForm').requestSubmit()" class="modern-btn px-6 py-3">
-            <i class="ph ph-check-circle"></i> 确认新增
+            <i class="ph ph-check-circle"></i> 確認新增
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 查看/编辑课程 Modal -->
+  <!-- 查看/編輯課程 Modal -->
   <div id="viewEventModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
     <div class="modal-card">
       <!-- Modal 头部 -->
       <div class="modal-header">
-        <h3 id="modalTitle"><i class="ph ph-info"></i> 课程详情</h3>
+        <h3 id="modalTitle"><i class="ph ph-info"></i> 課程詳情</h3>
       </div>
 
-      <!-- Modal 内容区 -->
+      <!-- Modal 內容区 -->
       <div class="modal-content">
         <!-- 查看模式 -->
         <div id="viewMode" class="space-y-4"></div>
 
-        <!-- 编辑模式 -->
+        <!-- 編輯模式 -->
         <form id="editCourseForm" class="space-y-4" style="display: none;">
           <div>
-            <label class="block font-semibold text-slate-700 mb-2">选择师资</label>
+            <label class="block font-semibold text-slate-700 mb-2">選擇師資</label>
             <select id="editTeacherId" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
-              <option value="">请选择师资</option>
+              <option value="">请選擇師資</option>
             </select>
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-2">课程名称</label>
+            <label class="block font-semibold text-slate-700 mb-2">課程名称</label>
             <input type="text" id="editCourseName" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block font-semibold text-slate-700 mb-2">课程日期</label>
+              <label class="block font-semibold text-slate-700 mb-2">課程日期</label>
               <input type="date" id="editCourseDate" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
             </div>
             <div>
-              <label class="block font-semibold text-slate-700 mb-2">课程类型</label>
+              <label class="block font-semibold text-slate-700 mb-2">課程類型</label>
               <select id="editCourseType" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                <option value="正课">正课</option>
-                <option value="补课">补课</option>
-                <option value="实验课">实验课</option>
-                <option value="实作课">实作课</option>
-                <option value="专题">专题</option>
+                <option value="正課">正課</option>
+                <option value="補課">補課</option>
+                <option value="實驗课">實驗课</option>
+                <option value="實作课">實作课</option>
+                <option value="專題">專題</option>
               </select>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block font-semibold text-slate-700 mb-2">开始时间</label>
+              <label class="block font-semibold text-slate-700 mb-2">開始時間</label>
               <input type="time" id="editStartTime" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
             </div>
             <div>
-              <label class="block font-semibold text-slate-700 mb-2">结束时间</label>
+              <label class="block font-semibold text-slate-700 mb-2">結束時間</label>
               <input type="time" id="editEndTime" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
             </div>
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-2">状态</label>
+            <label class="block font-semibold text-slate-700 mb-2">狀態</label>
             <select id="editCourseStatus" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
               <option value="上班">上班</option>
               <option value="休假">休假</option>
@@ -1037,8 +1037,8 @@
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-2">备注</label>
-            <textarea id="editCourseNote" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="选填：课程相关备注..."></textarea>
+            <label class="block font-semibold text-slate-700 mb-2">備註</label>
+            <textarea id="editCourseNote" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="選填：課程相關備註..."></textarea>
           </div>
         </form>
       </div>
@@ -1048,42 +1048,42 @@
         <!-- 查看模式按钮 -->
         <div id="viewModeButtons" class="flex flex-wrap gap-3 items-center">
           <button onclick="openEvaluationModal()" class="btn-secondary flex-1">
-            <i class="ph ph-star"></i> 课程评鉴
+            <i class="ph ph-star"></i> 課程評鑑
           </button>
           <button onclick="closeViewEventModal()" class="btn-secondary">
-            关闭
+            關閉
           </button>
           <button onclick="enterEditMode()" class="modern-btn">
-            <i class="ph ph-pencil"></i> 编辑
+            <i class="ph ph-pencil"></i> 編輯
           </button>
         </div>
 
-        <!-- 编辑模式按钮 -->
+        <!-- 編輯模式按钮 -->
         <div id="editModeButtons" class="flex justify-end gap-3" style="display: none;">
           <button onclick="cancelEditMode()" class="btn-secondary px-6 py-3">
             取消
           </button>
           <button onclick="saveEditedCourse()" class="modern-btn px-6 py-3">
-            <i class="ph ph-check-circle"></i> 保存变更
+            <i class="ph ph-check-circle"></i> 保存變更
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 课程评鉴 Modal ==================== -->
+  <!-- ==================== 課程評鑑 Modal ==================== -->
   <div id="evaluationModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
     <div class="modal-card">
       <!-- Modal 头部 -->
       <div class="modal-header">
-        <h3><i class="ph ph-star"></i> 课程评鉴</h3>
+        <h3><i class="ph ph-star"></i> 課程評鑑</h3>
       </div>
 
-      <!-- Modal 内容区 -->
+      <!-- Modal 內容区 -->
       <div class="modal-content">
-        <!-- 整体评分 -->
+        <!-- 整体評分 -->
         <div class="evaluation-section">
-          <h4 class="text-lg font-bold text-slate-900 mb-3">整体评分</h4>
+          <h4 class="text-lg font-bold text-slate-900 mb-3">整体評分</h4>
           <div class="flex items-center justify-center gap-2 mb-4">
             <div class="rating-stars" id="overallRating">
               <span class="rating-star" data-value="1">★</span>
@@ -1093,16 +1093,16 @@
               <span class="rating-star" data-value="5">★</span>
             </div>
           </div>
-          <p id="ratingText" class="text-center text-slate-600 text-sm">请选择评分</p>
+          <p id="ratingText" class="text-center text-slate-600 text-sm">请選擇評分</p>
         </div>
 
-        <!-- 详细评分标准 -->
+        <!-- 詳細評分標準 -->
         <div class="evaluation-section">
-          <h4 class="text-lg font-bold text-slate-900 mb-4">详细评分（1-5分）</h4>
+          <h4 class="text-lg font-bold text-slate-900 mb-4">詳細評分（1-5分）</h4>
           <div class="evaluation-criteria">
-            <!-- 教学内容 -->
+            <!-- 教学內容 -->
             <div class="criteria-item">
-              <span class="criteria-label">教学内容充实度</span>
+              <span class="criteria-label">教学內容充实度</span>
               <div class="criteria-score" id="contentScore">
                 <button class="score-btn" data-criteria="content" data-score="1">1</button>
                 <button class="score-btn" data-criteria="content" data-score="2">2</button>
@@ -1148,9 +1148,9 @@
               </div>
             </div>
 
-            <!-- 时间管理 -->
+            <!-- 時間管理 -->
             <div class="criteria-item">
-              <span class="criteria-label">时间管理能力</span>
+              <span class="criteria-label">時間管理能力</span>
               <div class="criteria-score" id="timeScore">
                 <button class="score-btn" data-criteria="time" data-score="1">1</button>
                 <button class="score-btn" data-criteria="time" data-score="2">2</button>
@@ -1162,26 +1162,26 @@
           </div>
         </div>
 
-        <!-- 文字评语 -->
+        <!-- 文字評語 -->
         <div class="evaluation-section">
-          <h4 class="text-lg font-bold text-slate-900 mb-3">文字评语</h4>
+          <h4 class="text-lg font-bold text-slate-900 mb-3">文字評語</h4>
           <textarea
             id="evaluationComment"
             rows="4"
             class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-            placeholder="请输入您对本次课程的建议和评语..."></textarea>
+            placeholder="请輸入您对本次課程的建议和評語..."></textarea>
         </div>
 
-        <!-- 评鉴结果摘要 -->
+        <!-- 評鑑结果摘要 -->
         <div id="evaluationSummary" class="evaluation-section" style="display: none;">
-          <h4 class="text-lg font-bold text-slate-900 mb-3">评鉴摘要</h4>
+          <h4 class="text-lg font-bold text-slate-900 mb-3">評鑑摘要</h4>
           <div class="grid grid-cols-2 gap-4">
             <div class="bg-white p-4 rounded-xl border border-slate-200">
-              <p class="text-sm text-slate-600 mb-1">综合得分</p>
+              <p class="text-sm text-slate-600 mb-1">綜合得分</p>
               <p id="summaryAverage" class="text-3xl font-bold text-blue-600">-</p>
             </div>
             <div class="bg-white p-4 rounded-xl border border-slate-200">
-              <p class="text-sm text-slate-600 mb-1">评鉴等级</p>
+              <p class="text-sm text-slate-600 mb-1">評鑑等级</p>
               <p id="summaryGrade" class="text-3xl font-bold text-emerald-600">-</p>
             </div>
           </div>
@@ -1195,29 +1195,29 @@
             取消
           </button>
           <button onclick="submitEvaluation()" class="modern-btn px-6 py-3">
-            <i class="ph ph-check-circle"></i> 提交评鉴
+            <i class="ph ph-check-circle"></i> 提交評鑑
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 复制到其他日期 Modal -->
+  <!-- 複製到其他日期 Modal -->
   <div id="duplicateDateModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
     <div class="modal-card" style="max-width: 480px;">
       <div class="modal-header">
-        <h3><i class="ph ph-copy"></i> 复制到其他日期</h3>
+        <h3><i class="ph ph-copy"></i> 複製到其他日期</h3>
       </div>
       <div class="modal-content">
         <div class="space-y-4">
           <div>
-            <label class="block font-semibold text-slate-700 mb-2">选择新日期</label>
+            <label class="block font-semibold text-slate-700 mb-2">選擇新日期</label>
             <input type="date" id="duplicateNewDate" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" required>
           </div>
           <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p class="text-sm text-blue-800">
               <i class="ph ph-info mr-2"></i>
-              课程将会保留所有信息（师资、时间、备注等），仅更改日期。
+              課程将会保留所有信息（師資、時間、備註等），僅更改日期。
             </p>
           </div>
         </div>
@@ -1228,7 +1228,7 @@
             取消
           </button>
           <button onclick="confirmDuplicateCourse()" class="modern-btn px-6 py-3">
-            <i class="ph ph-check-circle"></i> 确认复制
+            <i class="ph ph-check-circle"></i> 確認複製
           </button>
         </div>
       </div>
@@ -1239,11 +1239,11 @@
   <div class="context-menu-overlay" id="contextMenuOverlay" onclick="closeContextMenu()" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 9999; display: none; opacity: 0; transition: opacity 0.2s;">
     <div class="context-menu-popup" onclick="event.stopPropagation()" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 320px; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
       <div class="menu-option" onclick="copyCourseToClipboard(); closeContextMenu();" style="padding: 16px 20px; border-bottom: 1px solid var(--slate-200); cursor: pointer; transition: background 0.1s;">
-        <span>复制</span>
+        <span>複製</span>
         <i class="ph ph-copy"></i>
       </div>
       <div class="menu-option" onclick="openDuplicateDateModal(); closeContextMenu();" style="padding: 16px 20px; border-bottom: 1px solid var(--slate-200); cursor: pointer; transition: background 0.1s;">
-        <span>复制到其他日期</span>
+        <span>複製到其他日期</span>
         <i class="ph ph-calendar-plus"></i>
       </div>
       <div class="menu-option" onclick="shareCourse(); closeContextMenu();" style="padding: 16px 20px; border-bottom: 1px solid var(--slate-200); cursor: pointer; transition: background 0.1s;">
@@ -1251,14 +1251,14 @@
         <i class="ph ph-share-network"></i>
       </div>
       <div class="menu-option" onclick="confirmDeleteCourse(); closeContextMenu();" style="padding: 16px 20px; cursor: pointer; transition: background 0.1s; color: var(--red-500);">
-        <span>删除</span>
+        <span>刪除</span>
         <i class="ph ph-trash"></i>
       </div>
     </div>
   </div>
 
   <script>
-    // ==================== 数据管理 ====================
+    // ==================== 數據管理 ====================
     const loadArray = typeof loadArrayFromStorage === 'function'
       ? loadArrayFromStorage
       : function fallbackLoadArray(key, normalizer) {
@@ -1269,7 +1269,7 @@
             if (!Array.isArray(parsed)) return [];
             return typeof normalizer === 'function' ? parsed.map(normalizer) : parsed;
           } catch (error) {
-            console.warn('⚠️ 无法解析 ' + key + '：', error);
+            console.warn('⚠️ 無法解析 ' + key + '：', error);
             return [];
           }
         };
@@ -1300,11 +1300,11 @@
           syncToServer();
         }
       } catch (error) {
-        console.error('保存数据失败:', error);
+        console.error('保存數據失败:', error);
       }
     }
 
-    // ==================== 新功能：师资侧边栏渲染 ====================
+    // ==================== 新功能：師資侧边栏渲染 ====================
     function renderSidebarTeachers() {
       const container = document.getElementById('sidebarTeacherList');
       if (!container) return;
@@ -1318,7 +1318,7 @@
         const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
         const targetHours = teacher.targetHours || 12;
         const remainingHours = Math.max(0, targetHours - hours);
-        const status = hours >= targetHours ? '达标' : '未达标';
+        const status = hours >= targetHours ? '達標' : '未達標';
         
         return { teacher, hours, courses: courses.length, remainingHours, status };
       });
@@ -1334,20 +1334,20 @@
 
       filteredTeachers.sort((a, b) => {
         if (a.status !== b.status) {
-          return a.status === '未达标' ? -1 : 1;
+          return a.status === '未達標' ? -1 : 1;
         }
         return b.remainingHours - a.remainingHours;
       });
 
       if (filteredTeachers.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 text-center py-8 text-sm">未找到匹配的师资</p>';
+        container.innerHTML = '<p class="text-slate-500 text-center py-8 text-sm">未找到匹配的師資</p>';
         return;
       }
 
       container.innerHTML = filteredTeachers.map(item => {
         const isSelected = selectedTeacherId === item.teacher.id;
         const percentage = Math.min((item.hours / (item.teacher.targetHours || 12)) * 100, 100);
-        const statusColor = item.status === '达标' ? 'emerald' : 'red';
+        const statusColor = item.status === '達標' ? 'emerald' : 'red';
         const initials = item.teacher.name.charAt(0);
 
         return '<div class="teacher-card ' + (isSelected ? 'selected' : '') + '" onclick="selectTeacher(' + item.teacher.id + ')">' +
@@ -1355,7 +1355,7 @@
             '<div class="teacher-avatar">' + initials + '</div>' +
             '<div class="flex-1 min-w-0">' +
               '<h4 class="font-bold text-slate-900 truncate">' + item.teacher.name + '</h4>' +
-              '<p class="text-xs text-slate-600">' + item.courses + ' 门课程</p>' +
+              '<p class="text-xs text-slate-600">' + item.courses + ' 门課程</p>' +
             '</div>' +
             '<span class="px-2 py-1 text-xs font-semibold rounded-lg bg-' + statusColor + '-100 text-' + statusColor + '-700">' +
               item.status +
@@ -1363,13 +1363,13 @@
           '</div>' +
           '<div class="space-y-1.5">' +
             '<div class="flex justify-between text-xs text-slate-600">' +
-              '<span>本月时数</span>' +
+              '<span>本月時數</span>' +
               '<span class="font-bold text-slate-900">' + item.hours.toFixed(1) + 'h / ' + (item.teacher.targetHours || 12) + 'h</span>' +
             '</div>' +
             '<div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">' +
               '<div class="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full transition-all duration-500" style="width: ' + percentage + '%"></div>' +
             '</div>' +
-            (item.status === '未达标' ? '<p class="text-xs text-slate-600 mt-1"><i class="ph ph-clock"></i> 还需 ' + item.remainingHours.toFixed(1) + ' 小时</p>' : '') +
+            (item.status === '未達標' ? '<p class="text-xs text-slate-600 mt-1"><i class="ph ph-clock"></i> 還需 ' + item.remainingHours.toFixed(1) + ' 小时</p>' : '') +
           '</div>' +
         '</div>';
       }).join('');
@@ -1384,7 +1384,7 @@
       renderSidebarTeachers();
     }
 
-    // ==================== 新功能：SVG 甜甜圈图 ====================
+    // ==================== 新功能：SVG 甜甜圈圖 ====================
     function renderDonutChart() {
       const svg = document.getElementById('donutChart');
       const legendContainer = document.getElementById('donutLegend');
@@ -1402,11 +1402,11 @@
 
       const typeCount = {};
       const typeColors = {
-        '正课': '#3b82f6',
-        '补课': '#f59e0b',
-        '实验课': '#a855f7',
-        '实作课': '#10b981',
-        '专题': '#ef4444'
+        '正課': '#3b82f6',
+        '補課': '#f59e0b',
+        '實驗课': '#a855f7',
+        '實作课': '#10b981',
+        '專題': '#ef4444'
       };
 
       filteredCourses.forEach(course => {
@@ -1418,8 +1418,8 @@
       centerCount.textContent = total;
 
       if (total === 0) {
-        svg.innerHTML = '<text x="140" y="140" text-anchor="middle" fill="#94a3b8" font-size="14">暂无数据</text>';
-        legendContainer.innerHTML = '<p class="text-slate-500 text-sm">暂无课程数据</p>';
+        svg.innerHTML = '<text x="140" y="140" text-anchor="middle" fill="#94a3b8" font-size="14">暂无數據</text>';
+        legendContainer.innerHTML = '<p class="text-slate-500 text-sm">暂无課程數據</p>';
         return;
       }
 
@@ -1490,7 +1490,7 @@
       }
     }
 
-    // ==================== 新功能：个人剩余时数卡片 ====================
+    // ==================== 新功能：個人剩餘時數卡片 ====================
     function renderRemainingHoursCard() {
       const card = document.getElementById('remainingHoursCard');
       if (!card || !selectedTeacherId) {
@@ -1526,7 +1526,7 @@
       card.style.display = 'block';
     }
 
-    // ==================== 新功能：课程评鉴 ====================
+    // ==================== 新功能：課程評鑑 ====================
     function openEvaluationModal() {
       const modal = document.getElementById('evaluationModal');
       if (!modal) return;
@@ -1546,7 +1546,7 @@
       document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('selected'));
       document.getElementById('evaluationComment').value = '';
       document.getElementById('evaluationSummary').style.display = 'none';
-      document.getElementById('ratingText').textContent = '请选择评分';
+      document.getElementById('ratingText').textContent = '请選擇評分';
 
       modal.classList.remove('hidden');
 
@@ -1609,7 +1609,7 @@
 
     function submitEvaluation() {
       if (evaluationData.overallRating === 0) {
-        alert('请选择整体评分！');
+        alert('请選擇整体評分！');
         return;
       }
 
@@ -1617,7 +1617,7 @@
       const missingScores = requiredScores.filter(score => evaluationData[score] === 0);
       
       if (missingScores.length > 0) {
-        alert('请完成所有详细评分！');
+        alert('请完成所有詳細評分！');
         return;
       }
 
@@ -1629,12 +1629,12 @@
       localStorage.setItem('courseEvaluations', JSON.stringify(evaluations));
 
       closeEvaluationModal();
-      showMessage('课程评鉴已提交成功！', 'success');
+      showMessage('課程評鑑已提交成功！', 'success');
     }
 
     function closeEvaluationModal() {
 
-    // 动态统计卡片颜色更新
+    // 动态統計卡片颜色更新
     function updateStatCardColors() {
       const totalCard = document.querySelector('.stat-card:nth-child(1)');
       const hoursCard = document.querySelector('.stat-card:nth-child(2)');
@@ -1658,7 +1658,7 @@
     }
       const modal = document.getElementById('evaluationModal');
 
-    // 动态统计卡片颜色更新
+    // 动态統計卡片颜色更新
     function updateStatCardColors() {
       const totalCard = document.querySelector('.stat-card:nth-child(1)');
       const hoursCard = document.querySelector('.stat-card:nth-child(2)');
@@ -1682,7 +1682,7 @@
     }
       if (modal) modal.classList.add('hidden');
 
-    // 动态统计卡片颜色更新
+    // 动态統計卡片颜色更新
     function updateStatCardColors() {
       const totalCard = document.querySelector('.stat-card:nth-child(1)');
       const hoursCard = document.querySelector('.stat-card:nth-child(2)');
@@ -1706,7 +1706,7 @@
     }
     }
 
-    // 动态统计卡片颜色更新
+    // 动态統計卡片颜色更新
     function updateStatCardColors() {
       const totalCard = document.querySelector('.stat-card:nth-child(1)');
       const hoursCard = document.querySelector('.stat-card:nth-child(2)');
