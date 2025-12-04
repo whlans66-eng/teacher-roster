@@ -14,8 +14,8 @@
   <!-- 字體樣式表 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
   <!-- Tailwind CDN - 使用 defer 避免阻塞渲染 -->
   <script defer src="https://cdn.tailwindcss.com"></script>
@@ -1104,7 +1104,7 @@
       <!-- 左側師資側邊欄 -->
       <aside class="teacher-sidebar">
         <div class="teacher-list-header">
-          <h2><i data-lucide="presentation"></i> 師資列表</h2>
+          <h2><i class="ph ph-chalkboard-teacher"></i> 師資列表</h2>
           <input type="text" id="sidebarTeacherSearch" placeholder="🔍 搜尋師資姓名..." oninput="filterSidebarTeachers()">
         </div>
         <div id="teacherListCards">
@@ -1123,14 +1123,14 @@
         <div id="selectedTeacherBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
-              <div class="text-2xl"><i data-lucide="presentation"></i></div>
+              <div class="text-2xl"><i class="ph ph-chalkboard-teacher"></i></div>
               <div class="text-white">
                 <p class="text-sm opacity-90">目前檢視師資（再次點選師資可取消）</p>
                 <p id="selectedTeacherName" class="text-xl font-bold"></p>
               </div>
             </div>
             <button onclick="clearTeacherSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
-              <i data-lucide="x"></i> 清除
+              <i class="ph ph-x"></i> 清除
             </button>
           </div>
         </div>
@@ -1138,7 +1138,7 @@
         <div id="selectedDateBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
-              <div class="text-2xl"><i data-lucide="calendar"></i></div>
+              <div class="text-2xl"><i class="ph ph-calendar"></i></div>
               <div class="text-white">
                 <p class="text-sm opacity-90">目前檢視日期（再次點選日期可取消）</p>
                 <p id="selectedDateText" class="text-xl font-bold"></p>
@@ -1154,17 +1154,17 @@
       <!-- 課程行事曆 -->
       <div class="card p-6 fade-in" style="animation-delay: 0.1s">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h2 style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;" class="text-gray-900"><i data-lucide="calendar"></i> 課程行事曆</h2>
+          <h2 style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;" class="text-gray-900"><i class="ph ph-calendar"></i> 課程行事曆</h2>
           <div class="flex items-center gap-3">
             <button onclick="openAddCourseModal()" class="modern-btn px-6 py-2 rounded-xl font-medium" style="font-size: 15px;">
-              <i data-lucide="plus-circle"></i> 新增課程
+              <i class="ph ph-plus-circle"></i> 新增課程
             </button>
             <div class="flex rounded-xl p-1" style="background: rgba(118, 118, 128, 0.12);">
               <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-900" style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);">
-                <i data-lucide="calendar"></i> 月
+                <i class="ph ph-calendar"></i> 月
               </button>
               <button id="weekViewBtn" onclick="setViewMode('week')" class="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600" style="background: transparent;">
-                <i data-lucide="bar-chart"></i> 週
+                <i class="ph ph-chart-bar"></i> 週
               </button>
             </div>
           </div>
@@ -1211,7 +1211,7 @@
       <!-- 師資時數分析 -->
       <div id="teacherHoursAnalysisCard" class="card p-6 fade-in" style="animation-delay: 0.3s">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i data-lucide="presentation"></i> 師資時數分析</h2>
+          <h2 class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-chalkboard-teacher"></i> 師資時數分析</h2>
           <button onclick="toggleTeacherHoursAnalysis()" class="px-4 py-2 font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" style="font-size: 14px;">
             <span id="toggleAnalysisIcon">👁️</span> <span id="toggleAnalysisText">隱藏</span>
           </button>
@@ -1264,7 +1264,7 @@
       <!-- 課程總覽 -->
       <div class="card p-6 fade-in" style="animation-delay: 0.5s">
         <div class="flex items-center justify-between mb-6">
-          <h2 id="courseOverviewTitle" class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i data-lucide="calendar"></i> 今日課程總覽</h2>
+          <h2 id="courseOverviewTitle" class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-calendar"></i> 今日課程總覽</h2>
           <div class="text-gray-600" id="todayDate" style="font-size: 14px;"></div>
         </div>
         <div id="todayCoursesContainer" class="space-y-3">
@@ -1282,7 +1282,7 @@
 
       <!-- Modal 頭部 -->
       <div class="modal-header">
-        <h3><i data-lucide="book-open"></i> 新增課程</h3>
+        <h3><i class="ph ph-books"></i> 新增課程</h3>
       </div>
 
       <!-- Modal 內容區（可滾動） -->
@@ -1418,7 +1418,7 @@
 
       <!-- Modal 頭部 -->
       <div class="modal-header">
-        <h3><i data-lucide="calendar"></i> 複製到其他日期</h3>
+        <h3><i class="ph ph-calendar"></i> 複製到其他日期</h3>
       </div>
 
       <!-- Modal 內容區（可滾動） -->
@@ -1459,7 +1459,7 @@
 
       <!-- Modal 頭部 -->
       <div class="modal-header">
-        <h3 id="modalTitle"><i data-lucide="calendar"></i> 課程詳情</h3>
+        <h3 id="modalTitle"><i class="ph ph-calendar"></i> 課程詳情</h3>
       </div>
 
       <!-- Modal 內容區（可滾動） -->
@@ -1803,15 +1803,6 @@
       renderCalendar();
       updateTodayDate();
       loadTeacherHoursAnalysisVisibility();
-      // 初始化 Lucide 圖標
-      if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
-      }
-    }
-
-    // 主渲染入口（別名）
-    function renderDashboard() {
-      renderAllCourseViews();
     }
 
     async function init() {
@@ -2517,7 +2508,7 @@
           return `
             <div class="bg-white rounded-xl p-4 border border-gray-200">
               <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
-                <h4 class="font-semibold text-gray-800"><i data-lucide="calendar"></i> ${dateText}</h4>
+                <h4 class="font-semibold text-gray-800"><i class="ph ph-calendar"></i> ${dateText}</h4>
                 <span class="text-xs text-gray-500">${courses.length} 堂課</span>
               </div>
               <div class="space-y-2">
@@ -2532,7 +2523,7 @@
                   // 🔒 檢查鎖定狀態
                   const lock = courseLocks[c.id];
                   const isLocked = lock && lock.userName;
-                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200"><i data-lucide="lock"></i> ${lock.userName} 編輯中</span>` : '';
+                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200"><i class="ph ph-lock"></i> ${lock.userName} 編輯中</span>` : '';
 
                   return `
                     <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 ${isLocked ? 'border-red-300' : ''}" onclick="viewEvent(${c.id})">
@@ -2598,7 +2589,7 @@
                   // 🔒 檢查鎖定狀態
                   const lock = courseLocks[c.id];
                   const isLocked = lock && lock.userName;
-                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200"><i data-lucide="lock"></i> ${lock.userName} 編輯中</span>` : '';
+                  const lockBadge = isLocked ? `<span class="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200"><i class="ph ph-lock"></i> ${lock.userName} 編輯中</span>` : '';
 
                   return `
                     <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 ${isLocked ? 'border-red-300' : ''}" onclick="viewEvent(${c.id})">
@@ -2620,11 +2611,6 @@
             </div>
           `;
         }).join('');
-      }
-
-      // 初始化 Lucide 圖標
-      if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
       }
     }
 
@@ -2683,10 +2669,6 @@
         renderWeekView();
       }
       renderMobileCalendar();
-      // 初始化 Lucide 圖標
-      if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
-      }
     }
 
     function renderMonthView() {
@@ -2793,7 +2775,7 @@
                 <div class="event-item bg-blue-500 text-white p-3 rounded-xl cursor-pointer hover:bg-blue-600"
                      onclick="viewEvent(${e.id}); event.stopPropagation();">
                   <div class="font-semibold">${teacherName}</div>
-                  <div class="text-xs mt-1"><i data-lucide="clock"></i> ${e.time}</div>
+                  <div class="text-xs mt-1"><i class="ph ph-clock"></i> ${e.time}</div>
                   <div class="text-xs" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${e.name}</div>
                 </div>
               `;
@@ -2836,7 +2818,7 @@
                   return `
                     <div class="mt-2 p-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600" onclick="viewEvent(${e.id})">
                       <div class="font-semibold text-sm" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${teacherName} - ${e.name}</div>
-                      <div class="text-xs mt-1"><i data-lucide="clock"></i> ${e.time} | <i data-lucide="book-open"></i> ${e.type}</div>
+                      <div class="text-xs mt-1"><i class="ph ph-clock"></i> ${e.time} | <i class="ph ph-books"></i> ${e.type}</div>
                     </div>
                   `;
                 }).join('')
@@ -2853,13 +2835,6 @@
       container.innerHTML = html;
     }
 
-    // 在 renderCalendar 結束後初始化圖標
-    function finalizeCalendarRender() {
-      if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
-      }
-    }
-
     // ==================== Modal 管理 ====================
     function openAddCourseModal() {
       document.getElementById('courseDate').value = getLocalDateString(new Date());
@@ -2868,11 +2843,6 @@
       loadMaritimeCoursesToDatalist();
 
       document.getElementById('addCourseModal').classList.remove('hidden');
-
-      // 初始化 Lucide 圖標
-      if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
-      }
     }
 
     // 載入智慧派課的課程名稱到下拉選單
@@ -2954,7 +2924,7 @@
 
       // 顯示查看模式
       const modalTitle = document.getElementById('modalTitle');
-      modalTitle.innerHTML = '<i data-lucide="calendar"></i> 課程詳情';
+      modalTitle.innerHTML = '<i class="ph ph-calendar"></i> 課程詳情';
       modalTitle.style.cssText = 'font-size: 28px; font-weight: 600; letter-spacing: -0.015em;';
       document.getElementById('viewMode').style.display = 'block';
       document.getElementById('editCourseForm').style.display = 'none';
@@ -2977,7 +2947,7 @@
           <div>
             <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">授課教師</div>
             <div class="flex items-center gap-2">
-              <span class="text-2xl"><i data-lucide="presentation"></i></span>
+              <span class="text-2xl"><i class="ph ph-chalkboard-teacher"></i></span>
               <span class="text-lg font-semibold" style="color: var(--apple-gray-dark);">${teacher ? teacher.name : '未知'}</span>
             </div>
           </div>
@@ -2991,14 +2961,14 @@
             <div>
               <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">日期</div>
               <div class="flex items-center gap-2">
-                <span><i data-lucide="calendar"></i></span>
+                <span><i class="ph ph-calendar"></i></span>
                 <span class="text-sm font-medium">${course.date}</span>
               </div>
             </div>
             <div>
               <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">時間</div>
               <div class="flex items-center gap-2">
-                <span><i data-lucide="clock"></i></span>
+                <span><i class="ph ph-clock"></i></span>
                 <span class="text-sm font-medium">${course.time}</span>
               </div>
             </div>
@@ -3008,14 +2978,14 @@
             <div>
               <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">類型</div>
               <div class="flex items-center gap-2">
-                <span><i data-lucide="book-open"></i></span>
+                <span><i class="ph ph-books"></i></span>
                 <span class="text-sm font-medium">${course.type}</span>
               </div>
             </div>
             <div>
               <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">狀態</div>
               <div class="flex items-center gap-2">
-                <span><i data-lucide="briefcase"></i></span>
+                <span><i class="ph ph-briefcase"></i></span>
                 <span class="text-sm font-medium">${course.status || '上班'}</span>
               </div>
             </div>
@@ -3167,11 +3137,6 @@
       initSocialFeatures(courseId, currentUserId, currentUserName);
 
       document.getElementById('viewEventModal').classList.remove('hidden');
-
-      // 初始化 Lucide 圖標
-      if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
-      }
     }
 
     // 顯示「功能開發中」模態視窗
@@ -3807,11 +3772,6 @@
 
       // 顯示 Modal
       document.getElementById('duplicateDateModal').classList.remove('hidden');
-
-      // 初始化 Lucide 圖標
-      if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
-      }
     }
 
     /**
