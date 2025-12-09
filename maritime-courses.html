@@ -908,38 +908,94 @@
       }
     }
 
-    // 統計分析 - 使用固定演示數據
+    // 統計分析 - 從真實資料計算
     function displayMaritimeStats() {
-      // 固定的統計數據
-      const demoStats = {
-        totalCourses: 5,
-        totalKeywords: 57,
-        popularCategory: '04船舶設備操作與技術知能訓練',
-        categories: {
-          '01': { name: '船舶操縱與航行實務訓練', count: 0, color: '#4f46e5' },
-          '02': { name: '領導統御與檢查應對管理', count: 0, color: '#06b6d4' },
-          '03': { name: '事故案例分析與應變處置訓練', count: 0, color: '#10b981' },
-          '04': { name: '船舶設備操作與技術知能訓練', count: 3, color: '#f59e0b' },
-          '05': { name: '國際法規與環境合規知識', count: 2, color: '#ef4444' },
-          '06': { name: '船舶貨物裝卸作業實務', count: 0, color: '#8b5cf6' },
-          '07': { name: '船員經驗交流與職能回饋', count: 0, color: '#f97316' },
-          '08': { name: '職級轉換與壓力調適', count: 0, color: '#84cc16' },
-          '09': { name: '其他', count: 0, color: '#ec4899' }
-        },
-        methods: {
-          '混合課程': { count: 5, percentage: 100.0 }
-        }
+      // 從真實的 maritimeCourses 計算統計
+      const totalCourses = maritimeCourses.length;
+
+      // 定義分類名稱和顏色
+      const categoryNames = {
+        '01': { name: '船舶操縱與航行實務訓練', color: '#4f46e5' },
+        '02': { name: '領導統御與檢查應對管理', color: '#06b6d4' },
+        '03': { name: '事故案例分析與應變處置訓練', color: '#10b981' },
+        '04': { name: '船舶設備操作與技術知能訓練', color: '#f59e0b' },
+        '05': { name: '國際法規與環境合規知識', color: '#ef4444' },
+        '06': { name: '船舶貨物裝卸作業實務', color: '#8b5cf6' },
+        '07': { name: '船員經驗交流與職能回饋', color: '#f97316' },
+        '08': { name: '職級轉換與壓力調適', color: '#84cc16' },
+        '09': { name: '其他', color: '#ec4899' }
       };
 
+      // 統計每個分類的課程數量
+      const categoryCounts = {};
+      maritimeCourses.forEach(course => {
+        const cat = course.category || '09';
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      });
+
+      // 建立完整的 categories 物件
+      const categories = {};
+      Object.keys(categoryNames).forEach(code => {
+        categories[code] = {
+          ...categoryNames[code],
+          count: categoryCounts[code] || 0
+        };
+      });
+
+      // 找出最熱門的分類
+      let popularCategory = '09其他';
+      let maxCount = 0;
+      Object.entries(categories).forEach(([code, cat]) => {
+        if (cat.count > maxCount) {
+          maxCount = cat.count;
+          popularCategory = code + cat.name;
+        }
+      });
+
+      // 統計關鍵字
+      const keywordCounts = {};
+      maritimeCourses.forEach(course => {
+        if (Array.isArray(course.keywords)) {
+          course.keywords.forEach(keyword => {
+            const kw = keyword.trim();
+            if (kw) {
+              keywordCounts[kw] = (keywordCounts[kw] || 0) + 1;
+            }
+          });
+        }
+      });
+
+      // 轉換為陣列並按出現次數排序
+      const keywords = Object.entries(keywordCounts)
+        .map(([text, count]) => ({ text, count }))
+        .sort((a, b) => b.count - a.count);
+
+      const totalKeywords = keywords.length;
+
+      // 統計授課方式
+      const methodCounts = {};
+      maritimeCourses.forEach(course => {
+        const method = course.method || '未設定';
+        methodCounts[method] = (methodCounts[method] || 0) + 1;
+      });
+
+      const methods = {};
+      Object.entries(methodCounts).forEach(([method, count]) => {
+        methods[method] = {
+          count,
+          percentage: totalCourses > 0 ? ((count / totalCourses) * 100).toFixed(1) : 0
+        };
+      });
+
       // 頂部統計卡片
-      document.getElementById('maritimeTotalCourses').innerText = demoStats.totalCourses;
-      document.getElementById('maritimeTotalKeywords').innerText = demoStats.totalKeywords;
-      document.getElementById('maritimePopularCategory').innerText = demoStats.popularCategory;
+      document.getElementById('maritimeTotalCourses').innerText = totalCourses;
+      document.getElementById('maritimeTotalKeywords').innerText = totalKeywords;
+      document.getElementById('maritimePopularCategory').innerText = popularCategory;
 
       // 分類統計 - 條狀圖
-      const catHtml = Object.keys(demoStats.categories).map(code => {
-        const cat = demoStats.categories[code];
-        const percentage = (cat.count / demoStats.totalCourses) * 100;
+      const catHtml = Object.keys(categories).map(code => {
+        const cat = categories[code];
+        const percentage = totalCourses > 0 ? (cat.count / totalCourses) * 100 : 0;
         return `
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
             <div style="font-size:12px; width:140px; color: #1d1d1f;">${code} ${cat.name}</div>
@@ -953,13 +1009,13 @@
       document.getElementById('maritimeCategoryStats').innerHTML = catHtml;
 
       // 圓餅圖角度計算 (只顯示有課程的分類)
-      const activeCategories = Object.keys(demoStats.categories).filter(code => demoStats.categories[code].count > 0);
+      const activeCategories = Object.keys(categories).filter(code => categories[code].count > 0);
       let currentAngle = 0;
       const pieChart = document.getElementById('maritimePieChart');
 
       activeCategories.forEach((code, index) => {
-        const cat = demoStats.categories[code];
-        const percentage = (cat.count / demoStats.totalCourses) * 360;
+        const cat = categories[code];
+        const percentage = totalCourses > 0 ? (cat.count / totalCourses) * 360 : 0;
         currentAngle += percentage;
         pieChart.style.setProperty(`--angle${parseInt(code)}`, `${currentAngle}deg`);
       });
@@ -967,8 +1023,8 @@
       // 圓餅圖圖例
       const legend = document.getElementById('maritimeChartLegend');
       legend.innerHTML = activeCategories.map(code => {
-        const cat = demoStats.categories[code];
-        const percentage = ((cat.count / demoStats.totalCourses) * 100).toFixed(1);
+        const cat = categories[code];
+        const percentage = totalCourses > 0 ? ((cat.count / totalCourses) * 100).toFixed(1) : 0;
         return `
           <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; transition: background 0.2s;">
             <div style="width: 14px; height: 14px; border-radius: 50%; background: ${cat.color}; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);"></div>
@@ -982,14 +1038,14 @@
       const methodColors = { 實體課程: '#3b82f6', 線上課程: '#10b981', 混合課程: '#f59e0b', 未設定: '#6b7280' };
       const methodIcons = { 實體課程: '<i class="ph ph-buildings"></i>', 線上課程: '<i class="ph ph-laptop"></i>', 混合課程: '<i class="ph ph-arrows-clockwise"></i>', 未設定: '<i class="ph ph-question"></i>' };
 
-      document.getElementById('maritimeMethodStats').innerHTML = Object.entries(demoStats.methods).map(([method, data]) => {
-        const angle = (data.count / demoStats.totalCourses) * 360;
+      document.getElementById('maritimeMethodStats').innerHTML = Object.entries(methods).map(([method, data]) => {
+        const angle = totalCourses > 0 ? (data.count / totalCourses) * 360 : 0;
         return `
           <div class="method-card">
-            <div class="donut-chart" style="--color: ${methodColors[method]}; --angle: ${angle}deg; margin: 0 auto 16px;">
+            <div class="donut-chart" style="--color: ${methodColors[method] || '#6b7280'}; --angle: ${angle}deg; margin: 0 auto 16px;">
               <div class="donut-chart-label">${data.count}</div>
             </div>
-            <div style="font-size: 32px; margin-bottom: 8px;">${methodIcons[method]}</div>
+            <div style="font-size: 32px; margin-bottom: 8px;">${methodIcons[method] || '<i class="ph ph-question"></i>'}</div>
             <h4 style="font-weight: 600; color: #1d1d1f; margin-bottom: 4px;">${method}</h4>
             <p style="font-size: 13px; color: #6e6e73;">${data.percentage}% 的課程</p>
             <p style="font-size: 12px; color: #86868b; margin-top: 4px;">共 ${data.count} 門課程</p>
@@ -997,54 +1053,36 @@
         `;
       }).join('');
 
-      // 熱門關鍵字
-      const keywords = [
-        { text: 'CO2鋼瓶', count: 2 },
-        { text: 'Black out', count: 2 },
-        { text: 'BVS', count: 2 },
-        { text: '氣象導航', count: 2 },
-        { text: '跨洋', count: 2 },
-        { text: 'PFOS', count: 1 },
-        { text: 'BWM', count: 1 },
-        { text: 'OWS', count: 1 },
-        { text: '壓艙水', count: 1 },
-        { text: '壓艙水', count: 1 },
-        { text: 'CC', count: 1 },
-        { text: '泡沫滅火器', count: 1 },
-        { text: '液位計', count: 1 },
-        { text: '剩餘風險', count: 1 },
-        { text: 'Residue risk', count: 1 },
-        { text: 'Condition of Class', count: 1 },
-        { text: '棘', count: 1 },
-        { text: 'BWMS', count: 1 },
-        { text: '電子紀錄簿', count: 1 }
-      ];
-
-      document.getElementById('maritimeKeywordsCloud').innerHTML = keywords.map(kw => `
-        <div style="
-          background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-          color: white;
-          padding: 10px 16px;
-          border-radius: 12px;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0, 122, 255, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 122, 255, 0.3)'">
-          <span>${kw.text}</span>
-          <span style="
-            background: rgba(255, 255, 255, 0.25);
-            padding: 2px 8px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-          ">${kw.count}</span>
-        </div>
-      `).join('');
+      // 熱門關鍵字 - 從真實資料計算
+      if (keywords.length > 0) {
+        document.getElementById('maritimeKeywordsCloud').innerHTML = keywords.map(kw => `
+          <div style="
+            background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0, 122, 255, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 122, 255, 0.3)'">
+            <span>${kw.text}</span>
+            <span style="
+              background: rgba(255, 255, 255, 0.25);
+              padding: 2px 8px;
+              border-radius: 8px;
+              font-size: 12px;
+              font-weight: 600;
+            ">${kw.count}</span>
+          </div>
+        `).join('');
+      } else {
+        document.getElementById('maritimeKeywordsCloud').innerHTML = '<div style="text-align: center; color: #86868b; padding: 20px;">尚無關鍵字資料</div>';
+      }
     }
 
     // 訊息提示
