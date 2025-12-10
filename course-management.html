@@ -1678,35 +1678,53 @@
       const showMoreContainer = document.getElementById('showMoreContainer');
 
       // 從課程中提取所有有上課的師資ID
-      const thisMonthCourses = courseAssignments.filter(c => c.date.startsWith(thisMonth));
-      const teacherIdsWithCourses = [...new Set(thisMonthCourses.map(c => c.teacherId))];
+      const thisMonthCourses = courseAssignments.filter(c => c.date && c.date.startsWith(thisMonth));
 
-      // 建立包含所有有課程的師資列表（包括不在師資管理中的）
-      const allTeachersWithCourses = teacherIdsWithCourses.map(teacherId => {
-        const teacher = teachers.find(t => t.id === teacherId);
-        // 如果找不到師資資料，從課程中獲取名稱
-        if (!teacher) {
-          const course = thisMonthCourses.find(c => c.teacherId === teacherId);
-          return {
+      console.log('📊 師資時數分析調試信息：');
+      console.log('- 當前月份:', thisMonth);
+      console.log('- 本月課程數:', thisMonthCourses.length);
+      console.log('- 師資列表人數:', teachers.length);
+
+      // 統一 teacherId 為數字型別（有些可能是字串）
+      const teacherIdsWithCourses = [...new Set(thisMonthCourses.map(c => Number(c.teacherId)).filter(id => !isNaN(id)))];
+
+      console.log('- 有課程的師資ID:', teacherIdsWithCourses);
+
+      // 建立師資列表：包含師資管理中的所有老師 + 不在列表中但有課程的老師
+      const teacherMap = new Map();
+
+      // 1. 先加入所有在師資管理列表中的老師
+      teachers.forEach(teacher => {
+        teacherMap.set(Number(teacher.id), teacher);
+      });
+
+      // 2. 再加入有課程但不在師資列表中的老師
+      teacherIdsWithCourses.forEach(teacherId => {
+        if (!teacherMap.has(teacherId)) {
+          const course = thisMonthCourses.find(c => Number(c.teacherId) === teacherId);
+          teacherMap.set(teacherId, {
             id: teacherId,
             name: course?.teacherName || `未知師資 (ID: ${teacherId})`,
             notInTeacherList: true
-          };
+          });
         }
-        return teacher;
       });
 
-      if (allTeachersWithCourses.length === 0) {
-        listContainer.innerHTML = '<p class="text-center text-gray-500 py-8">本月尚無排課</p>';
+      const allTeachers = Array.from(teacherMap.values());
+
+      console.log('- 總師資數（包含有課程和無課程）:', allTeachers.length);
+
+      if (allTeachers.length === 0) {
+        listContainer.innerHTML = '<p class="text-center text-gray-500 py-8">尚無師資資料</p>';
         showMoreContainer.style.display = 'none';
         document.getElementById('targetAchievedAlert').style.display = 'none';
         return;
       }
 
       // 過濾師資（根據搜尋條件）
-      let filteredTeachers = allTeachersWithCourses;
+      let filteredTeachers = allTeachers;
       if (teacherSearchQuery.trim() !== '') {
-        filteredTeachers = allTeachersWithCourses.filter(teacher =>
+        filteredTeachers = allTeachers.filter(teacher =>
           teacher.name.toLowerCase().includes(teacherSearchQuery.toLowerCase())
         );
       }
@@ -1721,11 +1739,13 @@
       // 計算每位師資的時數並排序
       const teachersWithHours = filteredTeachers.map(teacher => {
         const courses = courseAssignments.filter(c =>
-          c.teacherId === teacher.id && c.date.startsWith(thisMonth)
+          Number(c.teacherId) === Number(teacher.id) && c.date && c.date.startsWith(thisMonth)
         );
         const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
         return { teacher, hours, courses };
       });
+
+      console.log('- 師資時數統計:', teachersWithHours.map(t => `${t.teacher.name}: ${t.hours}小時 (${t.courses.length}堂課)`));
 
       // 排序：已達標(>=12小時)排在前面，按時數降序
       teachersWithHours.sort((a, b) => {
