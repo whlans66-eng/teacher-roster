@@ -1738,10 +1738,21 @@
 
       // 計算每位師資的時數並排序
       const teachersWithHours = filteredTeachers.map(teacher => {
-        // 統計該老師的所有課程時數（不限月份）
+        // 根據選擇情境彈性統計時數：
+        // 1. 選擇特定日期 → 只統計該日期的課程時數
+        // 2. 選擇特定老師（無選日期）→ 統計該老師的全部課程時數
+        // 3. 預設狀態 → 統計每位老師的全部課程時數
+
         const courses = courseAssignments.filter(c => {
           const matchesTeacher = Number(c.teacherId) === Number(teacher.id);
           const hasValidDate = c.date;
+
+          // 如果選擇了特定日期，只統計該日期的課程
+          if (selectedDate !== null) {
+            return matchesTeacher && hasValidDate && c.date === selectedDate;
+          }
+
+          // 否則統計所有課程
           return matchesTeacher && hasValidDate;
         });
 
@@ -1806,8 +1817,10 @@
           ? 'border-2 border-blue-500 bg-blue-50 shadow-lg'
           : 'border border-gray-200 hover:border-blue-300 hover:shadow-md';
 
-        // 顯示總時數（包含所有月份的課程）
-        const hoursLabel = `總時數: ${hours.toFixed(1)} 小時`;
+        // 根據選擇情境顯示不同的時數標籤
+        const hoursLabel = selectedDate !== null
+          ? `該日時數: ${hours.toFixed(1)} 小時`
+          : `總時數: ${hours.toFixed(1)} 小時`;
 
         return `
           <div onclick="selectTeacher(${teacher.id})"
