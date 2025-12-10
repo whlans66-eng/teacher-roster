@@ -1738,15 +1738,11 @@
 
       // 計算每位師資的時數並排序
       const teachersWithHours = filteredTeachers.map(teacher => {
-        // 當選擇特定老師且無選擇日期時（顯示該老師的所有課程），統計全部課程時數
-        // 否則只統計本月課程時數
-        const shouldShowAllCourses = selectedTeacherId !== null && selectedDate === null && Number(selectedTeacherId) === Number(teacher.id);
-
+        // 統計該老師的所有課程時數（不限月份）
         const courses = courseAssignments.filter(c => {
           const matchesTeacher = Number(c.teacherId) === Number(teacher.id);
           const hasValidDate = c.date;
-          const matchesMonth = shouldShowAllCourses || c.date.startsWith(thisMonth);
-          return matchesTeacher && hasValidDate && matchesMonth;
+          return matchesTeacher && hasValidDate;
         });
 
         const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
@@ -1810,11 +1806,8 @@
           ? 'border-2 border-blue-500 bg-blue-50 shadow-lg'
           : 'border border-gray-200 hover:border-blue-300 hover:shadow-md';
 
-        // 當顯示該老師的所有課程時，使用不同的時數標籤
-        const showingAllCourses = selectedTeacherId !== null && selectedDate === null && Number(selectedTeacherId) === Number(teacher.id);
-        const hoursLabel = showingAllCourses
-          ? `總時數: ${hours.toFixed(1)} 小時`
-          : `${hours.toFixed(1)} / 12 小時`;
+        // 顯示總時數（包含所有月份的課程）
+        const hoursLabel = `總時數: ${hours.toFixed(1)} 小時`;
 
         return `
           <div onclick="selectTeacher(${teacher.id})"
@@ -1831,7 +1824,7 @@
               </div>
               <div class="text-right">
                 <p class="text-sm font-bold text-gray-900">${hoursLabel}</p>
-                ${showingAllCourses ? '' : `<span class="text-xs ${statusClass} text-white px-2 py-1 rounded-full">${statusText}</span>`}
+                <span class="text-xs ${statusClass} text-white px-2 py-1 rounded-full">${statusText}</span>
               </div>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-3">
