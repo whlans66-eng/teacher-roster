@@ -1677,16 +1677,36 @@
       const listContainer = document.getElementById('teacherHoursList');
       const showMoreContainer = document.getElementById('showMoreContainer');
 
-      if (teachers.length === 0) {
-        listContainer.innerHTML = '<p class="text-center text-gray-500 py-8">尚無師資資料</p>';
+      // 從課程中提取所有有上課的師資ID
+      const thisMonthCourses = courseAssignments.filter(c => c.date.startsWith(thisMonth));
+      const teacherIdsWithCourses = [...new Set(thisMonthCourses.map(c => c.teacherId))];
+
+      // 建立包含所有有課程的師資列表（包括不在師資管理中的）
+      const allTeachersWithCourses = teacherIdsWithCourses.map(teacherId => {
+        const teacher = teachers.find(t => t.id === teacherId);
+        // 如果找不到師資資料，從課程中獲取名稱
+        if (!teacher) {
+          const course = thisMonthCourses.find(c => c.teacherId === teacherId);
+          return {
+            id: teacherId,
+            name: course?.teacherName || `未知師資 (ID: ${teacherId})`,
+            notInTeacherList: true
+          };
+        }
+        return teacher;
+      });
+
+      if (allTeachersWithCourses.length === 0) {
+        listContainer.innerHTML = '<p class="text-center text-gray-500 py-8">本月尚無排課</p>';
         showMoreContainer.style.display = 'none';
+        document.getElementById('targetAchievedAlert').style.display = 'none';
         return;
       }
 
       // 過濾師資（根據搜尋條件）
-      let filteredTeachers = teachers;
+      let filteredTeachers = allTeachersWithCourses;
       if (teacherSearchQuery.trim() !== '') {
-        filteredTeachers = teachers.filter(teacher =>
+        filteredTeachers = allTeachersWithCourses.filter(teacher =>
           teacher.name.toLowerCase().includes(teacherSearchQuery.toLowerCase())
         );
       }
@@ -2917,9 +2937,14 @@
       }
 
       // 更新課程資料（包含自動生成的標籤）
+      // 取得老師資訊
+      const teacher = teachers.find(t => t.id === teacherId);
+      const teacherName = teacher ? teacher.name : '未知師資';
+
       courseAssignments[courseIndex] = {
         ...oldCourse,
         teacherId: teacherId,
+        teacherName: teacherName,
         name: document.getElementById('editCourseName').value,
         date: courseDate,
         time: newTime,
@@ -2933,11 +2958,10 @@
       // 同步更新行事曆事件
       const eventIndex = calendarEvents.findIndex(e => e.courseId === editingCourseId);
       if (eventIndex !== -1) {
-        const teacher = teachers.find(t => t.id === teacherId);
         calendarEvents[eventIndex] = {
           ...calendarEvents[eventIndex],
           date: courseDate,
-          title: `${courseAssignments[courseIndex].name} - ${teacher.name}`,
+          title: `${courseAssignments[courseIndex].name} - ${teacherName}`,
           time: newTime,
           teacherId: teacherId,
           location: courseAssignments[courseIndex].type,
@@ -3008,9 +3032,14 @@
         return;
       }
 
+      // 取得老師資訊
+      const teacher = teachers.find(t => t.id === teacherId);
+      const teacherName = teacher ? teacher.name : '未知師資';
+
       const courseData = {
         id: Date.now(),
         teacherId: teacherId,
+        teacherName: teacherName,
         name: document.getElementById('courseName').value,
         date: document.getElementById('courseDate').value,
         time: `${document.getElementById('startTime').value}-${document.getElementById('endTime').value}`,
@@ -3030,11 +3059,10 @@
       courseAssignments.push(courseData);
 
       // 同步到行事曆
-      const teacher = teachers.find(t => t.id === teacherId);
       calendarEvents.push({
         id: courseData.id,
         date: courseData.date,
-        title: `${courseData.name} - ${teacher.name}`,
+        title: `${courseData.name} - ${teacherName}`,
         time: courseData.time,
         teacherId: teacherId,
         location: courseData.type,
