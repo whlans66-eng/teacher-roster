@@ -1089,6 +1089,13 @@
         </div>
 
         <div>
+          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇助教</label>
+          <select id="courseTaId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            <option value="">請選擇助教（選填）</option>
+          </select>
+        </div>
+
+        <div>
           <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程名稱</label>
           <select id="courseName" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
             <option value="">請選擇課程</option>
@@ -1266,6 +1273,13 @@
           <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇師資</label>
           <select id="editTeacherId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
             <option value="">請選擇師資</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">選擇助教</label>
+          <select id="editTaId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            <option value="">請選擇助教（選填）</option>
           </select>
         </div>
 
@@ -1630,6 +1644,13 @@
       select.innerHTML = '<option value="">請選擇師資</option>';
       teachers.forEach(t => {
         select.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+      });
+
+      // 同時載入助教選單
+      const taSelect = document.getElementById('courseTaId');
+      taSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
+      teachers.forEach(t => {
+        taSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
       });
     }
 
@@ -2564,6 +2585,9 @@
       const currentUserName = '管理員'; // 模擬當前用戶名稱
       const userHasLiked = courseLikes.some(l => l.userId === currentUserId);
 
+      // 取得助教資訊
+      const ta = course.taId ? teachers.find(t => t.id === course.taId) : null;
+
       document.getElementById('viewMode').innerHTML = `
         <!-- TimeTree + Apple 風格的課程詳情 -->
 
@@ -2576,6 +2600,16 @@
               <span class="text-lg font-semibold" style="color: var(--apple-gray-dark);">${teacher ? teacher.name : '未知'}</span>
             </div>
           </div>
+
+          ${course.taId && ta ? `
+          <div>
+            <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">助教</div>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl"><i class="ph ph-user"></i></span>
+              <span class="text-lg font-semibold" style="color: var(--apple-gray-dark);">${ta.name}</span>
+            </div>
+          </div>
+          ` : ''}
 
           <div>
             <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">課程名稱</div>
@@ -2888,6 +2922,13 @@
         editTeacherSelect.innerHTML += `<option value="${t.id}" ${t.id === course.teacherId ? 'selected' : ''}>${t.name}</option>`;
       });
 
+      // 載入助教列表到編輯表單
+      const editTaSelect = document.getElementById('editTaId');
+      editTaSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
+      teachers.forEach(t => {
+        editTaSelect.innerHTML += `<option value="${t.id}" ${t.id === course.taId ? 'selected' : ''}>${t.name}</option>`;
+      });
+
       // 填入課程資料
       document.getElementById('editCourseName').value = course.name;
       document.getElementById('editCourseDate').value = course.date;
@@ -2981,10 +3022,18 @@
       const teacher = teachers.find(t => t.id === teacherId);
       const teacherName = teacher ? teacher.name : '未知師資';
 
+      // 取得助教資訊（選填）
+      const taIdValue = document.getElementById('editTaId').value;
+      const taId = taIdValue ? Number(taIdValue) : null;
+      const ta = taId ? teachers.find(t => t.id === taId) : null;
+      const taName = ta ? ta.name : null;
+
       courseAssignments[courseIndex] = {
         ...oldCourse,
         teacherId: teacherId,
         teacherName: teacherName,
+        taId: taId,
+        taName: taName,
         name: document.getElementById('editCourseName').value,
         date: courseDate,
         time: newTime,
@@ -3076,10 +3125,18 @@
       const teacher = teachers.find(t => t.id === teacherId);
       const teacherName = teacher ? teacher.name : '未知師資';
 
+      // 取得助教資訊（選填）
+      const taIdValue = document.getElementById('courseTaId').value;
+      const taId = taIdValue ? Number(taIdValue) : null;
+      const ta = taId ? teachers.find(t => t.id === taId) : null;
+      const taName = ta ? ta.name : null;
+
       const courseData = {
         id: Date.now(),
         teacherId: teacherId,
         teacherName: teacherName,
+        taId: taId,
+        taName: taName,
         name: document.getElementById('courseName').value,
         date: document.getElementById('courseDate').value,
         time: `${document.getElementById('startTime').value}-${document.getElementById('endTime').value}`,
