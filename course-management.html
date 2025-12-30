@@ -1707,9 +1707,12 @@
       console.log('- 師資列表人數:', teachers.length);
 
       // 統一 teacherId 為數字型別（有些可能是字串）
-      const teacherIdsWithCourses = [...new Set(thisMonthCourses.map(c => Number(c.teacherId)).filter(id => !isNaN(id)))];
+      // 同時收集主講老師和助教的 ID
+      const teacherIds = thisMonthCourses.map(c => Number(c.teacherId)).filter(id => !isNaN(id));
+      const taIds = thisMonthCourses.map(c => Number(c.taId)).filter(id => !isNaN(id));
+      const teacherIdsWithCourses = [...new Set([...teacherIds, ...taIds])];
 
-      console.log('- 有課程的師資ID:', teacherIdsWithCourses);
+      console.log('- 有課程的師資ID（含助教）:', teacherIdsWithCourses);
 
       // 建立師資列表：包含師資管理中的所有老師 + 不在列表中但有課程的老師
       const teacherMap = new Map();
@@ -1719,13 +1722,17 @@
         teacherMap.set(Number(teacher.id), teacher);
       });
 
-      // 2. 再加入有課程但不在師資列表中的老師
+      // 2. 再加入有課程但不在師資列表中的老師（包含主講和助教）
       teacherIdsWithCourses.forEach(teacherId => {
         if (!teacherMap.has(teacherId)) {
-          const course = thisMonthCourses.find(c => Number(c.teacherId) === teacherId);
+          // 嘗試從主講或助教身份找到名稱
+          const courseAsTeacher = thisMonthCourses.find(c => Number(c.teacherId) === teacherId);
+          const courseAsTa = thisMonthCourses.find(c => Number(c.taId) === teacherId);
+          const name = courseAsTeacher?.teacherName || courseAsTa?.taName || `未知師資 (ID: ${teacherId})`;
+
           teacherMap.set(teacherId, {
             id: teacherId,
-            name: course?.teacherName || `未知師資 (ID: ${teacherId})`,
+            name: name,
             notInTeacherList: true
           });
         }
@@ -1765,16 +1772,19 @@
         // 3. 預設狀態 → 統計每位老師的全部課程時數
 
         const courses = courseAssignments.filter(c => {
+          // 計算主講老師和助教的課程
           const matchesTeacher = Number(c.teacherId) === Number(teacher.id);
+          const matchesTa = c.taId && Number(c.taId) === Number(teacher.id);
+          const matchesAny = matchesTeacher || matchesTa;
           const hasValidDate = c.date;
 
           // 如果選擇了特定日期，只統計該日期的課程
           if (selectedDate !== null) {
-            return matchesTeacher && hasValidDate && c.date === selectedDate;
+            return matchesAny && hasValidDate && c.date === selectedDate;
           }
 
           // 否則統計所有課程
-          return matchesTeacher && hasValidDate;
+          return matchesAny && hasValidDate;
         });
 
         const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
