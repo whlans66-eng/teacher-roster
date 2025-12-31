@@ -459,3 +459,94 @@ function setupDatabase() {
   ];
   sheet.getRange(2, 1, defaultUsers.length, defaultUsers[0].length).setValues(defaultUsers);
 }
+
+/**
+ * 🔧 資料庫遷移：為 courseAssignments 表添加助教欄位
+ * 使用方法：
+ * 1. 部署完成後，在 Apps Script 編輯器中選擇這個函數
+ * 2. 點擊執行按鈕 ▶
+ * 3. 授權後會自動檢查並添加缺少的 taId 和 taName 欄位
+ */
+function migrateTAColumns() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheetName = 'courseAssignments';
+  const sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    Logger.log('❌ courseAssignments 表不存在，請先創建表格');
+    return { success: false, message: 'Sheet not found' };
+  }
+
+  // 讀取當前的 header
+  const lastCol = sheet.getLastColumn();
+  if (lastCol === 0) {
+    Logger.log('❌ 表格沒有任何欄位');
+    return { success: false, message: 'No columns found' };
+  }
+
+  const currentHeader = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  Logger.log('📋 當前 header: ' + currentHeader.join(', '));
+
+  // 檢查是否已經有 taId 和 taName
+  const hasTaId = currentHeader.includes('taId');
+  const hasTaName = currentHeader.includes('taName');
+
+  if (hasTaId && hasTaName) {
+    Logger.log('✅ taId 和 taName 已存在，無需遷移');
+    return { success: true, message: 'Columns already exist' };
+  }
+
+  // 找到 teacherName 的位置
+  const teacherNameIndex = currentHeader.indexOf('teacherName');
+  if (teacherNameIndex === -1) {
+    Logger.log('❌ 找不到 teacherName 欄位');
+    return { success: false, message: 'teacherName column not found' };
+  }
+
+  // 計算插入位置（在 teacherName 之後）
+  const insertPosition = teacherNameIndex + 2; // +1 for index, +1 for after
+
+  Logger.log(`🔍 將在第 ${insertPosition} 列插入 taId 和 taName`);
+
+  // 在正確位置插入兩個新欄位
+  sheet.insertColumnAfter(teacherNameIndex + 1);
+  sheet.insertColumnAfter(teacherNameIndex + 1);
+
+  // 設定新欄位的名稱
+  sheet.getRange(1, teacherNameIndex + 2).setValue('taId');
+  sheet.getRange(1, teacherNameIndex + 3).setValue('taName');
+
+  // 設定樣式（與其他 header 一致）
+  sheet.getRange(1, teacherNameIndex + 2, 1, 2)
+    .setFontWeight('bold')
+    .setBackground('#4285f4')
+    .setFontColor('#ffffff');
+
+  // 驗證結果
+  const newHeader = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  Logger.log('✅ 遷移完成！新 header: ' + newHeader.join(', '));
+
+  // 檢查順序是否正確
+  const expectedOrder = ['id', 'teacherId', 'teacherName', 'taId', 'taName', 'name'];
+  const actualOrder = newHeader.slice(0, 6);
+  const isCorrect = expectedOrder.every((val, idx) => val === actualOrder[idx]);
+
+  if (isCorrect) {
+    Logger.log('🎉 欄位順序正確！');
+    return {
+      success: true,
+      message: 'Migration completed successfully',
+      header: newHeader
+    };
+  } else {
+    Logger.log('⚠️ 欄位順序可能不正確，請手動檢查');
+    Logger.log('預期: ' + expectedOrder.join(', '));
+    Logger.log('實際: ' + actualOrder.join(', '));
+    return {
+      success: true,
+      message: 'Migration completed but order may be incorrect',
+      expected: expectedOrder,
+      actual: actualOrder
+    };
+  }
+}
