@@ -1862,8 +1862,7 @@
       const teachersWithHours = filteredTeachers.map(teacher => {
         // 根據選擇情境彈性統計時數：
         // 1. 選擇特定日期 → 只統計該日期的課程時數
-        // 2. 選擇特定老師（無選日期）→ 統計該老師的全部課程時數
-        // 3. 預設狀態 → 統計每位老師的全部課程時數
+        // 2. 無選擇特定日期 → 統計日期範圍內的所有課程時數
 
         const courses = courseAssignments.filter(c => {
           // 計算主講老師和助教的課程
@@ -1877,8 +1876,8 @@
             return matchesAny && hasValidDate && c.date === selectedDate;
           }
 
-          // 否則統計所有課程
-          return matchesAny && hasValidDate;
+          // 否則統計日期範圍內的所有課程
+          return matchesAny && hasValidDate && isDateInRange(c.date);
         });
 
         const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
