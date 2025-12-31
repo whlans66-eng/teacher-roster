@@ -900,37 +900,6 @@
           </div>
         </div>
 
-        <!-- 日期範圍選擇器 -->
-        <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-          <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div class="flex items-center gap-2">
-              <i class="ph ph-calendar-dots text-blue-600" style="font-size: 20px;"></i>
-              <span class="font-semibold text-gray-700" style="font-size: 14px;">日期範圍：</span>
-            </div>
-            <div class="flex flex-wrap items-center gap-3">
-              <div class="flex items-center gap-2">
-                <label class="text-gray-600" style="font-size: 13px;">從</label>
-                <input type="date" id="dateRangeStart"
-                       onchange="updateDateRange()"
-                       class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                       style="font-size: 14px;">
-              </div>
-              <div class="flex items-center gap-2">
-                <label class="text-gray-600" style="font-size: 13px;">到</label>
-                <input type="date" id="dateRangeEnd"
-                       onchange="updateDateRange()"
-                       class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                       style="font-size: 14px;">
-              </div>
-              <button onclick="resetDateRange()"
-                      class="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium border border-gray-300 transition-colors"
-                      style="font-size: 13px;">
-                <i class="ph ph-arrow-counter-clockwise"></i> 重置為本月
-              </button>
-            </div>
-          </div>
-        </div>
-
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center space-x-4">
             <button onclick="previousPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
@@ -960,6 +929,37 @@
           </div>
           <!-- 日期網格 -->
           <div id="calendarGrid" class="grid grid-cols-7"></div>
+        </div>
+
+        <!-- 日期範圍選擇器 -->
+        <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+          <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div class="flex items-center gap-2">
+              <i class="ph ph-calendar-dots text-blue-600" style="font-size: 20px;"></i>
+              <span class="font-semibold text-gray-700" style="font-size: 14px;">日期範圍：</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="flex items-center gap-2">
+                <label class="text-gray-600" style="font-size: 13px;">從</label>
+                <input type="date" id="dateRangeStart"
+                       onchange="updateDateRange()"
+                       class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       style="font-size: 14px;">
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-gray-600" style="font-size: 13px;">到</label>
+                <input type="date" id="dateRangeEnd"
+                       onchange="updateDateRange()"
+                       class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       style="font-size: 14px;">
+              </div>
+              <button onclick="resetDateRange()"
+                      class="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium border border-gray-300 transition-colors"
+                      style="font-size: 13px;">
+                <i class="ph ph-arrow-counter-clockwise"></i> 重置為本月
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- 手機版行事曆列表 -->
@@ -1697,6 +1697,29 @@
       showMessage('✅ 已重置為本月範圍', 'success');
     }
 
+    // 同步日期範圍到當前顯示的月份
+    function syncDateRangeToCurrentMonth() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      // 當月第一天
+      const firstDay = new Date(year, month, 1);
+      // 當月最後一天
+      const lastDay = new Date(year, month + 1, 0);
+
+      dateRangeStart = getLocalDateString(firstDay);
+      dateRangeEnd = getLocalDateString(lastDay);
+
+      // 更新 UI
+      const startInput = document.getElementById('dateRangeStart');
+      const endInput = document.getElementById('dateRangeEnd');
+      if (startInput) startInput.value = dateRangeStart;
+      if (endInput) endInput.value = dateRangeEnd;
+
+      // 重新渲染所有相關視圖
+      renderAllCourseViews();
+    }
+
     // 檢查日期是否在範圍內
     function isDateInRange(dateStr) {
       if (!dateRangeStart || !dateRangeEnd || !dateStr) {
@@ -2395,6 +2418,10 @@
         currentDate.setDate(currentDate.getDate() - 7);
       }
       renderCalendar();
+      // 同步日期範圍到新的月份
+      if (viewMode === 'month') {
+        syncDateRangeToCurrentMonth();
+      }
     }
 
     function nextPeriod() {
@@ -2404,11 +2431,19 @@
         currentDate.setDate(currentDate.getDate() + 7);
       }
       renderCalendar();
+      // 同步日期範圍到新的月份
+      if (viewMode === 'month') {
+        syncDateRangeToCurrentMonth();
+      }
     }
 
     function goToToday() {
       currentDate = new Date();
       renderCalendar();
+      // 同步日期範圍到當前月份
+      if (viewMode === 'month') {
+        syncDateRangeToCurrentMonth();
+      }
     }
 
     function renderCalendar() {
