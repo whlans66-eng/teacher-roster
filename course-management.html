@@ -196,11 +196,6 @@
       border: 1px solid rgba(0, 122, 255, 0.15);
     }
 
-    .feature-block-green {
-      background: linear-gradient(135deg, rgba(52, 199, 89, 0.08) 0%, rgba(52, 199, 89, 0.04) 100%);
-      border: 1px solid rgba(52, 199, 89, 0.15);
-    }
-
     /* Apple 風格的按鈕 */
     .apple-btn {
       padding: 10px 20px;
@@ -255,44 +250,6 @@
     .apple-btn-danger:hover {
       background: #E6342A;
       transform: translateY(-1px);
-    }
-
-    /* TimeTree 風格的社交互動按鈕 */
-    .social-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      background: white;
-      border: 1px solid #E5E5EA;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .social-btn:hover {
-      background: var(--apple-gray-light);
-      border-color: var(--apple-gray);
-      transform: translateY(-1px);
-    }
-
-    .social-btn.liked {
-      background: rgba(255, 59, 48, 0.08);
-      border-color: var(--apple-red);
-      color: var(--apple-red);
-    }
-
-    /* 愛心動畫 */
-    @keyframes heartBeat {
-      0%, 100% { transform: scale(1); }
-      25% { transform: scale(1.3); }
-      50% { transform: scale(1.1); }
-    }
-
-    .heart-animation {
-      animation: heartBeat 0.6s ease;
     }
 
     /* TimeTree 風格的留言卡片 */
@@ -2681,12 +2638,10 @@
       document.getElementById('editModeButtons').style.display = 'none';
 
       // 載入社交資料
-      const courseLikes = loadArray('likes').filter(l => l.courseId === courseId);
       const courseComments = loadArray('comments').filter(c => c.courseId === courseId);
       const activityLogs = loadArray('activityLog').filter(a => a.courseId === courseId);
       const currentUserId = 'user_1'; // 模擬當前用戶 ID
       const currentUserName = '管理員'; // 模擬當前用戶名稱
-      const userHasLiked = courseLikes.some(l => l.userId === currentUserId);
 
       // 取得助教資訊
       const ta = course.taId ? teachers.find(t => t.id === course.taId) : null;
@@ -2793,41 +2748,6 @@
             </button>
           </div>
         </div>
-
-        <!-- RSVP 確認狀態 -->
-        <div class="feature-block feature-block-green">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <span class="text-2xl">✓</span>
-              <div>
-                <div class="text-sm font-semibold" style="color: var(--apple-gray-dark);">參加確認</div>
-                <div class="text-xs font-medium" style="color: ${course.rsvpStatus === '已確認' ? 'var(--apple-green)' : 'var(--apple-gray)'};">
-                  ${course.rsvpStatus === '已確認' ? '✓ ' : ''}${course.rsvpStatus || '待確認'}
-                </div>
-              </div>
-            </div>
-            <button onclick="toggleRSVP()" class="apple-btn ${course.rsvpStatus === '已確認' ? 'apple-btn-secondary' : 'apple-btn-success'}" style="flex-shrink: 0; padding: 8px 16px; font-size: 13px;">
-              ${course.rsvpStatus === '已確認' ? '取消' : '確認'}
-            </button>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- TimeTree 風格的社交互動區 -->
-        <div class="flex items-center gap-3">
-          <button onclick="toggleLike()" class="social-btn ${userHasLiked ? 'liked' : ''}" id="likeButton">
-            <span class="text-xl" id="likeIcon">${userHasLiked ? '❤️' : '🤍'}</span>
-            <span class="font-semibold">${courseLikes.length}</span>
-          </button>
-
-          <div class="social-btn" style="cursor: default;">
-            <span class="text-xl">💬</span>
-            <span class="font-semibold">${courseComments.length}</span>
-          </div>
-        </div>
-
-        <div class="divider"></div>
 
         <!-- 留言討論區 -->
         <div>
@@ -3736,44 +3656,6 @@
     }
 
     /**
-     * 切換按讚（帶動畫效果）
-     */
-    function toggleLike() {
-      let likes = loadArray('likes');
-      const existingLike = likes.find(l => l.courseId === currentCourseId && l.userId === currentUserId);
-
-      // 觸發愛心動畫
-      const likeIcon = document.getElementById('likeIcon');
-      const likeButton = document.getElementById('likeButton');
-
-      if (likeIcon) {
-        likeIcon.classList.add('heart-animation');
-        setTimeout(() => {
-          likeIcon.classList.remove('heart-animation');
-        }, 600);
-      }
-
-      if (existingLike) {
-        // 取消按讚
-        likes = likes.filter(l => !(l.courseId === currentCourseId && l.userId === currentUserId));
-        logActivity(currentCourseId, '取消了按讚', 'unlike');
-      } else {
-        // 新增按讚
-        likes.push({
-          id: Date.now(),
-          courseId: currentCourseId,
-          userId: currentUserId,
-          userName: currentUserName,
-          timestamp: new Date().toISOString()
-        });
-        logActivity(currentCourseId, '按了讚', 'like');
-      }
-
-      localStorage.setItem('likes', JSON.stringify(likes));
-      viewEvent(currentCourseId); // 重新渲染
-    }
-
-    /**
      * 新增留言
      */
     function addComment() {
@@ -3802,23 +3684,6 @@
 
       input.value = '';
       viewEvent(currentCourseId); // 重新渲染
-    }
-
-    /**
-     * 切換 RSVP 確認狀態
-     */
-    function toggleRSVP() {
-      const course = courseAssignments.find(c => c.id === currentCourseId);
-      if (!course) return;
-
-      const newStatus = course.rsvpStatus === '已確認' ? '待確認' : '已確認';
-      course.rsvpStatus = newStatus;
-      course.updatedAt = new Date().toISOString();
-
-      saveData();
-      logActivity(currentCourseId, newStatus === '已確認' ? '確認參加課程' : '取消參加確認', 'rsvp');
-      viewEvent(currentCourseId); // 重新渲染
-      showMessage(`已${newStatus === '已確認' ? '確認' : '取消'}參加！`, 'success');
     }
 
     /**
