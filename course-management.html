@@ -900,6 +900,37 @@
           </div>
         </div>
 
+        <!-- 日期範圍選擇器 -->
+        <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+          <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div class="flex items-center gap-2">
+              <i class="ph ph-calendar-dots text-blue-600" style="font-size: 20px;"></i>
+              <span class="font-semibold text-gray-700" style="font-size: 14px;">日期範圍：</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="flex items-center gap-2">
+                <label class="text-gray-600" style="font-size: 13px;">從</label>
+                <input type="date" id="dateRangeStart"
+                       onchange="updateDateRange()"
+                       class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       style="font-size: 14px;">
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-gray-600" style="font-size: 13px;">到</label>
+                <input type="date" id="dateRangeEnd"
+                       onchange="updateDateRange()"
+                       class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       style="font-size: 14px;">
+              </div>
+              <button onclick="resetDateRange()"
+                      class="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium border border-gray-300 transition-colors"
+                      style="font-size: 13px;">
+                <i class="ph ph-arrow-counter-clockwise"></i> 重置為本月
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center space-x-4">
             <button onclick="previousPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
@@ -991,11 +1022,11 @@
           </div>
         </div>
 
-        <!-- 本月時數 -->
+        <!-- 範圍內時數 -->
         <div class="card p-6 card-hover fade-in" style="animation-delay: 0.2s">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">本月總時數</p>
+              <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">範圍內總時數</p>
               <p id="monthlyHoursCount" class="font-bold text-blue-600" style="font-size: 32px; letter-spacing: -0.02em;">0</p>
             </div>
             <div style="font-size: 36px;">📊</div>
@@ -1410,6 +1441,10 @@
     let editingCourseId = null;
     let selectedDate = null;
 
+    // 日期範圍變量
+    let dateRangeStart = null;
+    let dateRangeEnd = null;
+
     // ==================== 通用訊息顯示 ====================
     function showMessage(message, type = 'info', hint = '') {
       const banner = document.getElementById('syncStatusBanner');
@@ -1610,7 +1645,70 @@
       loadTeacherHoursAnalysisVisibility();
     }
 
+    // ==================== 日期範圍處理 ====================
+
+    // 初始化日期範圍為當月
+    function initializeDateRange() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      // 當月第一天
+      const firstDay = new Date(year, month, 1);
+      // 當月最後一天
+      const lastDay = new Date(year, month + 1, 0);
+
+      dateRangeStart = getLocalDateString(firstDay);
+      dateRangeEnd = getLocalDateString(lastDay);
+
+      // 更新 UI
+      const startInput = document.getElementById('dateRangeStart');
+      const endInput = document.getElementById('dateRangeEnd');
+      if (startInput) startInput.value = dateRangeStart;
+      if (endInput) endInput.value = dateRangeEnd;
+    }
+
+    // 更新日期範圍
+    function updateDateRange() {
+      const startInput = document.getElementById('dateRangeStart');
+      const endInput = document.getElementById('dateRangeEnd');
+
+      if (startInput && endInput && startInput.value && endInput.value) {
+        dateRangeStart = startInput.value;
+        dateRangeEnd = endInput.value;
+
+        // 確保結束日期不早於開始日期
+        if (dateRangeEnd < dateRangeStart) {
+          alert('結束日期不能早於開始日期！');
+          endInput.value = dateRangeStart;
+          dateRangeEnd = dateRangeStart;
+          return;
+        }
+
+        // 重新渲染所有相關視圖
+        renderAllCourseViews();
+      }
+    }
+
+    // 重置日期範圍為當月
+    function resetDateRange() {
+      initializeDateRange();
+      renderAllCourseViews();
+      showMessage('✅ 已重置為本月範圍', 'success');
+    }
+
+    // 檢查日期是否在範圍內
+    function isDateInRange(dateStr) {
+      if (!dateRangeStart || !dateRangeEnd || !dateStr) {
+        return true; // 如果沒有設定範圍，顯示所有
+      }
+      return dateStr >= dateRangeStart && dateStr <= dateRangeEnd;
+    }
+
     async function init() {
+      // 初始化日期範圍為當月
+      initializeDateRange();
+
       // 先用本地資料快速呈現畫面
       reloadCourseDataFromStorage();
       renderAllCourseViews();
@@ -1667,8 +1765,8 @@
 
     // ==================== 統計分析 ====================
     function updateStatistics() {
-      // 根據選擇的師資和日期過濾課程
-      let filteredCourses = courseAssignments;
+      // 根據選擇的師資、日期和日期範圍過濾課程
+      let filteredCourses = courseAssignments.filter(c => c.date && isDateInRange(c.date));
 
       if (selectedTeacherId !== null) {
         filteredCourses = filteredCourses.filter(c => c.teacherId === selectedTeacherId);
@@ -1678,38 +1776,34 @@
         filteredCourses = filteredCourses.filter(c => c.date === selectedDate);
       }
 
-      // 總課程數
+      // 總課程數（在日期範圍內）
       document.getElementById('totalCoursesCount').textContent = filteredCourses.length;
 
-      // 總時數
+      // 總時數（在日期範圍內）
       const totalHours = filteredCourses.reduce((sum, c) => sum + calculateHours(c.time), 0);
       document.getElementById('totalHoursCount').textContent = `${totalHours.toFixed(1)} 小時`;
 
-      // 本月時數
-      const thisMonth = new Date().toISOString().slice(0, 7);
-      const monthlyHours = filteredCourses
-        .filter(c => c.date.startsWith(thisMonth))
-        .reduce((sum, c) => sum + calculateHours(c.time), 0);
-      document.getElementById('monthlyHoursCount').textContent = `${monthlyHours.toFixed(1)} 小時`;
+      // 範圍內時數（同樣基於日期範圍）
+      const rangeHours = filteredCourses.reduce((sum, c) => sum + calculateHours(c.time), 0);
+      document.getElementById('monthlyHoursCount').textContent = `${rangeHours.toFixed(1)} 小時`;
     }
 
     function renderTeacherHoursAnalysis() {
-      const thisMonth = new Date().toISOString().slice(0, 7);
       const listContainer = document.getElementById('teacherHoursList');
       const showMoreContainer = document.getElementById('showMoreContainer');
 
-      // 從課程中提取所有有上課的師資ID
-      const thisMonthCourses = courseAssignments.filter(c => c.date && c.date.startsWith(thisMonth));
+      // 根據日期範圍篩選課程
+      const filteredCourses = courseAssignments.filter(c => c.date && isDateInRange(c.date));
 
       console.log('📊 師資時數分析調試信息：');
-      console.log('- 當前月份:', thisMonth);
-      console.log('- 本月課程數:', thisMonthCourses.length);
+      console.log('- 日期範圍:', dateRangeStart, '至', dateRangeEnd);
+      console.log('- 範圍內課程數:', filteredCourses.length);
       console.log('- 師資列表人數:', teachers.length);
 
       // 統一 teacherId 為數字型別（有些可能是字串）
       // 同時收集主講老師和助教的 ID
-      const teacherIds = thisMonthCourses.map(c => Number(c.teacherId)).filter(id => !isNaN(id));
-      const taIds = thisMonthCourses.map(c => Number(c.taId)).filter(id => !isNaN(id));
+      const teacherIds = filteredCourses.map(c => Number(c.teacherId)).filter(id => !isNaN(id));
+      const taIds = filteredCourses.map(c => Number(c.taId)).filter(id => !isNaN(id));
       const teacherIdsWithCourses = [...new Set([...teacherIds, ...taIds])];
 
       console.log('- 有課程的師資ID（含助教）:', teacherIdsWithCourses);
@@ -1726,8 +1820,8 @@
       teacherIdsWithCourses.forEach(teacherId => {
         if (!teacherMap.has(teacherId)) {
           // 嘗試從主講或助教身份找到名稱
-          const courseAsTeacher = thisMonthCourses.find(c => Number(c.teacherId) === teacherId);
-          const courseAsTa = thisMonthCourses.find(c => Number(c.taId) === teacherId);
+          const courseAsTeacher = filteredCourses.find(c => Number(c.teacherId) === teacherId);
+          const courseAsTa = filteredCourses.find(c => Number(c.taId) === teacherId);
           const name = courseAsTeacher?.teacherName || courseAsTa?.taName || `未知師資 (ID: ${teacherId})`;
 
           teacherMap.set(teacherId, {
