@@ -283,6 +283,7 @@ function normalizeCourseAssignment(record) {
   const normalized = { ...record };
   normalized.id = normalizeNumeric(normalized.id);
   normalized.teacherId = normalizeNumeric(normalized.teacherId);
+  normalized.taId = normalizeNumeric(normalized.taId);
 
   if (typeof normalized.date === 'string') {
     normalized.date = normalized.date.trim();
