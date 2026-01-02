@@ -1642,6 +1642,14 @@
           return;
         }
 
+        // 更新日曆顯示以匹配所選日期範圍
+        // 解析開始日期並更新 currentDate 到該月份
+        const startDate = new Date(dateRangeStart + 'T00:00:00');
+        if (!isNaN(startDate.getTime())) {
+          currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+          renderCalendar(); // 重新渲染日曆以反映新的月份
+        }
+
         // 重新渲染所有相關視圖
         renderAllCourseViews();
       }
