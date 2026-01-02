@@ -6,7 +6,7 @@
  */
 const API_CONFIG = {
   // 將此 URL 替換為你部署後的 Google Apps Script Web App URL
-  baseUrl: 'https://script.google.com/macros/s/AKfycbwic_QvWZ7b4j3cS-WHLaBEj6Knc_OnfqCp4yQaEKP_twt6J1xd4Q_nklQm7vCJ-mCbFQ/exec',
+  baseUrl: 'https://script.google.com/macros/s/AKfycbwN8J4yuOgGHlq6FHp32EnvIuvyf_RykVHtRXG3mVUFUmLS3wAJQIfI22gmtOnexEdfFQ/exec',
   token: 'tr_demo_12345',  // 與後端 TOKEN 一致
   timeout: 30000,  // 30 秒超時
   enableSessions: false, // 是否啟用 Session 追蹤與鎖定功能
