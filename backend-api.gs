@@ -461,11 +461,11 @@ function setupDatabase() {
 }
 
 /**
- * 🔧 資料庫遷移：為 courseAssignments 表添加助教欄位
+ * 🔧 資料庫遷移：為 courseAssignments 表添加缺少的欄位
  * 使用方法：
  * 1. 部署完成後，在 Apps Script 編輯器中選擇這個函數
  * 2. 點擊執行按鈕 ▶
- * 3. 授權後會自動檢查並添加缺少的 taId 和 taName 欄位
+ * 3. 授權後會自動檢查並添加 teacherName, taId, taName 欄位
  */
 function migrateTAColumns() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
@@ -487,37 +487,46 @@ function migrateTAColumns() {
   const currentHeader = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
   Logger.log('📋 當前 header: ' + currentHeader.join(', '));
 
-  // 檢查是否已經有 taId 和 taName
+  // 檢查需要添加的欄位
+  const hasTeacherName = currentHeader.includes('teacherName');
   const hasTaId = currentHeader.includes('taId');
   const hasTaName = currentHeader.includes('taName');
 
-  if (hasTaId && hasTaName) {
-    Logger.log('✅ taId 和 taName 已存在，無需遷移');
-    return { success: true, message: 'Columns already exist' };
+  if (hasTeacherName && hasTaId && hasTaName) {
+    Logger.log('✅ teacherName, taId, taName 已存在，無需遷移');
+    return { success: true, message: 'All columns already exist' };
   }
 
-  // 找到 teacherName 的位置
-  const teacherNameIndex = currentHeader.indexOf('teacherName');
-  if (teacherNameIndex === -1) {
-    Logger.log('❌ 找不到 teacherName 欄位');
-    return { success: false, message: 'teacherName column not found' };
+  // 找到 teacherId 的位置（作為插入點）
+  const teacherIdIndex = currentHeader.indexOf('teacherId');
+  if (teacherIdIndex === -1) {
+    Logger.log('❌ 找不到 teacherId 欄位，無法確定插入位置');
+    return { success: false, message: 'teacherId column not found' };
   }
 
-  // 計算插入位置（在 teacherName 之後）
-  const insertPosition = teacherNameIndex + 2; // +1 for index, +1 for after
+  Logger.log(`🔍 在 teacherId (位置 ${teacherIdIndex + 1}) 後面插入缺少的欄位`);
 
-  Logger.log(`🔍 將在第 ${insertPosition} 列插入 taId 和 taName`);
+  // 計算需要插入的欄位
+  const columnsToInsert = [];
+  if (!hasTeacherName) columnsToInsert.push('teacherName');
+  if (!hasTaId) columnsToInsert.push('taId');
+  if (!hasTaName) columnsToInsert.push('taName');
 
-  // 在正確位置插入兩個新欄位
-  sheet.insertColumnAfter(teacherNameIndex + 1);
-  sheet.insertColumnAfter(teacherNameIndex + 1);
+  Logger.log(`📝 需要添加的欄位: ${columnsToInsert.join(', ')}`);
+
+  // 在 teacherId 後面插入欄位
+  for (let i = 0; i < columnsToInsert.length; i++) {
+    sheet.insertColumnAfter(teacherIdIndex + 1);
+  }
 
   // 設定新欄位的名稱
-  sheet.getRange(1, teacherNameIndex + 2).setValue('taId');
-  sheet.getRange(1, teacherNameIndex + 3).setValue('taName');
+  for (let i = 0; i < columnsToInsert.length; i++) {
+    const colIndex = teacherIdIndex + 2 + i;
+    sheet.getRange(1, colIndex).setValue(columnsToInsert[i]);
+  }
 
   // 設定樣式（與其他 header 一致）
-  sheet.getRange(1, teacherNameIndex + 2, 1, 2)
+  sheet.getRange(1, teacherIdIndex + 2, 1, columnsToInsert.length)
     .setFontWeight('bold')
     .setBackground('#4285f4')
     .setFontColor('#ffffff');
@@ -536,6 +545,7 @@ function migrateTAColumns() {
     return {
       success: true,
       message: 'Migration completed successfully',
+      addedColumns: columnsToInsert,
       header: newHeader
     };
   } else {
@@ -545,6 +555,7 @@ function migrateTAColumns() {
     return {
       success: true,
       message: 'Migration completed but order may be incorrect',
+      addedColumns: columnsToInsert,
       expected: expectedOrder,
       actual: actualOrder
     };
