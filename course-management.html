@@ -3094,13 +3094,15 @@
       const ta = taId ? teachers.find(t => t.id === taId) : null;
       const taName = ta ? ta.name : null;
 
+      const newCourseName = document.getElementById('editCourseName').value;
+
       courseAssignments[courseIndex] = {
         ...oldCourse,
         teacherId: teacherId,
         teacherName: teacherName,
         taId: taId,
         taName: taName,
-        name: document.getElementById('editCourseName').value,
+        name: newCourseName,
         date: courseDate,
         time: newTime,
         type: document.getElementById('editCourseType').value,
@@ -3109,6 +3111,37 @@
         tags: getCurrentTags(),
         updatedAt: new Date().toISOString()
       };
+
+      // 🎓 自動填充講授課程（編輯模式）
+      const courseName = newCourseName.trim();
+
+      // 為主講師自動填充
+      if (teacher && courseName) {
+        // 確保 subjects 陣列存在
+        if (!teacher.subjects) {
+          teacher.subjects = [];
+        }
+
+        // 檢查課程名稱是否已存在於講授課程中（避免重複）
+        if (!teacher.subjects.includes(courseName)) {
+          teacher.subjects.push(courseName);
+          console.log(`✓ 已自動將「${courseName}」加入 ${teacherName} 的講授課程`);
+        }
+      }
+
+      // 為助教自動填充
+      if (ta && courseName) {
+        // 確保 subjects 陣列存在
+        if (!ta.subjects) {
+          ta.subjects = [];
+        }
+
+        // 檢查課程名稱是否已存在於講授課程中（避免重複）
+        if (!ta.subjects.includes(courseName)) {
+          ta.subjects.push(courseName);
+          console.log(`✓ 已自動將「${courseName}」加入 ${taName} 的講授課程（助教）`);
+        }
+      }
 
       // 同步更新行事曆事件
       const eventIndex = calendarEvents.findIndex(e => e.courseId === editingCourseId);
@@ -3220,6 +3253,37 @@
       }
 
       courseAssignments.push(courseData);
+
+      // 🎓 自動填充講授課程
+      const courseName = courseData.name.trim();
+
+      // 為主講師自動填充
+      if (teacher && courseName) {
+        // 確保 subjects 陣列存在
+        if (!teacher.subjects) {
+          teacher.subjects = [];
+        }
+
+        // 檢查課程名稱是否已存在於講授課程中（避免重複）
+        if (!teacher.subjects.includes(courseName)) {
+          teacher.subjects.push(courseName);
+          console.log(`✓ 已自動將「${courseName}」加入 ${teacherName} 的講授課程`);
+        }
+      }
+
+      // 為助教自動填充
+      if (ta && courseName) {
+        // 確保 subjects 陣列存在
+        if (!ta.subjects) {
+          ta.subjects = [];
+        }
+
+        // 檢查課程名稱是否已存在於講授課程中（避免重複）
+        if (!ta.subjects.includes(courseName)) {
+          ta.subjects.push(courseName);
+          console.log(`✓ 已自動將「${courseName}」加入 ${taName} 的講授課程（助教）`);
+        }
+      }
 
       // 同步到行事曆
       calendarEvents.push({
