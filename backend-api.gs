@@ -16,7 +16,7 @@ const SHEETS_CONFIG = {
   },
   teachers: {
     name: 'teachers',
-    header: ['id','name','email','teacherType','workLocation','photoUrl','experiences','certificates','subjects','tags','version','lastModifiedBy','lastModifiedAt']
+    header: ['id','name','email','teacherType','workLocation','teacherCategory','rank','photoUrl','experiences','certificates','subjects','tags','version','lastModifiedBy','lastModifiedAt']
   },
   courseAssignments: {
     name: 'courseAssignments',

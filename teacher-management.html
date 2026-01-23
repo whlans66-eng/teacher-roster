@@ -50,6 +50,10 @@
     .teacher-type-option.selected{border-color:#007aff;background-color:#f0f5ff}
     .teacher-type-option.selected.internal{border-color:#007aff;background-color:#e6f0ff}
     .teacher-type-option.selected.external{border-color:#5856d6;background-color:#f0efff}
+    .category-option.selected{border-color:#007aff;background-color:#f0f5ff}
+    .category-option.selected.existing{border-color:#007aff;background-color:#e6f0ff}
+    .category-option.selected.new{border-color:#34c759;background-color:#e8f9ed}
+    .rank-option.selected{border-color:#6366f1;background-color:#eef2ff;font-weight:600}
     .calendar-cell{min-height:110px;border:1px solid rgba(0,0,0,.06);border-radius:12px;transition:all .3s cubic-bezier(0.4,0,0.2,1)}
     .calendar-cell:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.08)}
 
@@ -889,6 +893,143 @@
               </div>
 
               <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-3">師資類別 *</label>
+                <div class="flex space-x-4">
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="teacherCategory" value="existing" id="categoryExisting" class="sr-only">
+                    <div class="category-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-blue-400 hover:bg-blue-50">
+                      <div class="text-2xl"><i class="ph ph-check-circle"></i></div>
+                      <div><div class="font-medium text-gray-800">現有</div><div class="text-sm text-gray-500">既有船員</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="teacherCategory" value="new" id="categoryNew" class="sr-only">
+                    <div class="category-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-green-400 hover:bg-green-50">
+                      <div class="text-2xl"><i class="ph ph-user-plus"></i></div>
+                      <div><div class="font-medium text-gray-800">新進</div><div class="text-sm text-gray-500">新加入船員</div></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-3">甲板部門職等 *</label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="C/P" id="rankCP" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-indigo-400 hover:bg-indigo-50 w-full">
+                      <div class="text-xl"><i class="ph ph-anchor"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">C/P</div><div class="text-xs text-gray-500">船長</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="C/O" id="rankCO" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-indigo-400 hover:bg-indigo-50 w-full">
+                      <div class="text-xl"><i class="ph ph-compass"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">C/O</div><div class="text-xs text-gray-500">大副</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="2/O" id="rank2O" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-blue-400 hover:bg-blue-50 w-full">
+                      <div class="text-xl"><i class="ph ph-binoculars"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">2/O</div><div class="text-xs text-gray-500">二副</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="3/O" id="rank3O" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-blue-400 hover:bg-blue-50 w-full">
+                      <div class="text-xl"><i class="ph ph-navigation-arrow"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">3/O</div><div class="text-xs text-gray-500">三副</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="bosun" id="rankBosun" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-cyan-400 hover:bg-cyan-50 w-full">
+                      <div class="text-xl"><i class="ph ph-users-three"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">水手長</div><div class="text-xs text-gray-500">Bosun</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="carpenter" id="rankCarpenter" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-amber-400 hover:bg-amber-50 w-full">
+                      <div class="text-xl"><i class="ph ph-hammer"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">木匠</div><div class="text-xs text-gray-500">Carpenter</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="AB" id="rankAB" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-teal-400 hover:bg-teal-50 w-full">
+                      <div class="text-xl"><i class="ph ph-user-check"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">幹練水手</div><div class="text-xs text-gray-500">A.B.</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="deckCadet" id="rankDeckCadet" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-sky-400 hover:bg-sky-50 w-full">
+                      <div class="text-xl"><i class="ph ph-student"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">甲板實習生</div><div class="text-xs text-gray-500">Deck Cadet</div></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-3">輪機部門職等 *</label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="C/E" id="rankCE" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-purple-400 hover:bg-purple-50 w-full">
+                      <div class="text-xl"><i class="ph ph-gear"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">C/E</div><div class="text-xs text-gray-500">輪機長</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="2/E" id="rank2E" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-violet-400 hover:bg-violet-50 w-full">
+                      <div class="text-xl"><i class="ph ph-engine"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">2/E</div><div class="text-xs text-gray-500">大管</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="3/E" id="rank3E" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-fuchsia-400 hover:bg-fuchsia-50 w-full">
+                      <div class="text-xl"><i class="ph ph-wrench"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">3/E</div><div class="text-xs text-gray-500">2管</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="4/E" id="rank4E" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-pink-400 hover:bg-pink-50 w-full">
+                      <div class="text-xl"><i class="ph ph-screwdriver"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">4/E</div><div class="text-xs text-gray-500">3管</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="oiler" id="rankOiler" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-orange-400 hover:bg-orange-50 w-full">
+                      <div class="text-xl"><i class="ph ph-drop"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">加油長</div><div class="text-xs text-gray-500">Oiler</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="fitter" id="rankFitter" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-red-400 hover:bg-red-50 w-full">
+                      <div class="text-xl"><i class="ph ph-toolbox"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">銅匠</div><div class="text-xs text-gray-500">Fitter</div></div>
+                    </div>
+                  </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="rank" value="engineCadet" id="rankEngineCadet" class="sr-only">
+                    <div class="rank-option flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all hover:border-rose-400 hover:bg-rose-50 w-full">
+                      <div class="text-xl"><i class="ph ph-student"></i></div>
+                      <div class="text-sm"><div class="font-medium text-gray-800">輪機實習生</div><div class="text-xs text-gray-500">Engine Cadet</div></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-2">照片</label>
                 <div class="flex items-center space-x-4">
                   <div id="photoPreview" class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-2xl"><i class="ph ph-user"></i></div>
@@ -1487,6 +1628,14 @@
           document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
           e.target.closest('label').querySelector('.teacher-type-option').classList.add('selected', e.target.value);
         }
+        if (e.target.name === 'teacherCategory') {
+          document.querySelectorAll('.category-option').forEach(o=>o.classList.remove('selected','existing','new'));
+          e.target.closest('label').querySelector('.category-option').classList.add('selected', e.target.value);
+        }
+        if (e.target.name === 'rank') {
+          document.querySelectorAll('.rank-option').forEach(o=>o.classList.remove('selected'));
+          e.target.closest('label').querySelector('.rank-option').classList.add('selected');
+        }
       });
     }
 
@@ -1571,8 +1720,19 @@
           card.innerHTML = `
             <div class="p-4 text-center relative">
               <div class="absolute top-2 left-2 flex flex-col space-y-1">
-                ${teacher.teacherType==='internal' ? `
+                ${teacher.teacherCategory==='new' ? `
+                  <div class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span><i class="ph ph-user-plus"></i></span><span>新進</span>
+                  </div>` : `
                   <div class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span><i class="ph ph-check-circle"></i></span><span>現有</span>
+                  </div>`}
+                ${teacher.rank ? `
+                  <div class="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                    ${teacher.rank}
+                  </div>` : ''}
+                ${teacher.teacherType==='internal' ? `
+                  <div class="bg-blue-400 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                     <span><i class="ph ph-user-circle"></i></span><span>內部</span>
                   </div>` : `
                   <div class="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
@@ -1608,6 +1768,16 @@
           card.onclick = () => viewTeacherDetail(teacher.id);
           card.innerHTML = `
             <div class="relative p-8 bg-gradient-to-br ${bgGradient} text-center">
+              <div class="absolute top-3 left-3 flex flex-col space-y-1">
+                ${teacher.teacherCategory==='new' ? `
+                  <div class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                    <span><i class="ph ph-user-plus"></i></span><span>新進</span>
+                  </div>` : ''}
+                ${teacher.rank ? `
+                  <div class="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                    ${teacher.rank}
+                  </div>` : ''}
+              </div>
               <div class="absolute top-3 right-3">
                 <div class="${categoryBadgeColor} text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                   <span>${categoryIcon}</span><span>${categoryTitle}</span>
@@ -1643,6 +1813,8 @@
       document.getElementById('tagList').innerHTML = '';
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
       document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
+      document.querySelectorAll('.category-option').forEach(o=>o.classList.remove('selected','existing','new'));
+      document.querySelectorAll('.rank-option').forEach(o=>o.classList.remove('selected'));
       addExperience(); addCertificate(); addSubject(); addTag();
     }
 
@@ -1659,10 +1831,34 @@
       const workLocation = teacher.workLocation || 'onshore';
       document.getElementById(workLocation==='onboard'?'locationOnboard':'locationOnshore').checked = true;
 
+      const teacherCategory = teacher.teacherCategory || 'existing';
+      document.getElementById(teacherCategory==='existing'?'categoryExisting':'categoryNew').checked = true;
+
+      const rank = teacher.rank || '';
+      if(rank){
+        const rankMap = {
+          'C/P':'rankCP', 'C/O':'rankCO', '2/O':'rank2O', '3/O':'rank3O',
+          'bosun':'rankBosun', 'carpenter':'rankCarpenter', 'AB':'rankAB', 'deckCadet':'rankDeckCadet',
+          'C/E':'rankCE', '2/E':'rank2E', '3/E':'rank3E', '4/E':'rank4E',
+          'oiler':'rankOiler', 'fitter':'rankFitter', 'engineCadet':'rankEngineCadet'
+        };
+        const rankId = rankMap[rank];
+        if(rankId) document.getElementById(rankId).checked = true;
+      }
+
       document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
       document.querySelector(`input[value="${teacherType}"]`).closest('label').querySelector('.teacher-type-option').classList.add('selected',teacherType);
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
       document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
+
+      document.querySelectorAll('.category-option').forEach(o=>o.classList.remove('selected','existing','new'));
+      document.querySelector(`input[value="${teacherCategory}"]`).closest('label').querySelector('.category-option').classList.add('selected',teacherCategory);
+
+      if(rank){
+        document.querySelectorAll('.rank-option').forEach(o=>o.classList.remove('selected'));
+        const rankInput = document.querySelector(`input[value="${rank}"]`);
+        if(rankInput) rankInput.closest('label').querySelector('.rank-option').classList.add('selected');
+      }
 
       const photoBox = document.getElementById('photoPreview');
       if (teacher.photo){
@@ -1714,6 +1910,11 @@
               <h1 class="text-4xl font-bold ${titleColor} mb-3">${teacher.name}</h1>
               <div class="space-y-2 text-lg">
                 ${teacher.email ? `<div class="flex items-center justify-center md:justify-start space-x-2"><span class="text-gray-600"><i class="ph ph-envelope"></i></span><span class="text-gray-700">${teacher.email}</span></div>` : ''}
+                ${teacher.rank ? `<div class="flex items-center justify-center md:justify-start space-x-2">
+                  <span class="text-indigo-600"><i class="ph ph-identification-badge"></i></span>
+                  <span class="text-indigo-600 font-bold">${teacher.rank}</span>
+                  ${teacher.teacherCategory==='new' ? '<span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs ml-2">新進</span>' : ''}
+                </div>` : ''}
                 <div class="flex items-center justify-center md:justify-start space-x-2">
                   <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'}">${teacher.workLocation==='onboard'?'[Sea]':'[Land]'}</span>
                   <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">${teacher.workLocation==='onboard'?'海上工作':'陸地工作'}</span>
@@ -1944,9 +2145,13 @@
       const email = document.getElementById('teacherEmail').value.trim();
       const teacherType = document.querySelector('input[name="teacherType"]:checked')?.value;
       const workLocation = document.querySelector('input[name="workLocation"]:checked')?.value;
+      const teacherCategory = document.querySelector('input[name="teacherCategory"]:checked')?.value;
+      const rank = document.querySelector('input[name="rank"]:checked')?.value;
       if(!name){ alert('請輸入師資姓名'); return; }
       if(!teacherType){ alert('請選擇師資類型'); return; }
       if(!workLocation){ alert('請選擇工作地點'); return; }
+      if(!teacherCategory){ alert('請選擇師資類別'); return; }
+      if(!rank){ alert('請選擇職等'); return; }
       if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('請輸入正確的Email格式'); return; }
 
       const experiences = Array.from(document.querySelectorAll('#experienceList input')).map(i=>i.value.trim()).filter(Boolean);
@@ -1967,7 +2172,7 @@
       const photoBox = document.getElementById('photoPreview');
       const photoUrl = photoBox.getAttribute('data-url') || '';
 
-      const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, photo: photoUrl, experiences, certificates, subjects, tags };
+      const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, teacherCategory, rank, photo: photoUrl, experiences, certificates, subjects, tags };
 
       if(currentTeacherId){
         const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData;
@@ -1998,6 +2203,8 @@
         email: t.email || '',
         teacherType: t.teacherType || 'internal',
         workLocation: t.workLocation || 'onshore',
+        teacherCategory: t.teacherCategory || 'existing',
+        rank: t.rank || '',
         photo: t.photo,
         experiences: [...(t.experiences||[])],
         certificates: (t.certificates||[]).map(c=> typeof c==='string'? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
