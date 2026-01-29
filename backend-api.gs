@@ -111,6 +111,31 @@ function doGet(e) {
       return _json({ ok: true, data: allData });
     }
 
+    // 取得資料版本資訊（用於衝突檢測）
+    if (action === 'getversions') {
+      const versions = {};
+      const targetTables = ['teachers', 'courseAssignments', 'maritimeCourses'];
+      targetTables.forEach(tableName => {
+        const data = _readTable(tableName);
+        const count = data.length;
+        // 計算簡單的資料指紋（基於 ID 列表和記錄數）
+        const ids = data.map(item => item.id || '').sort().join(',');
+        const fingerprint = Utilities.computeDigest(
+          Utilities.DigestAlgorithm.MD5,
+          ids + '|' + count
+        ).map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+        versions[tableName] = {
+          count: count,
+          fingerprint: fingerprint,
+          lastModified: data.reduce((latest, item) => {
+            const itemTime = item.lastModifiedAt || item.updatedAt || '';
+            return itemTime > latest ? itemTime : latest;
+          }, '')
+        };
+      });
+      return _json({ ok: true, versions: versions });
+    }
+
     // Session 管理 API (保留以防前端報錯，但可視為選用)
     if (action === 'session_register') {
       _cleanupStaleSessions();

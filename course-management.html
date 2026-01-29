@@ -1457,14 +1457,30 @@
       }
     }
 
-    // ==================== 衝突對話框 - 顯示在線使用者 ====================
+    // ==================== 衝突對話框 - 顯示資料衝突詳情 ====================
     function showConflictDialog(result) {
       const activeSessions = result.activeSessions || [];
+      const conflicts = result.conflicts || [];
 
+      // 資料衝突詳情
+      let conflictDetailsHTML = '';
+      if (conflicts.length > 0) {
+        const tableNames = {
+          'teachers': '教師資料',
+          'courseAssignments': '課程安排',
+          'maritimeCourses': '海事課程'
+        };
+        conflictDetailsHTML = '<div style="margin: 15px 0; padding: 15px; background: #fef3c7; border-radius: 8px;"><strong>偵測到以下資料變更：</strong><ul style="margin: 10px 0; padding-left: 20px;">';
+        conflicts.forEach(c => {
+          const tableName = tableNames[c.table] || c.table;
+          conflictDetailsHTML += `<li style="margin: 5px 0;"><strong>${tableName}</strong>: 載入時 ${c.savedCount} 筆，目前後端 ${c.currentCount} 筆</li>`;
+        });
+        conflictDetailsHTML += '</ul><p style="margin: 0; color: #92400e; font-size: 14px;">Google Sheets 上的資料已被修改。若繼續儲存，將覆蓋這些變更。</p></div>';
+      }
+
+      // 在線使用者列表
       let userListHTML = '';
-      if (activeSessions.length === 0) {
-        userListHTML = '<p style="color: #666; margin: 10px 0;">目前沒有其他使用者在線</p>';
-      } else {
+      if (activeSessions.length > 0) {
         userListHTML = '<div style="margin: 15px 0;"><strong>目前在線的使用者：</strong><ul style="list-style: none; padding: 10px 0; margin: 0;">';
 
         activeSessions.forEach(session => {
@@ -1488,6 +1504,8 @@
         userListHTML += '</ul></div>';
       }
 
+      const hintText = result.hint || '建議先重新載入資料，確認最新狀態後再進行編輯。';
+
       const dialogHTML = `
         <div id="conflictDialog" style="
           position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -1495,20 +1513,27 @@
           justify-content: center; z-index: 10000;">
           <div style="
             background: white; padding: 30px; border-radius: 12px;
-            max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            max-width: 550px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
             <h2 style="margin: 0 0 15px 0; color: #d97706;">⚠️ 資料衝突警告</h2>
-            <p style="color: #374151; margin: 10px 0;">${result.message}</p>
+            <p style="color: #374151; margin: 10px 0;">${result.message || '後端資料已被修改'}</p>
+            ${conflictDetailsHTML}
             ${userListHTML}
-            <div style="margin-top: 20px; text-align: right;">
+            <p style="color: #6b7280; font-size: 14px; margin: 15px 0;">${hintText}</p>
+            <div style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end;">
               <button
                 onclick="closeConflictDialog()"
-                style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-right: 10px;">
-                關閉
+                style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                取消
               </button>
               <button
-                onclick="window.location.reload()"
-                style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 16px;">
-                重新整理頁面
+                onclick="forceOverwriteData()"
+                style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                強制覆蓋
+              </button>
+              <button
+                onclick="reloadFromBackend()"
+                style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                重新載入資料
               </button>
             </div>
           </div>
@@ -1523,6 +1548,35 @@
 
       // 加入新對話框
       document.body.insertAdjacentHTML('beforeend', dialogHTML);
+    }
+
+    // 強制覆蓋後端資料（忽略衝突）
+    async function forceOverwriteData() {
+      if (!confirm('確定要強制覆蓋嗎？這會覆蓋 Google Sheets 上其他人的修改。')) {
+        return;
+      }
+      closeConflictDialog();
+      try {
+        const result = await syncManager.saveToBackendSafe(true); // forceOverwrite = true
+        if (result.success) {
+          showMessage('資料已強制儲存到雲端', 'success');
+        }
+      } catch (error) {
+        showMessage('儲存失敗: ' + error.message, 'error');
+      }
+    }
+
+    // 從後端重新載入資料
+    async function reloadFromBackend() {
+      closeConflictDialog();
+      try {
+        await syncManager.loadFromBackend();
+        reloadCourseDataFromStorage();
+        renderAllCourseViews();
+        showMessage('已從雲端重新載入最新資料', 'success');
+      } catch (error) {
+        showMessage('重新載入失敗: ' + error.message, 'error');
+      }
     }
 
     function closeConflictDialog() {

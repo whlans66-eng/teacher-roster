@@ -66,6 +66,20 @@ class TeacherRosterAPI {
   }
 
   /**
+   * 取得資料版本資訊（用於衝突檢測）
+   * @returns {Object} { teachers: {count, fingerprint, lastModified}, ... }
+   */
+  async getVersions() {
+    try {
+      const response = await this._get({ action: 'getversions' });
+      return response.versions || {};
+    } catch (error) {
+      console.error('取得版本資訊失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 儲存特定表格的資料
    * @param {string} table - 表格名稱
    * @param {Array} data - 資料陣列
@@ -366,8 +380,21 @@ class DataSyncManager {
       localStorage.setItem('courseAssignments', JSON.stringify(normalizedCourses));
       localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
 
+      // 儲存資料版本指紋（用於衝突檢測）
+      try {
+        const versions = await this.api.getVersions();
+        localStorage.setItem('dataVersions', JSON.stringify(versions));
+        if (this.api.debug) {
+          console.log('🔖 已儲存資料版本指紋:', versions);
+        }
+      } catch (versionError) {
+        console.warn('⚠️ 無法取得資料版本:', versionError);
+      }
+
       // 更新最後同步時間
       localStorage.setItem('lastSyncTime', new Date().toISOString());
+      // 清除本地修改標記（因為已經從後端載入最新資料）
+      localStorage.removeItem('hasLocalChanges');
 
       if (this.api.debug) {
         console.log('✅ 資料載入完成');
@@ -422,9 +449,11 @@ class DataSyncManager {
   }
 
   /**
-   * 儲存特定表格
+   * 儲存特定表格（含衝突檢測）
+   * @param {string} tableName - 表格名稱
+   * @param {boolean} forceOverwrite - 是否強制覆蓋（忽略衝突）
    */
-  async saveTable(tableName) {
+  async saveTable(tableName, forceOverwrite = false) {
     try {
       const normalizer = tableName === 'teachers'
         ? normalizeTeacherRecord
@@ -432,12 +461,46 @@ class DataSyncManager {
           ? normalizeCourseAssignment
           : undefined;
       const data = loadArrayFromStorage(tableName, normalizer);
+
+      // 衝突檢測
+      if (!forceOverwrite) {
+        try {
+          const savedVersions = JSON.parse(localStorage.getItem('dataVersions') || '{}');
+          const currentVersions = await this.api.getVersions();
+
+          const saved = savedVersions[tableName];
+          const current = currentVersions[tableName];
+
+          if (saved && current && saved.fingerprint !== current.fingerprint) {
+            console.warn(`⚠️ ${tableName} 偵測到資料衝突`);
+            return {
+              conflict: true,
+              table: tableName,
+              savedCount: saved.count,
+              currentCount: current.count,
+              message: `${tableName} 資料已被其他人修改`
+            };
+          }
+        } catch (versionCheckError) {
+          console.warn('⚠️ 衝突檢測失敗，繼續儲存:', versionCheckError);
+        }
+      }
+
       await this.api.save(tableName, data);
+
+      // 更新版本指紋
+      try {
+        const newVersions = await this.api.getVersions();
+        localStorage.setItem('dataVersions', JSON.stringify(newVersions));
+      } catch (e) {
+        console.warn('⚠️ 更新版本指紋失敗:', e);
+      }
+
       localStorage.setItem('lastSyncTime', new Date().toISOString());
       if (this.api.debug) {
         console.log(`✅ ${tableName} 儲存完成`);
       }
-      return true;
+      return { success: true };
     } catch (error) {
       console.error(`❌ 儲存 ${tableName} 失敗:`, error);
       throw error;
@@ -492,13 +555,14 @@ class DataSyncManager {
   }
 
   /**
-   * 安全儲存：直接儲存到後端（已移除衝突檢查）
-   * 注意：此模式下不檢查其他使用者的更新，直接覆蓋後端資料
+   * 安全儲存：儲存到後端（含衝突檢測）
+   * 會在儲存前檢查後端資料是否被其他人修改過
+   * @param {boolean} forceOverwrite - 是否強制覆蓋（忽略衝突）
    */
-  async saveToBackendSafe() {
+  async saveToBackendSafe(forceOverwrite = false) {
     try {
       if (this.api.debug) {
-        console.log('📤 儲存資料到後端（無衝突檢查）...');
+        console.log('📤 儲存資料到後端（含衝突檢測）...');
       }
 
       // 取得本地資料
@@ -516,10 +580,59 @@ class DataSyncManager {
         return { skipped: true, reason: 'no_local_changes' };
       }
 
-      // 直接儲存（不檢查衝突）
+      // 衝突檢測：比對儲存的版本與後端目前版本
+      if (!forceOverwrite) {
+        try {
+          const savedVersions = JSON.parse(localStorage.getItem('dataVersions') || '{}');
+          const currentVersions = await this.api.getVersions();
+
+          const conflicts = [];
+          const tables = ['teachers', 'courseAssignments', 'maritimeCourses'];
+
+          for (const table of tables) {
+            const saved = savedVersions[table];
+            const current = currentVersions[table];
+
+            if (saved && current) {
+              // 比對指紋，如果不同表示資料已被修改
+              if (saved.fingerprint !== current.fingerprint) {
+                conflicts.push({
+                  table,
+                  savedCount: saved.count,
+                  currentCount: current.count,
+                  savedFingerprint: saved.fingerprint,
+                  currentFingerprint: current.fingerprint
+                });
+              }
+            }
+          }
+
+          if (conflicts.length > 0) {
+            console.warn('⚠️ 偵測到資料衝突:', conflicts);
+            return {
+              conflict: true,
+              conflicts: conflicts,
+              message: '後端資料已被其他人修改，請先重新載入資料再進行編輯',
+              hint: '您可以選擇「重新載入」獲取最新資料，或「強制覆蓋」使用您的本地資料'
+            };
+          }
+        } catch (versionCheckError) {
+          console.warn('⚠️ 衝突檢測失敗，繼續儲存:', versionCheckError);
+        }
+      }
+
+      // 儲存資料
       await this.api.save('teachers', localTeachers);
       await this.api.save('courseAssignments', localCourses);
       await this.api.save('maritimeCourses', localMaritime);
+
+      // 更新儲存的版本指紋
+      try {
+        const newVersions = await this.api.getVersions();
+        localStorage.setItem('dataVersions', JSON.stringify(newVersions));
+      } catch (versionError) {
+        console.warn('⚠️ 更新版本指紋失敗:', versionError);
+      }
 
       // 清除修改標記
       localStorage.removeItem('hasLocalChanges');
