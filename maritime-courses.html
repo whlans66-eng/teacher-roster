@@ -1105,12 +1105,30 @@
 
     // 衝突對話框
     function showConflictDialog(result) {
+      const conflicts = result.conflicts || [];
+      const tableNames = {
+        'teachers': '教師資料',
+        'courseAssignments': '課程安排',
+        'maritimeCourses': '海事課程'
+      };
+
+      let conflictDetailsHTML = '';
+      if (conflicts.length > 0) {
+        conflictDetailsHTML = '<div style="margin: 10px 0; padding: 10px; background: #fef3c7; border-radius: 6px; font-size: 13px;"><strong>偵測到變更：</strong><ul style="margin: 5px 0; padding-left: 18px;">';
+        conflicts.forEach(c => {
+          const name = tableNames[c.table] || c.table;
+          conflictDetailsHTML += `<li>${name}: ${c.savedCount} → ${c.currentCount} 筆</li>`;
+        });
+        conflictDetailsHTML += '</ul></div>';
+      }
+
       const div = document.createElement('div');
       div.className = 'modal-backdrop show';
       div.innerHTML = `
         <div class="conflict-dialog">
           <h2 style="margin: 0 0 10px 0; font-size: 20px; color: #ff9500;">⚠️ 資料衝突警告</h2>
           <p style="color: #374151; margin: 10px 0;">${result.message || '後端有較新的資料'}</p>
+          ${conflictDetailsHTML}
           ${result.activeSessions && result.activeSessions.length > 0 ? `
             <div class="conflict-user-list">
               <p style="font-size: 12px; color: gray; margin-bottom: 5px;">線上使用者：</p>
@@ -1121,13 +1139,26 @@
                 </div>
               `).join('')}
             </div>` : ''}
+          <p style="color: #6b7280; font-size: 12px; margin-top: 10px;">${result.hint || '建議重新載入以取得最新資料'}</p>
           <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
             <button onclick="this.closest('.modal-backdrop').remove()" class="secondary-btn">稍後處理</button>
+            <button onclick="forceOverwrite()" class="secondary-btn" style="background: #ff3b30; color: white;">強制覆蓋</button>
             <button onclick="window.location.reload()" class="primary-btn">重新整理</button>
           </div>
         </div>
       `;
       document.body.appendChild(div);
+    }
+
+    async function forceOverwrite() {
+      if (!confirm('確定要強制覆蓋嗎？這會覆蓋後端其他人的修改。')) return;
+      document.querySelector('.modal-backdrop')?.remove();
+      try {
+        await syncManager.saveToBackendSafe(true);
+        showMaritimeMessage('✓ 已強制儲存', 'success');
+      } catch (e) {
+        showMaritimeMessage('✗ 儲存失敗', 'error');
+      }
     }
 
     async function kickUser(sid, name) {

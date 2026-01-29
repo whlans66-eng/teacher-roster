@@ -1554,7 +1554,15 @@
       if(syncing){ syncAgain=true; return; }
       syncing = true;
       try{
-        await api.save('teachers', teachers);
+        if (syncManager) {
+          const result = await syncManager.saveTable('teachers');
+          if (result && result.conflict) {
+            console.warn('[Warning] 師資資料衝突:', result);
+            showConflictAlert('teachers', result);
+          }
+        } else {
+          await api.save('teachers', teachers);
+        }
         // 師資資料已同步到雲端
       }catch(e){
         console.warn('雲端靜默上傳失敗：', e);
@@ -3476,7 +3484,11 @@
   async function saveCourseToBackend() {
     if (!api || !syncManager) return;
     try {
-      await syncManager.saveTable('courseAssignments');
+      const result = await syncManager.saveTable('courseAssignments');
+      if (result && result.conflict) {
+        console.warn('[Warning] 派課數據衝突:', result);
+        showConflictAlert('courseAssignments', result);
+      }
       // 派課數據已同步到後端
     } catch (error) {
       console.warn('[Warning] 派課數據後端同步失敗:', error);
@@ -3964,10 +3976,33 @@
   async function saveMaritimeCoursesToBackend() {
     if (!api || !syncManager) return;
     try {
-      await syncManager.saveTable('maritimeCourses');
+      const result = await syncManager.saveTable('maritimeCourses');
+      if (result && result.conflict) {
+        console.warn('[Warning] 海事課程數據衝突:', result);
+        showConflictAlert('maritimeCourses', result);
+      }
       // 海事課程數據已同步到後端
     } catch (error) {
       console.warn('[Warning] 海事課程數據後端同步失敗:', error);
+    }
+  }
+
+  // 顯示衝突警告
+  function showConflictAlert(tableName, result) {
+    const tableNames = {
+      'teachers': '教師資料',
+      'courseAssignments': '課程安排',
+      'maritimeCourses': '海事課程'
+    };
+    const displayName = tableNames[tableName] || tableName;
+    const msg = `⚠️ ${displayName}衝突警告\n\n` +
+      `後端資料已被其他人修改。\n` +
+      `您載入時: ${result.savedCount} 筆\n` +
+      `目前後端: ${result.currentCount} 筆\n\n` +
+      `建議重新整理頁面以取得最新資料。`;
+
+    if (confirm(msg + '\n\n點擊「確定」重新整理頁面')) {
+      window.location.reload();
     }
   }
 
