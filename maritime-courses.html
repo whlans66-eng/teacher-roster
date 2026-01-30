@@ -184,6 +184,17 @@
 
   .hidden { display: none !important; }
 
+  /* 適用對象選項樣式 */
+  .target-option.selected { border-color: #007aff !important; background: linear-gradient(135deg, #e6f0ff 0%, #f0f5ff 100%) !important; }
+  .target-option.selected.new { border-color: #34c759 !important; background: linear-gradient(135deg, #e8f9ed 0%, #f0fdf4 100%) !important; }
+  .rank-option-new.selected { border-color: #6366f1 !important; background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%) !important; }
+  .target-checkbox:hover .target-option, .target-checkbox:hover .rank-option-new { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  /* 模態框選項樣式 */
+  .target-option-modal.selected { border-color: #007aff !important; background: linear-gradient(135deg, #e6f0ff 0%, #f0f5ff 100%) !important; }
+  .target-option-modal.selected.new { border-color: #34c759 !important; background: linear-gradient(135deg, #e8f9ed 0%, #f0fdf4 100%) !important; }
+  .rank-option-modal.selected { border-color: #6366f1 !important; background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%) !important; color: #4f46e5; }
+  .target-checkbox-modal:hover .target-option-modal, .target-checkbox-modal:hover .rank-option-modal { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
   /* 衝突對話框 */
   .conflict-dialog {
     background: #ffffff;
@@ -348,6 +359,153 @@
             <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 6px;">課程描述</label>
             <textarea id="maritimeCourseDescription" rows="3" class="ios-input" style="resize: vertical;" placeholder="輸入課程大綱..."></textarea>
           </div>
+          <!-- 適用對象 -->
+          <div style="margin-bottom: 24px; background: #f5f5f7; border-radius: 16px; padding: 20px;">
+            <label style="font-size: 14px; font-weight: 700; color: #1d1d1f; margin-bottom: 16px; display: block;">
+              <i class="ph ph-users" style="margin-right: 6px;"></i>適用對象
+            </label>
+
+            <!-- 人員類別 -->
+            <div style="margin-bottom: 20px;">
+              <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 8px;">人員類別</label>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetCategory" value="existing" style="display: none;">
+                  <div class="target-option" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border: 2px solid #e5e5ea; border-radius: 12px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-check-circle" style="font-size: 18px; color: #007aff;"></i>
+                    <div><div style="font-weight: 600; font-size: 14px;">現有</div><div style="font-size: 11px; color: #86868b;">既有船員</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetCategory" value="new" style="display: none;">
+                  <div class="target-option" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border: 2px solid #e5e5ea; border-radius: 12px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-user-plus" style="font-size: 18px; color: #34c759;"></i>
+                    <div><div style="font-weight: 600; font-size: 14px;">新進</div><div style="font-size: 11px; color: #86868b;">新加入船員</div></div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 甲板部門職等 -->
+            <div style="margin-bottom: 20px;">
+              <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 8px;">甲板部門職等</label>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="C/P" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-anchor" style="font-size: 16px; color: #6366f1;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">C/P</div><div style="font-size: 10px; color: #86868b;">船長</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="C/O" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-compass" style="font-size: 16px; color: #6366f1;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">C/O</div><div style="font-size: 10px; color: #86868b;">大副</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="2/O" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-binoculars" style="font-size: 16px; color: #3b82f6;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">2/O</div><div style="font-size: 10px; color: #86868b;">二副</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="3/O" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-navigation-arrow" style="font-size: 16px; color: #3b82f6;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">3/O</div><div style="font-size: 10px; color: #86868b;">三副</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="bosun" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-users-three" style="font-size: 16px; color: #06b6d4;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">水手長</div><div style="font-size: 10px; color: #86868b;">Bosun</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="carpenter" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-hammer" style="font-size: 16px; color: #f59e0b;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">木匠</div><div style="font-size: 10px; color: #86868b;">Carpenter</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="AB" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-user-check" style="font-size: 16px; color: #14b8a6;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">幹練水手</div><div style="font-size: 10px; color: #86868b;">A.B.</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="deckCadet" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-student" style="font-size: 16px; color: #0ea5e9;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">甲板實習生</div><div style="font-size: 10px; color: #86868b;">Deck Cadet</div></div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 輪機部門職等 -->
+            <div>
+              <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 8px;">輪機部門職等</label>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="C/E" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-gear" style="font-size: 16px; color: #8b5cf6;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">C/E</div><div style="font-size: 10px; color: #86868b;">輪機長</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="2/E" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-engine" style="font-size: 16px; color: #a855f7;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">2/E</div><div style="font-size: 10px; color: #86868b;">大管</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="3/E" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-wrench" style="font-size: 16px; color: #d946ef;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">3/E</div><div style="font-size: 10px; color: #86868b;">2管</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="4/E" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-screwdriver" style="font-size: 16px; color: #ec4899;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">4/E</div><div style="font-size: 10px; color: #86868b;">3管</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="oiler" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-drop" style="font-size: 16px; color: #f97316;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">加油長</div><div style="font-size: 10px; color: #86868b;">Oiler</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="fitter" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-toolbox" style="font-size: 16px; color: #ef4444;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">銅匠</div><div style="font-size: 10px; color: #86868b;">Fitter</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="engineCadet" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-student" style="font-size: 16px; color: #f43f5e;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">輪機實習生</div><div style="font-size: 10px; color: #86868b;">Engine Cadet</div></div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
           <div style="margin-bottom: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px;">關鍵字標籤</label>
@@ -457,6 +615,60 @@
           <textarea id="maritimeCourseDescriptionModal" rows="3" class="ios-input" style="resize: vertical;" placeholder="課程描述"></textarea>
         </div>
 
+        <!-- 適用對象 Modal -->
+        <div style="margin-bottom: 20px; background: #f5f5f7; border-radius: 12px; padding: 16px;">
+          <label style="font-size: 13px; font-weight: 700; color: #1d1d1f; margin-bottom: 12px; display: block;">
+            <i class="ph ph-users" style="margin-right: 6px;"></i>適用對象
+          </label>
+
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 11px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">人員類別</label>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <label class="target-checkbox-modal" style="cursor: pointer;">
+                <input type="checkbox" name="targetCategoryModal" value="existing" style="display: none;">
+                <div class="target-option-modal" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 2px solid #e5e5ea; border-radius: 8px; transition: all 0.2s; background: white; font-size: 12px;">
+                  <i class="ph ph-check-circle" style="color: #007aff;"></i>
+                  <span style="font-weight: 600;">現有</span>
+                </div>
+              </label>
+              <label class="target-checkbox-modal" style="cursor: pointer;">
+                <input type="checkbox" name="targetCategoryModal" value="new" style="display: none;">
+                <div class="target-option-modal" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 2px solid #e5e5ea; border-radius: 8px; transition: all 0.2s; background: white; font-size: 12px;">
+                  <i class="ph ph-user-plus" style="color: #34c759;"></i>
+                  <span style="font-weight: 600;">新進</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 11px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">甲板部門</label>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="C/P" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">C/P</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="C/O" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">C/O</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="2/O" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">2/O</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="3/O" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">3/O</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="bosun" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">水手長</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="carpenter" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">木匠</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="AB" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">幹練水手</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="deckCadet" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">甲板實習生</div></label>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 11px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">輪機部門</label>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="C/E" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">C/E</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="2/E" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">2/E</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="3/E" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">3/E</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="4/E" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">4/E</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="oiler" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">加油長</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="fitter" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">銅匠</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="engineCadet" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">輪機實習生</div></label>
+            </div>
+          </div>
+        </div>
+
         <div style="margin-bottom: 24px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray);">關鍵字</label>
@@ -532,6 +744,32 @@
         }
       }
 
+      // 適用對象 checkbox 事件監聽（新增表單）
+      document.querySelectorAll('#maritimeCourseForm .target-checkbox input').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const option = this.nextElementSibling;
+          if (this.checked) {
+            option.classList.add('selected');
+            if (this.value === 'new') option.classList.add('new');
+          } else {
+            option.classList.remove('selected', 'new');
+          }
+        });
+      });
+
+      // 適用對象 checkbox 事件監聽（編輯模態框）
+      document.querySelectorAll('#maritimeCourseModalForm .target-checkbox-modal input').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const option = this.nextElementSibling;
+          if (this.checked) {
+            option.classList.add('selected');
+            if (this.value === 'new') option.classList.add('new');
+          } else {
+            option.classList.remove('selected', 'new');
+          }
+        });
+      });
+
       // 表單事件
       document.getElementById('maritimeCourseForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -541,19 +779,25 @@
           category: document.getElementById('maritimeCourseCategory').value,
           method: document.getElementById('maritimeCourseMethod').value,
           description: document.getElementById('maritimeCourseDescription').value,
-          keywords: Array.from(document.querySelectorAll('#maritimeKeywordList input')).map(i => i.value.trim()).filter(v => v)
+          keywords: Array.from(document.querySelectorAll('#maritimeKeywordList input')).map(i => i.value.trim()).filter(v => v),
+          targetCategories: Array.from(document.querySelectorAll('#maritimeCourseForm input[name="targetCategory"]:checked')).map(i => i.value),
+          targetRanks: Array.from(document.querySelectorAll('#maritimeCourseForm input[name="targetRank"]:checked')).map(i => i.value)
         };
         maritimeCourses.push(course);
         await saveMaritimeCourses();
         showMaritimeMessage('✓ 課程新增成功', 'success');
         document.getElementById('maritimeCourseForm').reset();
         document.getElementById('maritimeKeywordList').innerHTML = '';
+        // 清除 checkbox 選取狀態
+        document.querySelectorAll('#maritimeCourseForm .target-option, #maritimeCourseForm .rank-option-new').forEach(o => o.classList.remove('selected', 'new'));
         addMaritimeKeyword();
         displayManageMaritimeCourses();
       });
 
       document.getElementById('maritimeCancelEdit').addEventListener('click', () => {
         document.getElementById('maritimeCourseForm').reset();
+        // 清除 checkbox 選取狀態
+        document.querySelectorAll('#maritimeCourseForm .target-option, #maritimeCourseForm .rank-option-new').forEach(o => o.classList.remove('selected', 'new'));
         document.getElementById('maritimeKeywordList').innerHTML = '';
         addMaritimeKeyword();
       });
@@ -990,6 +1234,67 @@
           `}
         </div>
 
+        <!-- 適用對象 -->
+        <div class="glass-panel" style="margin-top: 24px;">
+          <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+            <span style="width: 36px; height: 36px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
+              <i class="ph ph-users"></i>
+            </span>
+            適用對象
+          </h3>
+          ${((course.targetCategories && course.targetCategories.length > 0) || (course.targetRanks && course.targetRanks.length > 0)) ? `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <!-- 人員類別 -->
+              <div>
+                <div style="font-size: 13px; font-weight: 600; color: #86868b; margin-bottom: 12px;">人員類別</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                  ${(course.targetCategories && course.targetCategories.length > 0) ? course.targetCategories.map(cat => `
+                    <span style="
+                      background: ${cat === 'existing' ? 'linear-gradient(135deg, #007aff 0%, #0051d5 100%)' : 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)'};
+                      color: white;
+                      padding: 8px 16px;
+                      border-radius: 20px;
+                      font-size: 13px;
+                      font-weight: 600;
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 6px;
+                      box-shadow: 0 2px 8px ${cat === 'existing' ? 'rgba(0, 122, 255, 0.25)' : 'rgba(52, 199, 89, 0.25)'};
+                    ">
+                      <i class="ph ${cat === 'existing' ? 'ph-check-circle' : 'ph-user-plus'}"></i>
+                      ${cat === 'existing' ? '現有船員' : '新進船員'}
+                    </span>
+                  `).join('') : '<span style="color: #86868b; font-size: 13px;">未設定</span>'}
+                </div>
+              </div>
+              <!-- 適用職等 -->
+              <div>
+                <div style="font-size: 13px; font-weight: 600; color: #86868b; margin-bottom: 12px;">適用職等</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  ${(course.targetRanks && course.targetRanks.length > 0) ? course.targetRanks.map(rank => `
+                    <span style="
+                      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+                      color: white;
+                      padding: 6px 14px;
+                      border-radius: 16px;
+                      font-size: 12px;
+                      font-weight: 600;
+                      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+                    ">
+                      ${getRankDisplayName(rank)}
+                    </span>
+                  `).join('') : '<span style="color: #86868b; font-size: 13px;">未設定</span>'}
+                </div>
+              </div>
+            </div>
+          ` : `
+            <div style="text-align: center; padding: 40px; color: #86868b;">
+              <div style="font-size: 48px; margin-bottom: 12px;"><i class="ph ph-users"></i></div>
+              <p>尚未設定適用對象</p>
+            </div>
+          `}
+        </div>
+
         <!-- 操作按鈕 -->
         <div style="margin-top: 32px; display: flex; justify-content: center; gap: 16px;">
           <button onclick="editMaritimeCourse(${course.id})" class="primary-btn" style="padding: 14px 32px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
@@ -1047,6 +1352,28 @@
       return descriptions[method] || '授課方式待定';
     }
 
+    // 取得職等顯示名稱
+    function getRankDisplayName(rank) {
+      const rankNames = {
+        'C/P': 'C/P 船長',
+        'C/O': 'C/O 大副',
+        '2/O': '2/O 二副',
+        '3/O': '3/O 三副',
+        'bosun': '水手長',
+        'carpenter': '木匠',
+        'AB': '幹練水手',
+        'deckCadet': '甲板實習生',
+        'C/E': 'C/E 輪機長',
+        '2/E': '2/E 大管',
+        '3/E': '3/E 2管',
+        '4/E': '4/E 3管',
+        'oiler': '加油長',
+        'fitter': '銅匠',
+        'engineCadet': '輪機實習生'
+      };
+      return rankNames[rank] || rank;
+    }
+
     // 編輯課程
     function editMaritimeCourse(id) {
       editingMaritimeCourseId = id;
@@ -1066,6 +1393,34 @@
         addMaritimeKeywordModal();
       }
 
+      // 設定適用對象選取狀態
+      // 先清除所有選取
+      document.querySelectorAll('#maritimeCourseModalForm .target-option-modal, #maritimeCourseModalForm .rank-option-modal').forEach(o => o.classList.remove('selected', 'new'));
+      document.querySelectorAll('#maritimeCourseModalForm input[name="targetCategoryModal"], #maritimeCourseModalForm input[name="targetRankModal"]').forEach(i => i.checked = false);
+
+      // 設定人員類別
+      if (c.targetCategories && c.targetCategories.length > 0) {
+        c.targetCategories.forEach(cat => {
+          const checkbox = document.querySelector(`#maritimeCourseModalForm input[name="targetCategoryModal"][value="${cat}"]`);
+          if (checkbox) {
+            checkbox.checked = true;
+            checkbox.nextElementSibling.classList.add('selected');
+            if (cat === 'new') checkbox.nextElementSibling.classList.add('new');
+          }
+        });
+      }
+
+      // 設定職等
+      if (c.targetRanks && c.targetRanks.length > 0) {
+        c.targetRanks.forEach(rank => {
+          const checkbox = document.querySelector(`#maritimeCourseModalForm input[name="targetRankModal"][value="${rank}"]`);
+          if (checkbox) {
+            checkbox.checked = true;
+            checkbox.nextElementSibling.classList.add('selected');
+          }
+        });
+      }
+
       document.getElementById('maritimeCourseModal').classList.add('show');
     }
 
@@ -1081,7 +1436,9 @@
         category: document.getElementById('maritimeCourseCategoryModal').value,
         method: document.getElementById('maritimeCourseMethodModal').value,
         description: document.getElementById('maritimeCourseDescriptionModal').value,
-        keywords: Array.from(document.querySelectorAll('#maritimeKeywordListModal input')).map(i => i.value.trim()).filter(v => v)
+        keywords: Array.from(document.querySelectorAll('#maritimeKeywordListModal input')).map(i => i.value.trim()).filter(v => v),
+        targetCategories: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetCategoryModal"]:checked')).map(i => i.value),
+        targetRanks: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetRankModal"]:checked')).map(i => i.value)
       };
 
       const idx = maritimeCourses.findIndex(x => x.id === editingMaritimeCourseId);
