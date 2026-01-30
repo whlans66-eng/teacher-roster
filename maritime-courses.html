@@ -195,6 +195,328 @@
   .rank-option-modal.selected { border-color: #6366f1 !important; background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%) !important; color: #4f46e5; }
   .target-checkbox-modal:hover .target-option-modal, .target-checkbox-modal:hover .rank-option-modal { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 
+  /* ========== 課程詳情頁面樣式 ========== */
+  .course-detail-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 32px;
+  }
+  @media (max-width: 1024px) {
+    .course-detail-layout { grid-template-columns: 1fr; }
+  }
+  .course-detail-main { display: flex; flex-direction: column; gap: 24px; }
+  .course-detail-sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+  /* 詳情卡片 */
+  .detail-card {
+    background: #ffffff;
+    border-radius: 24px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    overflow: hidden;
+  }
+  .sidebar-card { padding: 24px; }
+
+  /* 標題卡片 */
+  .detail-header-card {
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header-card-decoration {
+    position: absolute;
+    top: 32px;
+    right: 32px;
+    opacity: 0.08;
+    transform: rotate(12deg);
+  }
+  .header-card-decoration i { font-size: 128px; color: #3b82f6; }
+  .header-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid;
+  }
+  .header-badge i { font-size: 14px; }
+  .header-badge-blue { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }
+  .header-badge-indigo { background: #eef2ff; color: #4f46e5; border-color: #e0e7ff; }
+  .header-card-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+  }
+  .header-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 14px;
+    color: #64748b;
+    position: relative;
+    z-index: 1;
+  }
+  .header-card-meta span { display: flex; align-items: center; gap: 8px; }
+  .header-card-meta i { font-size: 16px; }
+
+  /* 卡片標題區 */
+  .detail-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f8fafc;
+    background: linear-gradient(to bottom, #fafbfc, #ffffff);
+  }
+  .detail-card-header-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f8fafc;
+    background: linear-gradient(to bottom, #fafbfc, #ffffff);
+  }
+  .detail-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .detail-card-icon-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+  .detail-card-icon-orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+  .detail-card-title { font-size: 18px; font-weight: 700; color: #0f172a; }
+  .detail-card-body { padding: 24px; }
+
+  /* 課程描述 */
+  .description-content {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #334155;
+    background: #f8fafc;
+    padding: 20px 24px;
+    border-radius: 16px;
+    border-left: 4px solid #3b82f6;
+  }
+
+  /* 關鍵字標籤 */
+  .keyword-count-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 9999px;
+  }
+  .keyword-tags-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .keyword-tag-item {
+    padding: 10px 18px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .keyword-tag-item:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: #eff6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59,130,246,0.15);
+  }
+  .keyword-tag-item:active { transform: scale(0.97); }
+
+  /* 空狀態 */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: #94a3b8;
+  }
+  .empty-state i { font-size: 48px; margin-bottom: 12px; display: block; }
+  .empty-state p { font-size: 14px; font-weight: 500; }
+
+  /* 側邊欄樣式 */
+  .sidebar-section { margin-bottom: 24px; }
+  .sidebar-section:last-child { margin-bottom: 0; }
+  .sidebar-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+  .sidebar-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .sidebar-dot-indigo { background: #6366f1; }
+  .sidebar-dot-emerald { background: #10b981; }
+  .sidebar-dot-purple { background: #8b5cf6; }
+
+  .sidebar-info-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid;
+    transition: all 0.2s ease;
+    cursor: default;
+  }
+  .sidebar-info-box:hover { transform: scale(1.02); }
+  .sidebar-info-box-indigo { background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%); border-color: #e0e7ff; }
+  .sidebar-info-box-emerald { background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border-color: #d1fae5; }
+  .sidebar-info-icon {
+    width: 56px;
+    height: 56px;
+    background: #ffffff;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid rgba(99,102,241,0.1);
+    transition: transform 0.2s ease;
+  }
+  .sidebar-info-box:hover .sidebar-info-icon { transform: scale(1.1); }
+  .sidebar-info-icon i { font-size: 28px; color: #6366f1; }
+  .sidebar-info-icon-emerald i { color: #10b981; }
+  .sidebar-info-main { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .sidebar-info-sub { font-size: 11px; color: #64748b; font-weight: 600; letter-spacing: 0.05em; }
+
+  /* 適用對象 */
+  .target-audience-content { display: flex; flex-direction: column; gap: 16px; }
+  .target-section-label { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+  .target-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .target-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .target-badge i { font-size: 14px; }
+  .target-badge-blue { background: #eff6ff; color: #2563eb; }
+  .target-badge-green { background: #ecfdf5; color: #059669; }
+  .target-badge-purple { background: #f5f3ff; color: #7c3aed; }
+
+  /* 空狀態（側邊欄） */
+  .empty-state-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
+  }
+  .empty-state-sidebar-icon {
+    width: 64px;
+    height: 64px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .empty-state-sidebar-icon i { font-size: 32px; color: #cbd5e1; }
+  .empty-state-sidebar p { font-size: 14px; color: #94a3b8; font-weight: 500; margin-bottom: 16px; }
+  .empty-state-btn {
+    padding: 8px 16px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #3b82f6;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .empty-state-btn:hover { background: #eff6ff; border-color: #bfdbfe; }
+
+  /* 操作按鈕 */
+  .sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: sticky;
+    bottom: 24px;
+  }
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 24px;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+  }
+  .action-btn i { font-size: 18px; }
+  .action-btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 8px 24px rgba(59,130,246,0.35);
+  }
+  .action-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(59,130,246,0.4);
+  }
+  .action-btn-primary:active { transform: scale(0.98); }
+  .action-btn-secondary {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .action-btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  .action-btn-secondary:active { transform: scale(0.98); }
+
   /* 衝突對話框 */
   .conflict-dialog {
     background: #ffffff;
@@ -1099,212 +1421,200 @@
       document.getElementById('maritimeCourseResults').classList.add('hidden');
       document.getElementById('courseDetailView').classList.remove('hidden');
 
-      // 根據授課方式決定配色
-      const methodColors = {
-        '實體課程': { gradient: 'from-blue-50 to-indigo-50', badge: 'bg-blue-500', text: 'text-blue-800', icon: '<i class="ph ph-buildings"></i>' },
-        '線上課程': { gradient: 'from-green-50 to-emerald-50', badge: 'bg-green-500', text: 'text-green-800', icon: '<i class="ph ph-laptop"></i>' },
-        '混合課程': { gradient: 'from-orange-50 to-amber-50', badge: 'bg-orange-500', text: 'text-orange-800', icon: '<i class="ph ph-arrows-clockwise"></i>' }
-      };
-
-      const colors = methodColors[course.method] || methodColors['實體課程'];
       const categoryName = maritimeCategoryNames[course.category] || course.category;
+      const keywordCount = (course.keywords || []).length;
+
+      // 授課方式圖標和顏色
+      const methodConfig = {
+        '實體課程': { icon: 'ph-buildings', color: '#3b82f6', bgColor: '#eff6ff', borderColor: '#dbeafe' },
+        '線上課程': { icon: 'ph-laptop', color: '#10b981', bgColor: '#ecfdf5', borderColor: '#d1fae5' },
+        '混合課程': { icon: 'ph-arrows-clockwise', color: '#10b981', bgColor: '#ecfdf5', borderColor: '#d1fae5' }
+      };
+      const method = methodConfig[course.method] || methodConfig['實體課程'];
+
+      // 分類圖標
+      const categoryIcons = {
+        '01': 'ph-anchor', '02': 'ph-users-three', '03': 'ph-warning-circle',
+        '04': 'ph-gear', '05': 'ph-globe', '06': 'ph-package',
+        '07': 'ph-chat-circle-dots', '08': 'ph-arrow-u-up-left', '09': 'ph-dots-three'
+      };
+      const catIcon = categoryIcons[course.category] || 'ph-folder';
 
       const content = document.getElementById('courseDetailContent');
       content.innerHTML = `
-        <!-- 頂部資訊卡片 -->
-        <div style="background: linear-gradient(135deg, #f0f5ff 0%, #e8f4f8 100%); border-radius: 24px; padding: 40px; margin-bottom: 32px; position: relative; overflow: hidden;">
-          <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(0, 122, 255, 0.08); border-radius: 50%;"></div>
-          <div style="position: absolute; bottom: -30px; left: -30px; width: 150px; height: 150px; background: rgba(139, 92, 246, 0.08); border-radius: 50%;"></div>
+        <div class="course-detail-layout">
+          <!-- 左側主內容 -->
+          <div class="course-detail-main">
 
-          <div style="position: relative; z-index: 1;">
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
-              <span style="background: linear-gradient(135deg, #007aff 0%, #0051d5 100%); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                ${colors.icon}
-                ${course.method || '未設定'}
-              </span>
-              <span style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">
-                ${course.category} ${categoryName}
-              </span>
-            </div>
-
-            <h1 style="font-size: 32px; font-weight: 700; color: #1d1d1f; margin-bottom: 16px; line-height: 1.3;">${course.name}</h1>
-
-            <div style="display: flex; align-items: center; gap: 16px; color: #6e6e73; font-size: 14px;">
-              <span style="display: flex; align-items: center; gap: 6px;">
-                <i class="ph ph-calendar-blank"></i>
-                建立於 ${new Date(course.id).toLocaleDateString('zh-TW')}
-              </span>
-              <span style="display: flex; align-items: center; gap: 6px;">
-                <i class="ph ph-tag"></i>
-                ${(course.keywords || []).length} 個關鍵字
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 詳細內容區塊 -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-          <!-- 課程描述 -->
-          <div class="glass-panel" style="grid-column: 1 / -1;">
-            <h3 style="font-size: 20px; font-weight: 700; color: #1d1d1f; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-              <span style="width: 40px; height: 40px; background: linear-gradient(135deg, #007aff 0%, #0051d5 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;">
-                <i class="ph ph-article"></i>
-              </span>
-              課程描述
-            </h3>
-            ${course.description ? `
-              <div style="background: #f5f5f7; border-radius: 16px; padding: 24px; line-height: 1.8; color: #333; font-size: 15px; border-left: 4px solid #007aff;">
-                ${course.description.replace(/\n/g, '<br>')}
+            <!-- 標題卡片 -->
+            <div class="detail-card detail-header-card">
+              <div class="header-card-decoration">
+                <i class="ph ph-book-open"></i>
               </div>
-            ` : `
-              <div style="text-align: center; padding: 40px; color: #86868b;">
-                <div style="font-size: 48px; margin-bottom: 12px;"><i class="ph ph-note-pencil"></i></div>
-                <p>尚未填寫課程描述</p>
-              </div>
-            `}
-          </div>
 
-          <!-- 分類資訊 -->
-          <div class="glass-panel">
-            <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-              <span style="width: 36px; height: 36px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
-                <i class="ph ph-folder-open"></i>
-              </span>
-              課程分類
-            </h3>
-            <div style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-radius: 16px; padding: 24px; text-align: center;">
-              <div style="font-size: 48px; margin-bottom: 12px; color: #8b5cf6;">
-                ${getCategoryIcon(course.category)}
-              </div>
-              <div style="font-size: 15px; font-weight: 600; color: #6d28d9;">${course.category}</div>
-              <div style="font-size: 17px; font-weight: 700; color: #1d1d1f; margin-top: 8px;">${categoryName}</div>
-            </div>
-          </div>
-
-          <!-- 授課方式 -->
-          <div class="glass-panel">
-            <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-              <span style="width: 36px; height: 36px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
-                <i class="ph ph-chalkboard-teacher"></i>
-              </span>
-              授課方式
-            </h3>
-            <div style="background: ${getMethodBackground(course.method)}; border-radius: 16px; padding: 24px; text-align: center;">
-              <div style="font-size: 48px; margin-bottom: 12px;">${colors.icon}</div>
-              <div style="font-size: 20px; font-weight: 700; color: #1d1d1f;">${course.method || '未設定'}</div>
-              <div style="font-size: 13px; color: #6e6e73; margin-top: 8px;">${getMethodDescription(course.method)}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 關鍵字標籤 -->
-        <div class="glass-panel" style="margin-top: 24px;">
-          <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-            <span style="width: 36px; height: 36px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
-              <i class="ph ph-hash"></i>
-            </span>
-            關鍵字標籤
-          </h3>
-          ${(course.keywords && course.keywords.length > 0) ? `
-            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-              ${course.keywords.map(keyword => `
-                <span style="
-                  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-                  color: white;
-                  padding: 10px 20px;
-                  border-radius: 25px;
-                  font-size: 14px;
-                  font-weight: 600;
-                  display: inline-flex;
-                  align-items: center;
-                  gap: 8px;
-                  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);
-                  transition: all 0.2s ease;
-                ">
-                  <i class="ph ph-hash" style="font-size: 12px;"></i>
-                  ${keyword}
+              <div class="header-card-badges">
+                <span class="header-badge header-badge-blue">
+                  <i class="ph ${method.icon}"></i>
+                  ${course.method || '未設定'}
                 </span>
-              `).join('')}
-            </div>
-          ` : `
-            <div style="text-align: center; padding: 40px; color: #86868b;">
-              <div style="font-size: 48px; margin-bottom: 12px;"><i class="ph ph-tag"></i></div>
-              <p>尚未設定關鍵字</p>
-            </div>
-          `}
-        </div>
-
-        <!-- 適用對象 -->
-        <div class="glass-panel" style="margin-top: 24px;">
-          <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-            <span style="width: 36px; height: 36px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
-              <i class="ph ph-users"></i>
-            </span>
-            適用對象
-          </h3>
-          ${((course.targetCategories && course.targetCategories.length > 0) || (course.targetRanks && course.targetRanks.length > 0)) ? `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-              <!-- 人員類別 -->
-              <div>
-                <div style="font-size: 13px; font-weight: 600; color: #86868b; margin-bottom: 12px;">人員類別</div>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                  ${(course.targetCategories && course.targetCategories.length > 0) ? course.targetCategories.map(cat => `
-                    <span style="
-                      background: ${cat === 'existing' ? 'linear-gradient(135deg, #007aff 0%, #0051d5 100%)' : 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)'};
-                      color: white;
-                      padding: 8px 16px;
-                      border-radius: 20px;
-                      font-size: 13px;
-                      font-weight: 600;
-                      display: inline-flex;
-                      align-items: center;
-                      gap: 6px;
-                      box-shadow: 0 2px 8px ${cat === 'existing' ? 'rgba(0, 122, 255, 0.25)' : 'rgba(52, 199, 89, 0.25)'};
-                    ">
-                      <i class="ph ${cat === 'existing' ? 'ph-check-circle' : 'ph-user-plus'}"></i>
-                      ${cat === 'existing' ? '現有船員' : '新進船員'}
-                    </span>
-                  `).join('') : '<span style="color: #86868b; font-size: 13px;">未設定</span>'}
-                </div>
+                <span class="header-badge header-badge-indigo">
+                  <i class="ph ph-globe"></i>
+                  ${course.category} ${categoryName}
+                </span>
               </div>
-              <!-- 適用職等 -->
-              <div>
-                <div style="font-size: 13px; font-weight: 600; color: #86868b; margin-bottom: 12px;">適用職等</div>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                  ${(course.targetRanks && course.targetRanks.length > 0) ? course.targetRanks.map(rank => `
-                    <span style="
-                      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-                      color: white;
-                      padding: 6px 14px;
-                      border-radius: 16px;
-                      font-size: 12px;
-                      font-weight: 600;
-                      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
-                    ">
-                      ${getRankDisplayName(rank)}
-                    </span>
-                  `).join('') : '<span style="color: #86868b; font-size: 13px;">未設定</span>'}
-                </div>
+
+              <h1 class="header-card-title">${course.name}</h1>
+
+              <div class="header-card-meta">
+                <span><i class="ph ph-calendar-blank"></i> 建立於 ${new Date(course.id).toLocaleDateString('zh-TW')}</span>
+                <span><i class="ph ph-tag"></i> ${keywordCount} 個關鍵字</span>
               </div>
             </div>
-          ` : `
-            <div style="text-align: center; padding: 40px; color: #86868b;">
-              <div style="font-size: 48px; margin-bottom: 12px;"><i class="ph ph-users"></i></div>
-              <p>尚未設定適用對象</p>
-            </div>
-          `}
-        </div>
 
-        <!-- 操作按鈕 -->
-        <div style="margin-top: 32px; display: flex; justify-content: center; gap: 16px;">
-          <button onclick="editMaritimeCourse(${course.id})" class="primary-btn" style="padding: 14px 32px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-pencil-simple"></i>
-            編輯課程資料
-          </button>
-          <button onclick="backToCourseList()" class="secondary-btn" style="padding: 14px 32px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-arrow-left"></i>
-            返回列表
-          </button>
+            <!-- 課程描述卡片 -->
+            <div class="detail-card">
+              <div class="detail-card-header">
+                <div class="detail-card-icon detail-card-icon-blue">
+                  <i class="ph ph-clipboard-text"></i>
+                </div>
+                <h2 class="detail-card-title">課程詳細描述</h2>
+              </div>
+
+              <div class="detail-card-body">
+                ${course.description ? `
+                  <div class="description-content">
+                    ${course.description.replace(/\n/g, '<br>')}
+                  </div>
+                ` : `
+                  <div class="empty-state">
+                    <i class="ph ph-note-pencil"></i>
+                    <p>尚未填寫課程描述</p>
+                  </div>
+                `}
+              </div>
+            </div>
+
+            <!-- 關鍵字標籤卡片 -->
+            <div class="detail-card">
+              <div class="detail-card-header-flex">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div class="detail-card-icon detail-card-icon-orange">
+                    <i class="ph ph-hash"></i>
+                  </div>
+                  <h2 class="detail-card-title">關鍵字標籤</h2>
+                </div>
+                <span class="keyword-count-badge">共 ${keywordCount} 個標籤</span>
+              </div>
+
+              <div class="detail-card-body">
+                ${(course.keywords && course.keywords.length > 0) ? `
+                  <div class="keyword-tags-grid">
+                    ${course.keywords.map(keyword => `
+                      <span class="keyword-tag-item"># ${keyword}</span>
+                    `).join('')}
+                  </div>
+                ` : `
+                  <div class="empty-state">
+                    <i class="ph ph-tag"></i>
+                    <p>尚未設定關鍵字</p>
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+
+          <!-- 右側側邊欄 -->
+          <div class="course-detail-sidebar">
+
+            <!-- 核心屬性卡片 -->
+            <div class="detail-card sidebar-card">
+              <!-- 課程分類 -->
+              <div class="sidebar-section">
+                <h3 class="sidebar-section-title">
+                  <span class="sidebar-dot sidebar-dot-indigo"></span>
+                  課程分類
+                </h3>
+                <div class="sidebar-info-box sidebar-info-box-indigo">
+                  <div class="sidebar-info-icon">
+                    <i class="ph ${catIcon}"></i>
+                  </div>
+                  <span class="sidebar-info-main">${categoryName}</span>
+                  <span class="sidebar-info-sub">IDENTIFIER: ${course.category}</span>
+                </div>
+              </div>
+
+              <!-- 授課方式 -->
+              <div class="sidebar-section">
+                <h3 class="sidebar-section-title">
+                  <span class="sidebar-dot sidebar-dot-emerald"></span>
+                  授課方式
+                </h3>
+                <div class="sidebar-info-box sidebar-info-box-emerald">
+                  <div class="sidebar-info-icon sidebar-info-icon-emerald">
+                    <i class="ph ${method.icon}"></i>
+                  </div>
+                  <span class="sidebar-info-main">${course.method || '未設定'}</span>
+                  <span class="sidebar-info-sub">${getMethodDescription(course.method)}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 適用對象卡片 -->
+            <div class="detail-card sidebar-card">
+              <h3 class="sidebar-section-title">
+                <span class="sidebar-dot sidebar-dot-purple"></span>
+                適用對象
+              </h3>
+
+              ${((course.targetCategories && course.targetCategories.length > 0) || (course.targetRanks && course.targetRanks.length > 0)) ? `
+                <div class="target-audience-content">
+                  ${(course.targetCategories && course.targetCategories.length > 0) ? `
+                    <div class="target-section">
+                      <div class="target-section-label">人員類別</div>
+                      <div class="target-badges">
+                        ${course.targetCategories.map(cat => `
+                          <span class="target-badge ${cat === 'existing' ? 'target-badge-blue' : 'target-badge-green'}">
+                            <i class="ph ${cat === 'existing' ? 'ph-check-circle' : 'ph-user-plus'}"></i>
+                            ${cat === 'existing' ? '現有船員' : '新進船員'}
+                          </span>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                  ${(course.targetRanks && course.targetRanks.length > 0) ? `
+                    <div class="target-section">
+                      <div class="target-section-label">適用職等</div>
+                      <div class="target-badges">
+                        ${course.targetRanks.map(rank => `
+                          <span class="target-badge target-badge-purple">${getRankDisplayName(rank)}</span>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              ` : `
+                <div class="empty-state-sidebar">
+                  <div class="empty-state-sidebar-icon">
+                    <i class="ph ph-users"></i>
+                  </div>
+                  <p>尚未設定特定對象</p>
+                  <button onclick="editMaritimeCourse(${course.id})" class="empty-state-btn">前往設定</button>
+                </div>
+              `}
+            </div>
+
+            <!-- 操作按鈕組 -->
+            <div class="sidebar-actions">
+              <button onclick="editMaritimeCourse(${course.id})" class="action-btn action-btn-primary">
+                <i class="ph ph-pencil-simple"></i>
+                編輯課程資料
+              </button>
+              <button onclick="backToCourseList()" class="action-btn action-btn-secondary">
+                <i class="ph ph-arrow-left"></i>
+                返回課程列表
+              </button>
+            </div>
+          </div>
         </div>
       `;
     }
