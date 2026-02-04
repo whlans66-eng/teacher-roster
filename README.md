@@ -210,7 +210,7 @@ teacher-roster/
 ├── index.html              # 主頁面
 ├── teacher-management.html # 教師管理頁面
 ├── course-management.html  # 課程管理頁面
-├── maritime-courses.html   # 航海課程頁面
+├── maritime-courses.html   # 海事課程頁面
 ├── js/
 │   └── api.js             # API 通訊層
 ├── backend-api.gs         # Google Apps Script 後端
