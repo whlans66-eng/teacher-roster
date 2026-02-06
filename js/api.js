@@ -7,11 +7,24 @@
 const API_CONFIG = {
   // 將此 URL 替換為你部署後的 Google Apps Script Web App URL
   baseUrl: 'https://script.google.com/macros/s/AKfycbxfHK4ebGv_M-Cce-D4vtVg7alHpTYiEjyWZB9G2ZS2ZCsBgrH0hJeiDgX3wp8uSoqt5Q/exec',
-  token: 'tr_demo_12345',  // 與後端 TOKEN 一致
   timeout: 30000,  // 30 秒超時
   enableSessions: false, // 是否啟用 Session 追蹤與鎖定功能
   debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
 };
+
+/**
+ * 從 sessionStorage 取得登入後的 Session Token
+ */
+function _getSessionToken() {
+  try {
+    const authData = sessionStorage.getItem('authData') || localStorage.getItem('authData');
+    if (!authData) return '';
+    const parsed = JSON.parse(authData);
+    return parsed.token || '';
+  } catch (e) {
+    return '';
+  }
+}
 
 /**
  * API 類別：統一管理所有後端呼叫
@@ -19,9 +32,58 @@ const API_CONFIG = {
 class TeacherRosterAPI {
   constructor(config) {
     this.baseUrl = config.baseUrl;
-    this.token = config.token;
     this.timeout = config.timeout;
     this.debug = config.debug || false;
+  }
+
+  /**
+   * 取得當前 Session Token（動態讀取，不寫死）
+   */
+  get token() {
+    return _getSessionToken();
+  }
+
+  /**
+   * 登入（使用 POST 方法，密碼不會出現在 URL 中）
+   * @param {string} username
+   * @param {string} password
+   * @returns {Object} { user, token }
+   */
+  async login(username, password) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const body = new URLSearchParams();
+      body.append('action', 'login');
+      body.append('username', username);
+      body.append('password', password);
+
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: body.toString(),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error('伺服器回傳狀態碼 ' + response.status);
+      }
+
+      const result = await response.json();
+      if (!result.ok) {
+        throw new Error(result.error || '登入失敗');
+      }
+
+      return result.data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') throw new Error('請求超時');
+      if (error instanceof TypeError) throw new Error('無法連線到 API：' + error.message);
+      throw error;
+    }
   }
 
   /**
@@ -194,6 +256,15 @@ class TeacherRosterAPI {
       }
 
       if (!result.ok) {
+        if (result.error === 'Unauthorized') {
+          console.warn('Session 已過期，導向登入頁面');
+          sessionStorage.removeItem('authData');
+          localStorage.removeItem('authData');
+          if (!window.location.pathname.endsWith('login.html')) {
+            window.location.href = 'login.html';
+          }
+          throw new Error('Session 已過期，請重新登入');
+        }
         throw new Error(result.error || '請求失敗');
       }
 
@@ -250,6 +321,15 @@ class TeacherRosterAPI {
       }
 
       if (!result.ok) {
+        if (result.error === 'Unauthorized') {
+          console.warn('Session 已過期，導向登入頁面');
+          sessionStorage.removeItem('authData');
+          localStorage.removeItem('authData');
+          if (!window.location.pathname.endsWith('login.html')) {
+            window.location.href = 'login.html';
+          }
+          throw new Error('Session 已過期，請重新登入');
+        }
         throw new Error(result.error || '請求失敗');
       }
 
