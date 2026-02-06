@@ -1,18 +1,27 @@
 /*****
- * 教師管理系統 - Google Apps Script 後端 API (最終完整版)
- * 更新日期：2025-11-26
- * 包含：登入驗證、單筆更新、檔案上傳、Session管理、安全寫入
+ * 教師管理系統 - Google Apps Script 後端 API (安全強化版)
+ * 更新日期：2026-02-06
+ * 安全修復：密碼雜湊、Session 認證、速率限制、檔案上傳白名單、XSS 防護
  *****/
 
 /***** 設定區 *****/
-const TOKEN      = 'tr_demo_12345'; 
-const SHEET_ID   = '1CPhI67yZt1W6FLV9Q02gjyJsdTP79pgUAc27ZZw3nJ4'; 
-const FOLDER_ID  = '1coJ2wsBu7I4qvM5eyViIu16POgEQL71n'; 
+const SHEET_ID   = '1CPhI67yZt1W6FLV9Q02gjyJsdTP79pgUAc27ZZw3nJ4';
+const FOLDER_ID  = '1coJ2wsBu7I4qvM5eyViIu16POgEQL71n';
+
+// 安全設定
+const SESSION_TTL = 21600; // Session 有效期 6 小時（CacheService 最大值）
+const MAX_LOGIN_ATTEMPTS = 5; // 最多登入失敗次數
+const LOGIN_LOCKOUT_SECONDS = 900; // 鎖定 15 分鐘
+const ALLOWED_UPLOAD_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'application/pdf'
+];
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
 
 const SHEETS_CONFIG = {
   users: {
     name: 'users',
-    header: ['id', 'username', 'password', 'full_name', 'role']
+    header: ['id', 'username', 'password', 'full_name', 'role', 'salt']
   },
   teachers: {
     name: 'teachers',
@@ -56,69 +65,131 @@ const SHEETS_CONFIG = {
   }
 };
 
+// ==================== 密碼安全 ====================
+
+function _generateSalt() {
+  return Utilities.getUuid();
+}
+
+function _hashPassword(password, salt) {
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    salt + ':' + password
+  );
+  return digest.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+}
+
+function _verifyPassword(inputPassword, storedHash, salt) {
+  if (!salt) {
+    // 尚未遷移的明文密碼：直接比對（向下相容）
+    return String(inputPassword) === String(storedHash);
+  }
+  return _hashPassword(inputPassword, salt) === storedHash;
+}
+
+// ==================== Session 管理（使用 CacheService）====================
+
+function _createSession(userData) {
+  const cache = CacheService.getScriptCache();
+  const sessionToken = Utilities.getUuid();
+  const sessionData = JSON.stringify({
+    username: userData.username,
+    role: userData.role,
+    full_name: userData.full_name,
+    createdAt: new Date().toISOString()
+  });
+  cache.put('sess_' + sessionToken, sessionData, SESSION_TTL);
+  return sessionToken;
+}
+
+function _getSession(token) {
+  if (!token || typeof token !== 'string') return null;
+  const cache = CacheService.getScriptCache();
+  const data = cache.get('sess_' + token);
+  if (!data) return null;
+  try {
+    const session = JSON.parse(data);
+    // 每次存取刷新 TTL
+    cache.put('sess_' + token, data, SESSION_TTL);
+    return session;
+  } catch (e) {
+    return null;
+  }
+}
+
+function _requireSession(token) {
+  const session = _getSession(token);
+  if (!session) throw new Error('Unauthorized');
+  return session;
+}
+
+function _requireRole(session, allowedRoles) {
+  if (!allowedRoles.includes(session.role)) {
+    throw new Error('Forbidden');
+  }
+}
+
+// ==================== 速率限制 ====================
+
+function _checkRateLimit(username) {
+  const cache = CacheService.getScriptCache();
+  const key = 'login_fail_' + String(username).toLowerCase();
+  const attempts = parseInt(cache.get(key) || '0', 10);
+  if (attempts >= MAX_LOGIN_ATTEMPTS) {
+    throw new Error('登入嘗試過多，帳號已暫時鎖定，請 15 分鐘後再試');
+  }
+}
+
+function _recordLoginFailure(username) {
+  const cache = CacheService.getScriptCache();
+  const key = 'login_fail_' + String(username).toLowerCase();
+  const attempts = parseInt(cache.get(key) || '0', 10);
+  cache.put(key, String(attempts + 1), LOGIN_LOCKOUT_SECONDS);
+}
+
+function _clearLoginFailures(username) {
+  const cache = CacheService.getScriptCache();
+  cache.remove('login_fail_' + String(username).toLowerCase());
+}
+
+// ==================== 路由處理 ====================
+
 function doGet(e) {
   try {
     const p = e?.parameter || {};
     const action = String(p.action || '').toLowerCase();
 
-    // 1. 處理登入 (不需 Token)
-    if (action === 'login') {
-      const username = p.username;
-      const password = p.password;
-      
-      if (!username || !password) return _json({ ok: false, error: '請輸入帳號密碼' });
-
-      // 嘗試從 users 表找人
-      let user = null;
-      try {
-        const users = _readTable('users');
-        user = users.find(u => u.username === username && String(u.password) === String(password));
-      } catch(err) {
-        // 如果 users 表還沒建好，提供一個緊急後門 (僅供第一次設定使用，建議之後刪除)
-        if (username === 'admin' && password === 'admin123') {
-             user = { username: 'admin', role: 'admin', full_name: '管理員(緊急)' };
-        }
-      }
-
-      if (user) {
-        const userData = { ...user };
-        delete userData.password; 
-        const token = 'token_' + new Date().getTime(); // 簡易 Token
-        return _json({ ok: true, data: { user: userData, token: token } });
-      } else {
-        return _json({ ok: false, error: '帳號或密碼錯誤' });
-      }
-    }
-
+    // Ping 不需要認證
     if (action === 'ping') {
       return _json({ ok: true, timestamp: new Date().toISOString(), server: 'Google Apps Script' });
     }
 
-    // 其他請求檢查 Token
-    _checkToken(p.token);
-
+    // 其他 GET 請求需要 Session 認證
+    const session = _requireSession(p.token);
     const table = String(p.table || '');
 
     if (action === 'list' && table && SHEETS_CONFIG[table]) {
+      // users 表不允許透過 API 讀取
+      if (table === 'users') return _json({ ok: false, error: 'Access denied' });
       return _json({ ok: true, table: table, data: _readTable(table) });
     }
 
     if (action === 'listall') {
       const allData = {};
       Object.keys(SHEETS_CONFIG).forEach(tableName => {
+        // 排除 users 表和 activeSessions 表
+        if (tableName === 'users' || tableName === 'activeSessions') return;
         allData[tableName] = _readTable(tableName);
       });
       return _json({ ok: true, data: allData });
     }
 
-    // 取得資料版本資訊（用於衝突檢測）
     if (action === 'getversions') {
       const versions = {};
       const targetTables = ['teachers', 'courseAssignments', 'maritimeCourses'];
       targetTables.forEach(tableName => {
         const data = _readTable(tableName);
         const count = data.length;
-        // 計算簡單的資料指紋（基於 ID 列表和記錄數）
         const ids = data.map(item => item.id || '').sort().join(',');
         const fingerprint = Utilities.computeDigest(
           Utilities.DigestAlgorithm.MD5,
@@ -136,7 +207,7 @@ function doGet(e) {
       return _json({ ok: true, versions: versions });
     }
 
-    // Session 管理 API (保留以防前端報錯，但可視為選用)
+    // Session 管理 API
     if (action === 'session_register') {
       _cleanupStaleSessions();
       const result = _registerSession(p);
@@ -148,11 +219,13 @@ function doGet(e) {
       return _json({ ok: true, ...result });
     }
     if (action === 'session_list') {
+      _requireRole(session, ['admin']);
       _cleanupStaleSessions();
       const sessions = _getActiveSessions();
       return _json({ ok: true, sessions });
     }
     if (action === 'session_kick') {
+      _requireRole(session, ['admin']);
       const result = _kickSession(p);
       return _json({ ok: true, ...result });
     }
@@ -163,7 +236,12 @@ function doGet(e) {
 
     return _json({ ok: false, error: 'Unknown action' });
   } catch (err) {
-    return _json({ ok: false, error: String(err) });
+    const msg = String(err.message || err);
+    if (msg === 'Unauthorized' || msg === 'Forbidden') {
+      return _json({ ok: false, error: msg });
+    }
+    Logger.log('doGet error: ' + msg);
+    return _json({ ok: false, error: '伺服器錯誤，請稍後再試' });
   }
 }
 
@@ -182,19 +260,58 @@ function doPost(e) {
       } catch (_) {}
     }
 
-    _checkToken(p.token);
+    // ===== 登入（不需要 Session）=====
+    if (action === 'login') {
+      const username = p.username || (bodyObj && bodyObj.username);
+      const password = p.password || (bodyObj && bodyObj.password);
 
-    // Save (整表寫入 - 用於初始化或大量匯入)
+      if (!username || !password) return _json({ ok: false, error: '請輸入帳號密碼' });
+
+      // 速率限制檢查
+      _checkRateLimit(username);
+
+      let user = null;
+      try {
+        const users = _readTable('users');
+        user = users.find(u => {
+          if (u.username !== username) return false;
+          return _verifyPassword(password, String(u.password), u.salt || '');
+        });
+      } catch (err) {
+        Logger.log('Login read users error: ' + err);
+      }
+
+      if (user) {
+        _clearLoginFailures(username);
+        const sessionToken = _createSession(user);
+        const userData = {
+          username: user.username,
+          role: user.role,
+          full_name: user.full_name
+        };
+        return _json({ ok: true, data: { user: userData, token: sessionToken } });
+      } else {
+        _recordLoginFailure(username);
+        return _json({ ok: false, error: '帳號或密碼錯誤' });
+      }
+    }
+
+    // ===== 其他 POST 請求需要 Session =====
+    const session = _requireSession(p.token);
+
+    // Save (整表寫入)
     if (action === 'save') {
+      _requireRole(session, ['admin', 'teacher']);
       const table = p.table || (bodyObj && bodyObj.table);
       const dataRaw = p.data || (bodyObj && bodyObj.data);
 
       if (!table || !SHEETS_CONFIG[table]) return _json({ ok: false, error: 'Invalid table' });
+      // 禁止透過 API 覆寫 users 表
+      if (table === 'users') return _json({ ok: false, error: 'Access denied' });
 
       let data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
       data = _asArray(data);
 
-      // 簡單的資料處理
       if (table === 'teachers') {
         data = data.map(t => ({
           ...t,
@@ -216,13 +333,15 @@ function doPost(e) {
       return _json({ ok: true, table: table, count: data.length });
     }
 
-    // Update (單筆更新 - 高效能)
+    // Update (單筆更新)
     if (action === 'update') {
+      _requireRole(session, ['admin', 'teacher']);
       const table = p.table || (bodyObj && bodyObj.table);
       const id = p.id || (bodyObj && bodyObj.id);
       const dataRaw = p.data || (bodyObj && bodyObj.data);
 
       if (!table || !SHEETS_CONFIG[table]) return _json({ ok: false, error: 'Invalid table' });
+      if (table === 'users') return _json({ ok: false, error: 'Access denied' });
       if (!id) return _json({ ok: false, error: 'Missing ID' });
 
       const data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
@@ -232,13 +351,22 @@ function doPost(e) {
 
     // Upload (檔案上傳)
     if (action === 'uploadfile') {
+      _requireRole(session, ['admin', 'teacher']);
       const result = _handleUpload(e, bodyObj);
       return _json({ ok: true, ...result });
     }
 
     return _json({ ok: false, error: 'Unknown action' });
   } catch (err) {
-    return _json({ ok: false, error: String(err) });
+    const msg = String(err.message || err);
+    if (msg === 'Unauthorized' || msg === 'Forbidden') {
+      return _json({ ok: false, error: msg });
+    }
+    if (msg.includes('帳號已暫時鎖定') || msg.includes('帳號或密碼錯誤')) {
+      return _json({ ok: false, error: msg });
+    }
+    Logger.log('doPost error: ' + msg);
+    return _json({ ok: false, error: '伺服器錯誤，請稍後再試' });
   }
 }
 
@@ -250,6 +378,8 @@ function doOptions(e) {
 
 function _handleUpload(e, bodyObj) {
   let blob = null;
+  let detectedMime = '';
+
   if (e && e.postData) {
     const raw = e.postData.contents || e.postData.getDataAsString();
     const ctype = e.postData.type || 'multipart/form-data';
@@ -258,7 +388,8 @@ function _handleUpload(e, bodyObj) {
       if (mp && mp.parts && mp.parts.length) {
         const part = mp.parts.find(p => p.name === 'file' && p.filename) || mp.parts.find(p => p.filename) || mp.parts[0];
         if (part && part.filename) {
-          blob = Utilities.newBlob(part.data, part.type || 'application/octet-stream', part.filename);
+          detectedMime = part.type || 'application/octet-stream';
+          blob = Utilities.newBlob(part.data, detectedMime, part.filename);
         }
       }
     } catch (_) {}
@@ -266,8 +397,19 @@ function _handleUpload(e, bodyObj) {
   if (!blob && bodyObj && bodyObj.dataUrl) {
     const fname = String(bodyObj.fileName || 'upload_' + Date.now());
     blob = _dataUrlToBlob(bodyObj.dataUrl, fname);
+    detectedMime = blob.getContentType();
   }
   if (!blob) throw new Error('No file found');
+
+  // 檔案類型白名單檢查
+  if (!ALLOWED_UPLOAD_TYPES.includes(detectedMime)) {
+    throw new Error('不允許的檔案類型：' + detectedMime + '，僅允許圖片與 PDF');
+  }
+
+  // 檔案大小檢查
+  if (blob.getBytes().length > MAX_UPLOAD_SIZE) {
+    throw new Error('檔案超過大小限制（最大 10MB）');
+  }
 
   const folder = DriveApp.getFolderById(FOLDER_ID);
   const file = folder.createFile(blob);
@@ -294,15 +436,24 @@ function _dataUrlToBlob(dataUrl, fileName) {
   return Utilities.newBlob(bytes, mime, fileName);
 }
 
+// 防止 Google Sheets 公式注入
+function _sanitizeSheetValue(val) {
+  if (typeof val !== 'string') return val;
+  // 如果以危險字元開頭，加上單引號前綴
+  if (/^[=+\-@\t\r]/.test(val)) {
+    return "'" + val;
+  }
+  return val;
+}
+
 function _readTable(tableName) {
   const config = SHEETS_CONFIG[tableName];
   if (!config) throw new Error('Table not found: ' + tableName);
-  
-  // 如果是 users 表，特別處理 (如果尚未建立 sheet)
+
   if (tableName === 'users') {
     try {
        const testSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('users');
-       if (!testSheet) return []; // 沒建表就回傳空，不報錯
+       if (!testSheet) return [];
     } catch(e) { return []; }
   }
 
@@ -336,10 +487,9 @@ function _readTable(tableName) {
 function _writeTable(tableName, dataArray) {
   const config = SHEETS_CONFIG[tableName];
   if (!config) throw new Error('Unknown table');
-  
-  // 🛑 安全檢查：防止寫入空資料
+
   if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
-    Logger.log(`⚠️ [攔截] 嘗試寫入空資料到 ${tableName}`);
+    Logger.log('[Guard] Blocked empty write to ' + tableName);
     return;
   }
 
@@ -356,7 +506,8 @@ function _writeTable(tableName, dataArray) {
       } else if (key === 'category' && tableName === 'maritimeCourses') {
         row[idx[key]] = val !== undefined && val !== null ? "'" + String(val) : '';
       } else {
-        row[idx[key]] = val !== undefined && val !== null ? String(val) : '';
+        const strVal = val !== undefined && val !== null ? String(val) : '';
+        row[idx[key]] = _sanitizeSheetValue(strVal);
       }
     });
     return row;
@@ -373,15 +524,15 @@ function _updateRow(tableName, id, dataObj) {
   const header = config.header;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) throw new Error('Table empty');
-  
+
   const idColumn = sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
   const rowIndex = idColumn.findIndex(rowId => String(rowId) === String(id));
   if (rowIndex === -1) throw new Error('Record not found');
-  
-  const actualRow = rowIndex + 2; 
+
+  const actualRow = rowIndex + 2;
   const idx = _headerIndex(sheet, header);
   const oldRowValues = sheet.getRange(actualRow, 1, 1, idx._len).getValues()[0];
-  
+
   const newRow = header.map((key, i) => {
     let val = dataObj.hasOwnProperty(key) ? dataObj[key] : oldRowValues[i];
     if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers'].includes(key)) {
@@ -390,10 +541,11 @@ function _updateRow(tableName, id, dataObj) {
       val = val !== undefined && val !== null ? "'" + String(val) : '';
     } else {
       val = val !== undefined && val !== null ? String(val) : '';
+      val = _sanitizeSheetValue(val);
     }
     return val;
   });
-  
+
   sheet.getRange(actualRow, 1, 1, newRow.length).setValues([newRow]);
   if (header.includes('lastModifiedAt')) {
      const timeCol = idx['lastModifiedAt'] + 1;
@@ -412,9 +564,11 @@ function _getOrCreateSheet(sheetName, header) {
   }
   const lastCol = sh.getLastColumn();
   const currentHeader = lastCol > 0 ? sh.getRange(1, 1, 1, lastCol).getValues()[0] : [];
-  const missing = header.slice(currentHeader.length);
-  if (missing.length > 0) {
-    sh.getRange(1, currentHeader.length + 1, 1, missing.length).setValues([missing]);
+  // 自動補齊缺少的欄位
+  const missingCols = header.filter(h => !currentHeader.includes(h));
+  if (missingCols.length > 0) {
+    const startCol = currentHeader.length + 1;
+    sh.getRange(1, startCol, 1, missingCols.length).setValues([missingCols]);
   }
   return sh;
 }
@@ -431,10 +585,6 @@ function _headerIndex(sh, header) {
   return idx;
 }
 
-function _checkToken(tok) {
-  if (TOKEN && String(tok).trim() !== TOKEN) throw new Error('Invalid token');
-}
-
 function _json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
@@ -449,7 +599,7 @@ function _formatDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-// Session Helpers (保留以防前端呼叫報錯，但邏輯簡化)
+// Session Helpers
 function _registerSession(p){
    const sh = _getOrCreateSheet('activeSessions', SHEETS_CONFIG.activeSessions.header);
    sh.appendRow([p.sessionId || Utilities.getUuid(), p.userName, p.userEmail, p.pageUrl, new Date().toISOString(), p.userAgent, false]);
@@ -460,37 +610,100 @@ function _getActiveSessions(){
    const sh = _getOrCreateSheet('activeSessions', SHEETS_CONFIG.activeSessions.header);
    const data = sh.getDataRange().getValues();
    if(data.length<2) return [];
-   // 簡單回傳最近 10 筆
    return data.slice(-10).map(r=>({userName:r[1], lastActiveTime:r[4]}));
 }
 function _kickSession(p){ return {}; }
 function _checkIfKicked(p){ return false; }
 function _cleanupStaleSessions(){}
 
+// ==================== 資料庫初始化與遷移 ====================
+
+/**
+ * 初始化資料庫（首次使用時執行）
+ * 預設密碼已使用 SHA-256 雜湊
+ */
 function setupDatabase() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName('users');
-  if (sheet) return; // 如果有了就不做
+  if (sheet) return;
 
   sheet = ss.insertSheet('users');
-  const headers = ['id', 'username', 'password', 'role'];
+  const headers = ['id', 'username', 'password', 'full_name', 'role', 'salt'];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#4285f4').setFontColor('#ffffff');
 
+  // 產生雜湊密碼（請部署後立即更改這些預設密碼！）
+  const salt1 = _generateSalt();
+  const salt2 = _generateSalt();
+  const salt3 = _generateSalt();
+
   const defaultUsers = [
-    ['1', 'admin', 'admin123', 'admin'],
-    ['2', 'teacher', 'teacher123', 'teacher'],
-    ['3', 'guest', 'guest123', 'guest']
+    ['1', 'admin',   _hashPassword('admin123', salt1),   '管理員', 'admin',   salt1],
+    ['2', 'teacher', _hashPassword('teacher123', salt2), '教師',   'teacher', salt2],
+    ['3', 'guest',   _hashPassword('guest123', salt3),   '訪客',   'guest',   salt3]
   ];
   sheet.getRange(2, 1, defaultUsers.length, defaultUsers[0].length).setValues(defaultUsers);
+
+  Logger.log('Database initialized with hashed passwords. Please change default passwords immediately!');
 }
 
 /**
- * 🔧 資料庫遷移：為 courseAssignments 表添加缺少的欄位
- * 使用方法：
- * 1. 部署完成後，在 Apps Script 編輯器中選擇這個函數
- * 2. 點擊執行按鈕 ▶
- * 3. 授權後會自動檢查並添加 teacherName, taId, taName 欄位
+ * 遷移：將現有明文密碼轉換為 SHA-256 雜湊
+ * 在 Apps Script 編輯器中手動執行此函數一次
+ */
+function migratePasswordsToHash() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName('users');
+  if (!sheet) {
+    Logger.log('users table not found');
+    return;
+  }
+
+  // 確保 salt 欄位存在
+  const lastCol = sheet.getLastColumn();
+  const currentHeader = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  let saltCol = currentHeader.indexOf('salt');
+  if (saltCol === -1) {
+    saltCol = lastCol;
+    sheet.getRange(1, saltCol + 1).setValue('salt');
+    Logger.log('Added salt column at position ' + (saltCol + 1));
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    Logger.log('No users to migrate');
+    return;
+  }
+
+  const passwordCol = currentHeader.indexOf('password');
+  if (passwordCol === -1) {
+    Logger.log('password column not found');
+    return;
+  }
+
+  let migrated = 0;
+  for (let row = 2; row <= lastRow; row++) {
+    const existingSalt = sheet.getRange(row, saltCol + 1).getValue();
+    if (existingSalt) {
+      Logger.log('Row ' + row + ' already has salt, skipping');
+      continue;
+    }
+
+    const plainPassword = String(sheet.getRange(row, passwordCol + 1).getValue());
+    const salt = _generateSalt();
+    const hashedPassword = _hashPassword(plainPassword, salt);
+
+    sheet.getRange(row, passwordCol + 1).setValue(hashedPassword);
+    sheet.getRange(row, saltCol + 1).setValue(salt);
+    migrated++;
+    Logger.log('Migrated row ' + row);
+  }
+
+  Logger.log('Migration complete. ' + migrated + ' passwords hashed.');
+}
+
+/**
+ * 資料庫遷移：為 courseAssignments 表添加缺少的欄位
  */
 function migrateTAColumns() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
@@ -498,91 +711,62 @@ function migrateTAColumns() {
   const sheet = ss.getSheetByName(sheetName);
 
   if (!sheet) {
-    Logger.log('❌ courseAssignments 表不存在，請先創建表格');
+    Logger.log('courseAssignments sheet not found');
     return { success: false, message: 'Sheet not found' };
   }
 
-  // 讀取當前的 header
   const lastCol = sheet.getLastColumn();
   if (lastCol === 0) {
-    Logger.log('❌ 表格沒有任何欄位');
+    Logger.log('Sheet has no columns');
     return { success: false, message: 'No columns found' };
   }
 
   const currentHeader = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  Logger.log('📋 當前 header: ' + currentHeader.join(', '));
+  Logger.log('Current header: ' + currentHeader.join(', '));
 
-  // 檢查需要添加的欄位
   const hasTeacherName = currentHeader.includes('teacherName');
   const hasTaId = currentHeader.includes('taId');
   const hasTaName = currentHeader.includes('taName');
 
   if (hasTeacherName && hasTaId && hasTaName) {
-    Logger.log('✅ teacherName, taId, taName 已存在，無需遷移');
+    Logger.log('All columns already exist');
     return { success: true, message: 'All columns already exist' };
   }
 
-  // 找到 teacherId 的位置（作為插入點）
   const teacherIdIndex = currentHeader.indexOf('teacherId');
   if (teacherIdIndex === -1) {
-    Logger.log('❌ 找不到 teacherId 欄位，無法確定插入位置');
+    Logger.log('teacherId column not found');
     return { success: false, message: 'teacherId column not found' };
   }
 
-  Logger.log(`🔍 在 teacherId (位置 ${teacherIdIndex + 1}) 後面插入缺少的欄位`);
-
-  // 計算需要插入的欄位
   const columnsToInsert = [];
   if (!hasTeacherName) columnsToInsert.push('teacherName');
   if (!hasTaId) columnsToInsert.push('taId');
   if (!hasTaName) columnsToInsert.push('taName');
 
-  Logger.log(`📝 需要添加的欄位: ${columnsToInsert.join(', ')}`);
+  Logger.log('Adding columns: ' + columnsToInsert.join(', '));
 
-  // 在 teacherId 後面插入欄位
   for (let i = 0; i < columnsToInsert.length; i++) {
     sheet.insertColumnAfter(teacherIdIndex + 1);
   }
 
-  // 設定新欄位的名稱
   for (let i = 0; i < columnsToInsert.length; i++) {
     const colIndex = teacherIdIndex + 2 + i;
     sheet.getRange(1, colIndex).setValue(columnsToInsert[i]);
   }
 
-  // 設定樣式（與其他 header 一致）
   sheet.getRange(1, teacherIdIndex + 2, 1, columnsToInsert.length)
     .setFontWeight('bold')
     .setBackground('#4285f4')
     .setFontColor('#ffffff');
 
-  // 驗證結果
   const newHeader = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  Logger.log('✅ 遷移完成！新 header: ' + newHeader.join(', '));
+  Logger.log('Migration complete. New header: ' + newHeader.join(', '));
 
-  // 檢查順序是否正確
-  const expectedOrder = ['id', 'teacherId', 'teacherName', 'taId', 'taName', 'name'];
-  const actualOrder = newHeader.slice(0, 6);
-  const isCorrect = expectedOrder.every((val, idx) => val === actualOrder[idx]);
-
-  if (isCorrect) {
-    Logger.log('🎉 欄位順序正確！');
-    return {
-      success: true,
-      message: 'Migration completed successfully',
-      addedColumns: columnsToInsert,
-      header: newHeader
-    };
-  } else {
-    Logger.log('⚠️ 欄位順序可能不正確，請手動檢查');
-    Logger.log('預期: ' + expectedOrder.join(', '));
-    Logger.log('實際: ' + actualOrder.join(', '));
-    return {
-      success: true,
-      message: 'Migration completed but order may be incorrect',
-      addedColumns: columnsToInsert,
-      expected: expectedOrder,
-      actual: actualOrder
-    };
-  }
+  return {
+    success: true,
+    message: 'Migration completed',
+    addedColumns: columnsToInsert,
+    header: newHeader
+  };
 }

@@ -797,6 +797,7 @@
   </style>
 
   <!-- API 層：與後端通訊 -->
+  <script src="js/security.js"></script>
   <script src="js/api.js"></script>
 </head>
 <body>
@@ -1800,14 +1801,14 @@
       const select = document.getElementById('courseTeacherId');
       select.innerHTML = '<option value="">請選擇師資</option>';
       teachers.forEach(t => {
-        select.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+        select.innerHTML += `<option value="${escapeAttr(t.id)}">${escapeHtml(t.name)}</option>`;
       });
 
       // 同時載入助教選單
       const taSelect = document.getElementById('courseTaId');
       taSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
       teachers.forEach(t => {
-        taSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+        taSelect.innerHTML += `<option value="${escapeAttr(t.id)}">${escapeHtml(t.name)}</option>`;
       });
     }
 
@@ -3094,14 +3095,14 @@
       const editTeacherSelect = document.getElementById('editTeacherId');
       editTeacherSelect.innerHTML = '<option value="">請選擇師資</option>';
       teachers.forEach(t => {
-        editTeacherSelect.innerHTML += `<option value="${t.id}" ${t.id === course.teacherId ? 'selected' : ''}>${t.name}</option>`;
+        editTeacherSelect.innerHTML += `<option value="${escapeAttr(t.id)}" ${t.id === course.teacherId ? 'selected' : ''}>${escapeHtml(t.name)}</option>`;
       });
 
       // 載入助教列表到編輯表單
       const editTaSelect = document.getElementById('editTaId');
       editTaSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
       teachers.forEach(t => {
-        editTaSelect.innerHTML += `<option value="${t.id}" ${t.id === course.taId ? 'selected' : ''}>${t.name}</option>`;
+        editTaSelect.innerHTML += `<option value="${escapeAttr(t.id)}" ${t.id === course.taId ? 'selected' : ''}>${escapeHtml(t.name)}</option>`;
       });
 
       // 填入課程資料

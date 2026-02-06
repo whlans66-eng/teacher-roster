@@ -240,6 +240,7 @@
   </style>
 
   <!-- API 層：與後端通訊 -->
+  <script src="js/security.js"></script>
   <script src="js/api.js"></script>
 </head>
 <body class="min-h-screen">
@@ -1716,8 +1717,9 @@
 
       const photoBox = document.getElementById('photoPreview');
       if (teacher.photo){
-        photoBox.innerHTML = `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">`;
-        photoBox.setAttribute('data-url', teacher.photo);
+        const safePhotoUrl = sanitizeUrl(teacher.photo);
+        photoBox.innerHTML = safePhotoUrl ? `<img src="${escapeAttr(safePhotoUrl)}" class="w-full h-full object-cover rounded-full">` : '<i class="ph ph-user"></i>';
+        if (safePhotoUrl) photoBox.setAttribute('data-url', safePhotoUrl);
       }else{
         photoBox.innerHTML = '<i class="ph ph-user"></i>'; photoBox.removeAttribute('data-url');
       }
@@ -1979,7 +1981,7 @@
 
       // 先本地預覽
       const reader = new FileReader();
-      reader.onload = e => { document.getElementById('photoPreview').innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-full">`; };
+      reader.onload = e => { document.getElementById('photoPreview').innerHTML = `<img src="${escapeAttr(e.target.result)}" class="w-full h-full object-cover rounded-full">`; };
       reader.readAsDataURL(file);
 
       // 直傳 Drive，寫回 URL
@@ -2356,7 +2358,7 @@
     document.getElementById('calendarView').classList.remove('hidden');
 
     const sel = document.getElementById('eventTeacherId');
-    sel.innerHTML = `<option value="">（未指派）</option>` + (teachers||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+    sel.innerHTML = `<option value="">（未指派）</option>` + (teachers||[]).map(t=>`<option value="${escapeAttr(t.id)}">${escapeHtml(t.name)}</option>`).join('');
 
     currentDate = new Date();
     document.getElementById('eventDate').value = todayStr();
