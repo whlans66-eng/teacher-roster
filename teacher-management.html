@@ -3773,36 +3773,6 @@
     '09': '09其他'
   };
 
-  // 初始化示例資料
-  if (maritimeCourses.length === 0) {
-    maritimeCourses = [
-      {
-        id: 1,
-        name: '船舶導航系統操作',
-        category: '01',
-        method: '實體課程',
-        description: '學習現代船舶導航系統的操作，包括GPS、雷達、電子海圖等設備的使用方法和注意事項。',
-        keywords: ['GPS', '雷達', '電子海圖', '導航', '定位', '航行安全']
-      },
-      {
-        id: 2,
-        name: '船員領導力培訓',
-        category: '02',
-        method: '線上課程',
-        description: '提升船員的領導能力和團隊管理技巧，學習有效的溝通方式和衝突解決方法。',
-        keywords: ['領導力', '團隊管理', '溝通技巧', '衝突解決', '人員管理']
-      },
-      {
-        id: 3,
-        name: '海上緊急應變處理',
-        category: '03',
-        method: '混合課程',
-        description: '學習各種海上緊急情況的應變處理程序，包括火災、碰撞、人員落水等事故的處理。',
-        keywords: ['緊急應變', '火災處理', '碰撞事故', '救生', '安全程序', '事故處理']
-      }
-    ];
-    saveMaritimeCourses();
-  }
 
   // 儲存課程資料到 localStorage 和後端
   function saveMaritimeCourses() {
