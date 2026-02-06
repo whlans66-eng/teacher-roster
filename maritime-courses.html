@@ -594,13 +594,33 @@
   <script>protectPage(['admin', 'teacher']);</script>
 
   <div class="container">
-    <div class="header-nav">
-      <a href="index.html" class="back-btn">← 首頁</a>
-      <div class="page-title">
-        <h1>智慧派課</h1>
-        <p>Smart Course Assignment System</p>
+    <!-- 跨頁導覽列 -->
+    <nav style="background: #ffffff; border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.04); position: sticky; top: 0; z-index: 50; margin: -40px -40px 40px -40px; padding: 0 40px;">
+      <div style="max-width: 1280px; margin: 0 auto;">
+        <div style="display: flex; align-items: center; justify-content: space-between; height: 56px;">
+          <a href="index.html" style="display: flex; align-items: center; gap: 8px; color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#1f2937'" onmouseout="this.style.color='#6b7280'">
+            <i class="ph ph-house" style="font-size: 18px;"></i>
+            <span>首頁</span>
+          </a>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <a href="teacher-management.html" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb';this.style.color='#374151'" onmouseout="this.style.background='transparent';this.style.color='#6b7280'">
+              <i class="ph ph-user-list"></i> 師資管理
+            </a>
+            <a href="course-management.html" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb';this.style.color='#374151'" onmouseout="this.style.background='transparent';this.style.color='#6b7280'">
+              <i class="ph ph-calendar"></i> 訓練排程
+            </a>
+            <a href="maritime-courses.html" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">
+              <i class="ph ph-anchor"></i> 智慧派課
+            </a>
+          </div>
+          <div style="width: 60px;"></div>
+        </div>
       </div>
-      <div style="width: 80px;"></div>
+    </nav>
+
+    <div class="page-title" style="margin-bottom: 40px;">
+      <h1>智慧派課</h1>
+      <p>Smart Course Assignment System</p>
     </div>
 
     <div class="segmented-control">
