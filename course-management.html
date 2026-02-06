@@ -807,14 +807,31 @@
     protectPage(['admin', 'teacher']);
   </script>
 
-  <div class="container mx-auto px-4 py-8">
-    <!-- 返回首頁 -->
-    <div class="mb-6">
-      <a href="index.html" class="inline-flex items-center px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
-        <span class="mr-2">←</span> 返回首頁
-      </a>
+  <!-- 跨頁導覽列 -->
+  <nav style="background: #ffffff; border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.04); position: sticky; top: 0; z-index: 50;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 0 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; height: 56px;">
+        <a href="index.html" style="display: flex; align-items: center; gap: 8px; color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#1f2937'" onmouseout="this.style.color='#6b7280'">
+          <i class="ph ph-house" style="font-size: 18px;"></i>
+          <span>首頁</span>
+        </a>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <a href="teacher-management.html" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb';this.style.color='#374151'" onmouseout="this.style.background='transparent';this.style.color='#6b7280'">
+            <i class="ph ph-user-list"></i> 師資管理
+          </a>
+          <a href="course-management.html" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">
+            <i class="ph ph-calendar"></i> 訓練排程
+          </a>
+          <a href="maritime-courses.html" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; color: #6b7280; transition: all 0.2s;" onmouseover="this.style.background='#f9fafb';this.style.color='#374151'" onmouseout="this.style.background='transparent';this.style.color='#6b7280'">
+            <i class="ph ph-anchor"></i> 智慧派課
+          </a>
+        </div>
+        <div style="width: 60px;"></div>
+      </div>
     </div>
+  </nav>
 
+  <div class="container mx-auto px-4 py-8">
     <!-- 標題區域 -->
     <div class="text-center mb-12">
       <h1 class="font-bold text-gray-900 mb-2" style="font-size: 40px; letter-spacing: -0.015em; font-weight: 600;">訓練排程</h1>
@@ -1988,31 +2005,69 @@
           ? `該日時數: ${hours.toFixed(1)} 小時`
           : `總時數: ${hours.toFixed(1)} 小時`;
 
+        // 產生課程歷史列表 HTML
+        const courseListId = `courseList_${teacher.id}`;
+        const sortedCourses = [...courses].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        const courseListHtml = sortedCourses.length > 0 ? sortedCourses.map(c => {
+          const isMainTeacher = Number(c.teacherId) === Number(teacher.id);
+          const roleLabel = isMainTeacher ? '主講' : '助教';
+          const roleColor = isMainTeacher ? 'background:#dbeafe;color:#1e40af;' : 'background:#fef3c7;color:#92400e;';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:4px;">
+            <div style="flex:1;min-width:0;">
+              <span style="font-size:13px;font-weight:500;color:#1f2937;">${c.name || '未命名課程'}</span>
+              <span style="font-size:11px;color:#6b7280;margin-left:8px;">${c.date || ''} ${c.time || ''}</span>
+            </div>
+            <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap;${roleColor}">${roleLabel}</span>
+          </div>`;
+        }).join('') : '<p style="text-align:center;color:#9ca3af;font-size:13px;padding:8px 0;">無課程記錄</p>';
+
         return `
-          <div onclick="selectTeacher(${teacher.id})"
-               class="${selectedStyle} rounded-xl p-4 cursor-pointer transition-all duration-300">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
-                  ${(teacher.name || '?')[0]}
+          <div class="${selectedStyle} rounded-xl p-4 transition-all duration-300">
+            <div onclick="selectTeacher(${teacher.id})" class="cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                    ${(teacher.name || '?')[0]}
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">${teacher.name}</h4>
+                    <p class="text-xs text-gray-500">${courses.length} 堂課</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 class="font-semibold text-gray-900">${teacher.name}</h4>
-                  <p class="text-xs text-gray-500">${courses.length} 堂課</p>
+                <div class="text-right">
+                  <p class="text-sm font-bold text-gray-900">${hoursLabel}</p>
+                  <span class="text-xs ${statusClass} text-white px-2 py-1 rounded-full">${statusText}</span>
                 </div>
               </div>
-              <div class="text-right">
-                <p class="text-sm font-bold text-gray-900">${hoursLabel}</p>
-                <span class="text-xs ${statusClass} text-white px-2 py-1 rounded-full">${statusText}</span>
+              <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="${statusClass} h-3 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+              </div>
+              ${isSelected ? '<p class="text-xs text-blue-600 font-semibold mt-2 text-center">~ 已選擇</p>' : ''}
+            </div>
+            <div style="margin-top:8px;">
+              <button onclick="event.stopPropagation(); toggleCourseList('${courseListId}')"
+                style="width:100%;background:none;border:none;cursor:pointer;padding:6px 0;font-size:12px;color:#6b7280;display:flex;align-items:center;justify-content:center;gap:4px;transition:color 0.2s;"
+                onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#6b7280'">
+                <i class="ph ph-clock-counter-clockwise" style="font-size:14px;"></i>
+                <span>協助課程記錄</span>
+                <i class="ph ph-caret-down" id="${courseListId}_icon" style="font-size:12px;transition:transform 0.2s;"></i>
+              </button>
+              <div id="${courseListId}" style="display:none;max-height:200px;overflow-y:auto;margin-top:4px;padding:4px 0;">
+                ${courseListHtml}
               </div>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div class="${statusClass} h-3 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
-            </div>
-            ${isSelected ? '<p class="text-xs text-blue-600 font-semibold mt-2 text-center">✓ 已選擇</p>' : ''}
           </div>
         `;
       }).join('');
+    }
+
+    function toggleCourseList(listId) {
+      const list = document.getElementById(listId);
+      const icon = document.getElementById(listId + '_icon');
+      if (!list) return;
+      const isVisible = list.style.display !== 'none';
+      list.style.display = isVisible ? 'none' : 'block';
+      if (icon) icon.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
     }
 
     function filterTeachers() {
