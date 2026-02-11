@@ -2498,7 +2498,7 @@
         typingDiv.remove();
 
         const errorMsg = error.message || '連線失敗，請稍後再試';
-        const isRateLimit = errorMsg.includes('頻繁') || errorMsg.includes('冷卻');
+        const isRateLimit = error.rateLimited === true;
 
         const errorDiv = document.createElement('div');
         errorDiv.className = 'ai-msg assistant';

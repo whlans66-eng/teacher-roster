@@ -1269,7 +1269,9 @@ ${teachersSummary}
     const now = Date.now();
     if (this._cooldownUntil > now) {
       const waitSec = Math.ceil((this._cooldownUntil - now) / 1000);
-      throw new Error(`AI 服務冷卻中，請等待 ${waitSec} 秒後再試`);
+      const err = new Error(`AI 服務冷卻中，請等待 ${waitSec} 秒後再試`);
+      err.rateLimited = true;
+      throw err;
     }
 
     // 防抖：確保最少間隔
@@ -1292,16 +1294,17 @@ ${teachersSummary}
         userMessage: userMessage
       });
 
-      const aiReply = response.reply || '抱歉，我無法回答這個問題。';
-
-      // 檢查回覆內容是否為 429 冷卻提示
-      if (aiReply.includes('請求過於頻繁') || aiReply.includes('冷卻中')) {
+      // 檢查後端結構化欄位判斷速率限制
+      if (response.rateLimited) {
         this._cooldownUntil = Date.now() + 60000; // 冷卻 60 秒
-        // 移除剛加入的使用者訊息（因為請求失敗）
-        this.conversationHistory.pop();
-        throw new Error(aiReply);
+        this.conversationHistory.pop(); // 移除失敗的使用者訊息
+        const msg = response.reply || 'AI 請求已達上限，請稍後再試。';
+        const err = new Error(msg);
+        err.rateLimited = true;
+        throw err;
       }
 
+      const aiReply = response.reply || '抱歉，我無法回答這個問題。';
       this.conversationHistory.push({ role: 'assistant', content: aiReply });
 
       // 只保留最近 10 輪對話以控制 token 數量
@@ -1313,8 +1316,8 @@ ${teachersSummary}
       return aiReply;
     } catch (error) {
       console.error('AI 對話失敗:', error);
-      // 如果不是冷卻期錯誤，也移除失敗的使用者訊息
-      if (!error.message.includes('冷卻中') && !error.message.includes('請求過於頻繁')) {
+      // 移除失敗的使用者訊息（速率限制已在上方處理過）
+      if (!error.rateLimited) {
         if (this.conversationHistory.length > 0 &&
             this.conversationHistory[this.conversationHistory.length - 1].role === 'user') {
           this.conversationHistory.pop();

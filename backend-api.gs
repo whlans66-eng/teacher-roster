@@ -371,11 +371,14 @@ function doPost(e) {
       const cache = CacheService.getScriptCache();
       const currentCount = parseInt(cache.get(rateLimitKey) || '0', 10);
       if (currentCount >= 6) {
-        return _json({ ok: true, reply: '⚠️ AI 請求過於頻繁（每分鐘限 6 次），請等候 1 分鐘後再試。' });
+        return _json({ ok: true, reply: 'AI 請求已達每分鐘上限（6 次），請等候 1 分鐘後再試。', rateLimited: true });
       }
       cache.put(rateLimitKey, String(currentCount + 1), 60);
 
       const reply = _callGemini(userMessage, systemContext, historyRaw);
+      if (reply && typeof reply === 'object') {
+        return _json(reply);
+      }
       return _json({ ok: true, reply: reply });
     }
 
@@ -744,7 +747,7 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
           Utilities.sleep((attempt + 1) * 2000);
           continue;
         }
-        return '⚠️ AI 請求過於頻繁，請等候 1 分鐘後再試。冷卻中…';
+        return { ok: true, reply: 'Gemini API 請求已達上限，請等候 1 分鐘後再試。', rateLimited: true };
       }
 
       if (status !== 200) {
