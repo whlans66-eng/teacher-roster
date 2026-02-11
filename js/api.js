@@ -1210,6 +1210,9 @@ class AIChatManager {
     this.onToken = null; // 串流回呼函式
     this.onComplete = null; // 完成回呼函式
     this.onError = null; // 錯誤回呼函式
+    this._lastRequestTime = 0;
+    this._minInterval = 3000; // 最少間隔 3 秒
+    this._cooldownUntil = 0; // 429 冷卻期到期時間
   }
 
   /**
@@ -1253,6 +1256,7 @@ ${teachersSummary}
 
   /**
    * 傳送訊息給 AI（透過後端 GAS）
+   * 含防抖（debounce）與冷卻期（cooldown）保護
    * @param {string} userMessage - 使用者的問題
    * @returns {Promise<string>} AI 回覆
    */
@@ -1261,7 +1265,21 @@ ${teachersSummary}
       throw new Error('AI 正在回覆中，請稍候');
     }
 
+    // 冷卻期檢查（429 後自動等待）
+    const now = Date.now();
+    if (this._cooldownUntil > now) {
+      const waitSec = Math.ceil((this._cooldownUntil - now) / 1000);
+      throw new Error(`AI 服務冷卻中，請等待 ${waitSec} 秒後再試`);
+    }
+
+    // 防抖：確保最少間隔
+    const elapsed = now - this._lastRequestTime;
+    if (elapsed < this._minInterval) {
+      await new Promise(resolve => setTimeout(resolve, this._minInterval - elapsed));
+    }
+
     this.isStreaming = true;
+    this._lastRequestTime = Date.now();
     this.conversationHistory.push({ role: 'user', content: userMessage });
 
     try {
@@ -1275,6 +1293,15 @@ ${teachersSummary}
       });
 
       const aiReply = response.reply || '抱歉，我無法回答這個問題。';
+
+      // 檢查回覆內容是否為 429 冷卻提示
+      if (aiReply.includes('請求過於頻繁') || aiReply.includes('冷卻中')) {
+        this._cooldownUntil = Date.now() + 60000; // 冷卻 60 秒
+        // 移除剛加入的使用者訊息（因為請求失敗）
+        this.conversationHistory.pop();
+        throw new Error(aiReply);
+      }
+
       this.conversationHistory.push({ role: 'assistant', content: aiReply });
 
       // 只保留最近 10 輪對話以控制 token 數量
@@ -1286,6 +1313,13 @@ ${teachersSummary}
       return aiReply;
     } catch (error) {
       console.error('AI 對話失敗:', error);
+      // 如果不是冷卻期錯誤，也移除失敗的使用者訊息
+      if (!error.message.includes('冷卻中') && !error.message.includes('請求過於頻繁')) {
+        if (this.conversationHistory.length > 0 &&
+            this.conversationHistory[this.conversationHistory.length - 1].role === 'user') {
+          this.conversationHistory.pop();
+        }
+      }
       if (this.onError) this.onError(error);
       throw error;
     } finally {
