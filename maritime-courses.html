@@ -2498,7 +2498,7 @@
         typingDiv.remove();
 
         const errorMsg = error.message || '連線失敗，請稍後再試';
-        const isRateLimit = errorMsg.includes('頻繁') || errorMsg.includes('冷卻');
+        const isRateLimit = error.rateLimited === true;
 
         const errorDiv = document.createElement('div');
         errorDiv.className = 'ai-msg assistant';
@@ -2516,10 +2516,13 @@
           messages.appendChild(errorDiv);
         }
       } finally {
-        sendBtn.disabled = false;
-        input.disabled = false;
-        input.focus();
-        document.querySelectorAll('.ai-quick-btn').forEach(b => b.disabled = false);
+        // 如果冷卻計時器正在運作，不要重新啟用控制項
+        if (!_aiCooldownTimer) {
+          sendBtn.disabled = false;
+          input.disabled = false;
+          input.focus();
+          document.querySelectorAll('.ai-quick-btn').forEach(b => b.disabled = false);
+        }
         messages.scrollTop = messages.scrollHeight;
       }
     }
