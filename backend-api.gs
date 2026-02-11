@@ -356,6 +356,19 @@ function doPost(e) {
       return _json({ ok: true, ...result });
     }
 
+    // Ask Gemini（AI 課程顧問）
+    if (action === 'askgemini') {
+      _requireRole(session, ['admin', 'teacher']);
+      const userMessage = p.userMessage || (bodyObj && bodyObj.userMessage) || '';
+      const systemContext = p.systemContext || (bodyObj && bodyObj.systemContext) || '';
+      const historyRaw = p.conversationHistory || (bodyObj && bodyObj.conversationHistory) || '[]';
+
+      if (!userMessage) return _json({ ok: false, error: '請輸入問題' });
+
+      const reply = _callGemini(userMessage, systemContext, historyRaw);
+      return _json({ ok: true, reply: reply });
+    }
+
     return _json({ ok: false, error: 'Unknown action' });
   } catch (err) {
     const msg = String(err.message || err);
@@ -615,6 +628,124 @@ function _getActiveSessions(){
 function _kickSession(p){ return {}; }
 function _checkIfKicked(p){ return false; }
 function _cleanupStaleSessions(){}
+
+// ==================== Gemini AI 整合 ====================
+
+/**
+ * 呼叫 Gemini API 產生回覆
+ * API Key 儲存在 Script Properties 中（安全性考量不寫死在程式碼裡）
+ * 設定方式：Apps Script 編輯器 → 專案設定 → 指令碼屬性 → 新增 GEMINI_API_KEY
+ *
+ * @param {string} userMessage - 使用者訊息
+ * @param {string} systemContext - 系統提示詞（含課程資料上下文）
+ * @param {string|Array} conversationHistory - 對話歷史
+ * @returns {string} AI 回覆文字
+ */
+function _callGemini(userMessage, systemContext, conversationHistory) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  if (!apiKey) {
+    return '⚠️ AI 功能尚未設定。請在 Apps Script 的「專案設定 → 指令碼屬性」中新增 GEMINI_API_KEY。';
+  }
+
+  // 解析對話歷史
+  let history = [];
+  try {
+    history = typeof conversationHistory === 'string'
+      ? JSON.parse(conversationHistory)
+      : (Array.isArray(conversationHistory) ? conversationHistory : []);
+  } catch (e) {
+    history = [];
+  }
+
+  // 建構 Gemini API 請求內容
+  const contents = [];
+
+  // 將系統提示詞作為第一輪對話
+  if (systemContext) {
+    contents.push({
+      role: 'user',
+      parts: [{ text: '系統指令：' + systemContext }]
+    });
+    contents.push({
+      role: 'model',
+      parts: [{ text: '了解，我已掌握課程資料與系統資訊，準備好為您服務。請問有什麼需要幫忙的嗎？' }]
+    });
+  }
+
+  // 加入歷史對話（排除當前訊息，因為會在最後加）
+  const historyWithoutLast = history.filter(h => h.role && h.content);
+  // 跳過最後一筆（如果是 user 且內容與當前相同）
+  const trimmedHistory = historyWithoutLast.length > 0 &&
+    historyWithoutLast[historyWithoutLast.length - 1].role === 'user' &&
+    historyWithoutLast[historyWithoutLast.length - 1].content === userMessage
+    ? historyWithoutLast.slice(0, -1)
+    : historyWithoutLast;
+
+  trimmedHistory.forEach(h => {
+    contents.push({
+      role: h.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: h.content }]
+    });
+  });
+
+  // 加入當前使用者訊息
+  contents.push({
+    role: 'user',
+    parts: [{ text: userMessage }]
+  });
+
+  // 呼叫 Gemini API
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey;
+
+  const payload = {
+    contents: contents,
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 2048
+    },
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' }
+    ]
+  };
+
+  try {
+    const response = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+
+    const status = response.getResponseCode();
+    const body = JSON.parse(response.getContentText());
+
+    if (status !== 200) {
+      Logger.log('Gemini API error: ' + JSON.stringify(body));
+      if (status === 429) {
+        return '⚠️ AI 服務請求過於頻繁，請稍後再試。';
+      }
+      return '⚠️ AI 服務暫時無法使用（錯誤碼：' + status + '），請稍後再試。';
+    }
+
+    // 擷取回覆文字
+    if (body.candidates && body.candidates.length > 0) {
+      const candidate = body.candidates[0];
+      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+        return candidate.content.parts.map(p => p.text || '').join('');
+      }
+    }
+
+    return '抱歉，AI 未能產生有效回覆，請再試一次。';
+  } catch (error) {
+    Logger.log('Gemini API call failed: ' + error);
+    return '⚠️ 無法連線到 AI 服務：' + String(error.message || error);
+  }
+}
 
 // ==================== 資料庫初始化與遷移 ====================
 
