@@ -2441,11 +2441,19 @@
       `;
     }
 
+    let _aiCooldownTimer = null;
+
     async function sendAIMessage() {
       const input = document.getElementById('aiChatInput');
       const sendBtn = document.getElementById('aiChatSendBtn');
       const message = input.value.trim();
       if (!message) return;
+
+      // 如果有冷卻計時器，阻止發送
+      if (_aiCooldownTimer) {
+        showMaritimeMessage('AI 冷卻中，請稍候…', 'info');
+        return;
+      }
 
       const messages = document.getElementById('aiChatMessages');
 
@@ -2458,6 +2466,9 @@
       input.value = '';
       sendBtn.disabled = true;
       input.disabled = true;
+
+      // 停用快捷按鈕
+      document.querySelectorAll('.ai-quick-btn').forEach(b => b.disabled = true);
 
       // 顯示打字指示器
       const typingDiv = document.createElement('div');
@@ -2485,19 +2496,67 @@
         }, 15);
       } catch (error) {
         typingDiv.remove();
+
+        const errorMsg = error.message || '連線失敗，請稍後再試';
+        const isRateLimit = errorMsg.includes('頻繁') || errorMsg.includes('冷卻');
+
         const errorDiv = document.createElement('div');
         errorDiv.className = 'ai-msg assistant';
-        errorDiv.innerHTML = '<span style="color: #ff3b30;">⚠️ ' + (error.message || '連線失敗，請稍後再試') + '</span>';
-        messages.appendChild(errorDiv);
+
+        if (isRateLimit) {
+          // 啟動冷卻倒數 UI
+          errorDiv.innerHTML = `<span style="color: #ff9500;">
+            <i class="ph ph-clock-countdown"></i> ${errorMsg}<br>
+            <span id="aiCooldownDisplay" style="font-size:12px; opacity:0.8;">冷卻倒數中…</span>
+          </span>`;
+          messages.appendChild(errorDiv);
+          _startCooldownTimer(60);
+        } else {
+          errorDiv.innerHTML = '<span style="color: #ff3b30;"><i class="ph ph-warning-circle"></i> ' + errorMsg + '</span>';
+          messages.appendChild(errorDiv);
+        }
       } finally {
         sendBtn.disabled = false;
         input.disabled = false;
         input.focus();
+        document.querySelectorAll('.ai-quick-btn').forEach(b => b.disabled = false);
         messages.scrollTop = messages.scrollHeight;
       }
     }
 
+    function _startCooldownTimer(seconds) {
+      let remaining = seconds;
+      const sendBtn = document.getElementById('aiChatSendBtn');
+      const input = document.getElementById('aiChatInput');
+      const display = document.getElementById('aiCooldownDisplay');
+
+      sendBtn.disabled = true;
+      input.disabled = true;
+      input.placeholder = `冷卻中… ${remaining} 秒`;
+      document.querySelectorAll('.ai-quick-btn').forEach(b => b.disabled = true);
+
+      _aiCooldownTimer = setInterval(() => {
+        remaining--;
+        if (display) display.textContent = `還需等待 ${remaining} 秒`;
+        input.placeholder = `冷卻中… ${remaining} 秒`;
+
+        if (remaining <= 0) {
+          clearInterval(_aiCooldownTimer);
+          _aiCooldownTimer = null;
+          sendBtn.disabled = false;
+          input.disabled = false;
+          input.placeholder = '輸入您的問題，例如：「推薦適合二副的安全課程」';
+          document.querySelectorAll('.ai-quick-btn').forEach(b => b.disabled = false);
+          if (display) display.textContent = '冷卻完成，可以繼續提問';
+        }
+      }, 1000);
+    }
+
     function sendAIQuickMessage(text) {
+      if (_aiCooldownTimer) {
+        showMaritimeMessage('AI 冷卻中，請稍候…', 'info');
+        return;
+      }
       document.getElementById('aiChatInput').value = text;
       sendAIMessage();
     }
