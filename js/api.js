@@ -1196,11 +1196,180 @@ window.addEventListener('beforeunload', () => {
   }
 });
 
+// ==================== AI 對話管理器 ====================
+
+/**
+ * AI 對話管理器
+ * 透過後端 GAS 呼叫 Gemini API，實現智慧課程顧問功能
+ */
+class AIChatManager {
+  constructor(apiInstance) {
+    this.api = apiInstance;
+    this.conversationHistory = [];
+    this.isStreaming = false;
+    this.onToken = null; // 串流回呼函式
+    this.onComplete = null; // 完成回呼函式
+    this.onError = null; // 錯誤回呼函式
+  }
+
+  /**
+   * 建構系統提示詞（含課程上下文）
+   */
+  _buildSystemContext() {
+    const courses = loadArrayFromStorage('maritimeCourses');
+    const teachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
+
+    const coursesSummary = courses.map(c => {
+      const keywords = Array.isArray(c.keywords) ? c.keywords.join('、') : '';
+      const targets = [];
+      if (Array.isArray(c.targetCategories)) targets.push(...c.targetCategories.map(t => t === 'existing' ? '現有船員' : '新進船員'));
+      if (Array.isArray(c.targetRanks)) targets.push(...c.targetRanks);
+      return `- ${c.name}（分類: ${c.category}, 方式: ${c.method || '未設定'}, 關鍵字: ${keywords}, 適用: ${targets.join('、') || '全員'}）`;
+    }).join('\n');
+
+    const teachersSummary = teachers.slice(0, 20).map(t =>
+      `- ${t.name}（類別: ${t.teacherType || '未設定'}, 職等: ${t.rank || '未設定'}, 專長: ${(Array.isArray(t.subjects) ? t.subjects.join('、') : '') || '未設定'}）`
+    ).join('\n');
+
+    return `你是「萬海智慧航安訓練管理系統」的 AI 課程顧問。請用繁體中文回答，語氣專業但親切。
+
+以下是目前系統中的課程資料（共 ${courses.length} 門課程）：
+${coursesSummary}
+
+以下是教師名單（前 20 位）：
+${teachersSummary}
+
+你的職責：
+1. 根據使用者的職等、經驗與需求，推薦最適合的課程
+2. 解答課程內容、訓練安排相關問題
+3. 提供船員職涯發展建議
+4. 分析課程之間的關聯性與學習路徑
+
+回答注意事項：
+- 回答請簡潔有力，使用項目符號整理
+- 推薦課程時，請說明理由
+- 若找不到完全匹配的課程，建議最接近的選項`;
+  }
+
+  /**
+   * 傳送訊息給 AI（透過後端 GAS）
+   * @param {string} userMessage - 使用者的問題
+   * @returns {Promise<string>} AI 回覆
+   */
+  async chat(userMessage) {
+    if (this.isStreaming) {
+      throw new Error('AI 正在回覆中，請稍候');
+    }
+
+    this.isStreaming = true;
+    this.conversationHistory.push({ role: 'user', content: userMessage });
+
+    try {
+      const systemContext = this._buildSystemContext();
+
+      const response = await this.api._post({
+        action: 'askgemini',
+        systemContext: systemContext,
+        conversationHistory: this.conversationHistory,
+        userMessage: userMessage
+      });
+
+      const aiReply = response.reply || '抱歉，我無法回答這個問題。';
+      this.conversationHistory.push({ role: 'assistant', content: aiReply });
+
+      // 只保留最近 10 輪對話以控制 token 數量
+      if (this.conversationHistory.length > 20) {
+        this.conversationHistory = this.conversationHistory.slice(-20);
+      }
+
+      if (this.onComplete) this.onComplete(aiReply);
+      return aiReply;
+    } catch (error) {
+      console.error('AI 對話失敗:', error);
+      if (this.onError) this.onError(error);
+      throw error;
+    } finally {
+      this.isStreaming = false;
+    }
+  }
+
+  /**
+   * 模擬串流顯示效果（打字機效果）
+   * @param {string} text - 要顯示的文字
+   * @param {function} onChar - 每個字元的回呼
+   * @param {number} speed - 每字元間隔（毫秒）
+   */
+  async simulateStream(text, onChar, speed = 20) {
+    for (let i = 0; i < text.length; i++) {
+      onChar(text[i], i, text.substring(0, i + 1));
+      await new Promise(resolve => setTimeout(resolve, speed));
+    }
+  }
+
+  /**
+   * 智慧匹配課程
+   * 根據使用者的職等、專長等條件，計算每門課程的匹配分數
+   * @param {Object} userProfile - 使用者資訊 { rank, category, keywords }
+   * @returns {Array} 排序後的課程（含匹配分數）
+   */
+  smartMatch(userProfile = {}) {
+    const courses = loadArrayFromStorage('maritimeCourses');
+    const { rank, category, keywords } = userProfile;
+
+    return courses.map(course => {
+      let score = 0;
+
+      // 職等匹配（權重 40）
+      if (rank && Array.isArray(course.targetRanks) && course.targetRanks.length > 0) {
+        if (course.targetRanks.includes(rank)) {
+          score += 40;
+        }
+      }
+
+      // 人員類別匹配（權重 20）
+      if (category && Array.isArray(course.targetCategories) && course.targetCategories.length > 0) {
+        if (course.targetCategories.includes(category)) {
+          score += 20;
+        }
+      }
+
+      // 關鍵字匹配（權重 30）
+      if (keywords && Array.isArray(keywords) && Array.isArray(course.keywords)) {
+        const matchCount = keywords.filter(kw =>
+          course.keywords.some(ck =>
+            typeof ck === 'string' && ck.toLowerCase().includes(kw.toLowerCase())
+          )
+        ).length;
+        if (keywords.length > 0) {
+          score += Math.round((matchCount / keywords.length) * 30);
+        }
+      }
+
+      // 基礎分（有描述、有關鍵字的課程品質較高）
+      if (course.description && course.description.length > 20) score += 5;
+      if (Array.isArray(course.keywords) && course.keywords.length > 0) score += 5;
+
+      return { ...course, matchScore: score };
+    }).sort((a, b) => b.matchScore - a.matchScore);
+  }
+
+  /**
+   * 清除對話歷史
+   */
+  clearHistory() {
+    this.conversationHistory = [];
+  }
+}
+
+// 建立全域 AI Chat Manager 實例
+const aiChat = new AIChatManager(api);
+
 // 匯出給其他模組使用
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     api,
     syncManager,
+    aiChat,
     initializeDataSync,
     normalizeTeacherRecord,
     normalizeCourseAssignment,
