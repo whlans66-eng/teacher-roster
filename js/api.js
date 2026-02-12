@@ -1207,18 +1207,26 @@ class AIChatManager {
     this.api = apiInstance;
     this.conversationHistory = [];
     this.isStreaming = false;
-    this.onToken = null; // 串流回呼函式
-    this.onComplete = null; // 完成回呼函式
-    this.onError = null; // 錯誤回呼函式
+    this.onToken = null;
+    this.onComplete = null;
+    this.onError = null;
     this._lastRequestTime = 0;
-    this._minInterval = 3000; // 最少間隔 3 秒
-    this._cooldownUntil = 0; // 429 冷卻期到期時間
+    this._minInterval = 5000; // 最少間隔 5 秒（免費 API 配額保護）
+    this._cooldownUntil = 0;
+    this._consecutiveFailures = 0; // 連續失敗計數
+    this._cachedContext = null;    // 系統上下文快取
+    this._contextCacheTime = 0;   // 上下文快取時間
   }
 
   /**
-   * 建構系統提示詞（含課程上下文）
+   * 建構系統提示詞（含課程上下文），5 分鐘內使用快取
    */
   _buildSystemContext() {
+    const now = Date.now();
+    if (this._cachedContext && (now - this._contextCacheTime) < 300000) {
+      return this._cachedContext;
+    }
+
     const courses = loadArrayFromStorage('maritimeCourses');
     const teachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
 
@@ -1234,7 +1242,7 @@ class AIChatManager {
       `- ${t.name}（類別: ${t.teacherType || '未設定'}, 職等: ${t.rank || '未設定'}, 專長: ${(Array.isArray(t.subjects) ? t.subjects.join('、') : '') || '未設定'}）`
     ).join('\n');
 
-    return `你是「萬海智慧航安訓練管理系統」的 AI 課程顧問。請用繁體中文回答，語氣專業但親切。
+    this._cachedContext = `你是「萬海智慧航安訓練管理系統」的 AI 課程顧問。請用繁體中文回答，語氣專業但親切。
 
 以下是目前系統中的課程資料（共 ${courses.length} 門課程）：
 ${coursesSummary}
@@ -1252,11 +1260,24 @@ ${teachersSummary}
 - 回答請簡潔有力，使用項目符號整理
 - 推薦課程時，請說明理由
 - 若找不到完全匹配的課程，建議最接近的選項`;
+    this._contextCacheTime = now;
+    return this._cachedContext;
+  }
+
+  /**
+   * 觸發冷卻並拋出帶 rateLimited 標記的錯誤
+   */
+  _triggerCooldown(message) {
+    this._cooldownUntil = Date.now() + 60000;
+    this.conversationHistory.pop(); // 移除失敗的使用者訊息
+    const err = new Error(message);
+    err.rateLimited = true;
+    throw err;
   }
 
   /**
    * 傳送訊息給 AI（透過後端 GAS）
-   * 含防抖（debounce）與冷卻期（cooldown）保護
+   * 含防抖（debounce）、冷卻期（cooldown）、連續失敗防護
    * @param {string} userMessage - 使用者的問題
    * @returns {Promise<string>} AI 回覆
    */
@@ -1265,7 +1286,7 @@ ${teachersSummary}
       throw new Error('AI 正在回覆中，請稍候');
     }
 
-    // 冷卻期檢查（429 後自動等待）
+    // 冷卻期檢查
     const now = Date.now();
     if (this._cooldownUntil > now) {
       const waitSec = Math.ceil((this._cooldownUntil - now) / 1000);
@@ -1294,20 +1315,30 @@ ${teachersSummary}
         userMessage: userMessage
       });
 
-      // 檢查後端結構化欄位判斷速率限制
+      // 第一優先：檢查後端結構化 rateLimited 旗標
       if (response.rateLimited) {
-        this._cooldownUntil = Date.now() + 60000; // 冷卻 60 秒
-        this.conversationHistory.pop(); // 移除失敗的使用者訊息
-        const msg = response.reply || 'AI 請求已達上限，請稍後再試。';
-        const err = new Error(msg);
-        err.rateLimited = true;
-        throw err;
+        this._consecutiveFailures++;
+        this._triggerCooldown(response.reply || 'AI 請求已達上限，請稍後再試。');
       }
 
       const aiReply = response.reply || '抱歉，我無法回答這個問題。';
+
+      // 第二防線：連續失敗偵測
+      // 如果 AI 回覆以 ⚠️ 開頭（後端錯誤訊息格式），累計失敗次數
+      // 連續 2 次代表 API 持續異常，觸發冷卻保護
+      if (aiReply.startsWith('⚠️') || aiReply.startsWith('⚠')) {
+        this._consecutiveFailures++;
+        if (this._consecutiveFailures >= 2) {
+          this._triggerCooldown('AI 服務連續異常，已啟動 60 秒冷卻保護。');
+        }
+        // 第 1 次：仍然顯示錯誤訊息，但不觸發冷卻
+      } else {
+        // 正常回覆，重置失敗計數
+        this._consecutiveFailures = 0;
+      }
+
       this.conversationHistory.push({ role: 'assistant', content: aiReply });
 
-      // 只保留最近 10 輪對話以控制 token 數量
       if (this.conversationHistory.length > 20) {
         this.conversationHistory = this.conversationHistory.slice(-20);
       }
@@ -1316,8 +1347,13 @@ ${teachersSummary}
       return aiReply;
     } catch (error) {
       console.error('AI 對話失敗:', error);
-      // 移除失敗的使用者訊息（速率限制已在上方處理過）
       if (!error.rateLimited) {
+        this._consecutiveFailures++;
+        // 任何錯誤連續 3 次也觸發冷卻
+        if (this._consecutiveFailures >= 3) {
+          this._cooldownUntil = Date.now() + 60000;
+          error.rateLimited = true;
+        }
         if (this.conversationHistory.length > 0 &&
             this.conversationHistory[this.conversationHistory.length - 1].role === 'user') {
           this.conversationHistory.pop();

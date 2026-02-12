@@ -1371,6 +1371,11 @@
           await initializeDataSync();
           maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
           displayMaritimeCourses();
+          // 同步完成後更新 AI 歡迎訊息（反映正確課程數）
+          const aiMsgContainer = document.getElementById('aiChatMessages');
+          if (aiMsgContainer && aiMsgContainer.children.length > 0) {
+            addAIWelcomeMessage();
+          }
         } catch (err) {
           console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
         }
