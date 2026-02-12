@@ -365,12 +365,12 @@ function doPost(e) {
 
       if (!userMessage) return _json({ ok: false, error: '請輸入問題' });
 
-      // 每用戶 Gemini 速率限制：每分鐘最多 6 次
+      // 每用戶 Gemini 速率限制：每分鐘最多 10 次（gemini-2.0-flash-lite 配額 30 RPM）
       const userId = session.userId || session.username || 'unknown';
       const rateLimitKey = 'gemini_rate_' + userId;
       const cache = CacheService.getScriptCache();
       const currentCount = parseInt(cache.get(rateLimitKey) || '0', 10);
-      if (currentCount >= 6) {
+      if (currentCount >= 10) {
         return _json({ ok: true, reply: 'AI 請求已達每分鐘上限（6 次），請等候 1 分鐘後再試。', rateLimited: true });
       }
       cache.put(rateLimitKey, String(currentCount + 1), 60);
@@ -708,7 +708,8 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
   });
 
   // 呼叫 Gemini API
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey;
+  // gemini-2.0-flash-lite：免費配額 30 RPM（比 gemini-2.0-flash 的 10 RPM 高 3 倍）
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=' + apiKey;
 
   const payload = {
     contents: contents,
@@ -726,54 +727,55 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
     ]
   };
 
-  // 含自動重試（429 時指數退避，最多 2 次）
-  var maxRetries = 2;
-  for (var attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      var response = UrlFetchApp.fetch(url, {
-        method: 'post',
-        contentType: 'application/json',
-        payload: JSON.stringify(payload),
-        muteHttpExceptions: true
-      });
+  // 呼叫 Gemini API（429 不重試，立即回傳避免加重配額消耗）
+  try {
+    var response = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
 
-      var status = response.getResponseCode();
-      var body = JSON.parse(response.getContentText());
+    var status = response.getResponseCode();
+    var body = JSON.parse(response.getContentText());
 
-      if (status === 429) {
-        Logger.log('Gemini API 429 (attempt ' + (attempt + 1) + '/' + (maxRetries + 1) + ')');
-        if (attempt < maxRetries) {
-          // 指數退避：2 秒、4 秒
-          Utilities.sleep((attempt + 1) * 2000);
-          continue;
-        }
-        return { ok: true, reply: 'Gemini API 請求已達上限，請等候 1 分鐘後再試。', rateLimited: true };
-      }
-
-      if (status !== 200) {
-        Logger.log('Gemini API error: ' + JSON.stringify(body));
-        return '⚠️ AI 服務暫時無法使用（錯誤碼：' + status + '），請稍後再試。';
-      }
-
-      // 擷取回覆文字
-      if (body.candidates && body.candidates.length > 0) {
-        var candidate = body.candidates[0];
-        if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-          return candidate.content.parts.map(function(p) { return p.text || ''; }).join('');
-        }
-      }
-
-      return '抱歉，AI 未能產生有效回覆，請再試一次。';
-    } catch (error) {
-      Logger.log('Gemini API call failed (attempt ' + (attempt + 1) + '): ' + error);
-      if (attempt < maxRetries) {
-        Utilities.sleep((attempt + 1) * 2000);
-        continue;
-      }
-      return '⚠️ 無法連線到 AI 服務：' + String(error.message || error);
+    if (status === 429) {
+      Logger.log('Gemini API 429 rate limited');
+      return { ok: true, reply: 'Gemini API 免費配額已達上限，請等候 1 分鐘後再試。', rateLimited: true };
     }
+
+    if (status !== 200) {
+      Logger.log('Gemini API error (' + status + '): ' + JSON.stringify(body).substring(0, 500));
+      var errorDetail = '';
+      if (body.error && body.error.message) {
+        errorDetail = body.error.message;
+      }
+      if (status === 400 && errorDetail.includes('API key')) {
+        return '⚠️ API Key 無效，請至 Apps Script「專案設定 → 指令碼屬性」檢查 GEMINI_API_KEY 是否正確。';
+      }
+      if (status === 403) {
+        return '⚠️ API Key 權限不足或已停用，請至 Google AI Studio 確認 Key 狀態。';
+      }
+      return '⚠️ AI 服務回傳錯誤（' + status + '）：' + (errorDetail || '請稍後再試');
+    }
+
+    // 擷取回覆文字
+    if (body.candidates && body.candidates.length > 0) {
+      var candidate = body.candidates[0];
+      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+        return candidate.content.parts.map(function(p) { return p.text || ''; }).join('');
+      }
+      // 安全過濾被阻擋
+      if (candidate.finishReason === 'SAFETY') {
+        return '抱歉，此問題觸發了安全過濾，請換個方式提問。';
+      }
+    }
+
+    return '抱歉，AI 未能產生有效回覆，請再試一次。';
+  } catch (error) {
+    Logger.log('Gemini API call failed: ' + error);
+    return '⚠️ 無法連線到 AI 服務：' + String(error.message || error);
   }
-  return '⚠️ AI 服務暫時無法使用，請稍後再試。';
 }
 
 // ==================== 資料庫初始化與遷移 ====================

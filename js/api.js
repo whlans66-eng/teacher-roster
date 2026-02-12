@@ -1228,38 +1228,21 @@ class AIChatManager {
     }
 
     const courses = loadArrayFromStorage('maritimeCourses');
-    const teachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
 
+    // 精簡格式：只送名稱、分類、關鍵字、適用對象（省略描述以節省 token）
     const coursesSummary = courses.map(c => {
-      const keywords = Array.isArray(c.keywords) ? c.keywords.join('、') : '';
-      const targets = [];
-      if (Array.isArray(c.targetCategories)) targets.push(...c.targetCategories.map(t => t === 'existing' ? '現有船員' : '新進船員'));
-      if (Array.isArray(c.targetRanks)) targets.push(...c.targetRanks);
-      return `- ${c.name}（分類: ${c.category}, 方式: ${c.method || '未設定'}, 關鍵字: ${keywords}, 適用: ${targets.join('、') || '全員'}）`;
+      const kw = Array.isArray(c.keywords) ? c.keywords.join(',') : '';
+      const ranks = Array.isArray(c.targetRanks) ? c.targetRanks.join(',') : '';
+      return `${c.name}|${c.category}|${c.method || ''}|${kw}|${ranks}`;
     }).join('\n');
 
-    const teachersSummary = teachers.slice(0, 20).map(t =>
-      `- ${t.name}（類別: ${t.teacherType || '未設定'}, 職等: ${t.rank || '未設定'}, 專長: ${(Array.isArray(t.subjects) ? t.subjects.join('、') : '') || '未設定'}）`
-    ).join('\n');
+    this._cachedContext = `你是「萬海智慧航安訓練管理系統」的 AI 課程顧問。用繁體中文回答，語氣專業親切。
 
-    this._cachedContext = `你是「萬海智慧航安訓練管理系統」的 AI 課程顧問。請用繁體中文回答，語氣專業但親切。
-
-以下是目前系統中的課程資料（共 ${courses.length} 門課程）：
+課程資料（共${courses.length}門，格式：名稱|分類|方式|關鍵字|適用職等）：
 ${coursesSummary}
 
-以下是教師名單（前 20 位）：
-${teachersSummary}
-
-你的職責：
-1. 根據使用者的職等、經驗與需求，推薦最適合的課程
-2. 解答課程內容、訓練安排相關問題
-3. 提供船員職涯發展建議
-4. 分析課程之間的關聯性與學習路徑
-
-回答注意事項：
-- 回答請簡潔有力，使用項目符號整理
-- 推薦課程時，請說明理由
-- 若找不到完全匹配的課程，建議最接近的選項`;
+職責：根據職等與需求推薦課程、解答訓練問題、提供職涯建議。
+回答要求：簡潔、用項目符號、推薦要說明理由。`;
     this._contextCacheTime = now;
     return this._cachedContext;
   }
