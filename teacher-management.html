@@ -2885,14 +2885,15 @@
 
     // 將所有派課轉換為行事曆事件
     courseAssignments.forEach((course, index) => {
-      // 驗證必要欄位：跳過 date 或 name 缺失的記錄
-      if (!course.date || !course.name) {
-        console.warn(`[syncCalendar] 跳過第 ${index + 1} 筆派課，缺少必要欄位 (id=${course.id}, date=${course.date}, name=${course.name})`);
+      // 只跳過真正無法放入行事曆的記錄（缺少日期）
+      if (!course.date) {
+        console.warn(`[syncCalendar] 跳過第 ${index + 1} 筆派課，缺少日期 (id=${course.id})`);
         return;
       }
 
       const teacher = teachers.find(t => t.id === course.teacherId);
       const teacherName = teacher ? teacher.name : '未知師資';
+      const courseName = course.name || '未命名課程';
 
       // 標準化日期格式：將 ISO 8601 格式 (2025-11-01T16:00:00.000Z) 轉換為 YYYY-MM-DD
       let normalizedDate = course.date;
@@ -2900,15 +2901,14 @@
         normalizedDate = normalizedDate.split('T')[0]; // 取 T 之前的部分
       }
 
-      // 調試：顯示前幾筆資料的日期格式
       if (index < 3) {
-        // 處理派課日期和時間
+        console.log(`[syncCalendar] 第 ${index + 1} 筆: id=${course.id}, date=${normalizedDate}, name=${courseName}`);
       }
 
       calendarEvents.push({
         id: course.id,
         date: normalizedDate,
-        title: `${course.name} - ${teacherName}`,
+        title: `${courseName} - ${teacherName}`,
         time: course.time,
         teacherId: course.teacherId,
         location: course.type,
