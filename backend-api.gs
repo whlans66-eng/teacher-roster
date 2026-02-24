@@ -930,3 +930,75 @@ function migrateTAColumns() {
     header: newHeader
   };
 }
+
+/**
+ * 資料庫遷移：修正 courseAssignments 欄位名稱標錯的問題。
+ *
+ * 背景：舊工作表的欄位順序為
+ *   id | teacherId | name | date | time | type | status | note | ...
+ * 但實際資料存放的是：
+ *   col C (name)   → 師資姓名（teacherName 的資料）
+ *   col D (date)   → 助教ID（taId 的資料）
+ *   col E (time)   → 助教姓名（taName 的資料）
+ *   col F (type)   → 課程名稱（name 的資料）  ← 行事曆需要這個
+ *   col G (status) → 課程日期（date 的資料）   ← 行事曆需要這個
+ *   col H (note)   → 課程時間（time 的資料）   ← 行事曆需要這個
+ *
+ * 本函式只修改第一列的表頭，資料列不動。
+ * 在 GAS 編輯器直接執行一次即可。
+ */
+function fixCourseAssignmentsHeaders() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName('courseAssignments');
+
+  if (!sh) {
+    Logger.log('[fixHeaders] courseAssignments sheet not found');
+    return;
+  }
+
+  const lastCol = sh.getLastColumn();
+  if (lastCol < 8) {
+    Logger.log('[fixHeaders] Not enough columns (' + lastCol + '), skipping');
+    return;
+  }
+
+  const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(v => String(v || ''));
+  Logger.log('[fixHeaders] Current headers: ' + headers.join(' | '));
+
+  // 偵測是否為需要修正的舊版格式：
+  // 位置 2 = 'name'，位置 5 = 'type'，位置 6 = 'status'
+  const isOldLayout = (headers[2] === 'name' && headers[5] === 'type' && headers[6] === 'status');
+  if (!isOldLayout) {
+    Logger.log('[fixHeaders] Headers do not match old pattern — already fixed or different layout. Skipping.');
+    Logger.log('[fixHeaders] headers[2]=' + headers[2] + ', headers[5]=' + headers[5] + ', headers[6]=' + headers[6]);
+    return;
+  }
+
+  const newHeaders = headers.slice(); // copy
+
+  // 核心修正：重新命名 col C–H 的表頭
+  newHeaders[2] = 'teacherName'; // was 'name'   → 資料是師資姓名
+  newHeaders[3] = 'taId';        // was 'date'   → 資料是助教 ID
+  newHeaders[4] = 'taName';      // was 'time'   → 資料是助教姓名
+  newHeaders[5] = 'name';        // was 'type'   → 資料是課程名稱 ★
+  newHeaders[6] = 'date';        // was 'status' → 資料是課程日期 ★
+  newHeaders[7] = 'time';        // was 'note'   → 資料是課程時間 ★
+
+  // 修正自動補齊時錯置的欄位（位置 8 之後）：
+  // _getOrCreateSheet() 曾把 'teacherName','taId','taName' 附加在末尾（空白欄）
+  // 這些位置現在應改回 'type','status','note'
+  for (let i = 8; i < newHeaders.length; i++) {
+    if (newHeaders[i] === 'teacherName') { newHeaders[i] = 'type';   continue; }
+    if (newHeaders[i] === 'taId')        { newHeaders[i] = 'status'; continue; }
+    if (newHeaders[i] === 'taName')      { newHeaders[i] = 'note';   continue; }
+  }
+
+  sh.getRange(1, 1, 1, newHeaders.length).setValues([newHeaders]);
+  sh.getRange(1, 1, 1, newHeaders.length)
+    .setFontWeight('bold')
+    .setBackground('#4285f4')
+    .setFontColor('#ffffff');
+
+  Logger.log('[fixHeaders] Done. New headers: ' + newHeaders.join(' | '));
+  Logger.log('[fixHeaders] 請重新整理前端頁面，行事曆課程應正常顯示。');
+}
