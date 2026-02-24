@@ -258,11 +258,7 @@ class TeacherRosterAPI {
       if (!result.ok) {
         if (result.error === 'Unauthorized') {
           console.warn('Session 已過期，導向登入頁面');
-          sessionStorage.removeItem('authData');
-          localStorage.removeItem('authData');
-          if (!window.location.pathname.endsWith('login.html')) {
-            window.location.href = 'login.html';
-          }
+          _handleSessionExpired();
           throw new Error('Session 已過期，請重新登入');
         }
         throw new Error(result.error || '請求失敗');
@@ -323,11 +319,7 @@ class TeacherRosterAPI {
       if (!result.ok) {
         if (result.error === 'Unauthorized') {
           console.warn('Session 已過期，導向登入頁面');
-          sessionStorage.removeItem('authData');
-          localStorage.removeItem('authData');
-          if (!window.location.pathname.endsWith('login.html')) {
-            window.location.href = 'login.html';
-          }
+          _handleSessionExpired();
           throw new Error('Session 已過期，請重新登入');
         }
         throw new Error(result.error || '請求失敗');
@@ -349,6 +341,20 @@ class TeacherRosterAPI {
 
 // 建立全域 API 實例
 const api = new TeacherRosterAPI(API_CONFIG);
+
+// Session 過期通知 dedup flag（避免同一頁面多個 API 請求同時觸發多個 alert）
+let _sessionExpiredNotified = false;
+
+function _handleSessionExpired() {
+  sessionStorage.removeItem('authData');
+  localStorage.removeItem('authData');
+  if (_sessionExpiredNotified) return; // 已經通知過，不重複
+  _sessionExpiredNotified = true;
+  if (!window.location.pathname.endsWith('login.html')) {
+    alert('登入逾期，請重新登入以載入行事曆資料。');
+    window.location.href = 'login.html';
+  }
+}
 
 function normalizeNumeric(value) {
   if (value === undefined || value === null || value === '') {

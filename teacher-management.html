@@ -538,6 +538,10 @@
           <!-- 日期網格 -->
           <div id="calendarGrid" class="grid grid-cols-7"></div>
         </div>
+        <!-- 行事曆空白狀態提示 -->
+        <div id="calendarEmptyState" class="hidden mt-4 p-4 rounded-xl text-center" style="background: rgba(255,149,0,0.08); border: 1px solid rgba(255,149,0,0.25);">
+          <p style="color: #b45309; font-size: 14px; font-weight: 500;">本月尚無課程安排，或資料尚未同步。若剛完成登入，請稍後重整頁面。</p>
+        </div>
       </div>
     </div>
   </div>
@@ -2576,7 +2580,21 @@
     renderCalendar();
   }
 
-  function renderCalendar(){ if(viewMode==='month') renderMonthView(); else renderWeekView(); }
+  function renderCalendar(){
+    if(viewMode==='month') renderMonthView(); else renderWeekView();
+    // 更新空白狀態提示
+    const emptyState = document.getElementById('calendarEmptyState');
+    if (emptyState) {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const hasEventsThisMonth = calendarEvents.some(ev => {
+        if (!ev.date) return false;
+        const d = new Date(ev.date);
+        return d.getFullYear() === year && d.getMonth() === month;
+      });
+      emptyState.classList.toggle('hidden', hasEventsThisMonth);
+    }
+  }
 
   function renderMonthView(){
     const year = currentDate.getFullYear();
