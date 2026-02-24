@@ -33,7 +33,7 @@ const SHEETS_CONFIG = {
   },
   maritimeCourses: {
     name: 'maritimeCourses',
-    header: ['id','name','category','method','description','keywords','version','lastModifiedBy','lastModifiedAt']
+    header: ['id','name','category','method','description','keywords','targetCategories','targetRanks','version','lastModifiedBy','lastModifiedAt']
   },
   surveyTemplates: {
     name: 'surveyTemplates',
@@ -322,7 +322,7 @@ function doPost(e) {
           tags: _asArray(t?.tags)
         }));
       } else if (table === 'maritimeCourses') {
-        data = data.map(c => ({ ...c, keywords: _asArray(c?.keywords) }));
+        data = data.map(c => ({ ...c, keywords: _asArray(c?.keywords), targetCategories: _asArray(c?.targetCategories), targetRanks: _asArray(c?.targetRanks) }));
       } else if (table === 'surveyTemplates') {
         data = data.map(t => ({ ...t, questions: _asArray(t?.questions) }));
       } else if (table === 'surveyResponses') {
@@ -495,7 +495,7 @@ function _readTable(tableName) {
     const obj = {};
     header.forEach((key, i) => {
       const val = row[idx[key]];
-      if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers'].includes(key)) {
+      if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers', 'targetCategories', 'targetRanks'].includes(key)) {
         obj[key] = _asArray(val);
       } else if (val instanceof Date) {
         obj[key] = _formatDate(val);
@@ -527,7 +527,7 @@ function _writeTable(tableName, dataArray) {
     const row = new Array(idx._len).fill('');
     header.forEach((key, i) => {
       const val = item[key];
-      if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers'].includes(key)) {
+      if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers', 'targetCategories', 'targetRanks'].includes(key)) {
         row[idx[key]] = JSON.stringify(_asArray(val));
       } else if (key === 'category' && tableName === 'maritimeCourses') {
         row[idx[key]] = val !== undefined && val !== null ? "'" + String(val) : '';
@@ -561,7 +561,7 @@ function _updateRow(tableName, id, dataObj) {
 
   const newRow = header.map((key, i) => {
     let val = dataObj.hasOwnProperty(key) ? dataObj[key] : oldRowValues[i];
-    if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers'].includes(key)) {
+    if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers', 'targetCategories', 'targetRanks'].includes(key)) {
       if (Array.isArray(val)) val = JSON.stringify(val);
     } else if (key === 'category' && tableName === 'maritimeCourses') {
       val = val !== undefined && val !== null ? "'" + String(val) : '';
