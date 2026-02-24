@@ -40,8 +40,8 @@
     const authData = protectPage();
     if (!authData) return;
 
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    if (Date.now() - authData.timestamp > sevenDays) {
+    const sessionTimeout = 6 * 60 * 60 * 1000; // 6 小時，與 GAS CacheService SESSION_TTL 一致
+    if (Date.now() - authData.timestamp > sessionTimeout) {
       clearAuthData();
       redirectToLogin();
     }
