@@ -2831,7 +2831,7 @@
           syncCourseAssignmentsToCalendar();
 
           // 如果正在顯示派課視圖，則更新顯示
-          if (currentMode === 'courses') {
+          if (!document.getElementById('courseManagementView').classList.contains('hidden')) {
             updateCourseView();
           }
         } else {
@@ -2893,9 +2893,8 @@
     // 派課數據已同步到行事曆
 
     // 如果目前正在行事曆視圖，重新渲染以顯示更新
-    if (currentMode === 'calendar') {
+    if (!document.getElementById('calendarView').classList.contains('hidden')) {
       renderCalendar();
-      // 行事曆視圖已更新
     }
   }
 
