@@ -2838,6 +2838,7 @@
     try {
       // 嘗試從後端 API 載入派課數據
       const data = await api.list('courseAssignments');
+      console.log('[Debug] 後端回傳派課資料:', Array.isArray(data) ? `${data.length} 筆` : data, data?.[0] ?? '(無資料)');
 
       if (Array.isArray(data)) {
         if (data.length > 0) {
@@ -2861,12 +2862,16 @@
         }
       }
     } catch (error) {
-      console.warn('[Warning] 從後端 API 載入派課數據失敗:', error.message);
-      // 使用本地數據
+      // Session 已過期（_handleSessionExpired 會處理 alert 和跳轉）
+      if (error.message && error.message.includes('Session 已過期')) {
+        console.warn('[Warning] 派課數據載入失敗：Session 已過期，等待跳轉至登入頁');
+        return;
+      }
+      console.error('[Error] 從後端 API 載入派課數據失敗:', error.message, error);
       if (courseAssignments.length > 0) {
-        // 使用本地派課數據
+        console.log('[Info] 使用本地派課數據，共', courseAssignments.length, '筆');
       } else {
-        console.warn('[Error] 沒有本地數據可用');
+        console.error('[Error] 後端失敗且無本地數據可用。請確認 API_URL 設定正確，並嘗試重新登入。');
       }
     }
   }
@@ -2880,6 +2885,12 @@
 
     // 將所有派課轉換為行事曆事件
     courseAssignments.forEach((course, index) => {
+      // 驗證必要欄位：跳過 date 或 name 缺失的記錄
+      if (!course.date || !course.name) {
+        console.warn(`[syncCalendar] 跳過第 ${index + 1} 筆派課，缺少必要欄位 (id=${course.id}, date=${course.date}, name=${course.name})`);
+        return;
+      }
+
       const teacher = teachers.find(t => t.id === course.teacherId);
       const teacherName = teacher ? teacher.name : '未知師資';
 
