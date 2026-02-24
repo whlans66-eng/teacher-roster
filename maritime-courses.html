@@ -726,6 +726,17 @@
     border-color: #cbd5e1;
   }
   .action-btn-secondary:active { transform: scale(0.98); }
+  .action-btn-danger {
+    background: #fff0f0;
+    color: #ff3b30;
+    border: 1px solid #ffcccc;
+    box-shadow: 0 2px 8px rgba(255, 59, 48, 0.08);
+  }
+  .action-btn-danger:hover {
+    background: #ffe5e5;
+    border-color: #ff9999;
+  }
+  .action-btn-danger:active { transform: scale(0.98); }
 
   /* 衝突對話框 */
   .conflict-dialog {
@@ -865,7 +876,7 @@
       <!-- 智慧匹配篩選 -->
       <div class="smart-match-bar">
         <label><i class="ph ph-magic-wand"></i> 智慧匹配</label>
-        <select id="smartMatchRank" onchange="displayMaritimeCourses()">
+        <select id="smartMatchRank" onchange="autoEnableSmartMatch(); displayMaritimeCourses()">
           <option value="">-- 選擇職等 --</option>
           <option value="C/P">C/P 船長</option>
           <option value="C/O">C/O 大副</option>
@@ -882,7 +893,7 @@
           <option value="fitter">銅匠</option>
           <option value="engineCadet">輪機實習生</option>
         </select>
-        <select id="smartMatchCategory" onchange="displayMaritimeCourses()">
+        <select id="smartMatchCategory" onchange="autoEnableSmartMatch(); displayMaritimeCourses()">
           <option value="">-- 人員類別 --</option>
           <option value="existing">現有船員</option>
           <option value="new">新進船員</option>
@@ -1442,6 +1453,20 @@
       addMaritimeKeyword();
     }
 
+    // 自動啟用智慧匹配：選擇職等或人員類別時自動勾選
+    function autoEnableSmartMatch() {
+      const smartRank = document.getElementById('smartMatchRank').value;
+      const smartCategory = document.getElementById('smartMatchCategory').value;
+      const checkbox = document.getElementById('smartMatchEnabled');
+      if ((smartRank || smartCategory) && !checkbox.checked) {
+        checkbox.checked = true;
+      }
+      // 如果兩個都清空，自動取消勾選
+      if (!smartRank && !smartCategory && checkbox.checked) {
+        checkbox.checked = false;
+      }
+    }
+
     // 顯示課程列表（關鍵字優先搜尋 + 高亮）
     function displayMaritimeCourses() {
       const search = document.getElementById('maritimeSearchInput').value.toLowerCase();
@@ -1970,6 +1995,10 @@
                 <i class="ph ph-pencil-simple"></i>
                 編輯課程資料
               </button>
+              <button onclick="deleteCourseFromDetail(${course.id})" class="action-btn action-btn-danger">
+                <i class="ph ph-trash"></i>
+                刪除課程
+              </button>
               <button onclick="backToCourseList()" class="action-btn action-btn-secondary">
                 <i class="ph ph-arrow-left"></i>
                 返回課程列表
@@ -1985,6 +2014,18 @@
       document.getElementById('courseDetailView').classList.add('hidden');
       document.getElementById('maritimeViewPage').querySelector('.glass-panel').classList.remove('hidden');
       document.getElementById('maritimeCourseResults').classList.remove('hidden');
+    }
+
+    // 從詳情頁面刪除課程
+    async function deleteCourseFromDetail(courseId) {
+      if (confirm('確定要刪除這個課程嗎？此操作無法復原。')) {
+        maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
+        await saveMaritimeCourses();
+        showMaritimeMessage('✓ 課程已刪除', 'success');
+        backToCourseList();
+        displayMaritimeCourses();
+        displayManageMaritimeCourses();
+      }
     }
 
     // 取得分類圖示
