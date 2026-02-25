@@ -628,6 +628,30 @@
   .sidebar-info-icon i { font-size: 18px; color: #6366f1; }
   .sidebar-info-icon-emerald i { color: #10b981; }
   .sidebar-info-icon-amber i { color: #d97706; }
+  .sidebar-info-icon-blue i { color: #2563eb; }
+  .sidebar-info-icon-teal i { color: #0d9488; }
+  .sidebar-dot-blue { background: #2563eb; }
+  .sidebar-dot-teal { background: #14b8a6; }
+  .sidebar-info-box-blue { background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-color: #bfdbfe; }
+  .sidebar-info-box-teal { background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%); border-color: #99f6e4; }
+
+  /* 語言選擇按鈕 */
+  .lang-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 14px; border: 2px solid #e5e5ea; border-radius: 8px;
+    background: white; font-size: 13px; font-weight: 600; cursor: pointer;
+    color: #6e6e73; transition: all 0.2s;
+  }
+  .lang-btn-active { border-color: #007aff; background: #eff6ff; color: #007aff; }
+  .lang-btn:hover:not(.lang-btn-active) { border-color: #c5c5c7; background: #f5f5f7; }
+
+  /* 語言徽章（管理清單用）*/
+  .lang-badge {
+    display: inline-flex; align-items: center;
+    padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 6px;
+  }
+  .lang-badge-zh { background: #eff6ff; color: #2563eb; }
+  .lang-badge-en { background: #f0fdf4; color: #16a34a; }
   .sidebar-info-text { display: flex; flex-direction: column; min-width: 0; }
   .sidebar-info-main { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
   .sidebar-info-sub { font-size: 10px; color: #64748b; font-weight: 600; letter-spacing: 0.04em; }
@@ -1232,6 +1256,25 @@
           <textarea id="maritimeCourseDescriptionModal" rows="3" class="ios-input" style="resize: vertical;" placeholder="課程描述"></textarea>
         </div>
 
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 16px; margin-bottom: 16px; align-items: end;">
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">授課語言</label>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" id="langBtnZh" onclick="setMaritimeLangModal('zh')" class="lang-btn lang-btn-active">
+                <i class="ph ph-chat-circle-text"></i> 中文
+              </button>
+              <button type="button" id="langBtnEn" onclick="setMaritimeLangModal('en')" class="lang-btn">
+                <i class="ph ph-globe"></i> 英文
+              </button>
+            </div>
+            <input type="hidden" id="maritimeCourseLangModal" value="zh">
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">教材連結</label>
+            <input type="url" id="maritimeCourseLinkModal" class="ios-input" placeholder="https://...（可留空）">
+          </div>
+        </div>
+
         <!-- 適用對象 Modal -->
         <div style="margin-bottom: 20px; background: #f5f5f7; border-radius: 12px; padding: 16px;">
           <label style="font-size: 13px; font-weight: 700; color: #1d1d1f; margin-bottom: 12px; display: block;">
@@ -1771,8 +1814,10 @@
       container.innerHTML = filtered.map(c => `
         <div style="background:white; padding:16px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
           <div>
-            <div style="font-weight:600; font-size:15px;">${c.name}</div>
-            <div style="font-size:12px; color:#86868b;">${maritimeCategoryNames[c.category] || c.category}</div>
+            <div style="font-weight:600; font-size:15px; margin-bottom:2px;">${c.name}</div>
+            <div style="font-size:12px; color:#86868b;">
+              <span class="lang-badge ${c.lang === 'en' ? 'lang-badge-en' : 'lang-badge-zh'}">${c.lang === 'en' ? 'EN' : '中'}</span>${maritimeCategoryNames[c.category] || c.category}
+            </div>
           </div>
           <button onclick="editMaritimeCourse(${c.id})" class="secondary-btn" style="padding:6px 16px; font-size:13px;">編輯</button>
         </div>
@@ -1971,6 +2016,45 @@
                   </div>
                 </div>
               </div>
+
+              <!-- 授課語言 -->
+              <div class="sidebar-section">
+                <h3 class="sidebar-section-title">
+                  <span class="sidebar-dot sidebar-dot-blue"></span>
+                  授課語言
+                </h3>
+                <div class="sidebar-info-box sidebar-info-box-blue">
+                  <div class="sidebar-info-icon sidebar-info-icon-blue">
+                    <i class="ph ${course.lang === 'en' ? 'ph-globe' : 'ph-chat-circle-text'}"></i>
+                  </div>
+                  <div class="sidebar-info-text">
+                    <span class="sidebar-info-main">${course.lang === 'en' ? '英文' : '中文'}</span>
+                    <span class="sidebar-info-sub">${course.lang === 'en' ? 'English' : 'Mandarin Chinese'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 教材連結 -->
+              <div class="sidebar-section">
+                <h3 class="sidebar-section-title">
+                  <span class="sidebar-dot sidebar-dot-teal"></span>
+                  教材連結
+                </h3>
+                <div class="sidebar-info-box sidebar-info-box-teal">
+                  <div class="sidebar-info-icon sidebar-info-icon-teal">
+                    <i class="ph ph-link"></i>
+                  </div>
+                  <div class="sidebar-info-text" style="min-width:0;">
+                    ${course.link ? `
+                      <a href="${course.link}" target="_blank" rel="noopener" class="sidebar-info-main" style="color:#0d9488; text-decoration:none; word-break:break-all;">開啟教材</a>
+                      <span class="sidebar-info-sub" style="word-break:break-all; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${course.link}</span>
+                    ` : `
+                      <span class="sidebar-info-main">未設定</span>
+                      <span class="sidebar-info-sub">尚未填寫連結</span>
+                    `}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- 適用對象卡片 -->
@@ -2121,6 +2205,8 @@
       document.getElementById('maritimeCourseMethodModal').value = c.method;
       document.getElementById('maritimeCourseDurationModal').value = c.duration || '';
       document.getElementById('maritimeCourseDescriptionModal').value = c.description;
+      setMaritimeLangModal(c.lang || 'zh');
+      document.getElementById('maritimeCourseLinkModal').value = c.link || '';
 
       const list = document.getElementById('maritimeKeywordListModal');
       list.innerHTML = '';
@@ -2166,6 +2252,12 @@
       editingMaritimeCourseId = null;
     }
 
+    function setMaritimeLangModal(lang) {
+      document.getElementById('maritimeCourseLangModal').value = lang;
+      document.getElementById('langBtnZh').classList.toggle('lang-btn-active', lang === 'zh');
+      document.getElementById('langBtnEn').classList.toggle('lang-btn-active', lang === 'en');
+    }
+
     async function saveMaritimeCourseFromModal(e) {
       e.preventDefault();
       const newData = {
@@ -2174,6 +2266,8 @@
         method: document.getElementById('maritimeCourseMethodModal').value,
         duration: parseInt(document.getElementById('maritimeCourseDurationModal').value) || 0,
         description: document.getElementById('maritimeCourseDescriptionModal').value,
+        lang: document.getElementById('maritimeCourseLangModal').value || 'zh',
+        link: document.getElementById('maritimeCourseLinkModal').value.trim(),
         keywords: Array.from(document.querySelectorAll('#maritimeKeywordListModal input')).map(i => i.value.trim()).filter(v => v),
         targetCategories: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetCategoryModal"]:checked')).map(i => i.value),
         targetRanks: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetRankModal"]:checked')).map(i => i.value)
@@ -2182,7 +2276,11 @@
       const idx = maritimeCourses.findIndex(x => x.id === editingMaritimeCourseId);
       if (idx >= 0) {
         maritimeCourses[idx] = { ...maritimeCourses[idx], ...newData };
-        await saveMaritimeCourses();
+        try {
+          await saveMaritimeCourses();
+        } catch (err) {
+          console.error('儲存到後端失敗（已存至本機）:', err);
+        }
         showMaritimeMessage('✓ 課程更新成功', 'success');
         closeMaritimeCourseModal();
         displayMaritimeCourses();
