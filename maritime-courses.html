@@ -995,6 +995,26 @@
             <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 6px;">課程描述</label>
             <textarea id="maritimeCourseDescription" rows="3" class="ios-input" style="resize: vertical;" placeholder="輸入課程大綱..."></textarea>
           </div>
+
+          <div style="display: grid; grid-template-columns: auto 1fr; gap: 16px; margin-bottom: 16px; align-items: end;">
+            <div>
+              <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 6px;">授課語言</label>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" id="langBtnZhAdd" onclick="setMaritimeLang('zh')" class="lang-btn lang-btn-active">
+                  <i class="ph ph-chat-circle-text"></i> 中文
+                </button>
+                <button type="button" id="langBtnEnAdd" onclick="setMaritimeLang('en')" class="lang-btn">
+                  <i class="ph ph-globe"></i> 英文
+                </button>
+              </div>
+              <input type="hidden" id="maritimeCourseLang" value="zh">
+            </div>
+            <div>
+              <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 6px;">教材連結</label>
+              <input type="url" id="maritimeCourseLink" class="ios-input" placeholder="https://...（可留空）">
+            </div>
+          </div>
+
           <!-- 適用對象 -->
           <div style="margin-bottom: 24px; background: #f5f5f7; border-radius: 16px; padding: 20px;">
             <label style="font-size: 14px; font-weight: 700; color: #1d1d1f; margin-bottom: 16px; display: block;">
@@ -1469,15 +1489,22 @@
           method: document.getElementById('maritimeCourseMethod').value,
           duration: parseInt(document.getElementById('maritimeCourseDuration').value) || 0,
           description: document.getElementById('maritimeCourseDescription').value,
+          lang: document.getElementById('maritimeCourseLang').value || 'zh',
+          link: document.getElementById('maritimeCourseLink').value.trim(),
           keywords: Array.from(document.querySelectorAll('#maritimeKeywordList input')).map(i => i.value.trim()).filter(v => v),
           targetCategories: Array.from(document.querySelectorAll('#maritimeCourseForm input[name="targetCategory"]:checked')).map(i => i.value),
           targetRanks: Array.from(document.querySelectorAll('#maritimeCourseForm input[name="targetRank"]:checked')).map(i => i.value)
         };
         maritimeCourses.push(course);
-        await saveMaritimeCourses();
+        try {
+          await saveMaritimeCourses();
+        } catch (err) {
+          console.error('儲存到後端失敗（已存至本機）:', err);
+        }
         showMaritimeMessage('✓ 課程新增成功', 'success');
         document.getElementById('maritimeCourseForm').reset();
         document.getElementById('maritimeKeywordList').innerHTML = '';
+        setMaritimeLang('zh');
         // 清除 checkbox 選取狀態
         document.querySelectorAll('#maritimeCourseForm .target-option, #maritimeCourseForm .rank-option-new').forEach(o => o.classList.remove('selected', 'new'));
         addMaritimeKeyword();
@@ -1487,6 +1514,7 @@
 
       document.getElementById('maritimeCancelEdit').addEventListener('click', () => {
         document.getElementById('maritimeCourseForm').reset();
+        setMaritimeLang('zh');
         // 清除 checkbox 選取狀態
         document.querySelectorAll('#maritimeCourseForm .target-option, #maritimeCourseForm .rank-option-new').forEach(o => o.classList.remove('selected', 'new'));
         document.getElementById('maritimeKeywordList').innerHTML = '';
@@ -2250,6 +2278,12 @@
     function closeMaritimeCourseModal() {
       document.getElementById('maritimeCourseModal').classList.remove('show');
       editingMaritimeCourseId = null;
+    }
+
+    function setMaritimeLang(lang) {
+      document.getElementById('maritimeCourseLang').value = lang;
+      document.getElementById('langBtnZhAdd').classList.toggle('lang-btn-active', lang === 'zh');
+      document.getElementById('langBtnEnAdd').classList.toggle('lang-btn-active', lang === 'en');
     }
 
     function setMaritimeLangModal(lang) {
