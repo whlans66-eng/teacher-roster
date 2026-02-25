@@ -876,36 +876,6 @@
           </select>
         </div>
       </div>
-      <!-- 智慧匹配篩選 -->
-      <div class="smart-match-bar">
-        <label><i class="ph ph-magic-wand"></i> 智慧匹配</label>
-        <select id="smartMatchRank" onchange="autoEnableSmartMatch(); displayMaritimeCourses()">
-          <option value="">-- 選擇職等 --</option>
-          <option value="C/P">C/P 船長</option>
-          <option value="C/O">C/O 大副</option>
-          <option value="2/O">2/O 二副</option>
-          <option value="3/O">3/O 三副</option>
-          <option value="bosun">水手長</option>
-          <option value="AB">幹練水手</option>
-          <option value="deckCadet">甲板實習生</option>
-          <option value="C/E">C/E 輪機長</option>
-          <option value="2/E">2/E 大管</option>
-          <option value="3/E">3/E 2管</option>
-          <option value="4/E">4/E 3管</option>
-          <option value="oiler">加油長</option>
-          <option value="fitter">銅匠</option>
-          <option value="engineCadet">輪機實習生</option>
-        </select>
-        <select id="smartMatchCategory" onchange="autoEnableSmartMatch(); displayMaritimeCourses()">
-          <option value="">-- 人員類別 --</option>
-          <option value="existing">現有船員</option>
-          <option value="new">新進船員</option>
-        </select>
-        <label class="smart-match-toggle">
-          <input type="checkbox" id="smartMatchEnabled" onchange="displayMaritimeCourses()">
-          啟用匹配排序
-        </label>
-      </div>
 
       <div id="maritimeCourseResults" class="course-grid"></div>
     </div>
@@ -1432,9 +1402,23 @@
       // 表單事件
       document.getElementById('maritimeCourseForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn.disabled) return;
+        submitBtn.disabled = true;
+
+        const courseName = document.getElementById('maritimeCourseName').value.trim();
+
+        // 重複課程名稱檢查
+        const duplicate = maritimeCourses.find(c => c.name.trim() === courseName);
+        if (duplicate) {
+          alert(`⚠️ 課程已存在！\n\n「${courseName}」已有相同名稱的課程，請確認是否重複新增。`);
+          submitBtn.disabled = false;
+          return;
+        }
+
         const course = {
           id: Date.now(),
-          name: document.getElementById('maritimeCourseName').value,
+          name: courseName,
           category: document.getElementById('maritimeCourseCategory').value,
           method: document.getElementById('maritimeCourseMethod').value,
           duration: parseInt(document.getElementById('maritimeCourseDuration').value) || 0,
@@ -1452,6 +1436,7 @@
         document.querySelectorAll('#maritimeCourseForm .target-option, #maritimeCourseForm .rank-option-new').forEach(o => o.classList.remove('selected', 'new'));
         addMaritimeKeyword();
         displayManageMaritimeCourses();
+        submitBtn.disabled = false;
       });
 
       document.getElementById('maritimeCancelEdit').addEventListener('click', () => {
@@ -2015,10 +2000,6 @@
               <button onclick="deleteCourseFromDetail(${course.id})" class="action-btn action-btn-danger">
                 <i class="ph ph-trash"></i>
                 刪除課程
-              </button>
-              <button onclick="backToCourseList()" class="action-btn action-btn-secondary">
-                <i class="ph ph-arrow-left"></i>
-                返回課程列表
               </button>
             </div>
           </div>

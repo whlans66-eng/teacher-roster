@@ -2330,13 +2330,8 @@
         return;
       }
 
-      // 排序課程：先按日期，再按時間
-      const sortedCourses = displayCourses.sort((a, b) => {
-        if (a.date !== b.date) {
-          return a.date.localeCompare(b.date);
-        }
-        return a.time.localeCompare(b.time);
-      });
+      // 排序課程：最新建立的排最上面
+      const sortedCourses = displayCourses.sort((a, b) => b.id - a.id);
 
       // 如果是顯示某個老師的所有課程，按日期分組
       if (selectedTeacherId !== null && selectedDate === null) {
@@ -3353,6 +3348,18 @@
         status: document.getElementById('courseStatus').value,
         note: document.getElementById('courseNote').value.trim()
       };
+
+      // 重複課程檢查
+      const duplicate = courseAssignments.find(c =>
+        c.teacherId === courseData.teacherId &&
+        c.name.trim() === courseData.name.trim() &&
+        c.date === courseData.date &&
+        c.time === courseData.time
+      );
+      if (duplicate) {
+        alert(`⚠️ 重複課程！\n\n「${courseData.name}」已有相同日期（${courseData.date}）、相同時間（${courseData.time}）的課程紀錄，請確認是否重複新增。`);
+        return;
+      }
 
       // 衝堂檢查
       const conflicts = checkConflict(courseData);

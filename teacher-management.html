@@ -2029,7 +2029,7 @@
       if(currentTeacherId){
         const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData;
       }else{
-        teachers.push(teacherData);
+        teachers.unshift(teacherData);
       }
       teachers = normalize(teachers);
       saveLocalSilently();
