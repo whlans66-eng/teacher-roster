@@ -1452,9 +1452,10 @@
 
     // 自動啟用智慧匹配：選擇職等或人員類別時自動勾選
     function autoEnableSmartMatch() {
-      const smartRank = document.getElementById('smartMatchRank').value;
-      const smartCategory = document.getElementById('smartMatchCategory').value;
+      const smartRank = document.getElementById('smartMatchRank')?.value ?? '';
+      const smartCategory = document.getElementById('smartMatchCategory')?.value ?? '';
       const checkbox = document.getElementById('smartMatchEnabled');
+      if (!checkbox) return;
       if ((smartRank || smartCategory) && !checkbox.checked) {
         checkbox.checked = true;
       }
@@ -1471,9 +1472,9 @@
       const container = document.getElementById('maritimeCourseResults');
 
       // 智慧匹配設定
-      const smartMatchEnabled = document.getElementById('smartMatchEnabled').checked;
-      const smartRank = document.getElementById('smartMatchRank').value;
-      const smartCategory = document.getElementById('smartMatchCategory').value;
+      const smartMatchEnabled = document.getElementById('smartMatchEnabled')?.checked ?? false;
+      const smartRank = document.getElementById('smartMatchRank')?.value ?? '';
+      const smartCategory = document.getElementById('smartMatchCategory')?.value ?? '';
 
       let filteredCourses;
       let isKeywordMatch = false;
