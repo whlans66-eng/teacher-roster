@@ -1402,9 +1402,23 @@
       // 表單事件
       document.getElementById('maritimeCourseForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn.disabled) return;
+        submitBtn.disabled = true;
+
+        const courseName = document.getElementById('maritimeCourseName').value.trim();
+
+        // 重複課程名稱檢查
+        const duplicate = maritimeCourses.find(c => c.name.trim() === courseName);
+        if (duplicate) {
+          alert(`⚠️ 課程已存在！\n\n「${courseName}」已有相同名稱的課程，請確認是否重複新增。`);
+          submitBtn.disabled = false;
+          return;
+        }
+
         const course = {
           id: Date.now(),
-          name: document.getElementById('maritimeCourseName').value,
+          name: courseName,
           category: document.getElementById('maritimeCourseCategory').value,
           method: document.getElementById('maritimeCourseMethod').value,
           duration: parseInt(document.getElementById('maritimeCourseDuration').value) || 0,
@@ -1422,6 +1436,7 @@
         document.querySelectorAll('#maritimeCourseForm .target-option, #maritimeCourseForm .rank-option-new').forEach(o => o.classList.remove('selected', 'new'));
         addMaritimeKeyword();
         displayManageMaritimeCourses();
+        submitBtn.disabled = false;
       });
 
       document.getElementById('maritimeCancelEdit').addEventListener('click', () => {
