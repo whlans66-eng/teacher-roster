@@ -2330,13 +2330,8 @@
         return;
       }
 
-      // 排序課程：先按日期，再按時間
-      const sortedCourses = displayCourses.sort((a, b) => {
-        if (a.date !== b.date) {
-          return a.date.localeCompare(b.date);
-        }
-        return a.time.localeCompare(b.time);
-      });
+      // 排序課程：最新建立的排最上面
+      const sortedCourses = displayCourses.sort((a, b) => b.id - a.id);
 
       // 如果是顯示某個老師的所有課程，按日期分組
       if (selectedTeacherId !== null && selectedDate === null) {
