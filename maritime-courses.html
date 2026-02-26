@@ -1397,6 +1397,8 @@
 
       if (tab === 'view') {
         document.getElementById('maritimeViewPage').classList.remove('hidden');
+        document.getElementById('maritimeViewPage').querySelector('.glass-panel').classList.remove('hidden');
+        document.getElementById('maritimeCourseResults').classList.remove('hidden');
         document.getElementById('maritimeViewTab').classList.add('active');
         displayMaritimeCourses();
       } else if (tab === 'ai') {
