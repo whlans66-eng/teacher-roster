@@ -33,7 +33,7 @@ const SHEETS_CONFIG = {
   },
   maritimeCourses: {
     name: 'maritimeCourses',
-    header: ['id','name','category','method','description','keywords','targetCategories','targetRanks','version','lastModifiedBy','lastModifiedAt']
+    header: ['id','name','category','method','description','keywords','targetCategories','targetRanks','version','lastModifiedBy','lastModifiedAt','duration','lang','link']
   },
   surveyTemplates: {
     name: 'surveyTemplates',
