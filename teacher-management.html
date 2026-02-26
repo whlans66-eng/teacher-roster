@@ -238,6 +238,59 @@
       }
     }
 
+    /* ── 師資多選模式 ── */
+    #teacherSelectBtn {
+      padding: 8px 18px; border-radius: 20px; border: none; cursor: pointer;
+      font-size: 14px; font-weight: 600;
+      background: rgba(0,122,255,0.1); color: #007aff;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    #teacherSelectBtn.active { background: #007aff; color: #fff; }
+    /* 選取模式下卡片禁止上浮 */
+    .teacher-select-mode .teacher-card-wrapper { cursor: pointer; }
+    .teacher-select-mode .teacher-card-wrapper:hover { transform: none !important; }
+    .teacher-select-circle {
+      position: absolute; top: 10px; left: 10px;
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid #c7c7cc; background: #fff;
+      display: none; align-items: center; justify-content: center;
+      font-size: 13px; color: #fff;
+      transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+      z-index: 15;
+    }
+    .teacher-select-mode .teacher-select-circle { display: flex; }
+    .teacher-card-wrapper.selected .teacher-select-circle {
+      background: #007aff; border-color: #007aff;
+    }
+    .teacher-card-wrapper.selected > div {
+      outline: 2.5px solid #007aff;
+      background: rgba(0,122,255,0.04);
+    }
+    /* 浮動操作列 */
+    #teacherSelectBar {
+      display: none; position: fixed; bottom: 28px;
+      left: 50%; transform: translateX(-50%);
+      background: rgba(30,30,32,0.92); backdrop-filter: blur(12px);
+      border-radius: 20px; padding: 12px 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+      z-index: 8000; align-items: center; gap: 14px; white-space: nowrap;
+      animation: tBarSlideUp 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes tBarSlideUp {
+      from { transform: translateX(-50%) translateY(20px); opacity:0; }
+      to   { transform: translateX(-50%) translateY(0);    opacity:1; }
+    }
+    #teacherSelectBar.show { display: flex; }
+    #teacherSelectBar .bar-count { color:#fff; font-size:14px; font-weight:600; min-width:80px; text-align:center; }
+    #teacherSelectBar button { padding:8px 18px; border-radius:12px; border:none; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.15s; }
+    #teacherSelectBar .bar-cancel { background:rgba(255,255,255,0.15); color:#fff; }
+    #teacherSelectBar .bar-cancel:hover { background:rgba(255,255,255,0.25); }
+    #teacherSelectBar .bar-all { background:rgba(255,255,255,0.15); color:#fff; }
+    #teacherSelectBar .bar-all:hover { background:rgba(255,255,255,0.25); }
+    #teacherSelectBar .bar-delete { background:#ff3b30; color:#fff; }
+    #teacherSelectBar .bar-delete:hover { background:#e02e23; }
+    #teacherSelectBar .bar-delete:disabled { background:rgba(255,59,48,0.35); cursor:not-allowed; }
+
     /* 師資字卡快速預覽 Modal */
     #teacherPreviewModal {
       display: none;
@@ -392,6 +445,11 @@
             <span>新增師資</span>
           </button>
 
+          <!-- 選取多刪按鈕 (呈現模式顯示) -->
+          <button id="teacherSelectBtn" onclick="toggleTeacherSelectMode()" class="hidden">
+            <i class="ph ph-check-square"></i> 選取
+          </button>
+
           <!-- 編輯模式按鈕 -->
           <button onclick="switchMode('display')" id="editModeBtn"
             class="w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700">
@@ -419,6 +477,16 @@
 
       <!-- 卡片網格 -->
       <div id="teacherGrid" class="grid gap-6"></div>
+    </div>
+
+    <!-- 師資多選浮動操作列 -->
+    <div id="teacherSelectBar">
+      <button class="bar-cancel" onclick="toggleTeacherSelectMode()"><i class="ph ph-x"></i> 取消</button>
+      <span class="bar-count" id="teacherSelectCount">已選 0 個</span>
+      <button class="bar-all" onclick="teacherSelectAll()"><i class="ph ph-selection-all"></i> 全選</button>
+      <button class="bar-delete" id="teacherSelectDeleteBtn" onclick="deleteSelectedTeachers()" disabled>
+        <i class="ph ph-trash"></i> 刪除
+      </button>
     </div>
 
     <!-- 師資字卡快速預覽 Modal -->
@@ -1613,6 +1681,7 @@
       const addTeacherBtn = document.getElementById('addTeacherBtn');
       const modeDescription = document.getElementById('modeDescription');
 
+      const selectBtn = document.getElementById('teacherSelectBtn');
       if (mode === 'edit') {
         // 切換到編輯模式
         editBtn.classList.remove('hidden');
@@ -1621,6 +1690,9 @@
         editBtn.innerHTML = '<i class="ph ph-pencil-simple"></i><span>編輯中</span>';
 
         displayBtn.classList.add('hidden');
+        if (selectBtn) selectBtn.classList.add('hidden');
+        // 退出選取模式（如果有在選取中）
+        if (teacherSelectMode) toggleTeacherSelectMode();
 
         addTeacherBtn.classList.remove('hidden');
         modeDescription.classList.remove('hidden');
@@ -1636,6 +1708,7 @@
         displayBtn.innerHTML = '<i class="ph ph-pencil-simple"></i><span>進入編輯</span>';
 
         editBtn.classList.add('hidden');
+        if (selectBtn) selectBtn.classList.remove('hidden');
 
         addTeacherBtn.classList.add('hidden');
         modeDescription.innerHTML = `
@@ -1732,8 +1805,17 @@
           const categoryIcon = isInternal ? '[Int]' : '[Ext]';
           const categoryBadgeColor = isInternal ? 'bg-blue-500' : 'bg-purple-500';
           card.className = 'teacher-card-wrapper bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer';
-          card.onclick = () => showTeacherPreview(teacher.id);
+          card.dataset.teacherId = teacher.id;
+          // 恢復選取狀態
+          if (teacherSelectMode && selectedTeacherIds.has(teacher.id)) {
+            card.classList.add('selected');
+          }
+          card.onclick = () => {
+            if (teacherSelectMode) { toggleTeacherCardSelect(teacher.id); }
+            else { showTeacherPreview(teacher.id); }
+          };
           card.innerHTML = `
+            <div class="teacher-select-circle"><i class="ph ph-check" style="font-size:13px;"></i></div>
             <button class="teacher-card-del-btn" onclick="event.stopPropagation(); quickDeleteTeacher(${teacher.id})" title="刪除師資">
               <i class="ph ph-trash"></i>
             </button>
@@ -1825,6 +1907,94 @@
       document.getElementById('tagList').innerHTML = '';
       (teacher.tags||[]).forEach(t=>addTag(t));
     }
+
+    // ── 師資多選模式 ──────────────────────────────────────────────────
+    let teacherSelectMode = false;
+    let selectedTeacherIds = new Set();
+
+    function toggleTeacherSelectMode() {
+      teacherSelectMode = !teacherSelectMode;
+      selectedTeacherIds.clear();
+
+      const btn = document.getElementById('teacherSelectBtn');
+      const bar = document.getElementById('teacherSelectBar');
+      const grid = document.getElementById('teacherGrid');
+
+      if (teacherSelectMode) {
+        btn.classList.add('active');
+        btn.innerHTML = '<i class="ph ph-x"></i> 取消';
+        bar.classList.add('show');
+        grid.classList.add('teacher-select-mode');
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<i class="ph ph-check-square"></i> 選取';
+        bar.classList.remove('show');
+        grid.classList.remove('teacher-select-mode');
+        grid.querySelectorAll('.teacher-card-wrapper.selected').forEach(c => c.classList.remove('selected'));
+      }
+      updateTeacherSelectBar();
+    }
+
+    function toggleTeacherCardSelect(teacherId) {
+      if (selectedTeacherIds.has(teacherId)) {
+        selectedTeacherIds.delete(teacherId);
+      } else {
+        selectedTeacherIds.add(teacherId);
+      }
+      const card = document.querySelector(`.teacher-card-wrapper[data-teacher-id="${teacherId}"]`);
+      if (card) card.classList.toggle('selected', selectedTeacherIds.has(teacherId));
+      updateTeacherSelectBar();
+    }
+
+    function teacherSelectAll() {
+      const grid = document.getElementById('teacherGrid');
+      const allCards = grid.querySelectorAll('.teacher-card-wrapper');
+      const allSelected = selectedTeacherIds.size === allCards.length;
+
+      if (allSelected) {
+        selectedTeacherIds.clear();
+        allCards.forEach(c => c.classList.remove('selected'));
+      } else {
+        allCards.forEach(c => {
+          const id = parseInt(c.dataset.teacherId);
+          selectedTeacherIds.add(id);
+          c.classList.add('selected');
+        });
+      }
+      updateTeacherSelectBar();
+    }
+
+    function updateTeacherSelectBar() {
+      const count = selectedTeacherIds.size;
+      const grid = document.getElementById('teacherGrid');
+      const total = grid.querySelectorAll('.teacher-card-wrapper').length;
+      document.getElementById('teacherSelectCount').textContent = `已選 ${count} 個`;
+      const delBtn = document.getElementById('teacherSelectDeleteBtn');
+      delBtn.disabled = count === 0;
+      delBtn.innerHTML = count > 0
+        ? `<i class="ph ph-trash"></i> 刪除 (${count})`
+        : `<i class="ph ph-trash"></i> 刪除`;
+      const allBtn = document.querySelector('#teacherSelectBar .bar-all');
+      if (allBtn) {
+        allBtn.innerHTML = (count === total && total > 0)
+          ? '<i class="ph ph-selection-slash"></i> 取消全選'
+          : '<i class="ph ph-selection-all"></i> 全選';
+      }
+    }
+
+    function deleteSelectedTeachers() {
+      const count = selectedTeacherIds.size;
+      if (count === 0) return;
+      if (!confirm(`確定要刪除選取的 ${count} 位師資嗎？此操作無法復原。`)) return;
+
+      const ids = new Set(selectedTeacherIds);
+      teachers = teachers.filter(t => !ids.has(t.id));
+      saveLocalSilently();
+      scheduleCloudSave();
+      toggleTeacherSelectMode();
+      renderTeacherGrid();
+    }
+    // ── 師資多選模式 end ──────────────────────────────────────────────
 
     // ── 師資字卡快速預覽 ──────────────────────────────────────────────
     let previewTeacherId = null;
