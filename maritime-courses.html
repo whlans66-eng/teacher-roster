@@ -907,6 +907,74 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
   }
   .method-card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.08); }
+
+  /* ── 多選模式 ── */
+  #courseSelectBtn {
+    padding: 8px 18px; border-radius: 20px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 600;
+    background: rgba(0,122,255,0.1); color: #007aff;
+    transition: all 0.2s;
+  }
+  #courseSelectBtn.active {
+    background: #007aff; color: #fff;
+  }
+  /* 選取模式下卡片禁止上浮 */
+  .select-mode .course-card { cursor: pointer; }
+  .select-mode .course-card:hover { transform: none; }
+  /* 選取圈圈 */
+  .course-select-circle {
+    position: absolute; top: 14px; left: 14px;
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid #c7c7cc;
+    background: #fff;
+    display: none;
+    align-items: center; justify-content: center;
+    font-size: 14px; color: #fff;
+    transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+    z-index: 5;
+  }
+  .select-mode .course-select-circle { display: flex; }
+  .course-card.selected .course-select-circle {
+    background: #007aff; border-color: #007aff;
+  }
+  .course-card.selected {
+    border-color: #007aff !important;
+    background: rgba(0,122,255,0.05) !important;
+    box-shadow: 0 0 0 2px rgba(0,122,255,0.25) !important;
+    transform: none !important;
+  }
+  /* 浮動操作列 */
+  #courseSelectBar {
+    display: none;
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: rgba(30,30,32,0.92);
+    backdrop-filter: blur(12px);
+    border-radius: 20px; padding: 12px 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    z-index: 8000;
+    align-items: center; gap: 14px;
+    white-space: nowrap;
+    animation: barSlideUp 0.22s cubic-bezier(0.4,0,0.2,1);
+  }
+  @keyframes barSlideUp {
+    from { transform: translateX(-50%) translateY(20px); opacity:0; }
+    to   { transform: translateX(-50%) translateY(0);    opacity:1; }
+  }
+  #courseSelectBar.show { display: flex; }
+  #courseSelectBar .bar-count {
+    color: #fff; font-size: 14px; font-weight: 600; min-width: 80px; text-align: center;
+  }
+  #courseSelectBar button {
+    padding: 8px 18px; border-radius: 12px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 600; transition: all 0.15s;
+  }
+  #courseSelectBar .bar-cancel { background: rgba(255,255,255,0.15); color: #fff; }
+  #courseSelectBar .bar-cancel:hover { background: rgba(255,255,255,0.25); }
+  #courseSelectBar .bar-all { background: rgba(255,255,255,0.15); color: #fff; }
+  #courseSelectBar .bar-all:hover { background: rgba(255,255,255,0.25); }
+  #courseSelectBar .bar-delete { background: #ff3b30; color: #fff; }
+  #courseSelectBar .bar-delete:hover { background: #e02e23; }
+  #courseSelectBar .bar-delete:disabled { background: rgba(255,59,48,0.35); cursor: not-allowed; }
   </style>
 
   <!-- Phosphor Icons -->
@@ -960,7 +1028,12 @@
     <!-- 1. 課程瀏覽頁面 -->
     <div id="maritimeViewPage">
       <div class="glass-panel">
-        <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 20px;">🔍 課程搜尋</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+          <h2 style="font-size: 20px; font-weight: 600; margin:0;">🔍 課程搜尋</h2>
+          <button id="courseSelectBtn" onclick="toggleCourseSelectMode()">
+            <i class="ph ph-check-square"></i> 選取
+          </button>
+        </div>
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
           <input type="text" id="maritimeSearchInput" placeholder="輸入課程名稱或關鍵字..." class="ios-input" oninput="displayMaritimeCourses()">
           <select id="maritimeCategoryFilter" class="ios-input" onchange="displayMaritimeCourses()">
@@ -980,6 +1053,16 @@
       </div>
 
       <div id="maritimeCourseResults" class="course-grid"></div>
+    </div>
+
+    <!-- 多選浮動操作列 -->
+    <div id="courseSelectBar">
+      <button class="bar-cancel" onclick="toggleCourseSelectMode()"><i class="ph ph-x"></i> 取消</button>
+      <span class="bar-count" id="courseSelectCount">已選 0 個</span>
+      <button class="bar-all" onclick="courseSelectAll()"><i class="ph ph-selection-all"></i> 全選</button>
+      <button class="bar-delete" id="courseSelectDeleteBtn" onclick="deleteSelectedCourses()" disabled>
+        <i class="ph ph-trash"></i> 刪除
+      </button>
     </div>
 
     <!-- 字卡快速預覽 Modal -->
@@ -1734,6 +1817,7 @@
 
         return `
           <div class="course-card" draggable="true" data-course-id="${c.id}" data-index="${index}" onclick="onCourseCardClick(event, ${c.id})">
+            <div class="course-select-circle"><i class="ph ph-check" style="font-size:13px;"></i></div>
             <button class="course-card-delete-btn" onclick="event.stopPropagation(); quickDeleteCourse(${c.id})" title="刪除字卡">
               <i class="ph ph-trash"></i>
             </button>
@@ -1796,14 +1880,28 @@
 
       container.innerHTML = html;
 
-      // 為所有卡片添加拖放事件監聽器
+      // 恢復選取狀態（重新渲染後保持已選項目）
+      if (courseSelectMode) {
+        container.classList.add('select-mode');
+        container.querySelectorAll('.course-card').forEach(card => {
+          const id = parseInt(card.dataset.courseId);
+          if (selectedCourseIds.has(id)) card.classList.add('selected');
+        });
+      }
+
+      // 為所有卡片添加拖放事件監聽器（選取模式下停用拖曳）
       const cards = container.querySelectorAll('.course-card');
       cards.forEach(card => {
-        card.addEventListener('dragstart', handleDragStart);
-        card.addEventListener('dragover', handleDragOver);
-        card.addEventListener('drop', handleDrop);
-        card.addEventListener('dragend', handleDragEnd);
-        card.addEventListener('dragleave', handleDragLeave);
+        if (!courseSelectMode) {
+          card.setAttribute('draggable', 'true');
+          card.addEventListener('dragstart', handleDragStart);
+          card.addEventListener('dragover', handleDragOver);
+          card.addEventListener('drop', handleDrop);
+          card.addEventListener('dragend', handleDragEnd);
+          card.addEventListener('dragleave', handleDragLeave);
+        } else {
+          card.setAttribute('draggable', 'false');
+        }
       });
     }
 
@@ -1814,9 +1912,105 @@
     // 當前預覽的課程 ID
     let previewCourseId = null;
 
+    // ── 多選模式 ──────────────────────────────────────────────────────
+    let courseSelectMode = false;
+    let selectedCourseIds = new Set();
+
+    function toggleCourseSelectMode() {
+      courseSelectMode = !courseSelectMode;
+      selectedCourseIds.clear();
+
+      const btn = document.getElementById('courseSelectBtn');
+      const bar = document.getElementById('courseSelectBar');
+      const grid = document.getElementById('maritimeCourseResults');
+
+      if (courseSelectMode) {
+        btn.classList.add('active');
+        btn.innerHTML = '<i class="ph ph-x"></i> 取消';
+        bar.classList.add('show');
+        grid.classList.add('select-mode');
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<i class="ph ph-check-square"></i> 選取';
+        bar.classList.remove('show');
+        grid.classList.remove('select-mode');
+        // 清除所有卡片選取樣式
+        grid.querySelectorAll('.course-card.selected').forEach(c => c.classList.remove('selected'));
+      }
+      updateCourseSelectBar();
+    }
+
+    function toggleCourseCardSelect(courseId) {
+      if (selectedCourseIds.has(courseId)) {
+        selectedCourseIds.delete(courseId);
+      } else {
+        selectedCourseIds.add(courseId);
+      }
+      const card = document.querySelector(`.course-card[data-course-id="${courseId}"]`);
+      if (card) card.classList.toggle('selected', selectedCourseIds.has(courseId));
+      updateCourseSelectBar();
+    }
+
+    function courseSelectAll() {
+      const grid = document.getElementById('maritimeCourseResults');
+      const allCards = grid.querySelectorAll('.course-card');
+      const allSelected = selectedCourseIds.size === allCards.length;
+
+      if (allSelected) {
+        // 取消全選
+        selectedCourseIds.clear();
+        allCards.forEach(c => c.classList.remove('selected'));
+      } else {
+        // 全選
+        allCards.forEach(c => {
+          const id = parseInt(c.dataset.courseId);
+          selectedCourseIds.add(id);
+          c.classList.add('selected');
+        });
+      }
+      updateCourseSelectBar();
+    }
+
+    function updateCourseSelectBar() {
+      const count = selectedCourseIds.size;
+      const grid = document.getElementById('maritimeCourseResults');
+      const total = grid.querySelectorAll('.course-card').length;
+      document.getElementById('courseSelectCount').textContent = `已選 ${count} 個`;
+      const delBtn = document.getElementById('courseSelectDeleteBtn');
+      delBtn.disabled = count === 0;
+      delBtn.innerHTML = count > 0
+        ? `<i class="ph ph-trash"></i> 刪除 (${count})`
+        : `<i class="ph ph-trash"></i> 刪除`;
+      // 全選按鈕文字切換
+      const allBtn = document.querySelector('#courseSelectBar .bar-all');
+      if (allBtn) {
+        allBtn.innerHTML = (count === total && total > 0)
+          ? '<i class="ph ph-selection-slash"></i> 取消全選'
+          : '<i class="ph ph-selection-all"></i> 全選';
+      }
+    }
+
+    async function deleteSelectedCourses() {
+      const count = selectedCourseIds.size;
+      if (count === 0) return;
+      if (!confirm(`確定要刪除選取的 ${count} 個課程嗎？此操作無法復原。`)) return;
+
+      const ids = new Set(selectedCourseIds);
+      maritimeCourses = maritimeCourses.filter(c => !ids.has(c.id));
+      await saveMaritimeCourses();
+      showMaritimeMessage(`✓ 已刪除 ${count} 個字卡`, 'success');
+      toggleCourseSelectMode(); // 退出選取模式
+      displayMaritimeCourses();
+      displayManageMaritimeCourses();
+    }
+    // ── 多選模式 end ──────────────────────────────────────────────────
+
     // 處理卡片點擊（區分拖動和普通點擊）
     function onCourseCardClick(event, courseId) {
-      if (!isDragging) {
+      if (isDragging) return;
+      if (courseSelectMode) {
+        toggleCourseCardSelect(courseId);
+      } else {
         showCoursePreview(courseId);
       }
     }
