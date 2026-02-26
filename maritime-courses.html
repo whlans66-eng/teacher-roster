@@ -105,12 +105,87 @@
     border: 1px solid rgba(0, 0, 0, 0.04); border-radius: 20px; padding: 24px;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    position: relative;
   }
   .course-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
     border-color: rgba(0, 122, 255, 0.1);
   }
+  .course-card-delete-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 59, 48, 0.1);
+    color: #ff3b30;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+    z-index: 2;
+  }
+  .course-card:hover .course-card-delete-btn {
+    opacity: 1;
+  }
+  .course-card-delete-btn:hover {
+    background: rgba(255, 59, 48, 0.2) !important;
+  }
+  /* 字卡預覽 Modal */
+  #coursePreviewModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  #coursePreviewModal.open {
+    display: flex;
+  }
+  #coursePreviewModal .preview-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 32px;
+    max-width: 520px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 8px 16px rgba(0,0,0,0.08);
+    position: relative;
+    animation: previewSlideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes previewSlideUp {
+    from { transform: translateY(24px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  #coursePreviewModal .preview-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.06);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #666;
+    transition: background 0.2s;
+  }
+  #coursePreviewModal .preview-close-btn:hover { background: rgba(0,0,0,0.12); }
   .course-card.dragging {
     opacity: 0.5;
     cursor: grabbing;
@@ -907,6 +982,24 @@
       <div id="maritimeCourseResults" class="course-grid"></div>
     </div>
 
+    <!-- 字卡快速預覽 Modal -->
+    <div id="coursePreviewModal" onclick="if(event.target===this)closeCoursePreview()">
+      <div class="preview-card">
+        <button class="preview-close-btn" onclick="closeCoursePreview()"><i class="ph ph-x"></i></button>
+        <div id="coursePreviewContent"></div>
+        <div style="display:flex; gap:10px; margin-top:24px;">
+          <button id="previewViewFullBtn" onclick="closeCoursePreviewAndView()"
+            style="flex:1; padding:12px; border-radius:12px; border:1.5px solid #007aff; color:#007aff; background:transparent; font-size:14px; font-weight:600; cursor:pointer;">
+            <i class="ph ph-arrow-square-out"></i> 查看完整資料
+          </button>
+          <button id="previewDeleteBtn" onclick="deleteCourseFromPreview()"
+            style="flex:1; padding:12px; border-radius:12px; border:none; background:#ff3b30; color:#fff; font-size:14px; font-weight:600; cursor:pointer;">
+            <i class="ph ph-trash"></i> 刪除字卡
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 課程詳情檢視頁面 -->
     <div id="courseDetailView" class="hidden">
       <div style="margin-bottom: 24px;">
@@ -1641,6 +1734,9 @@
 
         return `
           <div class="course-card" draggable="true" data-course-id="${c.id}" data-index="${index}" onclick="onCourseCardClick(event, ${c.id})">
+            <button class="course-card-delete-btn" onclick="event.stopPropagation(); quickDeleteCourse(${c.id})" title="刪除字卡">
+              <i class="ph ph-trash"></i>
+            </button>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span class="drag-handle" onmousedown="event.stopPropagation()">
@@ -1715,10 +1811,89 @@
     let draggedCard = null;
     let isDragging = false;
 
+    // 當前預覽的課程 ID
+    let previewCourseId = null;
+
     // 處理卡片點擊（區分拖動和普通點擊）
     function onCourseCardClick(event, courseId) {
       if (!isDragging) {
-        viewCourseDetail(courseId);
+        showCoursePreview(courseId);
+      }
+    }
+
+    // 顯示字卡預覽 Modal
+    function showCoursePreview(courseId) {
+      const course = maritimeCourses.find(c => c.id === courseId);
+      if (!course) return;
+      previewCourseId = courseId;
+
+      const categoryName = maritimeCategoryNames[course.category] || course.category;
+      let badgeColor = '#007aff';
+      if (course.method === '線上課程') badgeColor = '#34c759';
+      if (course.method === '混合課程') badgeColor = '#ff9500';
+
+      const keywordsHtml = (course.keywords || []).length > 0
+        ? (course.keywords || []).map(k =>
+            `<span style="font-size:12px; padding:4px 12px; background:rgba(0,0,0,0.06); color:#555; border-radius:8px;">#${k}</span>`
+          ).join('')
+        : '<span style="color:#aaa; font-size:13px;">無關鍵字</span>';
+
+      document.getElementById('coursePreviewContent').innerHTML = `
+        <div style="margin-bottom:18px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="background:${badgeColor}; color:#fff; padding:5px 12px; border-radius:10px; font-size:12px; font-weight:600;">${course.method || '未設定'}</span>
+          <span style="background:rgba(139,92,246,0.12); color:#7c3aed; padding:5px 12px; border-radius:10px; font-size:12px; font-weight:600;">${categoryName}</span>
+        </div>
+        <h2 style="font-size:20px; font-weight:700; color:#1d1d1f; margin-bottom:12px; line-height:1.4;">${course.name}</h2>
+        <p style="font-size:14px; color:#555; line-height:1.7; margin-bottom:18px;">${course.description || '（無描述）'}</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">${keywordsHtml}</div>
+      `;
+
+      const modal = document.getElementById('coursePreviewModal');
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // 關閉預覽 Modal
+    function closeCoursePreview() {
+      const modal = document.getElementById('coursePreviewModal');
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+      previewCourseId = null;
+    }
+
+    // 關閉預覽並前往完整詳情頁
+    function closeCoursePreviewAndView() {
+      const id = previewCourseId;
+      closeCoursePreview();
+      if (id !== null) viewCourseDetail(id);
+    }
+
+    // 從預覽 Modal 刪除課程
+    async function deleteCourseFromPreview() {
+      if (previewCourseId === null) return;
+      const course = maritimeCourses.find(c => c.id === previewCourseId);
+      const name = course ? course.name : '此課程';
+      if (confirm(`確定要刪除「${name}」嗎？此操作無法復原。`)) {
+        const id = previewCourseId;
+        closeCoursePreview();
+        maritimeCourses = maritimeCourses.filter(c => c.id !== id);
+        await saveMaritimeCourses();
+        showMaritimeMessage('✓ 字卡已刪除', 'success');
+        displayMaritimeCourses();
+        displayManageMaritimeCourses();
+      }
+    }
+
+    // 從卡片快速刪除（不開 Modal，直接確認）
+    async function quickDeleteCourse(courseId) {
+      const course = maritimeCourses.find(c => c.id === courseId);
+      const name = course ? course.name : '此課程';
+      if (confirm(`確定要刪除「${name}」嗎？此操作無法復原。`)) {
+        maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
+        await saveMaritimeCourses();
+        showMaritimeMessage('✓ 字卡已刪除', 'success');
+        displayMaritimeCourses();
+        displayManageMaritimeCourses();
       }
     }
 
@@ -2783,6 +2958,11 @@
         .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
         .replace(/\n/g, '<br>');
     }
+
+    // Escape 鍵關閉預覽 Modal
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeCoursePreview();
+    });
 
     window.addEventListener('DOMContentLoaded', initMaritimeCourseSystem);
   </script>
