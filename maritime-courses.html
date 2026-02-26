@@ -1666,7 +1666,10 @@
         });
       }
 
-      // 智慧匹配排序
+      // 預設排序：最新新增排最前面
+      filteredCourses.sort((a, b) => b.id - a.id);
+
+      // 智慧匹配排序（會覆蓋預設排序）
       if (smartMatchEnabled && (smartRank || smartCategory)) {
         const searchKeywords = search ? search.split(/\s+/).filter(k => k) : [];
         const scored = filteredCourses.map(course => {
@@ -2027,7 +2030,7 @@
         const matchKeywords = Array.isArray(course.keywords)
           ? course.keywords.some(keyword => typeof keyword === 'string' && keyword.toLowerCase().includes(search)) : false;
         return matchName || matchDescription || matchKeywords;
-      });
+      }).sort((a, b) => b.id - a.id);
 
       if (filtered.length === 0) {
         container.innerHTML = '<div style="text-align: center; padding: 32px 0; color: #6e6e73;">沒有找到課程</div>';
