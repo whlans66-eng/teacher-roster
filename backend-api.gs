@@ -301,7 +301,7 @@ function doPost(e) {
 
     // Save (整表寫入)
     if (action === 'save') {
-      _requireRole(session, ['admin', 'teacher']);
+      _requireRole(session, ['admin']);
       const table = p.table || (bodyObj && bodyObj.table);
       const dataRaw = p.data || (bodyObj && bodyObj.data);
 
@@ -335,7 +335,7 @@ function doPost(e) {
 
     // Update (單筆更新)
     if (action === 'update') {
-      _requireRole(session, ['admin', 'teacher']);
+      _requireRole(session, ['admin']);
       const table = p.table || (bodyObj && bodyObj.table);
       const id = p.id || (bodyObj && bodyObj.id);
       const dataRaw = p.data || (bodyObj && bodyObj.data);
@@ -351,7 +351,7 @@ function doPost(e) {
 
     // Upload (檔案上傳)
     if (action === 'uploadfile') {
-      _requireRole(session, ['admin', 'teacher']);
+      _requireRole(session, ['admin']);
       const result = _handleUpload(e, bodyObj);
       return _json({ ok: true, ...result });
     }

@@ -303,8 +303,9 @@
   <!-- Authentication -->
   <script src="js/auth.js"></script>
   <script>
-    // Protect this page - admin only
-    protectPage(['admin']);
+    // Allow admin (full access) and teacher (read-only preview)
+    const _authData = protectPage(['admin', 'teacher']);
+    const _isReadOnly = _authData && _authData.role === 'teacher';
   </script>
 
   <!-- 跨頁導覽列 -->
@@ -1539,6 +1540,26 @@
     document.addEventListener('DOMContentLoaded', async () => {
       setupApiStatusUI();
       handleApiStatusCheck(false);
+
+      // 唯讀模式：teacher 帳號只能預覽，不能修改
+      if (_isReadOnly) {
+        window.currentMode = 'display';
+        document.getElementById('addTeacherBtn').classList.add('hidden');
+        document.getElementById('editModeBtn').classList.add('hidden');
+        document.getElementById('displayModeBtn').classList.add('hidden');
+        const selectBtn = document.getElementById('teacherSelectBtn');
+        if (selectBtn) selectBtn.classList.add('hidden');
+        // 覆寫 switchMode，阻止 teacher 切換至編輯模式
+        window.switchMode = function(mode) {
+          if (mode === 'edit') return;
+          window.currentMode = mode;
+          renderTeacherGrid();
+        };
+        // 顯示唯讀提示
+        const desc = document.getElementById('modeDescription');
+        desc.className = 'mb-6 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm';
+        desc.innerHTML = '<i class="ph ph-eye" style="font-size: 16px;"></i><span>預覽模式：您具有師資管理的唯讀檢視權限，無法新增或修改資料</span>';
+      }
 
       renderTeacherGrid();
       setupLocationSelection();
