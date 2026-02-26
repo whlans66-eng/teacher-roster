@@ -291,68 +291,8 @@
     #teacherSelectBar .bar-delete:hover { background:#e02e23; }
     #teacherSelectBar .bar-delete:disabled { background:rgba(255,59,48,0.35); cursor:not-allowed; }
 
-    /* 師資字卡快速預覽 Modal */
-    #teacherPreviewModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 9000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      backdrop-filter: blur(4px);
-    }
-    #teacherPreviewModal.open {
-      display: flex;
-    }
-    #teacherPreviewModal .t-preview-card {
-      background: #fff;
-      border-radius: 24px;
-      padding: 32px;
-      max-width: 480px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 8px 16px rgba(0,0,0,0.08);
-      position: relative;
-      animation: tPreviewSlideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    @keyframes tPreviewSlideUp {
-      from { transform: translateY(24px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
-    }
-    #teacherPreviewModal .t-preview-close-btn {
-      position: absolute;
-      top: 16px; right: 16px;
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.06);
-      border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; color: #666;
-      transition: background 0.2s;
-    }
-    #teacherPreviewModal .t-preview-close-btn:hover { background: rgba(0,0,0,0.12); }
-
-    /* 師資卡片懸停刪除按鈕 */
+    /* 師資卡片包裝 (多選圓圈定位用) */
     .teacher-card-wrapper { position: relative; }
-    .teacher-card-del-btn {
-      position: absolute;
-      top: 12px; right: 12px;
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      background: rgba(255,59,48,0.12);
-      color: #ff3b30;
-      border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
-      opacity: 0;
-      transition: opacity 0.2s, background 0.2s;
-      z-index: 10;
-    }
-    .teacher-card-wrapper:hover .teacher-card-del-btn { opacity: 1; }
-    .teacher-card-del-btn:hover { background: rgba(255,59,48,0.22) !important; }
   </style>
 
   <!-- API 層：與後端通訊 -->
@@ -487,24 +427,6 @@
       <button class="bar-delete" id="teacherSelectDeleteBtn" onclick="deleteSelectedTeachers()" disabled>
         <i class="ph ph-trash"></i> 刪除
       </button>
-    </div>
-
-    <!-- 師資字卡快速預覽 Modal -->
-    <div id="teacherPreviewModal" onclick="if(event.target===this)closeTeacherPreview()">
-      <div class="t-preview-card">
-        <button class="t-preview-close-btn" onclick="closeTeacherPreview()"><i class="ph ph-x"></i></button>
-        <div id="teacherPreviewContent"></div>
-        <div style="display:flex; gap:10px; margin-top:24px;">
-          <button id="tPreviewViewFullBtn" onclick="closeTeacherPreviewAndView()"
-            style="flex:1; padding:12px; border-radius:12px; border:1.5px solid #007aff; color:#007aff; background:transparent; font-size:14px; font-weight:600; cursor:pointer;">
-            <i class="ph ph-arrow-square-out"></i> 查看完整資料
-          </button>
-          <button id="tPreviewDeleteBtn" onclick="deleteTeacherFromPreview()"
-            style="flex:1; padding:12px; border-radius:12px; border:none; background:#ff3b30; color:#fff; font-size:14px; font-weight:600; cursor:pointer;">
-            <i class="ph ph-trash"></i> 刪除師資
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- 統計頁 -->
@@ -1613,11 +1535,6 @@
       return null;
     }
 
-    // Escape 鍵關閉師資預覽 Modal
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeTeacherPreview();
-    });
-
     /* ---------- 啟動 ---------- */
     document.addEventListener('DOMContentLoaded', async () => {
       setupApiStatusUI();
@@ -1812,13 +1729,10 @@
           }
           card.onclick = () => {
             if (teacherSelectMode) { toggleTeacherCardSelect(teacher.id); }
-            else { showTeacherPreview(teacher.id); }
+            else { viewTeacherDetail(teacher.id); }
           };
           card.innerHTML = `
             <div class="teacher-select-circle"><i class="ph ph-check" style="font-size:13px;"></i></div>
-            <button class="teacher-card-del-btn" onclick="event.stopPropagation(); quickDeleteTeacher(${teacher.id})" title="刪除師資">
-              <i class="ph ph-trash"></i>
-            </button>
             <div class="relative p-8 bg-gradient-to-br ${bgGradient} text-center">
               <div class="absolute top-3 left-3 flex flex-col space-y-1">
                 ${teacher.teacherCategory==='new' ? `
@@ -1995,92 +1909,6 @@
       renderTeacherGrid();
     }
     // ── 師資多選模式 end ──────────────────────────────────────────────
-
-    // ── 師資字卡快速預覽 ──────────────────────────────────────────────
-    let previewTeacherId = null;
-
-    function showTeacherPreview(teacherId) {
-      const teacher = teachers.find(t => t.id === teacherId);
-      if (!teacher) return;
-      previewTeacherId = teacherId;
-
-      const isInternal = teacher.teacherType === 'internal';
-      const avatarGradient = isInternal
-        ? 'linear-gradient(135deg, #60a5fa, #6366f1)'
-        : 'linear-gradient(135deg, #c084fc, #f472b6)';
-      const badgeBg = isInternal ? '#3b82f6' : '#a855f7';
-      const categoryTitle = isInternal ? '內部講師' : '外聘講師';
-
-      const tagsHtml = (teacher.tags || []).length > 0
-        ? (teacher.tags || []).map(tag =>
-            `<span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;">${tag}</span>`
-          ).join('')
-        : '';
-
-      const subjectsHtml = (teacher.subjects || []).length > 0
-        ? `<div style="font-size:13px;color:#555;margin-top:4px;">${(teacher.subjects || []).join('、')}</div>`
-        : '';
-
-      document.getElementById('teacherPreviewContent').innerHTML = `
-        <div style="text-align:center; margin-bottom:20px;">
-          <div style="width:72px;height:72px;border-radius:50%;background:${avatarGradient};display:flex;align-items:center;justify-content:center;margin:0 auto 12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
-            ${teacher.photo
-              ? `<img src="${teacher.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-              : `<span style="font-size:26px;font-weight:700;color:#fff;">${initial(teacher.name)}</span>`}
-          </div>
-          <div style="display:inline-block;background:${badgeBg};color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:8px;">${categoryTitle}</div>
-          <h2 style="font-size:22px;font-weight:700;color:#1d1d1f;margin:0 0 4px;">${teacher.name}</h2>
-          ${teacher.rank ? `<div style="font-size:14px;color:#6366f1;font-weight:600;">${teacher.rank}</div>` : ''}
-          <div style="font-size:13px;color:${teacher.workLocation==='onboard'?'#ea580c':'#16a34a'};font-weight:500;margin-top:4px;">
-            ${teacher.workLocation==='onboard'?'<i class="ph ph-boat"></i> 海上工作':'<i class="ph ph-building"></i> 陸地工作'}
-          </div>
-          ${teacher.email ? `<div style="font-size:13px;color:#666;margin-top:4px;">${teacher.email}</div>` : ''}
-        </div>
-        ${subjectsHtml ? `<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">講授課程</div>${subjectsHtml}</div>` : ''}
-        ${tagsHtml ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">${tagsHtml}</div>` : ''}
-      `;
-
-      document.getElementById('teacherPreviewModal').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeTeacherPreview() {
-      document.getElementById('teacherPreviewModal').classList.remove('open');
-      document.body.style.overflow = '';
-      previewTeacherId = null;
-    }
-
-    function closeTeacherPreviewAndView() {
-      const id = previewTeacherId;
-      closeTeacherPreview();
-      if (id !== null) viewTeacherDetail(id);
-    }
-
-    function deleteTeacherFromPreview() {
-      if (previewTeacherId === null) return;
-      const teacher = teachers.find(t => t.id === previewTeacherId);
-      const name = teacher ? teacher.name : '此師資';
-      if (confirm(`確定要刪除「${name}」嗎？此操作無法復原。`)) {
-        const id = previewTeacherId;
-        closeTeacherPreview();
-        teachers = teachers.filter(t => t.id !== id);
-        saveLocalSilently();
-        scheduleCloudSave();
-        renderTeacherGrid();
-      }
-    }
-
-    function quickDeleteTeacher(teacherId) {
-      const teacher = teachers.find(t => t.id === teacherId);
-      const name = teacher ? teacher.name : '此師資';
-      if (confirm(`確定要刪除「${name}」嗎？此操作無法復原。`)) {
-        teachers = teachers.filter(t => t.id !== teacherId);
-        saveLocalSilently();
-        scheduleCloudSave();
-        renderTeacherGrid();
-      }
-    }
-    // ── 師資字卡快速預覽 end ──────────────────────────────────────────
 
     function viewTeacherDetail(teacherId){
       const teacher = teachers.find(t=>t.id===teacherId); if(!teacher) return;
