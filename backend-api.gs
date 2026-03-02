@@ -335,6 +335,46 @@ function doPost(e) {
       return _json({ ok: true, table: table, count: data.length });
     }
 
+    // Batch Save (多表同時寫入，減少 HTTP 往返次數)
+    if (action === 'batchsave') {
+      _requireRole(session, ['admin', 'teacher']);
+      const tablesRaw = p.tables || (bodyObj && bodyObj.tables);
+      if (!tablesRaw) return _json({ ok: false, error: 'Missing tables' });
+
+      const tablesObj = typeof tablesRaw === 'string' ? JSON.parse(tablesRaw) : tablesRaw;
+      const results = {};
+
+      for (const [table, dataRaw] of Object.entries(tablesObj)) {
+        if (!SHEETS_CONFIG[table]) continue;
+        if (table === 'users') continue;
+        if (['teachers', 'maritimeCourses'].includes(table) && session.role === 'teacher') continue;
+
+        let data = _asArray(dataRaw);
+
+        if (table === 'teachers') {
+          data = data.map(t => ({
+            ...t,
+            photoUrl: t.photoUrl || t.photo || '',
+            experiences: _asArray(t?.experiences),
+            certificates: _asArray(t?.certificates),
+            subjects: _asArray(t?.subjects),
+            tags: _asArray(t?.tags)
+          }));
+        } else if (table === 'maritimeCourses') {
+          data = data.map(c => ({ ...c, keywords: _asArray(c?.keywords), targetCategories: _asArray(c?.targetCategories), targetRanks: _asArray(c?.targetRanks) }));
+        } else if (table === 'surveyTemplates') {
+          data = data.map(t => ({ ...t, questions: _asArray(t?.questions) }));
+        } else if (table === 'surveyResponses') {
+          data = data.map(r => ({ ...r, answers: _asArray(r?.answers) }));
+        }
+
+        _writeTable(table, data);
+        results[table] = { count: data.length };
+      }
+
+      return _json({ ok: true, results });
+    }
+
     // Update (單筆更新)
     if (action === 'update') {
       _requireRole(session, ['admin', 'teacher']);
