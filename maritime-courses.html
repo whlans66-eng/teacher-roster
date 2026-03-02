@@ -1443,10 +1443,9 @@
         </div>
 
         <div style="display: flex; gap: 12px;">
-          <button type="button" onclick="deleteMaritimeCourseFromModal()" class="danger-btn">刪除課程</button>
-          <div style="flex: 1;"></div>
           <button type="button" onclick="closeMaritimeCourseModal()" class="secondary-btn">取消</button>
-          <button type="submit" class="primary-btn">儲存變更</button>
+          <button type="submit" class="primary-btn" style="flex:1;">儲存變更</button>
+          <button type="button" onclick="deleteMaritimeCourseFromModal()" class="danger-btn" style="flex-shrink:0;padding:12px 16px;" title="刪除課程"><i class="ph ph-trash"></i></button>
         </div>
       </form>
     </div>
