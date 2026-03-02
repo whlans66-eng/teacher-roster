@@ -161,6 +161,23 @@ class TeacherRosterAPI {
   }
 
   /**
+   * 批次儲存多個表格（單次 HTTP 請求，大幅減少等待時間）
+   * @param {Object} tables - { tableName: data[] } 格式
+   */
+  async batchSave(tables) {
+    try {
+      const response = await this._post({
+        action: 'batchsave',
+        tables
+      });
+      return response;
+    } catch (error) {
+      console.error('批次儲存失敗:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 上傳檔案到 Google Drive
    * @param {File|Blob} file - 檔案物件
    * @param {string} fileName - 檔案名稱（可選）
@@ -516,10 +533,8 @@ class DataSyncManager {
       const courseAssignments = loadArrayFromStorage('courseAssignments', normalizeCourseAssignment);
       const maritimeCourses = loadArrayFromStorage('maritimeCourses');
 
-      // 依序儲存三個表格
-      await this.api.save('teachers', teachers);
-      await this.api.save('courseAssignments', courseAssignments);
-      await this.api.save('maritimeCourses', maritimeCourses);
+      // 批次儲存三個表格（單次請求，比依序儲存快 3 倍）
+      await this.api.batchSave({ teachers, courseAssignments, maritimeCourses });
 
       // 更新最後同步時間
       localStorage.setItem('lastSyncTime', new Date().toISOString());
@@ -574,15 +589,12 @@ class DataSyncManager {
 
       await this.api.save(tableName, data);
 
-      // 更新版本指紋
-      try {
-        const newVersions = await this.api.getVersions();
-        localStorage.setItem('dataVersions', JSON.stringify(newVersions));
-      } catch (e) {
-        console.warn('⚠️ 更新版本指紋失敗:', e);
-      }
-
       localStorage.setItem('lastSyncTime', new Date().toISOString());
+
+      // 非同步更新版本指紋（不阻塞回傳）
+      this.api.getVersions().then(newVersions => {
+        localStorage.setItem('dataVersions', JSON.stringify(newVersions));
+      }).catch(e => console.warn('⚠️ 更新版本指紋失敗:', e));
       if (this.api.debug) {
         console.log(`✅ ${tableName} 儲存完成`);
       }
@@ -707,22 +719,21 @@ class DataSyncManager {
         }
       }
 
-      // 儲存資料
-      await this.api.save('teachers', localTeachers);
-      await this.api.save('courseAssignments', localCourses);
-      await this.api.save('maritimeCourses', localMaritime);
-
-      // 更新儲存的版本指紋
-      try {
-        const newVersions = await this.api.getVersions();
-        localStorage.setItem('dataVersions', JSON.stringify(newVersions));
-      } catch (versionError) {
-        console.warn('⚠️ 更新版本指紋失敗:', versionError);
-      }
+      // 批次儲存資料（單次請求，比依序儲存快 3 倍）
+      await this.api.batchSave({
+        teachers: localTeachers,
+        courseAssignments: localCourses,
+        maritimeCourses: localMaritime
+      });
 
       // 清除修改標記
       localStorage.removeItem('hasLocalChanges');
       localStorage.setItem('lastSyncTime', new Date().toISOString());
+
+      // 非同步更新版本指紋（不阻塞回傳）
+      this.api.getVersions().then(newVersions => {
+        localStorage.setItem('dataVersions', JSON.stringify(newVersions));
+      }).catch(e => console.warn('⚠️ 更新版本指紋失敗:', e));
 
       if (this.api.debug) {
         console.log('✅ 資料已儲存完成');
