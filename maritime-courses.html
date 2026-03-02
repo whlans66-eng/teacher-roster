@@ -2197,6 +2197,12 @@
                 `}
               </div>
             </div>
+
+            <!-- 刪除課程（放置於左側底部，避免誤觸） -->
+            <button onclick="deleteCourseFromDetail(${course.id})" class="action-btn action-btn-danger" style="align-self:flex-start;">
+              <i class="ph ph-trash"></i>
+              刪除課程
+            </button>
           </div>
 
           <!-- 右側側邊欄 -->
@@ -2347,11 +2353,7 @@
             <!-- 操作按鈕組 -->
             ${_isReadOnly ? '' : `
             <div class="sidebar-actions">
-              <button onclick="deleteCourseFromDetail(${course.id})" class="action-btn action-btn-danger" style="flex-shrink:0;">
-                <i class="ph ph-trash"></i>
-                刪除
-              </button>
-              <button onclick="editMaritimeCourse(${course.id})" class="action-btn action-btn-primary" style="margin-left:auto;">
+              <button onclick="editMaritimeCourse(${course.id})" class="action-btn action-btn-primary" style="width:100%;">
                 <i class="ph ph-pencil-simple"></i>
                 編輯課程資料
               </button>
