@@ -912,7 +912,10 @@
 </head>
 <body>
   <script src="js/auth.js"></script>
-  <script>protectPage(['admin', 'teacher']);</script>
+  <script>
+    const _authData = protectPage(['admin', 'teacher']);
+    const _isReadOnly = _authData && _authData.role === 'teacher';
+  </script>
 
   <!-- 跨頁導覽列 -->
   <nav style="background: #ffffff; border-bottom: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.04); position: sticky; top: 0; z-index: 50;">
@@ -1505,6 +1508,18 @@
 
     // 初始化
     async function initMaritimeCourseSystem() {
+      // 唯讀模式：teacher 帳號只能預覽，不能編輯
+      if (_isReadOnly) {
+        document.getElementById('maritimeEditTab').style.display = 'none';
+        const courseSelectBtn = document.getElementById('courseSelectBtn');
+        if (courseSelectBtn) courseSelectBtn.style.display = 'none';
+        const origSwitch = switchMaritimeTab;
+        window.switchMaritimeTab = function(tab) {
+          if (tab === 'edit') return;
+          origSwitch(tab);
+        };
+      }
+
       // 先用本地資料
       maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
       displayMaritimeCourses();
@@ -2047,7 +2062,7 @@
               <span class="lang-badge ${c.lang === 'en' ? 'lang-badge-en' : 'lang-badge-zh'}">${c.lang === 'en' ? 'EN' : '中'}</span>${maritimeCategoryNames[c.category] || c.category}
             </div>
           </div>
-          <button onclick="editMaritimeCourse(${c.id})" class="secondary-btn" style="padding:6px 16px; font-size:13px;">編輯</button>
+          ${_isReadOnly ? '' : `<button onclick="editMaritimeCourse(${c.id})" class="secondary-btn" style="padding:6px 16px; font-size:13px;">編輯</button>`}
         </div>
       `).join('');
     }
@@ -2324,12 +2339,13 @@
                     <i class="ph ph-users"></i>
                   </div>
                   <p>尚未設定特定對象</p>
-                  <button onclick="editMaritimeCourse(${course.id})" class="empty-state-btn">前往設定</button>
+                  ${_isReadOnly ? '' : `<button onclick="editMaritimeCourse(${course.id})" class="empty-state-btn">前往設定</button>`}
                 </div>
               `}
             </div>
 
             <!-- 操作按鈕組 -->
+            ${_isReadOnly ? '' : `
             <div class="sidebar-actions">
               <button onclick="editMaritimeCourse(${course.id})" class="action-btn action-btn-primary" style="flex:1;">
                 <i class="ph ph-pencil-simple"></i>
@@ -2339,6 +2355,7 @@
                 <i class="ph ph-trash"></i>
               </button>
             </div>
+            `}
           </div>
         </div>
       `;

@@ -301,13 +301,15 @@ function doPost(e) {
 
     // Save (整表寫入)
     if (action === 'save') {
-      _requireRole(session, ['admin']);
+      _requireRole(session, ['admin', 'teacher']);
       const table = p.table || (bodyObj && bodyObj.table);
       const dataRaw = p.data || (bodyObj && bodyObj.data);
 
       if (!table || !SHEETS_CONFIG[table]) return _json({ ok: false, error: 'Invalid table' });
       // 禁止透過 API 覆寫 users 表
       if (table === 'users') return _json({ ok: false, error: 'Access denied' });
+      // teacher 角色無法修改 teachers / maritimeCourses 資料表（唯讀預覽）
+      if (['teachers', 'maritimeCourses'].includes(table) && session.role === 'teacher') return _json({ ok: false, error: 'Access denied' });
 
       let data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
       data = _asArray(data);
@@ -335,13 +337,15 @@ function doPost(e) {
 
     // Update (單筆更新)
     if (action === 'update') {
-      _requireRole(session, ['admin']);
+      _requireRole(session, ['admin', 'teacher']);
       const table = p.table || (bodyObj && bodyObj.table);
       const id = p.id || (bodyObj && bodyObj.id);
       const dataRaw = p.data || (bodyObj && bodyObj.data);
 
       if (!table || !SHEETS_CONFIG[table]) return _json({ ok: false, error: 'Invalid table' });
       if (table === 'users') return _json({ ok: false, error: 'Access denied' });
+      // teacher 角色無法修改 teachers / maritimeCourses 資料表（唯讀預覽）
+      if (['teachers', 'maritimeCourses'].includes(table) && session.role === 'teacher') return _json({ ok: false, error: 'Access denied' });
       if (!id) return _json({ ok: false, error: 'Missing ID' });
 
       const data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
