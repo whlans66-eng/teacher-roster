@@ -716,7 +716,8 @@
   /* 操作按鈕 */
   .sidebar-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
     gap: 12px;
     position: sticky;
     bottom: 24px;
@@ -2331,13 +2332,12 @@
 
             <!-- 操作按鈕組 -->
             <div class="sidebar-actions">
-              <button onclick="editMaritimeCourse(${course.id})" class="action-btn action-btn-primary">
+              <button onclick="editMaritimeCourse(${course.id})" class="action-btn action-btn-primary" style="flex:1;">
                 <i class="ph ph-pencil-simple"></i>
                 編輯課程資料
               </button>
-              <button onclick="deleteCourseFromDetail(${course.id})" class="action-btn action-btn-danger">
+              <button onclick="deleteCourseFromDetail(${course.id})" class="action-btn action-btn-danger" style="flex-shrink:0;padding:16px;" title="刪除課程">
                 <i class="ph ph-trash"></i>
-                刪除課程
               </button>
             </div>
           </div>
