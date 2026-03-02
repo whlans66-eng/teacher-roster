@@ -591,7 +591,10 @@ class DataSyncManager {
 
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
-      // 非同步更新版本指紋（不阻塞回傳）
+      // 立刻清除舊版本指紋，避免下次儲存時誤報衝突
+      localStorage.removeItem('dataVersions');
+
+      // 非同步取得最新版本指紋（不阻塞回傳）
       this.api.getVersions().then(newVersions => {
         localStorage.setItem('dataVersions', JSON.stringify(newVersions));
       }).catch(e => console.warn('⚠️ 更新版本指紋失敗:', e));
@@ -730,7 +733,11 @@ class DataSyncManager {
       localStorage.removeItem('hasLocalChanges');
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
-      // 非同步更新版本指紋（不阻塞回傳）
+      // 立刻清除舊版本指紋，避免下次儲存時誤報衝突
+      // （後端資料剛被更新，舊指紋已失效）
+      localStorage.removeItem('dataVersions');
+
+      // 非同步取得最新版本指紋（不阻塞回傳）
       this.api.getVersions().then(newVersions => {
         localStorage.setItem('dataVersions', JSON.stringify(newVersions));
       }).catch(e => console.warn('⚠️ 更新版本指紋失敗:', e));
