@@ -2354,14 +2354,16 @@
 
     // 從詳情頁面刪除課程
     async function deleteCourseFromDetail(courseId) {
-      if (confirm('確定要刪除這個課程嗎？此操作無法復原。')) {
+      const course = maritimeCourses.find(c => c.id === courseId);
+      const courseName = course ? course.name : '';
+      showDeleteConfirmModal(courseName, async () => {
         maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
         await saveMaritimeCourses();
         showMaritimeMessage('✓ 課程已刪除', 'success');
         backToCourseList();
         displayMaritimeCourses();
         displayManageMaritimeCourses();
-      }
+      });
     }
 
     // 取得分類圖示
@@ -2523,14 +2525,16 @@
     }
 
     async function deleteMaritimeCourseFromModal() {
-      if (confirm('確定要刪除這個課程嗎？')) {
+      const course = maritimeCourses.find(x => x.id === editingMaritimeCourseId);
+      const courseName = course ? course.name : '';
+      showDeleteConfirmModal(courseName, async () => {
         maritimeCourses = maritimeCourses.filter(x => x.id !== editingMaritimeCourseId);
         await saveMaritimeCourses();
         showMaritimeMessage('✓ 課程已刪除', 'success');
         closeMaritimeCourseModal();
         displayMaritimeCourses();
         displayManageMaritimeCourses();
-      }
+      });
     }
 
     // 儲存（含衝突檢查）
@@ -2985,6 +2989,44 @@
     }
 
     window.addEventListener('DOMContentLoaded', initMaritimeCourseSystem);
+
+    // ========== 刪除確認 Modal ==========
+    let _deleteConfirmCallback = null;
+
+    function showDeleteConfirmModal(courseName, onConfirm) {
+      _deleteConfirmCallback = onConfirm;
+      const nameEl = document.getElementById('deleteConfirmCourseName');
+      nameEl.textContent = courseName ? `「${courseName}」` : '';
+      document.getElementById('deleteConfirmModal').classList.add('show');
+    }
+
+    function closeDeleteConfirmModal() {
+      document.getElementById('deleteConfirmModal').classList.remove('show');
+      _deleteConfirmCallback = null;
+    }
+
+    function executeDeleteConfirm() {
+      if (typeof _deleteConfirmCallback === 'function') {
+        _deleteConfirmCallback();
+      }
+      closeDeleteConfirmModal();
+    }
   </script>
+
+  <!-- 刪除確認 Modal -->
+  <div id="deleteConfirmModal" class="modal-backdrop" onclick="if(event.target===this)closeDeleteConfirmModal()">
+    <div class="apple-modal" style="max-width:400px;text-align:center;">
+      <div style="width:72px;height:72px;margin:0 auto 20px;background:rgba(255,59,48,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+        <i class="ph ph-trash" style="font-size:36px;color:#ff3b30;"></i>
+      </div>
+      <h3 style="font-size:22px;font-weight:700;margin-bottom:10px;color:#1d1d1f;">確認刪除課程？</h3>
+      <p id="deleteConfirmCourseName" style="font-size:15px;color:#86868b;margin-bottom:8px;font-weight:600;"></p>
+      <p style="font-size:13px;color:#ff3b30;margin-bottom:28px;font-weight:500;">此操作無法復原</p>
+      <div style="display:flex;gap:12px;">
+        <button onclick="closeDeleteConfirmModal()" class="secondary-btn" style="flex:1;">取消</button>
+        <button onclick="executeDeleteConfirm()" style="flex:1;background:#ff3b30;color:white;border:none;border-radius:12px;padding:12px 24px;font-weight:600;cursor:pointer;font-size:15px;">確認刪除</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
