@@ -720,7 +720,8 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
       temperature: 0.7,
       topP: 0.95,
       topK: 40,
-      maxOutputTokens: 2048
+      maxOutputTokens: 8192,
+      thinkingConfig: { thinkingBudget: 0 }
     },
     safetySettings: [
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
@@ -759,11 +760,18 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
         return '⚠️ AI 服務暫時無法使用（錯誤碼：' + status + '），請稍後再試。';
       }
 
-      // 擷取回覆文字
+      // 擷取回覆文字（過濾思考部分）
       if (body.candidates && body.candidates.length > 0) {
         var candidate = body.candidates[0];
         if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-          return candidate.content.parts.map(function(p) { return p.text || ''; }).join('');
+          var text = candidate.content.parts
+            .filter(function(p) { return !p.thought; })
+            .map(function(p) { return p.text || ''; })
+            .join('');
+          if (candidate.finishReason === 'MAX_TOKENS') {
+            text += '\n\n（回覆超出長度限制，請將問題拆成較小範圍分次詢問）';
+          }
+          return text;
         }
       }
 
