@@ -1445,7 +1445,7 @@
         <div style="display: flex; gap: 12px;">
           <button type="button" onclick="closeMaritimeCourseModal()" class="secondary-btn">取消</button>
           <button type="submit" class="primary-btn" style="flex:1;">儲存變更</button>
-          <button type="button" onclick="deleteMaritimeCourseFromModal()" class="danger-btn" style="flex-shrink:0;padding:12px 16px;" title="刪除課程"><i class="ph ph-trash"></i></button>
+          <button type="button" onclick="deleteMaritimeCourseFromModal()" class="danger-btn" style="flex-shrink:0;"><i class="ph ph-trash"></i> 刪除課程</button>
         </div>
       </form>
     </div>
@@ -2331,12 +2331,13 @@
 
             <!-- 操作按鈕組 -->
             <div class="sidebar-actions">
-              <button onclick="editMaritimeCourse(${course.id})" class="action-btn action-btn-primary" style="flex:1;">
+              <button onclick="deleteCourseFromDetail(${course.id})" class="action-btn action-btn-danger" style="flex-shrink:0;">
+                <i class="ph ph-trash"></i>
+                刪除
+              </button>
+              <button onclick="editMaritimeCourse(${course.id})" class="action-btn action-btn-primary" style="margin-left:auto;">
                 <i class="ph ph-pencil-simple"></i>
                 編輯課程資料
-              </button>
-              <button onclick="deleteCourseFromDetail(${course.id})" class="action-btn action-btn-danger" style="flex-shrink:0;padding:16px;" title="刪除課程">
-                <i class="ph ph-trash"></i>
               </button>
             </div>
           </div>
