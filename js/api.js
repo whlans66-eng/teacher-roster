@@ -1204,40 +1204,195 @@ class AIChatManager {
     this._consecutiveFailures = 0; // 連續失敗計數
     this._cachedContext = null;    // 系統上下文快取
     this._contextCacheTime = 0;   // 上下文快取時間
-    this._storageKey = 'aiChatHistory';   // 對話歷史 localStorage key
     this._memoriesKey = 'aiMemories';     // 長期記憶 localStorage key
+    this._sessionsKey = 'aiChatSessions'; // 所有 session 列表 localStorage key
     this._maxDisplayHistory = 200;        // UI 顯示用：最多保留 200 則
     this._maxApiHistory = 50;             // 送給 Gemini API：最多 50 則
-    this._loadHistory();
+    this._maxSessions = 30;               // 最多保留 30 個 session
+    this.currentSessionId = null;
+    this.sessions = [];
+    this._loadSessions();
     this._loadMemories();
+    // 自動進入最近的 session，若沒有則建立新的
+    if (this.sessions.length > 0) {
+      this.switchSession(this.sessions[0].id);
+    } else {
+      this.createSession();
+    }
   }
 
+  // ==================== Session 管理 ====================
+
   /**
-   * 從 localStorage 載入對話歷史
+   * 從 localStorage 載入所有 session 列表
    */
-  _loadHistory() {
+  _loadSessions() {
     try {
-      const saved = localStorage.getItem(this._storageKey);
+      const saved = localStorage.getItem(this._sessionsKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          this.conversationHistory = parsed;
+          this.sessions = parsed;
         }
       }
     } catch (e) {
-      console.warn('載入 AI 對話歷史失敗:', e);
-      this.conversationHistory = [];
+      console.warn('載入 AI sessions 失敗:', e);
+      this.sessions = [];
+    }
+    // 相容舊版：如果有舊的 aiChatHistory 單一對話，遷移到第一個 session
+    this._migrateOldHistory();
+  }
+
+  /**
+   * 遷移舊版單一對話記錄到新的 session 系統
+   */
+  _migrateOldHistory() {
+    try {
+      const oldHistory = localStorage.getItem('aiChatHistory');
+      if (oldHistory && this.sessions.length === 0) {
+        const messages = JSON.parse(oldHistory);
+        if (Array.isArray(messages) && messages.length > 0) {
+          const id = this._generateId();
+          const firstMsg = messages.find(m => m.role === 'user');
+          const title = firstMsg ? firstMsg.content.substring(0, 30) : '舊對話記錄';
+          const session = {
+            id,
+            title,
+            createdAt: new Date().toISOString(),
+            lastMessageAt: new Date().toISOString(),
+            messageCount: messages.length
+          };
+          this.sessions.unshift(session);
+          localStorage.setItem('aiSession_' + id, JSON.stringify(messages));
+          this._saveSessions();
+          localStorage.removeItem('aiChatHistory');
+        }
+      }
+    } catch (e) {
+      console.warn('遷移舊對話失敗:', e);
     }
   }
 
   /**
-   * 將對話歷史存入 localStorage
+   * 儲存 session 列表
    */
-  _saveHistory() {
+  _saveSessions() {
     try {
-      localStorage.setItem(this._storageKey, JSON.stringify(this.conversationHistory));
+      localStorage.setItem(this._sessionsKey, JSON.stringify(this.sessions));
     } catch (e) {
-      console.warn('儲存 AI 對話歷史失敗:', e);
+      console.warn('儲存 AI sessions 失敗:', e);
+    }
+  }
+
+  /**
+   * 產生唯一 ID
+   */
+  _generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+  }
+
+  /**
+   * 建立新的 session
+   * @returns {string} 新 session 的 ID
+   */
+  createSession() {
+    const id = this._generateId();
+    const session = {
+      id,
+      title: '新對話',
+      createdAt: new Date().toISOString(),
+      lastMessageAt: new Date().toISOString(),
+      messageCount: 0
+    };
+    this.sessions.unshift(session);
+    // 超過上限時刪除最舊的
+    while (this.sessions.length > this._maxSessions) {
+      const removed = this.sessions.pop();
+      localStorage.removeItem('aiSession_' + removed.id);
+    }
+    this._saveSessions();
+    this.currentSessionId = id;
+    this.conversationHistory = [];
+    this._saveCurrentSession();
+    return id;
+  }
+
+  /**
+   * 切換到指定 session
+   */
+  switchSession(id) {
+    const session = this.sessions.find(s => s.id === id);
+    if (!session) return false;
+    this.currentSessionId = id;
+    // 載入該 session 的對話記錄
+    try {
+      const saved = localStorage.getItem('aiSession_' + id);
+      this.conversationHistory = saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      this.conversationHistory = [];
+    }
+    return true;
+  }
+
+  /**
+   * 刪除指定 session
+   */
+  deleteSession(id) {
+    this.sessions = this.sessions.filter(s => s.id !== id);
+    localStorage.removeItem('aiSession_' + id);
+    this._saveSessions();
+    // 如果刪除的是當前 session，切到最近的或建新的
+    if (this.currentSessionId === id) {
+      if (this.sessions.length > 0) {
+        this.switchSession(this.sessions[0].id);
+      } else {
+        this.createSession();
+      }
+    }
+  }
+
+  /**
+   * 重新命名 session
+   */
+  renameSession(id, newTitle) {
+    const session = this.sessions.find(s => s.id === id);
+    if (session) {
+      session.title = newTitle;
+      this._saveSessions();
+    }
+  }
+
+  /**
+   * 取得所有 sessions
+   */
+  getSessions() {
+    return [...this.sessions];
+  }
+
+  /**
+   * 儲存當前 session 的對話記錄
+   */
+  _saveCurrentSession() {
+    if (!this.currentSessionId) return;
+    try {
+      localStorage.setItem('aiSession_' + this.currentSessionId, JSON.stringify(this.conversationHistory));
+      // 更新 session metadata
+      const session = this.sessions.find(s => s.id === this.currentSessionId);
+      if (session) {
+        session.lastMessageAt = new Date().toISOString();
+        session.messageCount = this.conversationHistory.length;
+        // 用第一則 user 訊息當標題（如果還是預設的「新對話」）
+        if (session.title === '新對話' && this.conversationHistory.length > 0) {
+          const firstUserMsg = this.conversationHistory.find(m => m.role === 'user');
+          if (firstUserMsg) {
+            session.title = firstUserMsg.content.substring(0, 30);
+            if (firstUserMsg.content.length > 30) session.title += '…';
+          }
+        }
+        this._saveSessions();
+      }
+    } catch (e) {
+      console.warn('儲存 session 對話失敗:', e);
     }
   }
 
@@ -1482,7 +1637,7 @@ ${teachersSummary}
         this.conversationHistory = this.conversationHistory.slice(-this._maxDisplayHistory);
       }
 
-      this._saveHistory();
+      this._saveCurrentSession();
 
       if (this.onComplete) this.onComplete(aiReply);
       return aiReply;
@@ -1568,15 +1723,23 @@ ${teachersSummary}
   }
 
   /**
-   * 清除對話歷史（長期記憶預設保留）
+   * 清除當前對話歷史（長期記憶預設保留）
    * @param {boolean} clearMemoriesToo - 是否同時清除長期記憶
    */
   clearHistory(clearMemoriesToo = false) {
     this.conversationHistory = [];
-    this._saveHistory();
+    this._saveCurrentSession();
     if (clearMemoriesToo) {
       this.clearMemories();
     }
+  }
+
+  /**
+   * 開始新對話 session（保留記憶）
+   * @returns {string} 新 session 的 ID
+   */
+  startNewSession() {
+    return this.createSession();
   }
 }
 

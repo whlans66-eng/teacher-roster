@@ -186,14 +186,115 @@
   .hidden { display: none !important; }
 
   /* ========== AI 對話介面 ========== */
-  .ai-chat-container {
+  .ai-chat-wrapper {
     display: flex;
-    flex-direction: column;
-    height: 600px;
-    background: #ffffff;
+    height: 650px;
     border-radius: 20px;
     border: 1px solid rgba(0, 0, 0, 0.04);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    background: #ffffff;
+  }
+  /* 側邊欄 */
+  .ai-sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: #1a1a2e;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+  .ai-sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .ai-sidebar-new-btn {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #e0e0e0;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .ai-sidebar-new-btn:hover { background: rgba(255,255,255,0.14); }
+  .ai-sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .ai-sidebar-list::-webkit-scrollbar { width: 4px; }
+  .ai-sidebar-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+  .ai-session-item {
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 2px;
+    transition: background 0.15s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ai-session-item:hover { background: rgba(255,255,255,0.06); }
+  .ai-session-item.active { background: rgba(102, 126, 234, 0.2); }
+  .ai-session-item-icon {
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    flex-shrink: 0;
+  }
+  .ai-session-item-content { flex: 1; min-width: 0; }
+  .ai-session-item-title {
+    font-size: 13px;
+    color: #e0e0e0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+  .ai-session-item.active .ai-session-item-title { color: #fff; font-weight: 600; }
+  .ai-session-item-date {
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 2px;
+  }
+  .ai-session-item-delete {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: opacity 0.15s, color 0.15s;
+  }
+  .ai-session-item:hover .ai-session-item-delete { opacity: 1; }
+  .ai-session-item-delete:hover { color: #ff453a; }
+  .ai-sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+  /* 手機版隱藏側邊欄 */
+  @media (max-width: 768px) {
+    .ai-sidebar { display: none; }
+    .ai-chat-wrapper { height: 600px; }
+  }
+  .ai-chat-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
   }
   .ai-chat-header {
@@ -1007,7 +1108,21 @@
 
     <!-- AI 顧問頁面 -->
     <div id="maritimeAIPage" class="hidden">
-      <div class="ai-chat-container">
+      <div class="ai-chat-wrapper">
+        <!-- 左側：Sessions 側邊欄 -->
+        <div class="ai-sidebar">
+          <div class="ai-sidebar-header">
+            <button class="ai-sidebar-new-btn" onclick="uiCreateNewSession()">
+              <i class="ph ph-plus"></i> 新對話
+            </button>
+          </div>
+          <div id="aiSessionList" class="ai-sidebar-list"></div>
+          <div class="ai-sidebar-footer">
+            <span id="aiSessionCount">0</span> 個對話
+          </div>
+        </div>
+        <!-- 右側：聊天主區域 -->
+        <div class="ai-chat-container">
         <div class="ai-chat-header">
           <div class="ai-chat-header-icon">
             <i class="ph ph-robot"></i>
@@ -1064,7 +1179,8 @@
             <i class="ph ph-paper-plane-tilt"></i>
           </button>
         </div>
-      </div>
+      </div><!-- /ai-chat-container -->
+      </div><!-- /ai-chat-wrapper -->
     </div>
 
     <!-- 2. 課程管理頁面 -->
@@ -1521,6 +1637,7 @@
             addAIWelcomeMessage();
           }
         }
+        renderSessionList();
         updateMemoryCount();
       } else if (tab === 'edit') {
         document.getElementById('maritimeEditPage').classList.remove('hidden');
@@ -2929,12 +3046,20 @@
     }
 
     /**
-     * 開始新對話（保留記憶）
+     * 開始新對話（保留記憶）— 從 header 按鈕觸發
      */
     function startNewAIChat() {
-      aiChat.clearHistory(false); // 清對話但保留記憶
+      uiCreateNewSession();
+    }
+
+    /**
+     * 側邊欄：建立新 session
+     */
+    function uiCreateNewSession() {
+      aiChat.startNewSession();
       document.getElementById('aiChatMessages').innerHTML = '';
       addAIWelcomeMessage();
+      renderSessionList();
       // 如果有記憶，顯示提示
       if (aiChat.memories.length > 0) {
         const messages = document.getElementById('aiChatMessages');
@@ -2943,6 +3068,98 @@
         hint.textContent = `AI 仍記得關於你的 ${aiChat.memories.length} 項資訊`;
         messages.appendChild(hint);
       }
+    }
+
+    /**
+     * 側邊欄：切換到指定 session
+     */
+    function uiSwitchSession(id) {
+      if (id === aiChat.currentSessionId) return;
+      aiChat.switchSession(id);
+      document.getElementById('aiChatMessages').innerHTML = '';
+      // 還原該 session 的對話
+      if (aiChat.conversationHistory.length > 0) {
+        restoreAIChatHistory();
+      } else {
+        addAIWelcomeMessage();
+      }
+      renderSessionList();
+    }
+
+    /**
+     * 側邊欄：刪除 session
+     */
+    function uiDeleteSession(id, event) {
+      event.stopPropagation();
+      if (!confirm('確定要刪除這個對話嗎？')) return;
+      const wasCurrent = (id === aiChat.currentSessionId);
+      aiChat.deleteSession(id);
+      if (wasCurrent) {
+        document.getElementById('aiChatMessages').innerHTML = '';
+        if (aiChat.conversationHistory.length > 0) {
+          restoreAIChatHistory();
+        } else {
+          addAIWelcomeMessage();
+        }
+      }
+      renderSessionList();
+    }
+
+    /**
+     * 渲染 session 側邊欄列表
+     */
+    function renderSessionList() {
+      const list = document.getElementById('aiSessionList');
+      const sessions = aiChat.getSessions();
+      document.getElementById('aiSessionCount').textContent = sessions.length;
+
+      if (sessions.length === 0) {
+        list.innerHTML = '<div style="color:rgba(255,255,255,0.3); font-size:12px; text-align:center; padding:20px;">還沒有對話紀錄</div>';
+        return;
+      }
+
+      list.innerHTML = sessions.map(s => {
+        const isActive = s.id === aiChat.currentSessionId;
+        const date = new Date(s.lastMessageAt);
+        const dateStr = formatSessionDate(date);
+        return `
+          <div class="ai-session-item ${isActive ? 'active' : ''}" onclick="uiSwitchSession('${s.id}')">
+            <div class="ai-session-item-icon"><i class="ph ph-chat-dots"></i></div>
+            <div class="ai-session-item-content">
+              <div class="ai-session-item-title">${escapeHtml(s.title)}</div>
+              <div class="ai-session-item-date">${dateStr}${s.messageCount ? ' · ' + s.messageCount + ' 則' : ''}</div>
+            </div>
+            <button class="ai-session-item-delete" onclick="uiDeleteSession('${s.id}', event)" title="刪除">
+              <i class="ph ph-trash"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /**
+     * 格式化 session 日期顯示
+     */
+    function formatSessionDate(date) {
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 1) return '剛剛';
+      if (diffMins < 60) return diffMins + ' 分鐘前';
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return diffHours + ' 小時前';
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays < 7) return diffDays + ' 天前';
+      return (date.getMonth() + 1) + '/' + date.getDate();
+    }
+
+    /**
+     * HTML escape 防 XSS
+     */
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     /**
@@ -3056,8 +3273,9 @@
           messages.scrollTop = messages.scrollHeight;
         }, 15);
 
-        // 更新記憶計數（AI 可能在回覆中記住了新資訊）
+        // 更新記憶計數和側邊欄（AI 可能在回覆中記住了新資訊，session 標題可能更新）
         updateMemoryCount();
+        renderSessionList();
       } catch (error) {
         typingDiv.remove();
 
