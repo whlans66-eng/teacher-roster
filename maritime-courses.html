@@ -2557,8 +2557,7 @@
       localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
 
       if (typeof syncManager !== 'undefined') {
-        syncManager.markAsChanged();
-        const result = await syncManager.saveToBackendSafe();
+        const result = await syncManager.saveTable('maritimeCourses');
         if (result.conflict) {
           showConflictDialog(result);
         }
@@ -2813,7 +2812,7 @@
       if (!confirm('確定要強制覆蓋嗎？這會覆蓋後端其他人的修改。')) return;
       document.querySelector('.modal-backdrop')?.remove();
       try {
-        await syncManager.saveToBackendSafe(true);
+        await syncManager.saveTable('maritimeCourses', true);
         showMaritimeMessage('✓ 已強制儲存', 'success');
       } catch (e) {
         showMaritimeMessage('✗ 儲存失敗', 'error');
