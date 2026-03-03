@@ -584,10 +584,9 @@ class DataSyncManager {
         console.warn(`⚠️ ${tableName} 偵測到資料衝突`);
         return {
           conflict: true,
-          table: tableName,
-          savedCount: saveResult.savedCount,
-          currentCount: saveResult.currentCount,
-          message: `${tableName} 資料已被其他人修改`
+          conflicts: [{ table: tableName, savedCount: saveResult.savedCount, currentCount: saveResult.currentCount }],
+          message: `${tableName} 資料已被其他人修改`,
+          hint: '您可以選擇「重新載入」獲取最新資料，或「強制覆蓋」使用您的本地資料'
         };
       }
 
