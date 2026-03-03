@@ -35,30 +35,6 @@ const SHEETS_CONFIG = {
     name: 'maritimeCourses',
     header: ['id','name','category','method','description','keywords','targetCategories','targetRanks','version','lastModifiedBy','lastModifiedAt','duration','lang','link']
   },
-  surveyTemplates: {
-    name: 'surveyTemplates',
-    header: ['id','name','description','questions','createdAt','updatedAt']
-  },
-  surveys: {
-    name: 'surveys',
-    header: ['id','templateId','courseId','courseName','courseDate','teacherId','teacherName','status','shareUrl','createdAt','expiresAt']
-  },
-  surveyResponses: {
-    name: 'surveyResponses',
-    header: ['id','surveyId','respondentName','respondentEmail','answers','submittedAt']
-  },
-  activityLog: {
-    name: 'activityLog',
-    header: ['id','courseId','userId','userName','action','actionType','details','timestamp']
-  },
-  comments: {
-    name: 'comments',
-    header: ['id','courseId','userId','userName','userAvatar','content','timestamp','updatedAt']
-  },
-  likes: {
-    name: 'likes',
-    header: ['id','courseId','userId','userName','timestamp']
-  },
   activeSessions: {
     name: 'activeSessions',
     header: ['sessionId','userName','userEmail','pageUrl','lastActiveTime','userAgent','kicked']
