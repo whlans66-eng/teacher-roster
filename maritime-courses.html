@@ -968,16 +968,15 @@
           <input type="text" id="maritimeSearchInput" placeholder="輸入課程名稱或關鍵字..." class="ios-input" oninput="displayMaritimeCourses()">
           <select id="maritimeCategoryFilter" class="ios-input" onchange="displayMaritimeCourses()">
             <option value="">所有分類</option>
-            <option value="01">01 船舶操縱與航行</option>
-            <option value="02">02 領導統御與管理</option>
-            <option value="03">03 事故案例分析</option>
-            <option value="04">04 船舶設備操作</option>
-            <option value="05">05 國際法規知識</option>
-            <option value="06">06 貨物裝卸實務</option>
-            <option value="07">07 船員經驗交流</option>
-            <option value="08">08 職級轉換調適</option>
+            <option value="01">01 船舶操縱與航行實務訓練</option>
+            <option value="02">02 領導統御與檢查應對管理</option>
+            <option value="03">03 事故案例分析與應變處置訓練</option>
+            <option value="04">04 船舶設備操作與技術知能訓練</option>
+            <option value="05">05 國際法規與環境合規知識</option>
+            <option value="06">06 船舶貨物裝卸作業實務</option>
+            <option value="07">07 船員經驗交流與職能回饋</option>
+            <option value="08">08 職級轉換與壓力調適</option>
             <option value="09">09 其他</option>
-            <option value="10">10 資料分析</option>
           </select>
         </div>
       </div>
@@ -1054,16 +1053,15 @@
               <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 6px;">分類</label>
               <select id="maritimeCourseCategory" required class="ios-input">
                 <option value="">選擇分類</option>
-                <option value="01">01 船舶操縱</option>
-                <option value="02">02 領導統御</option>
-                <option value="03">03 事故分析</option>
-                <option value="04">04 設備操作</option>
-                <option value="05">05 法規知識</option>
-                <option value="06">06 貨物裝卸</option>
-                <option value="07">07 經驗交流</option>
-                <option value="08">08 職級轉換</option>
+                <option value="01">01 船舶操縱與航行實務訓練</option>
+                <option value="02">02 領導統御與檢查應對管理</option>
+                <option value="03">03 事故案例分析與應變處置訓練</option>
+                <option value="04">04 船舶設備操作與技術知能訓練</option>
+                <option value="05">05 國際法規與環境合規知識</option>
+                <option value="06">06 船舶貨物裝卸作業實務</option>
+                <option value="07">07 船員經驗交流與職能回饋</option>
+                <option value="08">08 職級轉換與壓力調適</option>
                 <option value="09">09 其他</option>
-                <option value="10">10 資料分析</option>
               </select>
             </div>
             <div>
@@ -1333,16 +1331,15 @@
           <div>
             <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">分類</label>
             <select id="maritimeCourseCategoryModal" required class="ios-input">
-              <option value="01">01 船舶操縱</option>
-              <option value="02">02 領導統御</option>
-              <option value="03">03 事故分析</option>
-              <option value="04">04 設備操作</option>
-              <option value="05">05 法規知識</option>
-              <option value="06">06 貨物裝卸</option>
-              <option value="07">07 經驗交流</option>
-              <option value="08">08 職級轉換</option>
+              <option value="01">01 船舶操縱與航行實務訓練</option>
+              <option value="02">02 領導統御與檢查應對管理</option>
+              <option value="03">03 事故案例分析與應變處置訓練</option>
+              <option value="04">04 船舶設備操作與技術知能訓練</option>
+              <option value="05">05 國際法規與環境合規知識</option>
+              <option value="06">06 船舶貨物裝卸作業實務</option>
+              <option value="07">07 船員經驗交流與職能回饋</option>
+              <option value="08">08 職級轉換與壓力調適</option>
               <option value="09">09 其他</option>
-              <option value="10">10 資料分析</option>
             </select>
           </div>
           <div>
@@ -1460,16 +1457,15 @@
     let editingMaritimeCourseId = null;
 
     const maritimeCategoryNames = {
-      '01': '船舶操縱與航行實務',
-      '02': '領導統御與檢查應對',
-      '03': '事故案例分析',
-      '04': '船舶設備操作',
-      '05': '國際法規與環境',
-      '06': '貨物裝卸作業',
-      '07': '船員經驗交流',
-      '08': '職級轉換調適',
-      '09': '其他',
-      '10': '資料分析'
+      '01': '船舶操縱與航行實務訓練',
+      '02': '領導統御與檢查應對管理',
+      '03': '事故案例分析與應變處置訓練',
+      '04': '船舶設備操作與技術知能訓練',
+      '05': '國際法規與環境合規知識',
+      '06': '船舶貨物裝卸作業實務',
+      '07': '船員經驗交流與職能回饋',
+      '08': '職級轉換與壓力調適',
+      '09': '其他'
     };
 
     // 切換頁面
@@ -2586,8 +2582,7 @@
         '06': { name: '船舶貨物裝卸作業實務', color: '#8b5cf6' },
         '07': { name: '船員經驗交流與職能回饋', color: '#f97316' },
         '08': { name: '職級轉換與壓力調適', color: '#84cc16' },
-        '09': { name: '其他', color: '#ec4899' },
-        '10': { name: '資料分析', color: '#0ea5e9' }
+        '09': { name: '其他', color: '#ec4899' }
       };
 
       // 統計每個分類的課程數量
