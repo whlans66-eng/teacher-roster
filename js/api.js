@@ -1193,6 +1193,7 @@ class AIChatManager {
   constructor(apiInstance) {
     this.api = apiInstance;
     this.conversationHistory = [];
+    this.memories = [];             // 長期記憶（跨對話持久保存的重要資訊）
     this.isStreaming = false;
     this.onToken = null;
     this.onComplete = null;
@@ -1203,8 +1204,12 @@ class AIChatManager {
     this._consecutiveFailures = 0; // 連續失敗計數
     this._cachedContext = null;    // 系統上下文快取
     this._contextCacheTime = 0;   // 上下文快取時間
-    this._storageKey = 'aiChatHistory'; // localStorage key
-    this._loadHistory(); // 載入上次的對話記錄
+    this._storageKey = 'aiChatHistory';   // 對話歷史 localStorage key
+    this._memoriesKey = 'aiMemories';     // 長期記憶 localStorage key
+    this._maxDisplayHistory = 200;        // UI 顯示用：最多保留 200 則
+    this._maxApiHistory = 50;             // 送給 Gemini API：最多 50 則
+    this._loadHistory();
+    this._loadMemories();
   }
 
   /**
@@ -1237,6 +1242,96 @@ class AIChatManager {
   }
 
   /**
+   * 從 localStorage 載入長期記憶
+   */
+  _loadMemories() {
+    try {
+      const saved = localStorage.getItem(this._memoriesKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          this.memories = parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('載入 AI 記憶失敗:', e);
+      this.memories = [];
+    }
+  }
+
+  /**
+   * 將長期記憶存入 localStorage
+   */
+  _saveMemories() {
+    try {
+      localStorage.setItem(this._memoriesKey, JSON.stringify(this.memories));
+    } catch (e) {
+      console.warn('儲存 AI 記憶失敗:', e);
+    }
+  }
+
+  /**
+   * 從 AI 回覆中擷取 [MEMORY: ...] 標記並存入長期記憶
+   * @param {string} reply - AI 的原始回覆
+   * @returns {string} 移除記憶標記後的乾淨回覆
+   */
+  _extractMemories(reply) {
+    const memoryPattern = /\[MEMORY:\s*(.+?)\]/g;
+    let match;
+    while ((match = memoryPattern.exec(reply)) !== null) {
+      const fact = match[1].trim();
+      // 避免重複記憶
+      if (fact && !this.memories.some(m => m.fact === fact)) {
+        this.memories.push({
+          fact: fact,
+          createdAt: new Date().toISOString()
+        });
+      }
+    }
+    if (this.memories.length > 50) {
+      this.memories = this.memories.slice(-50);
+    }
+    this._saveMemories();
+    // 移除標記，回傳乾淨的回覆給使用者看
+    return reply.replace(/\s*\[MEMORY:\s*.+?\]/g, '').trim();
+  }
+
+  /**
+   * 取得所有長期記憶
+   */
+  getMemories() {
+    return [...this.memories];
+  }
+
+  /**
+   * 手動新增一條記憶
+   */
+  addMemory(fact) {
+    if (fact && !this.memories.some(m => m.fact === fact)) {
+      this.memories.push({ fact, createdAt: new Date().toISOString() });
+      this._saveMemories();
+    }
+  }
+
+  /**
+   * 刪除指定記憶
+   */
+  removeMemory(index) {
+    if (index >= 0 && index < this.memories.length) {
+      this.memories.splice(index, 1);
+      this._saveMemories();
+    }
+  }
+
+  /**
+   * 清除所有長期記憶
+   */
+  clearMemories() {
+    this.memories = [];
+    this._saveMemories();
+  }
+
+  /**
    * 建構系統提示詞（含課程上下文），5 分鐘內使用快取
    */
   _buildSystemContext() {
@@ -1264,13 +1359,21 @@ class AIChatManager {
       ? '\n⚠️ 注意：目前系統中沒有任何課程資料，請先在課程管理頁面新增課程。'
       : '';
 
+    // 組合長期記憶區塊
+    let memoriesBlock = '';
+    if (this.memories.length > 0) {
+      const memList = this.memories.map(m => `- ${m.fact}`).join('\n');
+      memoriesBlock = `\n\n【關於這位使用者的記憶】\n以下是你從過去對話中記住的重要資訊，請善用這些資訊提供更個人化的回答：\n${memList}\n`;
+    }
+
     this._cachedContext = `你是「萬海智慧航安訓練管理系統」的 AI 課程顧問。請用繁體中文回答，語氣專業但親切。
+你具有「長期記憶」能力，能記住使用者告訴你的重要資訊。
 
 【重要限制】
 - 你只能根據以下系統提供的課程資料來回答，不得自行創造、假設或補充任何課程資訊
 - 若系統資料中找不到符合的課程，請明確告知「目前系統中沒有符合條件的課程」，不要推薦不存在的課程
 - 課程名稱、分類、授課方式等資訊必須完全來自以下資料，不得修改或發明
-
+${memoriesBlock}
 以下是目前系統中的課程資料（共 ${courses.length} 門課程）：${emptyCourseWarning}
 ${coursesSummary}
 
@@ -1285,7 +1388,12 @@ ${teachersSummary}
 回答注意事項：
 - 回答請簡潔有力，使用項目符號整理
 - 推薦課程時，請說明是基於哪個欄位（分類/關鍵字/適用對象）做的推薦
-- 若系統資料不足以回答，請直接說明並建議使用者補充課程資料`;
+- 若系統資料不足以回答，請直接說明並建議使用者補充課程資料
+
+【記憶功能】
+當使用者告訴你關於自己的重要資訊（如職等、部門、專長、偏好、姓名等），請在回答的最末尾加上記憶標記，格式為：[MEMORY: 資訊內容]
+例如使用者說「我是二副」，你回答完後加上 [MEMORY: 使用者的職等是二副]
+每次對話只在發現新資訊時加標記，已經記住的不要重複。標記不會顯示給使用者看。`;
     this._contextCacheTime = now;
     return this._cachedContext;
   }
@@ -1332,12 +1440,17 @@ ${teachersSummary}
     this.conversationHistory.push({ role: 'user', content: userMessage });
 
     try {
+      // 記憶有更新時，清除 context 快取以重新帶入最新記憶
+      this._cachedContext = null;
       const systemContext = this._buildSystemContext();
+
+      // 只送最近的對話給 Gemini API（節省 token，但保留完整歷史給 UI）
+      const apiHistory = this.conversationHistory.slice(-this._maxApiHistory);
 
       const response = await this.api._post({
         action: 'askgemini',
         systemContext: systemContext,
-        conversationHistory: this.conversationHistory,
+        conversationHistory: apiHistory,
         userMessage: userMessage
       });
 
@@ -1347,26 +1460,26 @@ ${teachersSummary}
         this._triggerCooldown(response.reply || 'AI 請求已達上限，請稍後再試。');
       }
 
-      const aiReply = response.reply || '抱歉，我無法回答這個問題。';
+      const rawReply = response.reply || '抱歉，我無法回答這個問題。';
 
       // 第二防線：連續失敗偵測
-      // 如果 AI 回覆以 ⚠️ 開頭（後端錯誤訊息格式），累計失敗次數
-      // 連續 2 次代表 API 持續異常，觸發冷卻保護
-      if (aiReply.startsWith('⚠️') || aiReply.startsWith('⚠')) {
+      if (rawReply.startsWith('⚠️') || rawReply.startsWith('⚠')) {
         this._consecutiveFailures++;
         if (this._consecutiveFailures >= 2) {
           this._triggerCooldown('AI 服務連續異常，已啟動 60 秒冷卻保護。');
         }
-        // 第 1 次：仍然顯示錯誤訊息，但不觸發冷卻
       } else {
-        // 正常回覆，重置失敗計數
         this._consecutiveFailures = 0;
       }
 
+      // 從回覆中擷取記憶標記並儲存，回傳乾淨的回覆
+      const aiReply = this._extractMemories(rawReply);
+
       this.conversationHistory.push({ role: 'assistant', content: aiReply });
 
-      if (this.conversationHistory.length > 20) {
-        this.conversationHistory = this.conversationHistory.slice(-20);
+      // 保留最多 200 則（供 UI 顯示），送 API 時會另外截取最近 50 則
+      if (this.conversationHistory.length > this._maxDisplayHistory) {
+        this.conversationHistory = this.conversationHistory.slice(-this._maxDisplayHistory);
       }
 
       this._saveHistory();
@@ -1455,11 +1568,15 @@ ${teachersSummary}
   }
 
   /**
-   * 清除對話歷史
+   * 清除對話歷史（長期記憶預設保留）
+   * @param {boolean} clearMemoriesToo - 是否同時清除長期記憶
    */
-  clearHistory() {
+  clearHistory(clearMemoriesToo = false) {
     this.conversationHistory = [];
     this._saveHistory();
+    if (clearMemoriesToo) {
+      this.clearMemories();
+    }
   }
 }
 

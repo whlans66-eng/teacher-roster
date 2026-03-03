@@ -1016,10 +1016,38 @@
             <div class="ai-chat-header-title">AI 課程顧問</div>
             <div class="ai-chat-header-sub">根據課程資料庫為您提供智慧推薦</div>
           </div>
-          <button onclick="aiChat.clearHistory(); document.getElementById('aiChatMessages').innerHTML = ''; addAIWelcomeMessage();"
-            style="margin-left:auto; background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;">
-            <i class="ph ph-arrow-counter-clockwise"></i> 新對話
-          </button>
+          <div style="margin-left:auto; display:flex; gap:6px;">
+            <button onclick="toggleAIMemoryPanel()"
+              style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;"
+              title="查看 AI 記住了哪些資訊">
+              <i class="ph ph-brain"></i> 記憶
+              <span id="aiMemoryCount" style="background:rgba(255,255,255,0.3); padding:1px 6px; border-radius:8px; font-size:10px; margin-left:2px;">0</span>
+            </button>
+            <button onclick="startNewAIChat()"
+              style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;">
+              <i class="ph ph-arrow-counter-clockwise"></i> 新對話
+            </button>
+          </div>
+        </div>
+        <!-- AI 記憶管理面板 -->
+        <div id="aiMemoryPanel" style="display:none; background:#f0f4ff; border-bottom:1px solid #dde4f0; padding:12px 16px; font-size:13px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:#1a3a5c;"><i class="ph ph-brain"></i> AI 長期記憶</strong>
+            <button onclick="if(confirm('確定要清除所有記憶嗎？AI 將忘記關於你的所有資訊。')){aiChat.clearMemories(); renderAIMemoryPanel();}"
+              style="background:#ff3b30; color:white; border:none; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer;">
+              全部清除
+            </button>
+          </div>
+          <div id="aiMemoryList" style="color:#333;"></div>
+          <div style="margin-top:8px; display:flex; gap:6px;">
+            <input type="text" id="aiMemoryInput" placeholder="手動新增記憶，例如：我是三副、我對 ECDIS 有興趣"
+              style="flex:1; padding:6px 10px; border:1px solid #ccc; border-radius:8px; font-size:12px;"
+              onkeydown="if(event.key==='Enter'){addManualMemory();}">
+            <button onclick="addManualMemory()"
+              style="background:#007aff; color:white; border:none; padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;">
+              新增
+            </button>
+          </div>
         </div>
         <div id="aiChatMessages" class="ai-chat-messages"></div>
         <div class="ai-quick-actions">
@@ -1493,6 +1521,7 @@
             addAIWelcomeMessage();
           }
         }
+        updateMemoryCount();
       } else if (tab === 'edit') {
         document.getElementById('maritimeEditPage').classList.remove('hidden');
         document.getElementById('maritimeEditTab').classList.add('active');
@@ -2899,6 +2928,80 @@
       return true;
     }
 
+    /**
+     * 開始新對話（保留記憶）
+     */
+    function startNewAIChat() {
+      aiChat.clearHistory(false); // 清對話但保留記憶
+      document.getElementById('aiChatMessages').innerHTML = '';
+      addAIWelcomeMessage();
+      // 如果有記憶，顯示提示
+      if (aiChat.memories.length > 0) {
+        const messages = document.getElementById('aiChatMessages');
+        const hint = document.createElement('div');
+        hint.className = 'ai-msg system';
+        hint.textContent = `AI 仍記得關於你的 ${aiChat.memories.length} 項資訊`;
+        messages.appendChild(hint);
+      }
+    }
+
+    /**
+     * 切換記憶管理面板
+     */
+    function toggleAIMemoryPanel() {
+      const panel = document.getElementById('aiMemoryPanel');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        renderAIMemoryPanel();
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+
+    /**
+     * 渲染記憶列表
+     */
+    function renderAIMemoryPanel() {
+      const list = document.getElementById('aiMemoryList');
+      const memories = aiChat.getMemories();
+      document.getElementById('aiMemoryCount').textContent = memories.length;
+
+      if (memories.length === 0) {
+        list.innerHTML = '<div style="color:#999; font-size:12px; padding:4px 0;">目前沒有記憶。AI 會在對話中自動記住你告訴它的重要資訊（如職等、專長、偏好等），你也可以手動新增。</div>';
+        return;
+      }
+
+      list.innerHTML = memories.map((m, i) => `
+        <div style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid #eee;">
+          <span style="flex:1;">• ${m.fact}</span>
+          <button onclick="aiChat.removeMemory(${i}); renderAIMemoryPanel();"
+            style="background:none; border:none; color:#ff3b30; cursor:pointer; font-size:14px; padding:2px 6px;" title="刪除此記憶">
+            <i class="ph ph-x"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    /**
+     * 手動新增記憶
+     */
+    function addManualMemory() {
+      const input = document.getElementById('aiMemoryInput');
+      const fact = input.value.trim();
+      if (!fact) return;
+      aiChat.addMemory(fact);
+      input.value = '';
+      renderAIMemoryPanel();
+    }
+
+    /**
+     * 更新記憶計數 badge
+     */
+    function updateMemoryCount() {
+      const el = document.getElementById('aiMemoryCount');
+      if (el) el.textContent = aiChat.memories.length;
+    }
+
     let _aiCooldownTimer = null;
 
     async function sendAIMessage() {
@@ -2952,6 +3055,9 @@
           aiDiv.innerHTML = formatAIResponse(partial);
           messages.scrollTop = messages.scrollHeight;
         }, 15);
+
+        // 更新記憶計數（AI 可能在回覆中記住了新資訊）
+        updateMemoryCount();
       } catch (error) {
         typingDiv.remove();
 
