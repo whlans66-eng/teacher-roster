@@ -186,15 +186,23 @@ function doGet(e) {
           versions[tableName] = _computeFingerprint(data);
         }
       });
+      // 更新快取，讓後續 batchsave 的衝突檢測不需重讀 sheet
+      _writeCachedFingerprints(versions);
       return _json({ ok: true, data: allData, versions });
     }
 
     if (action === 'getversions') {
-      const versions = {};
       const targetTables = ['teachers', 'courseAssignments', 'maritimeCourses'];
-      targetTables.forEach(tableName => {
-        versions[tableName] = _computeFingerprint(_readTable(tableName));
+      const versions = _readCachedFingerprints(targetTables);
+      // 快取 miss 的 table 才讀 sheet（通常重新部署後第一次）
+      const missing = targetTables.filter(t => !versions[t]);
+      const newCache = {};
+      missing.forEach(tableName => {
+        const fp = _computeFingerprint(_readTable(tableName));
+        versions[tableName] = fp;
+        newCache[tableName] = fp;
       });
+      if (Object.keys(newCache).length > 0) _writeCachedFingerprints(newCache);
       return _json({ ok: true, versions: versions });
     }
 
@@ -300,13 +308,14 @@ function doPost(e) {
       if (table === 'users') return _json({ ok: false, error: 'Access denied' });
       if (['teachers', 'maritimeCourses'].includes(table) && session.role === 'teacher') return _json({ ok: false, error: 'Access denied' });
 
-      // server-side 衝突檢測（省掉 client 的 getVersions 請求）
+      // server-side 衝突檢測（優先從 ScriptProperties 快取讀取，省掉 sheet read）
       const savedVersionRaw = p.savedVersion || (bodyObj && bodyObj.savedVersion);
       const forceOverwrite = String(p.forceOverwrite || (bodyObj && bodyObj.forceOverwrite)) === 'true';
       if (savedVersionRaw && !forceOverwrite) {
         const savedVersion = typeof savedVersionRaw === 'string' ? JSON.parse(savedVersionRaw) : savedVersionRaw;
         if (savedVersion && savedVersion.fingerprint) {
-          const current = _computeFingerprint(_readTable(table));
+          const cached = _readCachedFingerprints([table]);
+          const current = cached[table] || _computeFingerprint(_readTable(table));
           if (savedVersion.fingerprint !== current.fingerprint) {
             return _json({ ok: true, conflict: true, table, savedCount: savedVersion.count, currentCount: current.count });
           }
@@ -334,7 +343,9 @@ function doPost(e) {
       }
 
       _writeTable(table, data);
-      return _json({ ok: true, table, count: data.length, newVersion: _computeFingerprint(data) });
+      const newVersion = _computeFingerprint(data);
+      _writeCachedFingerprints({ [table]: newVersion });
+      return _json({ ok: true, table, count: data.length, newVersion });
     }
 
     // Batch Save (多表同時寫入，減少 HTTP 往返次數)
@@ -345,16 +356,18 @@ function doPost(e) {
 
       const tablesObj = typeof tablesRaw === 'string' ? JSON.parse(tablesRaw) : tablesRaw;
 
-      // server-side 衝突檢測（省掉 client 的 getVersions 請求）
+      // server-side 衝突檢測（優先從 ScriptProperties 快取讀取，省掉 sheet reads）
       const savedVersionsRaw = p.savedVersions || (bodyObj && bodyObj.savedVersions);
       const forceOverwrite = String(p.forceOverwrite || (bodyObj && bodyObj.forceOverwrite)) === 'true';
       if (savedVersionsRaw && !forceOverwrite) {
         const savedVersions = typeof savedVersionsRaw === 'string' ? JSON.parse(savedVersionsRaw) : savedVersionsRaw;
+        const tableNames = Object.keys(savedVersions).filter(t => SHEETS_CONFIG[t] && savedVersions[t]?.fingerprint);
+        // 一次批次讀取所有快取（1 次 Properties call，比 N 次 sheet read 快 10x）
+        const cached = _readCachedFingerprints(tableNames);
         const conflicts = [];
-        for (const tableName of Object.keys(savedVersions)) {
+        for (const tableName of tableNames) {
           const saved = savedVersions[tableName];
-          if (!saved || !saved.fingerprint || !SHEETS_CONFIG[tableName]) continue;
-          const current = _computeFingerprint(_readTable(tableName));
+          const current = cached[tableName] || _computeFingerprint(_readTable(tableName));
           if (saved.fingerprint !== current.fingerprint) {
             conflicts.push({ table: tableName, savedCount: saved.count, currentCount: current.count });
           }
@@ -398,6 +411,9 @@ function doPost(e) {
           newVersions[table] = _computeFingerprint(data);
         }
       }
+
+      // 寫完後批次更新 fingerprint 快取（讓下次衝突檢測不需重讀 sheet）
+      if (Object.keys(newVersions).length > 0) _writeCachedFingerprints(newVersions);
 
       return _json({ ok: true, results, newVersions });
     }
@@ -611,8 +627,10 @@ function _writeTable(tableName, dataArray) {
   });
 
   const lastRow = sh.getLastRow();
-  if (lastRow > 1) sh.getRange(2, 1, lastRow - 1, idx._len).clearContent();
+  // 先寫入新資料（覆蓋現有內容），再清除多餘的舊 rows（避免清除後馬上覆寫的浪費）
   sh.getRange(2, 1, rows.length, idx._len).setValues(rows);
+  const extraRows = lastRow - 1 - rows.length;
+  if (extraRows > 0) sh.getRange(2 + rows.length, 1, extraRows, idx._len).clearContent();
 }
 
 function _updateRow(tableName, id, dataObj) {
@@ -684,6 +702,33 @@ function _headerIndex(sh, header) {
 
 function _json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ScriptProperties fingerprint 快取（讀取比 sheet 快 10-100x）
+const _FP_PREFIX = 'fp_';
+
+function _readCachedFingerprints(tableNames) {
+  try {
+    const all = PropertiesService.getScriptProperties().getProperties();
+    const result = {};
+    tableNames.forEach(t => {
+      const raw = all[_FP_PREFIX + t];
+      if (raw) try { result[t] = JSON.parse(raw); } catch (_) {}
+    });
+    return result;
+  } catch (e) {
+    return {};
+  }
+}
+
+function _writeCachedFingerprints(fpMap) {
+  try {
+    const toSet = {};
+    Object.entries(fpMap).forEach(([t, fp]) => { toSet[_FP_PREFIX + t] = JSON.stringify(fp); });
+    PropertiesService.getScriptProperties().setProperties(toSet, false);
+  } catch (e) {
+    Logger.log('⚠️ fingerprint cache write failed: ' + e);
+  }
 }
 
 function _asArray(v) {
