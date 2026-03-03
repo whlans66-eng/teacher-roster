@@ -185,106 +185,146 @@
 
   .hidden { display: none !important; }
 
-  /* ========== AI 對話介面 ========== */
+  /* ========== AI 對話介面（全新設計） ========== */
   .ai-chat-wrapper {
     display: flex;
-    height: 650px;
+    height: 700px;
     border-radius: 20px;
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
     overflow: hidden;
-    background: #ffffff;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   }
-  /* 側邊欄 */
+  /* 側邊欄 — 白色主題 */
   .ai-sidebar {
-    width: 240px;
-    min-width: 240px;
-    background: #1a1a2e;
+    width: 280px;
+    min-width: 280px;
+    background: #ffffff;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid rgba(255,255,255,0.06);
+    border-right: 1px solid #e2e8f0;
   }
   .ai-sidebar-header {
-    padding: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 20px;
   }
   .ai-sidebar-new-btn {
     width: 100%;
-    padding: 10px 14px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
-    color: #e0e0e0;
+    padding: 10px 16px;
+    background: #2563eb;
+    border: none;
+    color: #ffffff;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
   }
-  .ai-sidebar-new-btn:hover { background: rgba(255,255,255,0.14); }
+  .ai-sidebar-new-btn:hover { background: #1d4ed8; }
+  .ai-sidebar-new-btn:active { transform: scale(0.98); }
+  .ai-sidebar-list-label {
+    padding: 8px 20px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
   .ai-sidebar-list {
     flex: 1;
     overflow-y: auto;
-    padding: 8px;
+    padding: 4px 12px;
   }
   .ai-sidebar-list::-webkit-scrollbar { width: 4px; }
-  .ai-sidebar-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+  .ai-sidebar-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   .ai-session-item {
-    padding: 10px 12px;
-    border-radius: 8px;
+    padding: 12px;
+    border-radius: 12px;
     cursor: pointer;
     margin-bottom: 2px;
-    transition: background 0.15s;
+    transition: all 0.15s;
     position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    border: 1px solid transparent;
   }
-  .ai-session-item:hover { background: rgba(255,255,255,0.06); }
-  .ai-session-item.active { background: rgba(102, 126, 234, 0.2); }
+  .ai-session-item:hover { background: #f1f5f9; }
+  .ai-session-item.active {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
   .ai-session-item-icon {
-    font-size: 14px;
-    color: rgba(255,255,255,0.4);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
     flex-shrink: 0;
+    background: #f1f5f9;
+    color: #64748b;
+  }
+  .ai-session-item.active .ai-session-item-icon {
+    background: #dbeafe;
+    color: #2563eb;
   }
   .ai-session-item-content { flex: 1; min-width: 0; }
   .ai-session-item-title {
     font-size: 13px;
-    color: #e0e0e0;
+    font-weight: 600;
+    color: #334155;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.3;
   }
-  .ai-session-item.active .ai-session-item-title { color: #fff; font-weight: 600; }
+  .ai-session-item.active .ai-session-item-title { color: #1e40af; }
   .ai-session-item-date {
     font-size: 10px;
-    color: rgba(255,255,255,0.3);
+    color: #94a3b8;
     margin-top: 2px;
+    font-weight: 500;
   }
   .ai-session-item-delete {
     opacity: 0;
     background: none;
     border: none;
-    color: rgba(255,255,255,0.4);
+    color: #94a3b8;
     cursor: pointer;
     font-size: 14px;
-    padding: 2px 4px;
-    border-radius: 4px;
+    padding: 4px 6px;
+    border-radius: 6px;
     flex-shrink: 0;
-    transition: opacity 0.15s, color 0.15s;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
   }
   .ai-session-item:hover .ai-session-item-delete { opacity: 1; }
-  .ai-session-item-delete:hover { color: #ff453a; }
+  .ai-session-item-delete:hover { color: #ef4444; background: #fef2f2; }
   .ai-sidebar-footer {
-    padding: 12px 16px;
-    border-top: 1px solid rgba(255,255,255,0.08);
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    text-align: center;
+    padding: 16px 20px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
+  .ai-sidebar-footer-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ai-sidebar-footer-btn:hover { background: #f1f5f9; color: #1e293b; }
   /* 手機版隱藏側邊欄 */
   @media (max-width: 768px) {
     .ai-sidebar { display: none; }
@@ -297,127 +337,194 @@
     min-width: 0;
     overflow: hidden;
   }
+  /* 頂部標題列 — 白底 + 藍色圖示 */
   .ai-chat-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    gap: 14px;
+    padding: 16px 28px;
+    border-bottom: 1px solid #e2e8f0;
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 10;
   }
   .ai-chat-header-icon {
-    width: 40px; height: 40px;
+    width: 42px; height: 42px;
     border-radius: 12px;
-    background: rgba(255,255,255,0.2);
+    background: #2563eb;
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
+    font-size: 22px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
   }
-  .ai-chat-header-title { font-size: 17px; font-weight: 700; }
-  .ai-chat-header-sub { font-size: 12px; opacity: 0.8; }
+  .ai-chat-header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.3px;
+  }
+  .ai-chat-header-sub {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .ai-chat-header-sub i { color: #3b82f6; font-size: 13px; }
+  .ai-memory-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: #f1f5f9;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .ai-memory-badge:hover { background: #e2e8f0; color: #334155; }
+  .ai-memory-badge-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #3b82f6;
+    flex-shrink: 0;
+  }
+  .ai-header-btn {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ai-header-btn:hover { background: #f1f5f9; color: #1e293b; }
+  /* 聊天訊息區 — 訊息氣泡 + 頭像 */
   .ai-chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 28px 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 24px;
     scroll-behavior: smooth;
+    background: rgba(255,255,255,0.5);
   }
-  .ai-msg {
-    max-width: 85%;
-    padding: 14px 18px;
-    border-radius: 18px;
-    font-size: 14px;
+  .ai-msg-row {
+    display: flex;
+    gap: 14px;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    animation: msgFadeIn 0.3s ease;
+  }
+  .ai-msg-row.user { flex-direction: row-reverse; }
+  .ai-msg-avatar {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .ai-msg-avatar.bot {
+    background: #f1f5f9;
+    color: #2563eb;
+    border: 1px solid #e2e8f0;
+  }
+  .ai-msg-avatar.human {
+    background: #2563eb;
+    color: white;
+  }
+  .ai-msg-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 80%;
+  }
+  .ai-msg-row.user .ai-msg-body { align-items: flex-end; }
+  .ai-msg-bubble {
+    padding: 16px 20px;
+    border-radius: 16px;
+    font-size: 14.5px;
     line-height: 1.7;
     word-break: break-word;
-    animation: msgFadeIn 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #334155;
+  }
+  .ai-msg-row.user .ai-msg-bubble {
+    background: #2563eb;
+    border-color: #1d4ed8;
+    color: white;
   }
   @keyframes msgFadeIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .ai-msg.user {
-    align-self: flex-end;
-    background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-    color: white;
-    border-bottom-right-radius: 6px;
-  }
-  .ai-msg.assistant {
-    align-self: flex-start;
-    background: #f5f5f7;
-    color: #1d1d1f;
-    border-bottom-left-radius: 6px;
-  }
-  .ai-msg.assistant ul, .ai-msg.assistant ol {
+  .ai-msg-bubble ul, .ai-msg-bubble ol {
     margin: 8px 0;
     padding-left: 20px;
   }
-  .ai-msg.assistant li { margin-bottom: 4px; }
-  .ai-msg.assistant strong { color: #007aff; }
-  .ai-msg.assistant code {
+  .ai-msg-bubble li { margin-bottom: 4px; }
+  .ai-msg-bubble strong { color: #2563eb; }
+  .ai-msg-row.user .ai-msg-bubble strong { color: #bfdbfe; }
+  .ai-msg-bubble code {
     background: rgba(0,0,0,0.06);
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 13px;
   }
+  .ai-msg-time {
+    font-size: 10px;
+    color: #94a3b8;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 0 4px;
+  }
+  /* 系統訊息（保留） */
   .ai-msg.system {
     align-self: center;
     background: transparent;
-    color: #86868b;
-    font-size: 13px;
+    color: #94a3b8;
+    font-size: 12px;
     text-align: center;
     padding: 8px;
+    font-weight: 500;
   }
-  .ai-chat-input-area {
+  /* 打字指示器 */
+  .ai-typing-row {
     display: flex;
-    gap: 10px;
-    padding: 16px 20px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-    background: #fafafa;
+    gap: 14px;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    animation: msgFadeIn 0.3s ease;
   }
-  .ai-chat-input {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: 24px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    background: #ffffff;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .ai-chat-input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
-  }
-  .ai-chat-send {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    border: none;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s, opacity 0.2s;
-  }
-  .ai-chat-send:hover { transform: scale(1.08); }
-  .ai-chat-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
   .ai-typing-indicator {
     display: flex;
-    gap: 4px;
-    padding: 14px 18px;
-    align-self: flex-start;
-    background: #f5f5f7;
-    border-radius: 18px;
-    border-bottom-left-radius: 6px;
+    gap: 5px;
+    padding: 16px 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
   .ai-typing-dot {
     width: 8px; height: 8px;
     border-radius: 50%;
-    background: #86868b;
+    background: #94a3b8;
     animation: typingBounce 1.4s infinite ease-in-out;
   }
   .ai-typing-dot:nth-child(2) { animation-delay: 0.2s; }
@@ -426,29 +533,141 @@
     0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
     40% { transform: scale(1); opacity: 1; }
   }
+  /* 底部：快捷按鈕 + 輸入框 */
+  .ai-chat-bottom {
+    position: relative;
+    padding: 16px 24px 28px;
+    background: linear-gradient(to top, #ffffff, rgba(255,255,255,0.95), transparent);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid #f1f5f9;
+  }
   .ai-quick-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px 20px;
-    border-top: 1px solid rgba(0, 0, 0, 0.04);
-    background: #fafafa;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
   }
   .ai-quick-btn {
-    padding: 8px 14px;
-    border-radius: 20px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    background: white;
-    color: #1d1d1f;
-    font-size: 12px;
-    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 16px;
+    border: 1px solid #bfdbfe;
+    background: rgba(239, 246, 255, 0.5);
+    color: #1d4ed8;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   }
   .ai-quick-btn:hover {
-    border-color: #667eea;
-    color: #667eea;
-    background: #f5f3ff;
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+  }
+  .ai-quick-btn:active { transform: translateY(0); }
+  .ai-quick-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  .ai-quick-btn i { font-size: 14px; }
+  /* 輸入框容器 */
+  .ai-input-wrapper {
+    position: relative;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .ai-input-glow {
+    position: absolute;
+    inset: -4px;
+    background: linear-gradient(to right, #bfdbfe, #c7d2fe);
+    border-radius: 28px;
+    opacity: 0;
+    filter: blur(8px);
+    transition: opacity 0.4s;
+    pointer-events: none;
+  }
+  .ai-input-wrapper:focus-within .ai-input-glow { opacity: 0.4; }
+  .ai-input-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: all 0.3s;
+    overflow: hidden;
+  }
+  .ai-input-wrapper:focus-within .ai-input-inner {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.06);
+  }
+  .ai-chat-input {
+    flex: 1;
+    background: transparent;
+    padding: 16px 56px 16px 24px;
+    font-size: 15px;
+    color: #334155;
+    font-weight: 500;
+    outline: none;
+    border: none;
+  }
+  .ai-chat-input::placeholder { color: #94a3b8; }
+  .ai-chat-send {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px; height: 40px;
+    border-radius: 14px;
+    border: none;
+    background: #f1f5f9;
+    color: #cbd5e1;
+    font-size: 17px;
+    cursor: not-allowed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+  .ai-chat-send.active {
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+  .ai-chat-send.active:hover { background: #1d4ed8; transform: translateY(-50%) scale(1.05); }
+  .ai-chat-send.active:active { transform: translateY(-50%) scale(0.95); }
+  .ai-chat-send:disabled {
+    background: #f1f5f9;
+    color: #cbd5e1;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: translateY(-50%);
+  }
+  .ai-chat-disclaimer {
+    text-align: center;
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .ai-chat-disclaimer-dot {
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: #cbd5e1;
   }
 
   /* 智慧匹配篩選器 */
@@ -1113,12 +1332,17 @@
         <div class="ai-sidebar">
           <div class="ai-sidebar-header">
             <button class="ai-sidebar-new-btn" onclick="uiCreateNewSession()">
-              <i class="ph ph-plus"></i> 新對話
+              <i class="ph ph-plus" style="font-size:16px;"></i>
+              <span>開啟新對話</span>
             </button>
           </div>
+          <div class="ai-sidebar-list-label">歷史紀錄</div>
           <div id="aiSessionList" class="ai-sidebar-list"></div>
           <div class="ai-sidebar-footer">
-            <span id="aiSessionCount">0</span> 個對話
+            <button class="ai-sidebar-footer-btn" onclick="toggleAIMemoryPanel()">
+              <i class="ph ph-gear" style="font-size:16px;"></i>
+              <span>偏好設定</span>
+            </button>
           </div>
         </div>
         <!-- 右側：聊天主區域 -->
@@ -1129,55 +1353,68 @@
           </div>
           <div>
             <div class="ai-chat-header-title">AI 課程顧問</div>
-            <div class="ai-chat-header-sub">根據課程資料庫為您提供智慧推薦</div>
+            <div class="ai-chat-header-sub">
+              <i class="ph ph-database"></i>
+              智慧派課資料庫連線中
+            </div>
           </div>
-          <div style="margin-left:auto; display:flex; gap:6px;">
-            <button onclick="toggleAIMemoryPanel()"
-              style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;"
-              title="查看 AI 記住了哪些資訊">
-              <i class="ph ph-brain"></i> 記憶
-              <span id="aiMemoryCount" style="background:rgba(255,255,255,0.3); padding:1px 6px; border-radius:8px; font-size:10px; margin-left:2px;">0</span>
+          <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+            <button class="ai-memory-badge" onclick="toggleAIMemoryPanel()" title="查看 AI 記住了哪些資訊">
+              <span class="ai-memory-badge-dot"></span>
+              Memory <span id="aiMemoryCount">0</span>
             </button>
-            <button onclick="startNewAIChat()"
-              style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;">
-              <i class="ph ph-arrow-counter-clockwise"></i> 新對話
+            <button class="ai-header-btn" onclick="startNewAIChat()" title="新對話">
+              <i class="ph ph-arrow-counter-clockwise"></i>
             </button>
           </div>
         </div>
         <!-- AI 記憶管理面板 -->
-        <div id="aiMemoryPanel" style="display:none; background:#f0f4ff; border-bottom:1px solid #dde4f0; padding:12px 16px; font-size:13px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong style="color:#1a3a5c;"><i class="ph ph-brain"></i> AI 長期記憶</strong>
+        <div id="aiMemoryPanel" style="display:none; background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:14px 20px; font-size:13px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <strong style="color:#1e293b; display:flex; align-items:center; gap:6px;"><i class="ph ph-brain" style="color:#3b82f6;"></i> AI 長期記憶</strong>
             <button onclick="if(confirm('確定要清除所有記憶嗎？AI 將忘記關於你的所有資訊。')){aiChat.clearMemories(); renderAIMemoryPanel();}"
-              style="background:#ff3b30; color:white; border:none; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer;">
+              style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer;">
               全部清除
             </button>
           </div>
-          <div id="aiMemoryList" style="color:#333;"></div>
-          <div style="margin-top:8px; display:flex; gap:6px;">
+          <div id="aiMemoryList" style="color:#334155;"></div>
+          <div style="margin-top:10px; display:flex; gap:8px;">
             <input type="text" id="aiMemoryInput" placeholder="手動新增記憶，例如：我是三副、我對 ECDIS 有興趣"
-              style="flex:1; padding:6px 10px; border:1px solid #ccc; border-radius:8px; font-size:12px;"
+              style="flex:1; padding:8px 12px; border:1px solid #e2e8f0; border-radius:10px; font-size:12px; outline:none; transition: border-color 0.2s;"
+              onfocus="this.style.borderColor='#60a5fa'" onblur="this.style.borderColor='#e2e8f0'"
               onkeydown="if(event.key==='Enter'){addManualMemory();}">
             <button onclick="addManualMemory()"
-              style="background:#007aff; color:white; border:none; padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;">
+              style="background:#2563eb; color:white; border:none; padding:8px 16px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;">
               新增
             </button>
           </div>
         </div>
         <div id="aiChatMessages" class="ai-chat-messages"></div>
-        <div class="ai-quick-actions">
-          <button class="ai-quick-btn" onclick="sendAIQuickMessage('推薦大副適合的課程')">推薦大副課程</button>
-          <button class="ai-quick-btn" onclick="sendAIQuickMessage('新進船員需要上哪些課？')">新進船員課程</button>
-          <button class="ai-quick-btn" onclick="sendAIQuickMessage('領導統御相關的課程有哪些？')">領導統御</button>
-          <button class="ai-quick-btn" onclick="sendAIQuickMessage('請分析目前課程分佈是否均衡')">課程分佈分析</button>
-        </div>
-        <div class="ai-chat-input-area">
-          <input type="text" id="aiChatInput" class="ai-chat-input"
-            placeholder="輸入您的問題，例如：「推薦適合二副的安全課程」"
-            onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendAIMessage();}">
-          <button id="aiChatSendBtn" class="ai-chat-send" onclick="sendAIMessage()">
-            <i class="ph ph-paper-plane-tilt"></i>
-          </button>
+        <!-- 底部區域：快捷按鈕 + 輸入框 -->
+        <div class="ai-chat-bottom">
+          <div class="ai-quick-actions">
+            <button class="ai-quick-btn" onclick="sendAIQuickMessage('推薦大副適合的課程')"><i class="ph ph-user"></i> 推薦大副課程</button>
+            <button class="ai-quick-btn" onclick="sendAIQuickMessage('新進船員需要上哪些課？')"><i class="ph ph-users-three"></i> 新進船員課程</button>
+            <button class="ai-quick-btn" onclick="sendAIQuickMessage('領導統御相關的課程有哪些？')"><i class="ph ph-book-open"></i> 領導統御</button>
+            <button class="ai-quick-btn" onclick="sendAIQuickMessage('請分析目前課程分佈是否均衡')"><i class="ph ph-chart-pie"></i> 課程分佈分析</button>
+          </div>
+          <div class="ai-input-wrapper">
+            <div class="ai-input-glow"></div>
+            <div class="ai-input-inner">
+              <input type="text" id="aiChatInput" class="ai-chat-input"
+                placeholder="輸入您的問題，例如：「推薦適合二副的安全課程」"
+                oninput="toggleSendBtnState()"
+                onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendAIMessage();}">
+              <button id="aiChatSendBtn" class="ai-chat-send" onclick="sendAIMessage()">
+                <i class="ph ph-paper-plane-tilt" style="font-weight:bold;"></i>
+              </button>
+            </div>
+          </div>
+          <div class="ai-chat-disclaimer">
+            <span class="ai-chat-disclaimer-dot"></span>
+            智慧派課 AI 顧問由大型語言模型驅動，建議您對重要排程進行二次確認。
+            <span class="ai-chat-disclaimer-dot"></span>
+          </div>
         </div>
       </div><!-- /ai-chat-container -->
       </div><!-- /ai-chat-wrapper -->
@@ -2994,20 +3231,40 @@
 
     // ==================== AI 對話功能 ====================
 
+    /** 建立帶頭像的訊息列 */
+    function createMsgRow(role, htmlContent) {
+      const row = document.createElement('div');
+      if (role === 'system') {
+        row.className = 'ai-msg system';
+        row.innerHTML = htmlContent;
+        return row;
+      }
+      const isUser = role === 'user';
+      row.className = 'ai-msg-row' + (isUser ? ' user' : '');
+      row.innerHTML = `
+        <div class="ai-msg-avatar ${isUser ? 'human' : 'bot'}">
+          <i class="ph ph-${isUser ? 'user' : 'robot'}"></i>
+        </div>
+        <div class="ai-msg-body">
+          <div class="ai-msg-bubble">${htmlContent}</div>
+        </div>
+      `;
+      return row;
+    }
+
     function addAIWelcomeMessage() {
       const messages = document.getElementById('aiChatMessages');
-      messages.innerHTML = `
-        <div class="ai-msg system">歡迎使用 AI 課程顧問</div>
-        <div class="ai-msg assistant">
-          您好！我是智慧派課 AI 顧問，已掌握系統中 <strong>${maritimeCourses.length}</strong> 門課程的資料。<br><br>
+      const welcomeHtml = `
+          您好！我是智慧派課 <strong>AI 顧問</strong>，已掌握系統中 <span style="color:#2563eb; font-weight:700; text-decoration:underline;">${maritimeCourses.length}</span> 門課程的資料。<br><br>
           您可以問我：<br>
           • 根據職等推薦適合的課程<br>
           • 查詢特定主題的訓練課程<br>
           • 分析課程分佈與建議<br>
           • 規劃船員訓練路徑<br><br>
           請直接輸入您的問題，或點選下方的快捷按鈕開始！
-        </div>
       `;
+      messages.innerHTML = '';
+      messages.appendChild(createMsgRow('assistant', welcomeHtml));
     }
 
     /**
@@ -3023,22 +3280,15 @@
       addAIWelcomeMessage();
 
       // 加一個分隔提示，讓使用者知道這是上次的對話
-      const divider = document.createElement('div');
-      divider.className = 'ai-msg system';
-      divider.textContent = '── 以下是上次的對話記錄 ──';
-      messages.appendChild(divider);
+      messages.appendChild(createMsgRow('system', '── 以下是上次的對話記錄 ──'));
 
       // 依序渲染歷史訊息
       history.forEach(msg => {
-        const div = document.createElement('div');
         if (msg.role === 'user') {
-          div.className = 'ai-msg user';
-          div.textContent = msg.content;
+          messages.appendChild(createMsgRow('user', escapeHtml(msg.content)));
         } else {
-          div.className = 'ai-msg assistant';
-          div.innerHTML = formatAIResponse(msg.content);
+          messages.appendChild(createMsgRow('assistant', formatAIResponse(msg.content)));
         }
-        messages.appendChild(div);
       });
 
       messages.scrollTop = messages.scrollHeight;
@@ -3063,10 +3313,7 @@
       // 如果有記憶，顯示提示
       if (aiChat.memories.length > 0) {
         const messages = document.getElementById('aiChatMessages');
-        const hint = document.createElement('div');
-        hint.className = 'ai-msg system';
-        hint.textContent = `AI 仍記得關於你的 ${aiChat.memories.length} 項資訊`;
-        messages.appendChild(hint);
+        messages.appendChild(createMsgRow('system', `AI 仍記得關於你的 ${aiChat.memories.length} 項資訊`));
       }
     }
 
@@ -3111,10 +3358,9 @@
     function renderSessionList() {
       const list = document.getElementById('aiSessionList');
       const sessions = aiChat.getSessions();
-      document.getElementById('aiSessionCount').textContent = sessions.length;
 
       if (sessions.length === 0) {
-        list.innerHTML = '<div style="color:rgba(255,255,255,0.3); font-size:12px; text-align:center; padding:20px;">還沒有對話紀錄</div>';
+        list.innerHTML = '<div style="color:#94a3b8; font-size:12px; text-align:center; padding:20px;">還沒有對話紀錄</div>';
         return;
       }
 
@@ -3184,15 +3430,15 @@
       document.getElementById('aiMemoryCount').textContent = memories.length;
 
       if (memories.length === 0) {
-        list.innerHTML = '<div style="color:#999; font-size:12px; padding:4px 0;">目前沒有記憶。AI 會在對話中自動記住你告訴它的重要資訊（如職等、專長、偏好等），你也可以手動新增。</div>';
+        list.innerHTML = '<div style="color:#64748b; font-size:12px; padding:4px 0;">目前沒有記憶。AI 會在對話中自動記住你告訴它的重要資訊（如職等、專長、偏好等），你也可以手動新增。</div>';
         return;
       }
 
       list.innerHTML = memories.map((m, i) => `
-        <div style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid #eee;">
-          <span style="flex:1;">• ${m.fact}</span>
+        <div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #e2e8f0;">
+          <span style="flex:1; color:#334155;">• ${m.fact}</span>
           <button onclick="aiChat.removeMemory(${i}); renderAIMemoryPanel();"
-            style="background:none; border:none; color:#ff3b30; cursor:pointer; font-size:14px; padding:2px 6px;" title="刪除此記憶">
+            style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; padding:2px 6px; border-radius:4px;" title="刪除此記憶">
             <i class="ph ph-x"></i>
           </button>
         </div>
@@ -3219,6 +3465,17 @@
       if (el) el.textContent = aiChat.memories.length;
     }
 
+    /** 切換送出按鈕的啟用狀態 */
+    function toggleSendBtnState() {
+      const btn = document.getElementById('aiChatSendBtn');
+      const input = document.getElementById('aiChatInput');
+      if (input.value.trim()) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
+
     let _aiCooldownTimer = null;
 
     async function sendAIMessage() {
@@ -3235,41 +3492,44 @@
 
       const messages = document.getElementById('aiChatMessages');
 
-      // 顯示使用者訊息
-      const userDiv = document.createElement('div');
-      userDiv.className = 'ai-msg user';
-      userDiv.textContent = message;
-      messages.appendChild(userDiv);
+      // 顯示使用者訊息（帶頭像）
+      messages.appendChild(createMsgRow('user', escapeHtml(message)));
 
       input.value = '';
+      toggleSendBtnState();
       sendBtn.disabled = true;
       input.disabled = true;
 
       // 停用快捷按鈕
       document.querySelectorAll('.ai-quick-btn').forEach(b => b.disabled = true);
 
-      // 顯示打字指示器
-      const typingDiv = document.createElement('div');
-      typingDiv.className = 'ai-typing-indicator';
-      typingDiv.id = 'aiTypingIndicator';
-      typingDiv.innerHTML = '<div class="ai-typing-dot"></div><div class="ai-typing-dot"></div><div class="ai-typing-dot"></div>';
-      messages.appendChild(typingDiv);
+      // 顯示打字指示器（帶頭像）
+      const typingRow = document.createElement('div');
+      typingRow.className = 'ai-typing-row';
+      typingRow.id = 'aiTypingIndicator';
+      typingRow.innerHTML = `
+        <div class="ai-msg-avatar bot"><i class="ph ph-robot"></i></div>
+        <div class="ai-typing-indicator">
+          <div class="ai-typing-dot"></div><div class="ai-typing-dot"></div><div class="ai-typing-dot"></div>
+        </div>
+      `;
+      messages.appendChild(typingRow);
       messages.scrollTop = messages.scrollHeight;
 
       try {
         const reply = await aiChat.chat(message);
 
         // 移除打字指示器
-        typingDiv.remove();
+        typingRow.remove();
 
-        // 建立 AI 回覆元素
-        const aiDiv = document.createElement('div');
-        aiDiv.className = 'ai-msg assistant';
-        messages.appendChild(aiDiv);
+        // 建立 AI 回覆元素（帶頭像）
+        const aiMsgRow = createMsgRow('assistant', '');
+        messages.appendChild(aiMsgRow);
+        const aiBubble = aiMsgRow.querySelector('.ai-msg-bubble');
 
         // 串流打字效果
         await aiChat.simulateStream(reply, (char, idx, partial) => {
-          aiDiv.innerHTML = formatAIResponse(partial);
+          aiBubble.innerHTML = formatAIResponse(partial);
           messages.scrollTop = messages.scrollHeight;
         }, 15);
 
@@ -3277,25 +3537,20 @@
         updateMemoryCount();
         renderSessionList();
       } catch (error) {
-        typingDiv.remove();
+        typingRow.remove();
 
         const errorMsg = error.message || '連線失敗，請稍後再試';
         const isRateLimit = error.rateLimited === true;
 
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'ai-msg assistant';
-
         if (isRateLimit) {
-          // 啟動冷卻倒數 UI
-          errorDiv.innerHTML = `<span style="color: #ff9500;">
+          const errRow = createMsgRow('assistant', `<span style="color: #f59e0b;">
             <i class="ph ph-clock-countdown"></i> ${errorMsg}<br>
             <span id="aiCooldownDisplay" style="font-size:12px; opacity:0.8;">冷卻倒數中…</span>
-          </span>`;
-          messages.appendChild(errorDiv);
+          </span>`);
+          messages.appendChild(errRow);
           _startCooldownTimer(60);
         } else {
-          errorDiv.innerHTML = '<span style="color: #ff3b30;"><i class="ph ph-warning-circle"></i> ' + errorMsg + '</span>';
-          messages.appendChild(errorDiv);
+          messages.appendChild(createMsgRow('assistant', '<span style="color: #ef4444;"><i class="ph ph-warning-circle"></i> ' + errorMsg + '</span>'));
         }
       } finally {
         // 如果冷卻計時器正在運作，不要重新啟用控制項
