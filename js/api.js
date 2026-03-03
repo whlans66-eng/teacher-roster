@@ -435,6 +435,16 @@ function loadArrayFromStorage(key, normalizer) {
   }
 }
 
+// 將後端回傳的版本指紋合併寫入 localStorage（updates 為 null 時清除）
+function _mergeDataVersions(updates) {
+  if (!updates || Object.keys(updates).length === 0) {
+    localStorage.removeItem('dataVersions');
+    return;
+  }
+  const current = JSON.parse(localStorage.getItem('dataVersions') || '{}');
+  localStorage.setItem('dataVersions', JSON.stringify({ ...current, ...updates }));
+}
+
 /**
  * 資料同步管理器
  * 負責 localStorage 與後端的雙向同步
@@ -584,13 +594,7 @@ class DataSyncManager {
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
       // 用回傳的新版本指紋更新對應 table（無需額外請求）
-      if (saveResult.newVersion) {
-        const updatedVersions = JSON.parse(localStorage.getItem('dataVersions') || '{}');
-        updatedVersions[tableName] = saveResult.newVersion;
-        localStorage.setItem('dataVersions', JSON.stringify(updatedVersions));
-      } else {
-        localStorage.removeItem('dataVersions');
-      }
+      _mergeDataVersions(saveResult.newVersion ? { [tableName]: saveResult.newVersion } : null);
 
       if (this.api.debug) {
         console.log(`✅ ${tableName} 儲存完成`);
@@ -700,11 +704,7 @@ class DataSyncManager {
       // 清除修改標記，並用回傳的新版本指紋更新 localStorage（無需額外請求）
       localStorage.removeItem('hasLocalChanges');
       localStorage.setItem('lastSyncTime', new Date().toISOString());
-      if (saveResult.newVersions && Object.keys(saveResult.newVersions).length > 0) {
-        localStorage.setItem('dataVersions', JSON.stringify(saveResult.newVersions));
-      } else {
-        localStorage.removeItem('dataVersions');
-      }
+      _mergeDataVersions(saveResult.newVersions);
 
       if (this.api.debug) {
         console.log('✅ 資料已儲存完成');
