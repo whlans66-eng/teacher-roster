@@ -176,33 +176,24 @@ function doGet(e) {
 
     if (action === 'listall') {
       const allData = {};
+      const versions = {};
+      const versionTables = ['teachers', 'courseAssignments', 'maritimeCourses'];
       Object.keys(SHEETS_CONFIG).forEach(tableName => {
-        // 排除 users 表和 activeSessions 表
         if (tableName === 'users' || tableName === 'activeSessions') return;
-        allData[tableName] = _readTable(tableName);
+        const data = _readTable(tableName);
+        allData[tableName] = data;
+        if (versionTables.includes(tableName)) {
+          versions[tableName] = _computeFingerprint(data);
+        }
       });
-      return _json({ ok: true, data: allData });
+      return _json({ ok: true, data: allData, versions });
     }
 
     if (action === 'getversions') {
       const versions = {};
       const targetTables = ['teachers', 'courseAssignments', 'maritimeCourses'];
       targetTables.forEach(tableName => {
-        const data = _readTable(tableName);
-        const count = data.length;
-        const ids = data.map(item => item.id || '').sort().join(',');
-        const fingerprint = Utilities.computeDigest(
-          Utilities.DigestAlgorithm.MD5,
-          ids + '|' + count
-        ).map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
-        versions[tableName] = {
-          count: count,
-          fingerprint: fingerprint,
-          lastModified: data.reduce((latest, item) => {
-            const itemTime = item.lastModifiedAt || item.updatedAt || '';
-            return itemTime > latest ? itemTime : latest;
-          }, '')
-        };
+        versions[tableName] = _computeFingerprint(_readTable(tableName));
       });
       return _json({ ok: true, versions: versions });
     }
@@ -306,10 +297,21 @@ function doPost(e) {
       const dataRaw = p.data || (bodyObj && bodyObj.data);
 
       if (!table || !SHEETS_CONFIG[table]) return _json({ ok: false, error: 'Invalid table' });
-      // 禁止透過 API 覆寫 users 表
       if (table === 'users') return _json({ ok: false, error: 'Access denied' });
-      // teacher 角色無法修改 teachers / maritimeCourses 資料表（唯讀預覽）
       if (['teachers', 'maritimeCourses'].includes(table) && session.role === 'teacher') return _json({ ok: false, error: 'Access denied' });
+
+      // server-side 衝突檢測（省掉 client 的 getVersions 請求）
+      const savedVersionRaw = p.savedVersion || (bodyObj && bodyObj.savedVersion);
+      const forceOverwrite = String(p.forceOverwrite || (bodyObj && bodyObj.forceOverwrite)) === 'true';
+      if (savedVersionRaw && !forceOverwrite) {
+        const savedVersion = typeof savedVersionRaw === 'string' ? JSON.parse(savedVersionRaw) : savedVersionRaw;
+        if (savedVersion && savedVersion.fingerprint) {
+          const current = _computeFingerprint(_readTable(table));
+          if (savedVersion.fingerprint !== current.fingerprint) {
+            return _json({ ok: true, conflict: true, table, savedCount: savedVersion.count, currentCount: current.count });
+          }
+        }
+      }
 
       let data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
       data = _asArray(data);
@@ -332,7 +334,7 @@ function doPost(e) {
       }
 
       _writeTable(table, data);
-      return _json({ ok: true, table: table, count: data.length });
+      return _json({ ok: true, table, count: data.length, newVersion: _computeFingerprint(data) });
     }
 
     // Batch Save (多表同時寫入，減少 HTTP 往返次數)
@@ -342,7 +344,29 @@ function doPost(e) {
       if (!tablesRaw) return _json({ ok: false, error: 'Missing tables' });
 
       const tablesObj = typeof tablesRaw === 'string' ? JSON.parse(tablesRaw) : tablesRaw;
+
+      // server-side 衝突檢測（省掉 client 的 getVersions 請求）
+      const savedVersionsRaw = p.savedVersions || (bodyObj && bodyObj.savedVersions);
+      const forceOverwrite = String(p.forceOverwrite || (bodyObj && bodyObj.forceOverwrite)) === 'true';
+      if (savedVersionsRaw && !forceOverwrite) {
+        const savedVersions = typeof savedVersionsRaw === 'string' ? JSON.parse(savedVersionsRaw) : savedVersionsRaw;
+        const conflicts = [];
+        for (const tableName of Object.keys(savedVersions)) {
+          const saved = savedVersions[tableName];
+          if (!saved || !saved.fingerprint || !SHEETS_CONFIG[tableName]) continue;
+          const current = _computeFingerprint(_readTable(tableName));
+          if (saved.fingerprint !== current.fingerprint) {
+            conflicts.push({ table: tableName, savedCount: saved.count, currentCount: current.count });
+          }
+        }
+        if (conflicts.length > 0) {
+          return _json({ ok: true, conflict: true, conflicts, message: '後端資料已被其他人修改，請先重新載入資料再進行編輯' });
+        }
+      }
+
       const results = {};
+      const newVersions = {};
+      const versionTables = ['teachers', 'courseAssignments', 'maritimeCourses'];
 
       for (const [table, dataRaw] of Object.entries(tablesObj)) {
         if (!SHEETS_CONFIG[table]) continue;
@@ -370,9 +394,12 @@ function doPost(e) {
 
         _writeTable(table, data);
         results[table] = { count: data.length };
+        if (versionTables.includes(table)) {
+          newVersions[table] = _computeFingerprint(data);
+        }
       }
 
-      return _json({ ok: true, results });
+      return _json({ ok: true, results, newVersions });
     }
 
     // Update (單筆更新)
@@ -662,6 +689,23 @@ function _json(obj) {
 function _asArray(v) {
   if (Array.isArray(v)) return v;
   try { return JSON.parse(v) || []; } catch (e) { return []; }
+}
+
+function _computeFingerprint(data) {
+  const count = data.length;
+  const ids = data.map(item => item.id || '').sort().join(',');
+  const fingerprint = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.MD5,
+    ids + '|' + count
+  ).map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+  return {
+    count,
+    fingerprint,
+    lastModified: data.reduce((latest, item) => {
+      const itemTime = item.lastModifiedAt || item.updatedAt || '';
+      return itemTime > latest ? itemTime : latest;
+    }, '')
+  };
 }
 
 function _formatDate(date) {

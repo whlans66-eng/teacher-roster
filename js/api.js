@@ -114,13 +114,13 @@ class TeacherRosterAPI {
   }
 
   /**
-   * 讀取所有表格的資料
-   * @returns {Object} { teachers: [], courseAssignments: [], maritimeCourses: [] }
+   * 讀取所有表格的資料（含版本指紋，避免額外的 getVersions 請求）
+   * @returns {{ data: Object, versions: Object }}
    */
   async listAll() {
     try {
       const response = await this._get({ action: 'listall' });
-      return response.data || {};
+      return { data: response.data || {}, versions: response.versions || {} };
     } catch (error) {
       console.error('讀取所有資料失敗:', error);
       throw error;
@@ -142,17 +142,18 @@ class TeacherRosterAPI {
   }
 
   /**
-   * 儲存特定表格的資料
+   * 儲存特定表格的資料（含 server-side 衝突檢測）
    * @param {string} table - 表格名稱
    * @param {Array} data - 資料陣列
+   * @param {Object|null} savedVersion - 本地版本指紋，傳給後端做衝突檢測
+   * @param {boolean} forceOverwrite - 是否略過衝突檢測
    */
-  async save(table, data) {
+  async save(table, data, savedVersion = null, forceOverwrite = false) {
     try {
-      const response = await this._post({
-        action: 'save',
-        table,
-        data
-      });
+      const payload = { action: 'save', table, data };
+      if (savedVersion) payload.savedVersion = savedVersion;
+      if (forceOverwrite) payload.forceOverwrite = 'true';
+      const response = await this._post(payload);
       return response;
     } catch (error) {
       console.error(`儲存 ${table} 失敗:`, error);
@@ -161,15 +162,17 @@ class TeacherRosterAPI {
   }
 
   /**
-   * 批次儲存多個表格（單次 HTTP 請求，大幅減少等待時間）
+   * 批次儲存多個表格（單次 HTTP 請求，含 server-side 衝突檢測）
    * @param {Object} tables - { tableName: data[] } 格式
+   * @param {Object|null} savedVersions - localStorage 中的版本指紋，傳給後端做衝突檢測
+   * @param {boolean} forceOverwrite - 是否略過衝突檢測強制覆寫
    */
-  async batchSave(tables) {
+  async batchSave(tables, savedVersions = null, forceOverwrite = false) {
     try {
-      const response = await this._post({
-        action: 'batchsave',
-        tables
-      });
+      const payload = { action: 'batchsave', tables };
+      if (savedVersions) payload.savedVersions = savedVersions;
+      if (forceOverwrite) payload.forceOverwrite = 'true';
+      const response = await this._post(payload);
       return response;
     } catch (error) {
       console.error('批次儲存失敗:', error);
@@ -454,7 +457,7 @@ class DataSyncManager {
         console.log('🔍 Token:', this.api.token ? '已設置' : '未設置');
       }
 
-      const allData = await this.api.listAll();
+      const { data: allData, versions } = await this.api.listAll();
 
       // 詳細日誌
       if (this.api.debug) {
@@ -483,15 +486,12 @@ class DataSyncManager {
       localStorage.setItem('courseAssignments', JSON.stringify(normalizedCourses));
       localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
 
-      // 儲存資料版本指紋（用於衝突檢測）
-      try {
-        const versions = await this.api.getVersions();
+      // listall 已附帶版本指紋，直接使用（省掉一次 getVersions 請求）
+      if (versions && Object.keys(versions).length > 0) {
         localStorage.setItem('dataVersions', JSON.stringify(versions));
         if (this.api.debug) {
           console.log('🔖 已儲存資料版本指紋:', versions);
         }
-      } catch (versionError) {
-        console.warn('⚠️ 無法取得資料版本:', versionError);
       }
 
       // 更新最後同步時間
@@ -563,41 +563,35 @@ class DataSyncManager {
           : undefined;
       const data = loadArrayFromStorage(tableName, normalizer);
 
-      // 衝突檢測
-      if (!forceOverwrite) {
-        try {
-          const savedVersions = JSON.parse(localStorage.getItem('dataVersions') || '{}');
-          const currentVersions = await this.api.getVersions();
+      // 衝突檢測由後端執行（省掉一次 getVersions 請求）
+      const savedVersions = JSON.parse(localStorage.getItem('dataVersions') || '{}');
+      const savedVersion = !forceOverwrite ? (savedVersions[tableName] || null) : null;
 
-          const saved = savedVersions[tableName];
-          const current = currentVersions[tableName];
+      // save 接收 savedVersion 做 server-side 衝突檢測，並回傳 newVersion（單次請求完成）
+      const saveResult = await this.api.save(tableName, data, savedVersion, forceOverwrite);
 
-          if (saved && current && saved.fingerprint !== current.fingerprint) {
-            console.warn(`⚠️ ${tableName} 偵測到資料衝突`);
-            return {
-              conflict: true,
-              table: tableName,
-              savedCount: saved.count,
-              currentCount: current.count,
-              message: `${tableName} 資料已被其他人修改`
-            };
-          }
-        } catch (versionCheckError) {
-          console.warn('⚠️ 衝突檢測失敗，繼續儲存:', versionCheckError);
-        }
+      if (saveResult.conflict) {
+        console.warn(`⚠️ ${tableName} 偵測到資料衝突`);
+        return {
+          conflict: true,
+          table: tableName,
+          savedCount: saveResult.savedCount,
+          currentCount: saveResult.currentCount,
+          message: `${tableName} 資料已被其他人修改`
+        };
       }
-
-      await this.api.save(tableName, data);
 
       localStorage.setItem('lastSyncTime', new Date().toISOString());
 
-      // 立刻清除舊版本指紋，避免下次儲存時誤報衝突
-      localStorage.removeItem('dataVersions');
+      // 用回傳的新版本指紋更新對應 table（無需額外請求）
+      if (saveResult.newVersion) {
+        const updatedVersions = JSON.parse(localStorage.getItem('dataVersions') || '{}');
+        updatedVersions[tableName] = saveResult.newVersion;
+        localStorage.setItem('dataVersions', JSON.stringify(updatedVersions));
+      } else {
+        localStorage.removeItem('dataVersions');
+      }
 
-      // 非同步取得最新版本指紋（不阻塞回傳）
-      this.api.getVersions().then(newVersions => {
-        localStorage.setItem('dataVersions', JSON.stringify(newVersions));
-      }).catch(e => console.warn('⚠️ 更新版本指紋失敗:', e));
       if (this.api.debug) {
         console.log(`✅ ${tableName} 儲存完成`);
       }
@@ -681,66 +675,36 @@ class DataSyncManager {
         return { skipped: true, reason: 'no_local_changes' };
       }
 
-      // 衝突檢測：比對儲存的版本與後端目前版本
-      if (!forceOverwrite) {
-        try {
-          const savedVersions = JSON.parse(localStorage.getItem('dataVersions') || '{}');
-          const currentVersions = await this.api.getVersions();
+      // 衝突檢測由後端執行（省掉一次 getVersions 請求）
+      const savedVersions = forceOverwrite
+        ? null
+        : JSON.parse(localStorage.getItem('dataVersions') || '{}');
 
-          const conflicts = [];
-          const tables = ['teachers', 'courseAssignments', 'maritimeCourses'];
+      // 批次儲存：server-side 衝突檢測 + 寫入 + 回傳新版本指紋（單次請求完成）
+      const saveResult = await this.api.batchSave(
+        { teachers: localTeachers, courseAssignments: localCourses, maritimeCourses: localMaritime },
+        savedVersions && Object.keys(savedVersions).length > 0 ? savedVersions : null,
+        forceOverwrite
+      );
 
-          for (const table of tables) {
-            const saved = savedVersions[table];
-            const current = currentVersions[table];
-
-            if (saved && current) {
-              // 比對指紋，如果不同表示資料已被修改
-              if (saved.fingerprint !== current.fingerprint) {
-                conflicts.push({
-                  table,
-                  savedCount: saved.count,
-                  currentCount: current.count,
-                  savedFingerprint: saved.fingerprint,
-                  currentFingerprint: current.fingerprint
-                });
-              }
-            }
-          }
-
-          if (conflicts.length > 0) {
-            console.warn('⚠️ 偵測到資料衝突:', conflicts);
-            return {
-              conflict: true,
-              conflicts: conflicts,
-              message: '後端資料已被其他人修改，請先重新載入資料再進行編輯',
-              hint: '您可以選擇「重新載入」獲取最新資料，或「強制覆蓋」使用您的本地資料'
-            };
-          }
-        } catch (versionCheckError) {
-          console.warn('⚠️ 衝突檢測失敗，繼續儲存:', versionCheckError);
-        }
+      if (saveResult.conflict) {
+        console.warn('⚠️ 偵測到資料衝突:', saveResult.conflicts);
+        return {
+          conflict: true,
+          conflicts: saveResult.conflicts,
+          message: saveResult.message || '後端資料已被其他人修改，請先重新載入資料再進行編輯',
+          hint: '您可以選擇「重新載入」獲取最新資料，或「強制覆蓋」使用您的本地資料'
+        };
       }
 
-      // 批次儲存資料（單次請求，比依序儲存快 3 倍）
-      await this.api.batchSave({
-        teachers: localTeachers,
-        courseAssignments: localCourses,
-        maritimeCourses: localMaritime
-      });
-
-      // 清除修改標記
+      // 清除修改標記，並用回傳的新版本指紋更新 localStorage（無需額外請求）
       localStorage.removeItem('hasLocalChanges');
       localStorage.setItem('lastSyncTime', new Date().toISOString());
-
-      // 立刻清除舊版本指紋，避免下次儲存時誤報衝突
-      // （後端資料剛被更新，舊指紋已失效）
-      localStorage.removeItem('dataVersions');
-
-      // 非同步取得最新版本指紋（不阻塞回傳）
-      this.api.getVersions().then(newVersions => {
-        localStorage.setItem('dataVersions', JSON.stringify(newVersions));
-      }).catch(e => console.warn('⚠️ 更新版本指紋失敗:', e));
+      if (saveResult.newVersions && Object.keys(saveResult.newVersions).length > 0) {
+        localStorage.setItem('dataVersions', JSON.stringify(saveResult.newVersions));
+      } else {
+        localStorage.removeItem('dataVersions');
+      }
 
       if (this.api.debug) {
         console.log('✅ 資料已儲存完成');
