@@ -1203,6 +1203,37 @@ class AIChatManager {
     this._consecutiveFailures = 0; // 連續失敗計數
     this._cachedContext = null;    // 系統上下文快取
     this._contextCacheTime = 0;   // 上下文快取時間
+    this._storageKey = 'aiChatHistory'; // localStorage key
+    this._loadHistory(); // 載入上次的對話記錄
+  }
+
+  /**
+   * 從 localStorage 載入對話歷史
+   */
+  _loadHistory() {
+    try {
+      const saved = localStorage.getItem(this._storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          this.conversationHistory = parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('載入 AI 對話歷史失敗:', e);
+      this.conversationHistory = [];
+    }
+  }
+
+  /**
+   * 將對話歷史存入 localStorage
+   */
+  _saveHistory() {
+    try {
+      localStorage.setItem(this._storageKey, JSON.stringify(this.conversationHistory));
+    } catch (e) {
+      console.warn('儲存 AI 對話歷史失敗:', e);
+    }
   }
 
   /**
@@ -1338,6 +1369,8 @@ ${teachersSummary}
         this.conversationHistory = this.conversationHistory.slice(-20);
       }
 
+      this._saveHistory();
+
       if (this.onComplete) this.onComplete(aiReply);
       return aiReply;
     } catch (error) {
@@ -1426,6 +1459,7 @@ ${teachersSummary}
    */
   clearHistory() {
     this.conversationHistory = [];
+    this._saveHistory();
   }
 }
 
