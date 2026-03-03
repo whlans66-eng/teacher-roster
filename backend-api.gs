@@ -35,30 +35,6 @@ const SHEETS_CONFIG = {
     name: 'maritimeCourses',
     header: ['id','name','category','method','description','keywords','targetCategories','targetRanks','version','lastModifiedBy','lastModifiedAt','duration','lang','link']
   },
-  surveyTemplates: {
-    name: 'surveyTemplates',
-    header: ['id','name','description','questions','createdAt','updatedAt']
-  },
-  surveys: {
-    name: 'surveys',
-    header: ['id','templateId','courseId','courseName','courseDate','teacherId','teacherName','status','shareUrl','createdAt','expiresAt']
-  },
-  surveyResponses: {
-    name: 'surveyResponses',
-    header: ['id','surveyId','respondentName','respondentEmail','answers','submittedAt']
-  },
-  activityLog: {
-    name: 'activityLog',
-    header: ['id','courseId','userId','userName','action','actionType','details','timestamp']
-  },
-  comments: {
-    name: 'comments',
-    header: ['id','courseId','userId','userName','userAvatar','content','timestamp','updatedAt']
-  },
-  likes: {
-    name: 'likes',
-    header: ['id','courseId','userId','userName','timestamp']
-  },
   activeSessions: {
     name: 'activeSessions',
     header: ['sessionId','userName','userEmail','pageUrl','lastActiveTime','userAgent','kicked']
@@ -177,24 +153,30 @@ function doGet(e) {
     if (action === 'listall') {
       const allData = {};
       const versions = {};
-      const versionTables = ['teachers', 'courseAssignments', 'maritimeCourses'];
       Object.keys(SHEETS_CONFIG).forEach(tableName => {
         if (tableName === 'users' || tableName === 'activeSessions') return;
         const data = _readTable(tableName);
         allData[tableName] = data;
-        if (versionTables.includes(tableName)) {
+        if (VERSION_TABLES.includes(tableName)) {
           versions[tableName] = _computeFingerprint(data);
         }
       });
+      // 更新快取，讓後續 batchsave 的衝突檢測不需重讀 sheet
+      _writeCachedFingerprints(versions);
       return _json({ ok: true, data: allData, versions });
     }
 
     if (action === 'getversions') {
-      const versions = {};
-      const targetTables = ['teachers', 'courseAssignments', 'maritimeCourses'];
-      targetTables.forEach(tableName => {
-        versions[tableName] = _computeFingerprint(_readTable(tableName));
+      const versions = _readCachedFingerprints(VERSION_TABLES);
+      // 快取 miss 的 table 才讀 sheet（通常重新部署後第一次）
+      const missing = VERSION_TABLES.filter(t => !versions[t]);
+      const newCache = {};
+      missing.forEach(tableName => {
+        const fp = _computeFingerprint(_readTable(tableName));
+        versions[tableName] = fp;
+        newCache[tableName] = fp;
       });
+      if (Object.keys(newCache).length > 0) _writeCachedFingerprints(newCache);
       return _json({ ok: true, versions: versions });
     }
 
@@ -300,15 +282,16 @@ function doPost(e) {
       if (table === 'users') return _json({ ok: false, error: 'Access denied' });
       if (['teachers', 'maritimeCourses'].includes(table) && session.role === 'teacher') return _json({ ok: false, error: 'Access denied' });
 
-      // server-side 衝突檢測（省掉 client 的 getVersions 請求）
+      // server-side 衝突檢測（優先從 ScriptProperties 快取讀取，省掉 sheet read）
       const savedVersionRaw = p.savedVersion || (bodyObj && bodyObj.savedVersion);
       const forceOverwrite = String(p.forceOverwrite || (bodyObj && bodyObj.forceOverwrite)) === 'true';
       if (savedVersionRaw && !forceOverwrite) {
-        const savedVersion = typeof savedVersionRaw === 'string' ? JSON.parse(savedVersionRaw) : savedVersionRaw;
+        const savedVersion = _parseRaw(savedVersionRaw);
         if (savedVersion && savedVersion.fingerprint) {
-          const current = _computeFingerprint(_readTable(table));
-          if (savedVersion.fingerprint !== current.fingerprint) {
-            return _json({ ok: true, conflict: true, table, savedCount: savedVersion.count, currentCount: current.count });
+          const conflicts = _detectConflicts({ [table]: savedVersion }, [table]);
+          if (conflicts.length > 0) {
+            const c = conflicts[0];
+            return _json({ ok: true, conflict: true, table, savedCount: c.savedCount, currentCount: c.currentCount });
           }
         }
       }
@@ -334,7 +317,9 @@ function doPost(e) {
       }
 
       _writeTable(table, data);
-      return _json({ ok: true, table, count: data.length, newVersion: _computeFingerprint(data) });
+      const newVersion = _computeFingerprint(data);
+      _writeCachedFingerprints({ [table]: newVersion });
+      return _json({ ok: true, table, count: data.length, newVersion });
     }
 
     // Batch Save (多表同時寫入，減少 HTTP 往返次數)
@@ -345,20 +330,12 @@ function doPost(e) {
 
       const tablesObj = typeof tablesRaw === 'string' ? JSON.parse(tablesRaw) : tablesRaw;
 
-      // server-side 衝突檢測（省掉 client 的 getVersions 請求）
+      // server-side 衝突檢測（優先從 ScriptProperties 快取讀取，省掉 sheet reads）
       const savedVersionsRaw = p.savedVersions || (bodyObj && bodyObj.savedVersions);
       const forceOverwrite = String(p.forceOverwrite || (bodyObj && bodyObj.forceOverwrite)) === 'true';
       if (savedVersionsRaw && !forceOverwrite) {
-        const savedVersions = typeof savedVersionsRaw === 'string' ? JSON.parse(savedVersionsRaw) : savedVersionsRaw;
-        const conflicts = [];
-        for (const tableName of Object.keys(savedVersions)) {
-          const saved = savedVersions[tableName];
-          if (!saved || !saved.fingerprint || !SHEETS_CONFIG[tableName]) continue;
-          const current = _computeFingerprint(_readTable(tableName));
-          if (saved.fingerprint !== current.fingerprint) {
-            conflicts.push({ table: tableName, savedCount: saved.count, currentCount: current.count });
-          }
-        }
+        const savedVersions = _parseRaw(savedVersionsRaw);
+        const conflicts = _detectConflicts(savedVersions, VERSION_TABLES);
         if (conflicts.length > 0) {
           return _json({ ok: true, conflict: true, conflicts, message: '後端資料已被其他人修改，請先重新載入資料再進行編輯' });
         }
@@ -366,7 +343,6 @@ function doPost(e) {
 
       const results = {};
       const newVersions = {};
-      const versionTables = ['teachers', 'courseAssignments', 'maritimeCourses'];
 
       for (const [table, dataRaw] of Object.entries(tablesObj)) {
         if (!SHEETS_CONFIG[table]) continue;
@@ -394,10 +370,13 @@ function doPost(e) {
 
         _writeTable(table, data);
         results[table] = { count: data.length };
-        if (versionTables.includes(table)) {
+        if (VERSION_TABLES.includes(table)) {
           newVersions[table] = _computeFingerprint(data);
         }
       }
+
+      // 寫完後批次更新 fingerprint 快取（讓下次衝突檢測不需重讀 sheet）
+      if (Object.keys(newVersions).length > 0) _writeCachedFingerprints(newVersions);
 
       return _json({ ok: true, results, newVersions });
     }
@@ -611,8 +590,10 @@ function _writeTable(tableName, dataArray) {
   });
 
   const lastRow = sh.getLastRow();
-  if (lastRow > 1) sh.getRange(2, 1, lastRow - 1, idx._len).clearContent();
+  // 先寫入新資料（覆蓋現有內容），再清除多餘的舊 rows（避免清除後馬上覆寫的浪費）
   sh.getRange(2, 1, rows.length, idx._len).setValues(rows);
+  const extraRows = lastRow - 1 - rows.length;
+  if (extraRows > 0) sh.getRange(2 + rows.length, 1, extraRows, idx._len).clearContent();
 }
 
 function _updateRow(tableName, id, dataObj) {
@@ -684,6 +665,54 @@ function _headerIndex(sh, header) {
 
 function _json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ScriptProperties fingerprint 快取（讀取比 sheet 快 10-100x）
+const _FP_PREFIX = 'fp_';
+const VERSION_TABLES = ['teachers', 'courseAssignments', 'maritimeCourses'];
+
+function _readCachedFingerprints(tableNames) {
+  try {
+    const all = PropertiesService.getScriptProperties().getProperties();
+    const result = {};
+    tableNames.forEach(t => {
+      const raw = all[_FP_PREFIX + t];
+      if (raw) try { result[t] = JSON.parse(raw); } catch (_) {}
+    });
+    return result;
+  } catch (e) {
+    return {};
+  }
+}
+
+function _writeCachedFingerprints(fpMap) {
+  try {
+    const toSet = {};
+    Object.entries(fpMap).forEach(([t, fp]) => { toSet[_FP_PREFIX + t] = JSON.stringify(fp); });
+    PropertiesService.getScriptProperties().setProperties(toSet, false);
+  } catch (e) {
+    Logger.log('⚠️ fingerprint cache write failed: ' + e);
+  }
+}
+
+// 解析可能為 JSON 字串或已是物件的值
+function _parseRaw(raw) {
+  return typeof raw === 'string' ? JSON.parse(raw) : raw;
+}
+
+// 衝突檢測：比對 savedVersions 與快取指紋，回傳衝突陣列
+function _detectConflicts(savedVersions, tableNames) {
+  const cached = _readCachedFingerprints(tableNames);
+  const conflicts = [];
+  for (const tableName of tableNames) {
+    const saved = savedVersions[tableName];
+    if (!saved || !saved.fingerprint || !SHEETS_CONFIG[tableName]) continue;
+    const current = cached[tableName] || _computeFingerprint(_readTable(tableName));
+    if (saved.fingerprint !== current.fingerprint) {
+      conflicts.push({ table: tableName, savedCount: saved.count, currentCount: current.count });
+    }
+  }
+  return conflicts;
 }
 
 function _asArray(v) {
