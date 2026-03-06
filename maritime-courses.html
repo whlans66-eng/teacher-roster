@@ -1226,6 +1226,10 @@
 
   <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <!-- PptxGenJS for PowerPoint export -->
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
@@ -1278,11 +1282,22 @@
     <!-- 1. 課程瀏覽頁面 -->
     <div id="maritimeViewPage">
       <div class="glass-panel">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
           <h2 style="font-size: 20px; font-weight: 600; margin:0;">🔍 課程搜尋</h2>
-          <button id="courseSelectBtn" onclick="toggleCourseSelectMode()">
-            <i class="ph ph-check-square"></i> 選取
-          </button>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button id="courseSelectBtn" onclick="toggleCourseSelectMode()" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; font-size:13px; font-weight:500; cursor:pointer;">
+              <i class="ph ph-check-square"></i> 選取
+            </button>
+            <button onclick="exportToExcel()" title="匯出 Excel" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #16a34a; border-radius:10px; background:#f0fdf4; color:#16a34a; font-size:13px; font-weight:600; cursor:pointer;">
+              <i class="ph ph-microsoft-excel-logo"></i> Excel
+            </button>
+            <button onclick="exportToPDF()" title="匯出 PDF" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #dc2626; border-radius:10px; background:#fef2f2; color:#dc2626; font-size:13px; font-weight:600; cursor:pointer;">
+              <i class="ph ph-file-pdf"></i> PDF
+            </button>
+            <button onclick="exportToPPT()" title="匯出 PowerPoint" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #d97706; border-radius:10px; background:#fffbeb; color:#d97706; font-size:13px; font-weight:600; cursor:pointer;">
+              <i class="ph ph-presentation-chart"></i> PPT
+            </button>
+          </div>
         </div>
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
           <input type="text" id="maritimeSearchInput" placeholder="輸入課程名稱或關鍵字..." class="ios-input" oninput="displayMaritimeCourses()">
@@ -1397,6 +1412,8 @@
             <button class="ai-quick-btn" onclick="sendAIQuickMessage('新進船員需要上哪些課？')"><i class="ph ph-users-three"></i> 新進船員課程</button>
             <button class="ai-quick-btn" onclick="sendAIQuickMessage('領導統御相關的課程有哪些？')"><i class="ph ph-book-open"></i> 領導統御</button>
             <button class="ai-quick-btn" onclick="sendAIQuickMessage('請分析目前課程分佈是否均衡')"><i class="ph ph-chart-pie"></i> 課程分佈分析</button>
+            <button class="ai-quick-btn" onclick="openFeedbackMode()" style="background:rgba(255,149,0,0.18); color:#ff9500; border-color:rgba(255,149,0,0.35);"><i class="ph ph-chat-dots"></i> 反映課程意見</button>
+            <button class="ai-quick-btn" onclick="sendAIQuickMessage('幫我新增一門課程')" style="background:rgba(52,199,89,0.18); color:#248a3d; border-color:rgba(52,199,89,0.35);"><i class="ph ph-plus-circle"></i> 新增課程</button>
           </div>
           <div class="ai-input-wrapper">
             <div class="ai-input-glow"></div>
@@ -3522,20 +3539,41 @@
         // 移除打字指示器
         typingRow.remove();
 
-        // 建立 AI 回覆元素（帶頭像）
+        // 解析是否含有 AI 操作指令
+        const actions = aiChat.parseAIActions(reply);
+        const displayText = aiChat.cleanDisplayText(reply);
+
+        // 建立 AI 回覆元素（帶頭像，使用新版 createMsgRow）
         const aiMsgRow = createMsgRow('assistant', '');
         messages.appendChild(aiMsgRow);
         const aiBubble = aiMsgRow.querySelector('.ai-msg-bubble');
 
-        // 串流打字效果
-        await aiChat.simulateStream(reply, (char, idx, partial) => {
+        // 串流打字效果（只顯示清理後的文字）
+        await aiChat.simulateStream(displayText, (char, idx, partial) => {
           aiBubble.innerHTML = formatAIResponse(partial);
           messages.scrollTop = messages.scrollHeight;
         }, 15);
 
-        // 更新記憶計數和側邊欄（AI 可能在回覆中記住了新資訊，session 標題可能更新）
+        // 更新記憶計數和側邊欄
         updateMemoryCount();
         renderSessionList();
+
+        // 若有操作指令，顯示確認按鈕
+        if (actions.length > 0) {
+          const actionBtnDiv = document.createElement('div');
+          actionBtnDiv.style.cssText = 'background:rgba(0,122,255,0.08); border:1px solid rgba(0,122,255,0.2); border-radius:12px; padding:10px 14px; margin-top:6px; margin-left:44px;';
+          actionBtnDiv.innerHTML = `
+            <div style="font-size:13px; color:#007aff; font-weight:600; margin-bottom:8px;"><i class="ph ph-lightning"></i> AI 偵測到操作指令</div>
+            ${actions.map((a, i) => `
+              <button onclick="showAIActionConfirmation(${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; background:#007aff; color:white; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; margin-right:6px; margin-bottom:4px;">
+                <i class="ph ph-${a.type === 'CREATE_COURSE' ? 'plus-circle' : 'pencil-simple'}"></i>
+                ${a.type === 'CREATE_COURSE' ? '新增課程：' + (a.data.name || '未命名') : '修改課程：' + (a.data.name || '未知')}
+              </button>
+            `).join('')}
+          `;
+          messages.appendChild(actionBtnDiv);
+          window._pendingAIActions = actions;
+        }
       } catch (error) {
         typingRow.remove();
 
@@ -3601,6 +3639,227 @@
       sendAIMessage();
     }
 
+    /** 開啟課程意見反映模式：在輸入框填入引導語 */
+    function openFeedbackMode() {
+      if (_aiCooldownTimer) { showMaritimeMessage('AI 冷卻中，請稍候…', 'info'); return; }
+      const input = document.getElementById('aiChatInput');
+      input.value = '我要反映課程意見：課程「」的教學方式建議調整為：';
+      input.focus();
+      // 將游標移到引號中間
+      const pos = input.value.indexOf('」') - (input.value.length - input.value.indexOf('「')) + 1;
+      try { input.setSelectionRange(pos, pos); } catch(e) {}
+    }
+
+    // ── AI 操作確認 Modal ──────────────────────────────
+    let _currentAIAction = null;
+
+    function showAIActionConfirmation(index) {
+      const action = (window._pendingAIActions || [])[index];
+      if (!action) return;
+      _currentAIAction = action;
+
+      const modal = document.getElementById('aiActionModal');
+      const title = document.getElementById('aiActionModalTitle');
+      const body = document.getElementById('aiActionModalBody');
+
+      if (action.type === 'CREATE_COURSE') {
+        title.textContent = '新增課程確認';
+        const d = action.data;
+        const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+        body.innerHTML = `
+          <div style="display:grid;gap:8px;">
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">課程名稱</span><div style="font-size:15px;font-weight:700;color:#1d1d1f;margin-top:2px;">${d.name || '（未設定）'}</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div><span style="font-weight:600;color:#86868b;font-size:12px;">分類</span><div style="margin-top:2px;">${catMap[d.category] || d.category || '未設定'}</div></div>
+              <div><span style="font-weight:600;color:#86868b;font-size:12px;">授課方式</span><div style="margin-top:2px;">${d.method || '未設定'}</div></div>
+              <div><span style="font-weight:600;color:#86868b;font-size:12px;">時數（分鐘）</span><div style="margin-top:2px;">${d.duration || 0}</div></div>
+            </div>
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">課程描述</span><div style="margin-top:2px;font-size:13px;">${d.description || '（無）'}</div></div>
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">關鍵字</span><div style="margin-top:4px;">${(d.keywords||[]).map(k=>`<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:12px;margin-right:4px;">${k}</span>`).join('') || '（無）'}</div></div>
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">適用對象</span><div style="margin-top:2px;font-size:13px;">${(d.targetRanks||[]).join('、') || '全員'}</div></div>
+          </div>`;
+      } else if (action.type === 'UPDATE_COURSE') {
+        title.textContent = '修改課程確認';
+        const d = action.data;
+        const changes = d.changes || {};
+        body.innerHTML = `
+          <div style="display:grid;gap:8px;">
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">目標課程</span><div style="font-size:15px;font-weight:700;color:#1d1d1f;margin-top:2px;">${d.name || '（未指定）'}</div></div>
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">建議修改內容</span>
+              <div style="margin-top:6px;display:grid;gap:6px;">
+                ${Object.entries(changes).map(([k,v])=>`<div style="background:#fff;border-radius:8px;padding:8px 10px;border:1px solid #e5e7eb;font-size:13px;"><strong>${k}：</strong>${Array.isArray(v)?v.join('、'):v}</div>`).join('')}
+              </div>
+            </div>
+          </div>`;
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    function closeAIActionModal() {
+      document.getElementById('aiActionModal').style.display = 'none';
+      _currentAIAction = null;
+    }
+
+    async function confirmAIAction() {
+      if (!_currentAIAction) return;
+      const action = _currentAIAction;
+      const btn = document.getElementById('aiActionConfirmBtn');
+      btn.disabled = true;
+      btn.textContent = '執行中…';
+
+      try {
+        if (action.type === 'CREATE_COURSE') {
+          const d = action.data;
+          const courseName = (d.name || '').trim();
+          if (!courseName) { alert('課程名稱不能為空'); btn.disabled = false; btn.innerHTML = '<i class="ph ph-check-circle"></i> 確認執行'; return; }
+          const duplicate = maritimeCourses.find(c => c.name.trim() === courseName);
+          if (duplicate) { alert(`課程「${courseName}」已存在，無法重複新增。`); closeAIActionModal(); return; }
+          const course = {
+            id: Date.now(),
+            name: courseName,
+            category: d.category || '09',
+            method: d.method || '實體課程',
+            duration: parseInt(d.duration) || 0,
+            description: d.description || '',
+            keywords: Array.isArray(d.keywords) ? d.keywords : [],
+            targetCategories: Array.isArray(d.targetCategories) ? d.targetCategories : [],
+            targetRanks: Array.isArray(d.targetRanks) ? d.targetRanks : [],
+            lang: 'zh', link: ''
+          };
+          maritimeCourses.push(course);
+          await saveMaritimeCourses();
+          showMaritimeMessage(`✓ 已新增課程：${courseName}`, 'success');
+          displayMaritimeCourses();
+          displayManageMaritimeCourses();
+          aiChat._cachedContext = null; // 清除快取，讓 AI 看到新課程
+
+        } else if (action.type === 'UPDATE_COURSE') {
+          const d = action.data;
+          const idx = maritimeCourses.findIndex(c => c.name.trim() === (d.name || '').trim());
+          if (idx === -1) { alert(`找不到課程「${d.name}」，請確認課程名稱是否正確。`); closeAIActionModal(); return; }
+          const changes = d.changes || {};
+          maritimeCourses[idx] = { ...maritimeCourses[idx], ...changes };
+          await saveMaritimeCourses();
+          showMaritimeMessage(`✓ 已更新課程：${d.name}`, 'success');
+          displayMaritimeCourses();
+          displayManageMaritimeCourses();
+          aiChat._cachedContext = null;
+        }
+        closeAIActionModal();
+      } catch (err) {
+        console.error('AI 操作執行失敗:', err);
+        alert('操作失敗，請稍後再試。');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph ph-check-circle"></i> 確認執行';
+      }
+    }
+
+    // ── 匯出功能 ──────────────────────────────────────
+    function exportToExcel() {
+      if (typeof XLSX === 'undefined') { showMaritimeMessage('Excel 匯出模組載入中，請稍後再試', 'info'); return; }
+      const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+      const rows = maritimeCourses.map(c => ({
+        '課程名稱': c.name || '',
+        '分類': (catMap[c.category] || c.category || ''),
+        '授課方式': c.method || '',
+        '時數(分鐘)': c.duration || 0,
+        '語言': c.lang || 'zh',
+        '關鍵字': Array.isArray(c.keywords) ? c.keywords.join('、') : '',
+        '適用職等': Array.isArray(c.targetRanks) ? c.targetRanks.join('、') : '',
+        '適用類別': Array.isArray(c.targetCategories) ? c.targetCategories.map(t=>t==='existing'?'現有船員':'新進船員').join('、') : '',
+        '課程描述': c.description || '',
+        '課程連結': c.link || ''
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      // 設定欄寬
+      ws['!cols'] = [{wch:28},{wch:14},{wch:10},{wch:10},{wch:6},{wch:24},{wch:28},{wch:14},{wch:40},{wch:30}];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '課程清單');
+      XLSX.writeFile(wb, `萬海訓練課程_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.xlsx`);
+      showMaritimeMessage('✓ Excel 已下載', 'success');
+    }
+
+    function exportToPDF() {
+      const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+      const printArea = document.getElementById('pdfPrintArea');
+      const today = new Date().toLocaleDateString('zh-TW');
+      printArea.innerHTML = `
+        <div style="font-family:-apple-system,sans-serif;color:#1d1d1f;max-width:900px;margin:0 auto;">
+          <div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #007aff;">
+            <h1 style="font-size:22px;font-weight:700;margin:0 0 4px;">萬海智慧航安訓練管理系統</h1>
+            <h2 style="font-size:16px;font-weight:500;color:#6b7280;margin:0;">課程清單（共 ${maritimeCourses.length} 門）　列印日期：${today}</h2>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="background:#eff6ff;">
+                <th style="padding:8px;text-align:left;border:1px solid #e5e7eb;font-weight:600;width:28%;">課程名稱</th>
+                <th style="padding:8px;text-align:center;border:1px solid #e5e7eb;font-weight:600;width:12%;">分類</th>
+                <th style="padding:8px;text-align:center;border:1px solid #e5e7eb;font-weight:600;width:10%;">方式</th>
+                <th style="padding:8px;text-align:center;border:1px solid #e5e7eb;font-weight:600;width:8%;">時數</th>
+                <th style="padding:8px;text-align:left;border:1px solid #e5e7eb;font-weight:600;width:20%;">關鍵字</th>
+                <th style="padding:8px;text-align:left;border:1px solid #e5e7eb;font-weight:600;">適用對象</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${maritimeCourses.map((c,i)=>`
+                <tr style="background:${i%2===0?'#fff':'#f9fafb'};">
+                  <td style="padding:8px;border:1px solid #e5e7eb;font-weight:600;">${c.name||''}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;">${catMap[c.category]||c.category||''}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;">${c.method||''}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;">${c.duration||0}分</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;font-size:11px;">${Array.isArray(c.keywords)?c.keywords.join('、'):''}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;font-size:11px;">${Array.isArray(c.targetRanks)?c.targetRanks.join('、'):'全員'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      printArea.style.display = 'block';
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => { printArea.style.display = 'none'; }, 1000);
+      }, 100);
+    }
+
+    async function exportToPPT() {
+      if (typeof PptxGenJS === 'undefined') { showMaritimeMessage('PPT 匯出模組載入中，請稍後再試', 'info'); return; }
+      const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+      const pptx = new PptxGenJS();
+      pptx.layout = 'LAYOUT_WIDE';
+      pptx.author = '萬海智慧航安訓練管理系統';
+
+      // 封面頁
+      const cover = pptx.addSlide();
+      cover.background = { color: '0051d5' };
+      cover.addText('萬海智慧航安訓練管理系統', { x:0.5, y:2.5, w:'90%', fontSize:32, bold:true, color:'FFFFFF', align:'center' });
+      cover.addText('課程資料總覽', { x:0.5, y:3.4, w:'90%', fontSize:20, color:'BFD7FF', align:'center' });
+      cover.addText(`共 ${maritimeCourses.length} 門課程　${new Date().toLocaleDateString('zh-TW')}`, { x:0.5, y:4.2, w:'90%', fontSize:14, color:'93C5FD', align:'center' });
+
+      // 每 6 門課一頁
+      const perPage = 6;
+      for (let p = 0; p < maritimeCourses.length; p += perPage) {
+        const slide = pptx.addSlide();
+        slide.background = { color: 'F5F5F7' };
+        const pageNum = Math.floor(p / perPage) + 1;
+        slide.addText(`課程清單（第 ${pageNum} 頁）`, { x:0.4, y:0.2, w:'90%', fontSize:16, bold:true, color:'0051d5' });
+        const chunk = maritimeCourses.slice(p, p + perPage);
+        chunk.forEach((c, i) => {
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          const x = col === 0 ? 0.4 : 6.8;
+          const y = 0.7 + row * 1.55;
+          slide.addShape(pptx.ShapeType.rect, { x, y, w:5.9, h:1.45, fill:{color:'FFFFFF'}, line:{color:'E5E7EB',width:0.5}, rectRadius:0.12 });
+          slide.addText(c.name || '未命名', { x:x+0.15, y:y+0.08, w:5.6, fontSize:11, bold:true, color:'1D1D1F' });
+          slide.addText(`${catMap[c.category]||c.category||''}  ·  ${c.method||''}  ·  ${c.duration||0} 分鐘`, { x:x+0.15, y:y+0.38, w:5.6, fontSize:9, color:'6B7280' });
+          slide.addText(Array.isArray(c.keywords) && c.keywords.length ? '🏷 ' + c.keywords.slice(0,4).join('、') : '', { x:x+0.15, y:y+0.62, w:5.6, fontSize:9, color:'1D4ED8' });
+          slide.addText(Array.isArray(c.targetRanks) && c.targetRanks.length ? '👤 ' + c.targetRanks.slice(0,4).join('、') : '適用全員', { x:x+0.15, y:y+0.88, w:5.6, fontSize:9, color:'374151' });
+        });
+      }
+
+      await pptx.writeFile({ fileName: `萬海訓練課程_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.pptx` });
+      showMaritimeMessage('✓ PowerPoint 已下載', 'success');
+    }
+
     /**
      * 將 AI 回覆的 Markdown 格式轉為 HTML
      */
@@ -3657,5 +3916,37 @@
       </div>
     </div>
   </div>
+
+  <!-- AI 操作確認 Modal -->
+  <div id="aiActionModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:20000; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this)closeAIActionModal()">
+    <div style="background:#fff; border-radius:20px; padding:32px; max-width:560px; width:100%; box-shadow:0 24px 64px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+        <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#007aff,#0051d5);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;">
+          <i class="ph ph-robot"></i>
+        </div>
+        <div>
+          <h3 id="aiActionModalTitle" style="font-size:18px;font-weight:700;color:#1d1d1f;margin:0;">AI 建議操作</h3>
+          <p style="font-size:12px;color:#86868b;margin:2px 0 0;">請確認以下內容後再執行</p>
+        </div>
+      </div>
+      <div id="aiActionModalBody" style="background:#f5f5f7;border-radius:12px;padding:16px;margin-bottom:20px;font-size:14px;line-height:1.6;max-height:320px;overflow-y:auto;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeAIActionModal()" style="flex:1;padding:12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;color:#6b7280;">取消</button>
+        <button id="aiActionConfirmBtn" onclick="confirmAIAction()" style="flex:2;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,#007aff,#0051d5);color:white;font-size:14px;font-weight:700;cursor:pointer;">
+          <i class="ph ph-check-circle"></i> 確認執行
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF 列印樣式 -->
+  <style id="printStyles">
+    @media print {
+      body > *:not(#pdfPrintArea) { display: none !important; }
+      #pdfPrintArea { display: block !important; }
+      @page { margin: 20mm; }
+    }
+  </style>
+  <div id="pdfPrintArea" style="display:none;"></div>
 </body>
 </html>
