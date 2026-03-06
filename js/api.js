@@ -1525,9 +1525,22 @@ class AIChatManager {
 你具有「長期記憶」能力，能記住使用者告訴你的重要資訊。
 
 【重要限制】
-- 你只能根據以下系統提供的課程資料來回答，不得自行創造、假設或補充任何課程資訊
-- 若系統資料中找不到符合的課程，請明確告知「目前系統中沒有符合條件的課程」，不要推薦不存在的課程
-- 課程名稱、分類、授課方式等資訊必須完全來自以下資料，不得修改或發明
+- 推薦課程時，只能從以下系統課程資料中選擇，不得推薦不存在的課程
+- 若找不到符合的課程，請明確告知「目前系統中沒有符合條件的課程」
+
+【AI 操作指令】
+當使用者明確要求「新增課程」、「幫我建立一門課」、「新增一堂課」時，請在回覆末尾附上以下 JSON 指令（格式必須完全正確）：
+[WHAI_ACTION]{"type":"CREATE_COURSE","data":{"name":"課程名稱","category":"01","method":"實體課程","duration":60,"description":"課程描述","keywords":["關鍵字1"],"targetCategories":["existing"],"targetRanks":["大副","二副"]}}[/WHAI_ACTION]
+
+當使用者要求「修改課程」、「更新課程資料」、「反映意見」、「調整教學方式」時，請在回覆末尾附上：
+[WHAI_ACTION]{"type":"UPDATE_COURSE","data":{"name":"現有課程名稱（必填）","changes":{"description":"新描述","keywords":["新關鍵字"],"method":"線上課程"}}}[/WHAI_ACTION]
+
+指令格式規則：
+- category 必須是 "01"~"10" 其中一個（01=船舶操縱、02=領導統御、03=事故分析、04=設備操作、05=法規知識、06=貨物裝卸、07=經驗交流、08=職級轉換、09=其他、10=資料分析）
+- method 必須是 "實體課程"、"線上課程" 或 "混合課程"
+- targetCategories 只能包含 "existing"（現有船員）或 "new"（新進船員）
+- targetRanks 可填：船長、大副、二副、三副、輪機長、大管輪、二管輪、三管輪、電機員等
+- 只在使用者明確要求操作時才附上指令，一般問答不要加
 ${memoriesBlock}
 以下是目前系統中的課程資料（共 ${courses.length} 門課程）：${emptyCourseWarning}
 ${coursesSummary}
@@ -1536,14 +1549,15 @@ ${coursesSummary}
 ${teachersSummary}
 
 你的職責：
-1. 根據使用者的職等、經驗與需求，從上方課程清單中推薦最適合的課程
-2. 解答課程內容、訓練安排相關問題（僅限上方資料範圍內）
-3. 分析課程之間的關聯性與學習路徑（僅限上方資料範圍內）
+1. 根據使用者需求推薦課程（只從上方清單選）
+2. 解答課程相關問題
+3. 協助新增或修改課程（用 AI 操作指令格式）
+4. 處理學員/教師反映的意見並建議修改方向
 
 回答注意事項：
 - 回答請簡潔有力，使用項目符號整理
-- 推薦課程時，請說明是基於哪個欄位（分類/關鍵字/適用對象）做的推薦
-- 若系統資料不足以回答，請直接說明並建議使用者補充課程資料
+- 附上 [WHAI_ACTION] 指令時，先在正文說明你的建議內容，讓使用者確認後才執行
+- 若系統資料不足，請直接說明並建議補充課程資料
 
 【記憶功能】
 當使用者告訴你關於自己的重要資訊（如職等、部門、專長、偏好、姓名等），請在回答的最末尾加上記憶標記，格式為：[MEMORY: 資訊內容]
@@ -1660,6 +1674,38 @@ ${teachersSummary}
     } finally {
       this.isStreaming = false;
     }
+  }
+
+  /**
+   * 解析 AI 回覆中的操作指令
+   * 支援 [WHAI_ACTION]{...}[/WHAI_ACTION] 格式
+   * @param {string} text - AI 回覆全文
+   * @returns {Array} 解析出的 action 陣列，每筆含 { type, data }
+   */
+  parseAIActions(text) {
+    const actions = [];
+    const regex = /\[WHAI_ACTION\]([\s\S]*?)\[\/WHAI_ACTION\]/g;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      try {
+        const parsed = JSON.parse(match[1].trim());
+        if (parsed.type && parsed.data) {
+          actions.push(parsed);
+        }
+      } catch (e) {
+        console.warn('AI 指令 JSON 解析失敗:', e, match[1]);
+      }
+    }
+    return actions;
+  }
+
+  /**
+   * 移除回覆中的 [WHAI_ACTION]...[/WHAI_ACTION] 區塊，只保留給使用者看的文字
+   * @param {string} text - AI 回覆全文
+   * @returns {string} 清理後的文字
+   */
+  cleanDisplayText(text) {
+    return text.replace(/\[WHAI_ACTION\][\s\S]*?\[\/WHAI_ACTION\]/g, '').trim();
   }
 
   /**
