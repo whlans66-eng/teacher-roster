@@ -796,6 +796,9 @@
     }
   </style>
 
+  <!-- SheetJS - Excel 匯出 -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
   <!-- API 層：與後端通訊 -->
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
@@ -863,6 +866,9 @@
           <div class="flex items-center gap-3">
             <button onclick="openAddCourseModal()" class="modern-btn px-6 py-2 rounded-xl font-medium" style="font-size: 15px;">
               <i class="ph ph-plus-circle"></i> 新增課程
+            </button>
+            <button onclick="exportToExcel()" class="px-5 py-2 rounded-xl font-medium text-white" style="font-size: 15px; background: #34C759; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+              <i class="ph ph-file-xls"></i> 匯出 Excel
             </button>
             <div class="flex rounded-xl p-1" style="background: rgba(118, 118, 128, 0.12);">
               <button id="monthViewBtn" onclick="setViewMode('month')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-900" style="box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);">
@@ -3434,6 +3440,72 @@
       renderTodayCourses();
       renderCalendar();
       alert('✓ 課程已刪除！');
+    }
+
+    // ==================== Excel 匯出 ====================
+    function exportToExcel() {
+      // 根據目前篩選條件取得課程資料
+      let filteredCourses = courseAssignments.filter(c => c.date && isDateInRange(c.date));
+
+      if (selectedTeacherId !== null) {
+        filteredCourses = filteredCourses.filter(c => c.teacherId === selectedTeacherId);
+      }
+      if (selectedDate !== null) {
+        filteredCourses = filteredCourses.filter(c => c.date === selectedDate);
+      }
+
+      if (filteredCourses.length === 0) {
+        showMessage('目前篩選範圍內沒有課程資料可匯出', 'warning');
+        return;
+      }
+
+      // 依日期、時間排序
+      filteredCourses.sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return (a.time || '').localeCompare(b.time || '');
+      });
+
+      // 建立表頭與資料列
+      const rows = filteredCourses.map(c => ({
+        '日期': c.date || '',
+        '時間': c.time || '',
+        '時數': c.time ? calculateHours(c.time).toFixed(1) : '0',
+        '課程名稱': c.name || '',
+        '授課教師': c.teacherName || '',
+        '助教': c.taName || '',
+        '課程類型': c.type || '',
+        '狀態': c.status || '',
+        '備註': c.note || ''
+      }));
+
+      // 建立工作表
+      const ws = XLSX.utils.json_to_sheet(rows);
+
+      // 設定欄寬
+      ws['!cols'] = [
+        { wch: 12 },  // 日期
+        { wch: 14 },  // 時間
+        { wch: 6 },   // 時數
+        { wch: 30 },  // 課程名稱
+        { wch: 12 },  // 授課教師
+        { wch: 12 },  // 助教
+        { wch: 10 },  // 課程類型
+        { wch: 8 },   // 狀態
+        { wch: 30 }   // 備註
+      ];
+
+      // 建立活頁簿並匯出
+      const wb = XLSX.utils.book_new();
+      const startDate = document.getElementById('startDate')?.value || '';
+      const endDate = document.getElementById('endDate')?.value || '';
+      const sheetName = '課程資料';
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+      // 檔名包含日期範圍
+      const fileName = `課程匯出_${startDate}_${endDate}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      showMessage(`已匯出 ${filteredCourses.length} 筆課程資料`, 'success');
     }
 
     // ==================== 工具函數 ====================
