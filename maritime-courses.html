@@ -3540,8 +3540,8 @@
         typingRow.remove();
 
         // 解析是否含有 AI 操作指令
-        const actions = aiChat.parseAIActions(reply);
-        const displayText = aiChat.cleanDisplayText(reply);
+        const actions = typeof aiChat.parseAIActions === 'function' ? aiChat.parseAIActions(reply) : [];
+        const displayText = typeof aiChat.cleanDisplayText === 'function' ? aiChat.cleanDisplayText(reply) : reply;
 
         // 建立 AI 回覆元素（帶頭像，使用新版 createMsgRow）
         const aiMsgRow = createMsgRow('assistant', '');
