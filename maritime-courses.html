@@ -1219,6 +1219,9 @@
   #courseSelectBar .bar-cancel:hover { background: rgba(255,255,255,0.25); }
   #courseSelectBar .bar-all { background: rgba(255,255,255,0.15); color: #fff; }
   #courseSelectBar .bar-all:hover { background: rgba(255,255,255,0.25); }
+  #courseSelectBar .bar-copy { background: #007aff; color: #fff; }
+  #courseSelectBar .bar-copy:hover { background: #0063d1; }
+  #courseSelectBar .bar-copy:disabled { background: rgba(0,122,255,0.35); cursor: not-allowed; }
   #courseSelectBar .bar-delete { background: #ff3b30; color: #fff; }
   #courseSelectBar .bar-delete:hover { background: #e02e23; }
   #courseSelectBar .bar-delete:disabled { background: rgba(255,59,48,0.35); cursor: not-allowed; }
@@ -1324,6 +1327,9 @@
       <button class="bar-cancel" onclick="toggleCourseSelectMode()"><i class="ph ph-x"></i> 取消</button>
       <span class="bar-count" id="courseSelectCount">已選 0 個</span>
       <button class="bar-all" onclick="courseSelectAll()"><i class="ph ph-selection-all"></i> 全選</button>
+      <button class="bar-copy" id="courseSelectCopyBtn" onclick="copySelectedCourses()" disabled>
+        <i class="ph ph-copy"></i> 複製
+      </button>
       <button class="bar-delete" id="courseSelectDeleteBtn" onclick="deleteSelectedCourses()" disabled>
         <i class="ph ph-trash"></i> 刪除
       </button>
@@ -2296,6 +2302,11 @@
       const grid = document.getElementById('maritimeCourseResults');
       const total = grid.querySelectorAll('.course-card').length;
       document.getElementById('courseSelectCount').textContent = `已選 ${count} 個`;
+      const copyBtn = document.getElementById('courseSelectCopyBtn');
+      copyBtn.disabled = count === 0;
+      copyBtn.innerHTML = count > 0
+        ? `<i class="ph ph-copy"></i> 複製 (${count})`
+        : `<i class="ph ph-copy"></i> 複製`;
       const delBtn = document.getElementById('courseSelectDeleteBtn');
       delBtn.disabled = count === 0;
       delBtn.innerHTML = count > 0
@@ -2308,6 +2319,29 @@
           ? '<i class="ph ph-selection-slash"></i> 取消全選'
           : '<i class="ph ph-selection-all"></i> 全選';
       }
+    }
+
+    async function copySelectedCourses() {
+      const count = selectedCourseIds.size;
+      if (count === 0) return;
+
+      const ids = Array.from(selectedCourseIds);
+      const copiedCourses = [];
+      ids.forEach(id => {
+        const original = maritimeCourses.find(c => c.id === id);
+        if (original) {
+          const copy = JSON.parse(JSON.stringify(original));
+          copy.id = Date.now() + Math.floor(Math.random() * 1000) + copiedCourses.length;
+          copy.name = original.name + ' (副本)';
+          copiedCourses.push(copy);
+        }
+      });
+      copiedCourses.forEach(c => maritimeCourses.push(c));
+      await saveMaritimeCourses();
+      showMaritimeMessage(`✓ 已複製 ${copiedCourses.length} 個課程`, 'success');
+      toggleCourseSelectMode();
+      displayMaritimeCourses();
+      displayManageMaritimeCourses();
     }
 
     async function deleteSelectedCourses() {
