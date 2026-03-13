@@ -1586,6 +1586,13 @@
                   </div>
                 </label>
                 <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="OS" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-user" style="font-size: 16px; color: #64748b;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">普通水手</div><div style="font-size: 10px; color: #86868b;">O.S.</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
                   <input type="checkbox" name="targetRank" value="deckCadet" style="display: none;">
                   <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
                     <i class="ph ph-student" style="font-size: 16px; color: #0ea5e9;"></i>
@@ -1820,6 +1827,7 @@
               <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="bosun" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">水手長</div></label>
               <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="carpenter" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">木匠</div></label>
               <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="AB" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">幹練水手</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="OS" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">普通水手</div></label>
               <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="deckCadet" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">甲板實習生</div></label>
             </div>
           </div>
@@ -2863,6 +2871,7 @@
         'bosun': '水手長',
         'carpenter': '木匠',
         'AB': '幹練水手',
+        'OS': '普通水手',
         'deckCadet': '甲板實習生',
         'C/E': 'C/E 輪機長',
         '2/E': '2/E 大管',
