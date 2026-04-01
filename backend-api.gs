@@ -14,9 +14,14 @@ const MAX_LOGIN_ATTEMPTS = 5; // 最多登入失敗次數
 const LOGIN_LOCKOUT_SECONDS = 900; // 鎖定 15 分鐘
 const ALLOWED_UPLOAD_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-  'application/pdf'
+  'application/pdf',
+  'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 ];
-const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
 
 const SHEETS_CONFIG = {
   users: {
@@ -479,7 +484,7 @@ function _handleUpload(e, bodyObj) {
 
   // 檔案類型白名單檢查
   if (!ALLOWED_UPLOAD_TYPES.includes(detectedMime)) {
-    throw new Error('不允許的檔案類型：' + detectedMime + '，僅允許圖片與 PDF');
+    throw new Error('不允許的檔案類型：' + detectedMime + '，僅允許圖片、PDF、影片與文件檔案');
   }
 
   // 檔案大小檢查
