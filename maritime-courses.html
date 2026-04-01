@@ -35,6 +35,10 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 
   /* 頂部導航 */
   .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
@@ -1791,6 +1795,20 @@
           </div>
         </div>
 
+        <!-- 教材檔案上傳 -->
+        <div style="margin-bottom: 20px; background: #f5f5f7; border-radius: 12px; padding: 16px;">
+          <label style="font-size: 13px; font-weight: 700; color: #1d1d1f; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="ph ph-folder-open" style="margin-right: 6px;"></i>教材與影片附件</span>
+            <button type="button" onclick="document.getElementById('maritimeMatFileInput').click()" style="font-size: 12px; font-weight: 600; color: white; background: #8b5cf6; border: none; border-radius: 8px; padding: 6px 14px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <i class="ph ph-upload-simple"></i> 上傳檔案
+            </button>
+          </label>
+          <input type="file" id="maritimeMatFileInput" accept=".jpg,.jpeg,.png,.pdf,.mp4,.webm,.mov,.ppt,.pptx,.doc,.docx" class="hidden" onchange="handleMaritimeCourseMaterialUpload(this)" multiple style="display:none;">
+          <div style="font-size: 11px; color: var(--apple-gray); margin-bottom: 10px;">支援格式：圖片、PDF、影片（MP4/WebM/MOV）、PPT、DOC｜上限 50MB</div>
+          <div id="maritimeMaterialListModal" style="display: flex; flex-direction: column; gap: 8px;">
+          </div>
+        </div>
+
         <!-- 適用對象 Modal -->
         <div style="margin-bottom: 20px; background: #f5f5f7; border-radius: 12px; padding: 16px;">
           <label style="font-size: 13px; font-weight: 700; color: #1d1d1f; margin-bottom: 12px; display: block;">
@@ -2746,6 +2764,51 @@
               </div>
             </div>
 
+              <!-- 教材與影片附件 -->
+              ${(course.materials && course.materials.length > 0) ? `
+              <div class="sidebar-section" style="margin-top: 16px;">
+                <h3 class="sidebar-section-title">
+                  <span class="sidebar-dot" style="background: #8b5cf6;"></span>
+                  教材與影片附件
+                  <span style="margin-left: auto; font-size: 11px; font-weight: 500; color: var(--apple-gray); background: #f5f5f7; padding: 2px 8px; border-radius: 10px;">${course.materials.length} 個檔案</span>
+                </h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${course.materials.map(m => {
+                    const ext = (m.fileName||'').split('.').pop().toLowerCase();
+                    const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
+                    const isPdf = ext === 'pdf';
+                    const isPpt = ['ppt','pptx'].includes(ext);
+                    const isDoc = ['doc','docx'].includes(ext);
+                    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext);
+                    const iconClass = isVideo ? 'ph-video-camera' : (isPdf ? 'ph-file-pdf' : (isPpt ? 'ph-presentation' : (isDoc ? 'ph-file-doc' : (isImg ? 'ph-image' : 'ph-file'))));
+                    const iconColor = isVideo ? '#ef4444' : (isPdf ? '#dc2626' : (isPpt ? '#f97316' : (isDoc ? '#3b82f6' : (isImg ? '#10b981' : '#6b7280'))));
+                    return `<div style="display:flex;align-items:center;gap:10px;background:white;padding:10px 14px;border-radius:10px;border:1px solid #e5e5ea;">
+                      <i class="ph ${iconClass}" style="font-size:20px;color:${iconColor};flex-shrink:0;"></i>
+                      <span style="flex:1;font-size:13px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.fileName}">${m.fileName}</span>
+                      <button onclick="openMaritimeCourseMaterial('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" style="flex-shrink:0;font-size:11px;font-weight:600;color:white;background:#8b5cf6;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;">檢視</button>
+                    </div>`;
+                  }).join('')}
+                </div>
+              </div>
+              ` : `
+              ${_isReadOnly ? '' : `
+              <div class="sidebar-section" style="margin-top: 16px;">
+                <h3 class="sidebar-section-title">
+                  <span class="sidebar-dot" style="background: #8b5cf6;"></span>
+                  教材與影片附件
+                </h3>
+                <div class="empty-state-sidebar">
+                  <div class="empty-state-sidebar-icon">
+                    <i class="ph ph-folder-open"></i>
+                  </div>
+                  <p>尚未上傳教材檔案</p>
+                  <button onclick="editMaritimeCourse(${course.id})" class="empty-state-btn">前往上傳</button>
+                </div>
+              </div>
+              `}
+              `}
+            </div>
+
             <!-- 適用對象卡片 -->
             <div class="detail-card sidebar-card">
               <h3 class="sidebar-section-title">
@@ -2898,6 +2961,9 @@
       setMaritimeLangModal(c.lang || 'zh');
       document.getElementById('maritimeCourseLinkModal').value = c.link || '';
 
+      // 載入教材附件
+      loadMaterialsToModal(c.materials || []);
+
       const list = document.getElementById('maritimeKeywordListModal');
       list.innerHTML = '';
       if (c.keywords && c.keywords.length > 0) {
@@ -2954,6 +3020,92 @@
       document.getElementById('langBtnEn').classList.toggle('lang-btn-active', lang === 'en');
     }
 
+    // ── 教材檔案上傳功能 ─────────────────────────────────
+    function renderMaritimeMaterialItem(mat) {
+      const ext = (mat.fileName||'').split('.').pop().toLowerCase();
+      const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
+      const isPdf = ext === 'pdf';
+      const isPpt = ['ppt','pptx'].includes(ext);
+      const isDoc = ['doc','docx'].includes(ext);
+      const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext);
+      const iconClass = isVideo ? 'ph-video-camera' : (isPdf ? 'ph-file-pdf' : (isPpt ? 'ph-presentation' : (isDoc ? 'ph-file-doc' : (isImg ? 'ph-image' : 'ph-file'))));
+      const iconColor = isVideo ? '#ef4444' : (isPdf ? '#dc2626' : (isPpt ? '#f97316' : (isDoc ? '#3b82f6' : (isImg ? '#10b981' : '#6b7280'))));
+      return `<div class="maritime-mat-item" data-filename="${mat.fileName||''}" data-fileurl="${mat.fileUrl||''}" data-filetype="${mat.fileType||''}" style="display:flex;align-items:center;gap:10px;background:white;padding:10px 14px;border-radius:10px;border:1px solid #e5e5ea;">
+        <i class="ph ${iconClass}" style="font-size:18px;color:${iconColor};flex-shrink:0;"></i>
+        <span style="flex:1;font-size:12px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${mat.fileName}">${mat.fileName}</span>
+        <button type="button" onclick="openMaritimeCourseMaterial('${(mat.fileName||'').replace(/'/g,"\\'")}','${(mat.fileUrl||'').replace(/'/g,"\\'")}')" style="font-size:11px;font-weight:600;color:#8b5cf6;background:none;border:1px solid #8b5cf6;border-radius:6px;padding:4px 10px;cursor:pointer;">檢視</button>
+        <button type="button" onclick="this.closest('.maritime-mat-item').remove()" style="font-size:11px;font-weight:600;color:#ef4444;background:none;border:1px solid #ef4444;border-radius:6px;padding:4px 8px;cursor:pointer;">移除</button>
+      </div>`;
+    }
+
+    function loadMaterialsToModal(materials) {
+      const list = document.getElementById('maritimeMaterialListModal');
+      list.innerHTML = '';
+      if (materials && materials.length > 0) {
+        materials.forEach(m => {
+          list.insertAdjacentHTML('beforeend', renderMaritimeMaterialItem(m));
+        });
+      }
+    }
+
+    function collectMaterialsFromModal() {
+      return Array.from(document.querySelectorAll('#maritimeMaterialListModal .maritime-mat-item')).map(el => ({
+        fileName: el.getAttribute('data-filename') || '',
+        fileUrl: el.getAttribute('data-fileurl') || '',
+        fileType: el.getAttribute('data-filetype') || ''
+      })).filter(m => m.fileUrl);
+    }
+
+    async function handleMaritimeCourseMaterialUpload(input) {
+      if (!input.files || !input.files.length) return;
+      const list = document.getElementById('maritimeMaterialListModal');
+      const okTypes = ['image/jpeg','image/jpg','image/png','image/gif','image/webp','application/pdf',
+        'video/mp4','video/webm','video/ogg','video/quicktime',
+        'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+      for (const file of input.files) {
+        if (!okTypes.includes(file.type)) { alert(`不支援的檔案格式：${file.name}\n支援：JPG, PNG, PDF, MP4, WebM, MOV, PPT, PPTX, DOC, DOCX`); continue; }
+        if (file.size > 50*1024*1024) { alert(`檔案太大：${file.name}（上限 50MB）`); continue; }
+
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = 'display:flex;align-items:center;gap:10px;background:#fefce8;padding:10px 14px;border-radius:10px;border:1px solid #fde68a;';
+        placeholder.innerHTML = `<i class="ph ph-spinner" style="font-size:18px;color:#f59e0b;animation:spin 1s linear infinite;"></i><span style="font-size:12px;color:#92400e;">上傳中... ${file.name}</span>`;
+        list.appendChild(placeholder);
+
+        try {
+          const r = await api.uploadFile(file, file.name);
+          const mat = { fileName: r.name || file.name, fileUrl: r.url, fileType: file.type };
+          placeholder.outerHTML = renderMaritimeMaterialItem(mat);
+        } catch(err) {
+          console.error(err);
+          placeholder.outerHTML = `<div style="display:flex;align-items:center;gap:10px;background:#fef2f2;padding:10px 14px;border-radius:10px;border:1px solid #fecaca;">
+            <i class="ph ph-warning" style="font-size:18px;color:#ef4444;"></i>
+            <span style="flex:1;font-size:12px;color:#991b1b;">上傳失敗：${file.name} - ${err.message}</span>
+            <button type="button" onclick="this.parentElement.remove()" style="font-size:11px;color:#ef4444;background:none;border:none;cursor:pointer;">✕</button>
+          </div>`;
+        }
+      }
+      input.value = '';
+    }
+
+    function openMaritimeCourseMaterial(fileName, fileUrl) {
+      const ext = (fileName || '').split('.').pop().toLowerCase();
+      if (['mp4','webm','mov','ogg'].includes(ext)) {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#000;">
+          <video controls autoplay style="max-width:100%;max-height:100vh;"><source src="${fileUrl}">您的瀏覽器不支援影片播放</video></body></html>`);
+      } else if (ext === 'pdf') {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><embed src="${fileUrl}" type="application/pdf" width="100%" height="100%"></body></html>`);
+      } else if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;"><img src="${fileUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
+      } else {
+        window.open(fileUrl, '_blank');
+      }
+    }
+
     async function saveMaritimeCourseFromModal(e) {
       e.preventDefault();
       const newData = {
@@ -2966,7 +3118,8 @@
         link: document.getElementById('maritimeCourseLinkModal').value.trim(),
         keywords: Array.from(document.querySelectorAll('#maritimeKeywordListModal input')).map(i => i.value.trim()).filter(v => v),
         targetCategories: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetCategoryModal"]:checked')).map(i => i.value),
-        targetRanks: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetRankModal"]:checked')).map(i => i.value)
+        targetRanks: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetRankModal"]:checked')).map(i => i.value),
+        materials: collectMaterialsFromModal()
       };
 
       const idx = maritimeCourses.findIndex(x => x.id === editingMaritimeCourseId);
