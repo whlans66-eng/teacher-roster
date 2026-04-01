@@ -2887,6 +2887,32 @@
           ` : ''}
         </div>
 
+        <!-- 教材附件 -->
+        ${(() => {
+          const teacherSubjects = teacher ? (teacher.subjects || []) : [];
+          const matchedSubject = teacherSubjects.find(s => (typeof s === 'object' ? s.name : s) === course.name);
+          const mats = (typeof matchedSubject === 'object' && matchedSubject) ? (matchedSubject.materials || []) : [];
+          if (mats.length > 0) {
+            return `<div class="info-card" style="margin-top: 12px;">
+              <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 8px;">教材與影片</div>
+              <div class="space-y-2">
+                ${mats.map(m => {
+                  const ext = (m.fileName||'').split('.').pop().toLowerCase();
+                  const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
+                  const isPdf = ext === 'pdf';
+                  const icon = isVideo ? '🎬' : (isPdf ? '📄' : (['ppt','pptx'].includes(ext) ? '📊' : (['doc','docx'].includes(ext) ? '📝' : (['jpg','jpeg','png','gif','webp'].includes(ext) ? '🖼️' : '📎'))));
+                  return `<div style="display:flex;align-items:center;gap:8px;background:#f5f5f7;padding:8px 12px;border-radius:8px;">
+                    <span>${icon}</span>
+                    <span style="flex:1;font-size:13px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.fileName}">${m.fileName}</span>
+                    <button onclick="openCourseMaterialViewer('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" class="action-btn" style="flex-shrink:0;font-size:12px;padding:4px 10px;">檢視</button>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>`;
+          }
+          return '';
+        })()}
+
         <!-- 提醒設定 -->
         <div class="feature-block feature-block-blue">
           <div class="flex items-center justify-between">
@@ -3234,7 +3260,8 @@
         }
 
         // 檢查課程名稱是否已存在於講授課程中（避免重複）
-        if (!teacher.subjects.includes(courseName)) {
+        const teacherHasSubject = teacher.subjects.some(s => (typeof s === 'string' ? s : s.name) === courseName);
+        if (!teacherHasSubject) {
           teacher.subjects.push(courseName);
           console.log(`✓ 已自動將「${courseName}」加入 ${teacherName} 的講授課程`);
         }
@@ -3248,7 +3275,8 @@
         }
 
         // 檢查課程名稱是否已存在於講授課程中（避免重複）
-        if (!ta.subjects.includes(courseName)) {
+        const taHasSubject = ta.subjects.some(s => (typeof s === 'string' ? s : s.name) === courseName);
+        if (!taHasSubject) {
           ta.subjects.push(courseName);
           console.log(`✓ 已自動將「${courseName}」加入 ${taName} 的講授課程（助教）`);
         }
@@ -3388,7 +3416,8 @@
         }
 
         // 檢查課程名稱是否已存在於講授課程中（避免重複）
-        if (!teacher.subjects.includes(courseName)) {
+        const teacherHasCourse = teacher.subjects.some(s => (typeof s === 'string' ? s : s.name) === courseName);
+        if (!teacherHasCourse) {
           teacher.subjects.push(courseName);
           console.log(`✓ 已自動將「${courseName}」加入 ${teacherName} 的講授課程`);
         }
@@ -3402,7 +3431,8 @@
         }
 
         // 檢查課程名稱是否已存在於講授課程中（避免重複）
-        if (!ta.subjects.includes(courseName)) {
+        const taHasCourse = ta.subjects.some(s => (typeof s === 'string' ? s : s.name) === courseName);
+        if (!taHasCourse) {
           ta.subjects.push(courseName);
           console.log(`✓ 已自動將「${courseName}」加入 ${taName} 的講授課程（助教）`);
         }
@@ -3979,6 +4009,26 @@
 
       input.value = '';
       viewEvent(currentCourseId); // 重新渲染
+    }
+
+    /**
+     * 檢視課程教材
+     */
+    function openCourseMaterialViewer(fileName, fileUrl) {
+      const ext = (fileName || '').split('.').pop().toLowerCase();
+      if (['mp4','webm','mov','ogg'].includes(ext)) {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#000;">
+          <video controls autoplay style="max-width:100%;max-height:100vh;"><source src="${fileUrl}">您的瀏覽器不支援影片播放</video></body></html>`);
+      } else if (ext === 'pdf') {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><embed src="${fileUrl}" type="application/pdf" width="100%" height="100%"></body></html>`);
+      } else if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;"><img src="${fileUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
+      } else {
+        window.open(fileUrl, '_blank');
+      }
     }
 
     /**

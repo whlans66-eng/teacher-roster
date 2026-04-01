@@ -1457,7 +1457,12 @@
               : { name: toStr(c?.name), fileName: toStr(c?.fileName), fileUrl: toStr(c?.fileUrl) }
             )).filter(x => (typeof x === 'string' ? x : x.name))
           : [],
-        subjects: arrStr(t?.subjects),
+        subjects: Array.isArray(t?.subjects)
+          ? t.subjects.map(s => (typeof s === 'string'
+              ? toStr(s)
+              : { name: toStr(s?.name), materials: Array.isArray(s?.materials) ? s.materials.map(m => ({fileName: toStr(m?.fileName), fileUrl: toStr(m?.fileUrl), fileType: toStr(m?.fileType)})).filter(m => m.fileUrl) : [] }
+            )).filter(x => (typeof x === 'string' ? x : x.name))
+          : [],
         tags: arrStr(t?.tags), 
       }));
     }
@@ -1480,7 +1485,7 @@
         teacherType:t.teacherType, workLocation:t.workLocation,
         photo:t.photo, experiences:t.experiences||[],
         certificates:(t.certificates||[]).map(c=> typeof c==='string' ? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
-        subjects:t.subjects||[]
+        subjects:(t.subjects||[]).map(s=> typeof s==='string' ? s : ({name:s.name,materials:s.materials||[]}))
       }));
     }
     function saveLocalSilently(){
@@ -1835,7 +1840,10 @@
         else addCertificate(cert.name||'', cert.fileName||'', cert.fileUrl||'');
       });
       document.getElementById('subjectList').innerHTML = '';
-      (teacher.subjects||[]).forEach(s=>addSubject(s));
+      (teacher.subjects||[]).forEach(s=> {
+        if (typeof s === 'string') addSubject(s);
+        else addSubject(s.name, s.materials || []);
+      });
       document.getElementById('tagList').innerHTML = '';
       (teacher.tags||[]).forEach(t=>addTag(t));
     }
@@ -2002,8 +2010,26 @@
         <div class="bg-gray-50 rounded-xl p-6 mt-8">
           <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl"><i class="ph ph-books"></i></span>講授課程</h3>
           ${(teacher.subjects&&teacher.subjects.length>0)?`
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              ${teacher.subjects.map(s=>`<div class="bg-white rounded-lg p-4 shadow-sm text-center border-l-4 border-purple-500"><p class="text-gray-700 font-medium">${s}</p></div>`).join('')}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${teacher.subjects.map(s => {
+                const subName = typeof s === 'string' ? s : s.name;
+                const mats = typeof s === 'object' ? (s.materials || []) : [];
+                return `<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-purple-500">
+                  <p class="text-gray-700 font-medium mb-2">${subName}</p>
+                  ${mats.length > 0 ? `<div class="space-y-1">
+                    ${mats.map(m => {
+                      const ext = (m.fileName||'').split('.').pop().toLowerCase();
+                      const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
+                      const icon = isVideo ? '<i class="ph ph-video-camera"></i>' : (['pdf'].includes(ext) ? '<i class="ph ph-file-pdf"></i>' : (['ppt','pptx'].includes(ext) ? '<i class="ph ph-presentation"></i>' : (['doc','docx'].includes(ext) ? '<i class="ph ph-file-doc"></i>' : (['jpg','jpeg','png','gif','webp'].includes(ext) ? '<i class="ph ph-image"></i>' : '<i class="ph ph-file"></i>'))));
+                      return `<div class="flex items-center space-x-2 bg-gray-50 p-2 rounded text-sm">
+                        <span>${icon}</span>
+                        <span class="flex-1 truncate text-gray-600" title="${m.fileName}">${m.fileName}</span>
+                        <button onclick="openMaterialViewer('${m.fileName.replace(/'/g,"\\'")}','${m.fileUrl.replace(/'/g,"\\'")}')" class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs">檢視</button>
+                      </div>`;
+                    }).join('')}
+                  </div>` : ''}
+                </div>`;
+              }).join('')}
             </div>`:`
             <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2"><i class="ph ph-book"></i></div><p>尚未填寫講授課程</p></div>`}
         </div>
@@ -2121,18 +2147,116 @@
       }
     }
 
-    function addSubject(value=''){
+    function addSubject(value='', materials=[]){
       const c = document.getElementById('subjectList');
       const div = document.createElement('div');
-      div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
+      const uid = 'subj_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+      div.className = 'bg-white p-4 rounded-lg border border-gray-200 move-transition';
+      div.setAttribute('data-subject-id', uid);
+
+      const name = typeof value === 'object' ? (value.name || '') : value;
+      const mats = typeof value === 'object' ? (value.materials || []) : materials;
+
       div.innerHTML = `
-        <div class="flex flex-col space-y-1">
-          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
-        </div>
-        <input type="text" value="${value}" placeholder="請輸入講授課程..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+        <div class="flex items-start space-x-3">
+          <div class="flex flex-col space-y-1">
+            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
+            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+          </div>
+          <div class="flex-1 space-y-3">
+            <input type="text" value="${name}" placeholder="請輸入講授課程..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent subject-name-input">
+            <div class="flex items-center space-x-2">
+              <input type="file" id="matFile_${uid}" accept=".jpg,.jpeg,.png,.pdf,.mp4,.webm,.mov,.ppt,.pptx,.doc,.docx" class="hidden" onchange="handleSubjectMaterialFile(this, '${uid}')" multiple>
+              <button type="button" onclick="document.getElementById('matFile_${uid}').click()" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg text-sm flex items-center space-x-1">
+                <i class="ph ph-upload-simple"></i><span>上傳教材/影片</span>
+              </button>
+              <span class="text-xs text-gray-400">支援：圖片、PDF、影片、PPT、DOC</span>
+            </div>
+            <div class="subject-materials space-y-2" id="matList_${uid}">
+              ${mats.map((m, idx) => renderMaterialItem(uid, m, idx)).join('')}
+            </div>
+          </div>
+          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
+        </div>`;
       c.appendChild(div);
+    }
+
+    function renderMaterialItem(uid, mat, idx) {
+      const icon = getMaterialIcon(mat.fileName || '');
+      return `<div class="flex items-center space-x-2 bg-gray-50 p-2 rounded border" data-filename="${mat.fileName||''}" data-fileurl="${mat.fileUrl||''}" data-filetype="${mat.fileType||''}">
+        <span class="text-lg">${icon}</span>
+        <span class="text-sm text-gray-700 flex-1 truncate" title="${mat.fileName||''}">${mat.fileName||'檔案'}</span>
+        <button type="button" onclick="viewSubjectMaterial(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">檢視</button>
+        <button type="button" onclick="this.parentElement.remove()" class="bg-red-400 hover:bg-red-500 text-white px-2 py-1 rounded text-xs">移除</button>
+      </div>`;
+    }
+
+    function getMaterialIcon(fileName) {
+      const ext = (fileName || '').split('.').pop().toLowerCase();
+      if (['mp4','webm','mov','ogg'].includes(ext)) return '<i class="ph ph-video-camera"></i>';
+      if (['pdf'].includes(ext)) return '<i class="ph ph-file-pdf"></i>';
+      if (['ppt','pptx'].includes(ext)) return '<i class="ph ph-presentation"></i>';
+      if (['doc','docx'].includes(ext)) return '<i class="ph ph-file-doc"></i>';
+      if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '<i class="ph ph-image"></i>';
+      return '<i class="ph ph-file"></i>';
+    }
+
+    async function handleSubjectMaterialFile(input, uid) {
+      if (!input.files || !input.files.length) return;
+      const matList = document.getElementById('matList_' + uid);
+      const okTypes = ['image/jpeg','image/jpg','image/png','image/gif','image/webp','application/pdf',
+        'video/mp4','video/webm','video/ogg','video/quicktime',
+        'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+      for (const file of input.files) {
+        if (!okTypes.includes(file.type)) { alert(`不支援的檔案格式：${file.name}\n支援：JPG, PNG, PDF, MP4, WebM, MOV, PPT, PPTX, DOC, DOCX`); continue; }
+        if (file.size > 50*1024*1024) { alert(`檔案太大：${file.name}（上限 50MB）`); continue; }
+
+        const placeholder = document.createElement('div');
+        placeholder.className = 'flex items-center space-x-2 bg-yellow-50 p-2 rounded border border-yellow-300';
+        placeholder.innerHTML = `<span class="text-sm text-yellow-700">上傳中... ${file.name}</span>`;
+        matList.appendChild(placeholder);
+
+        try {
+          const r = await apiUploadToDrive(file);
+          const mat = { fileName: r.name || file.name, fileUrl: r.url, fileType: file.type };
+          const idx = matList.children.length;
+          placeholder.outerHTML = renderMaterialItem(uid, mat, idx);
+        } catch(err) {
+          console.error(err);
+          placeholder.outerHTML = `<div class="flex items-center space-x-2 bg-red-50 p-2 rounded border border-red-300">
+            <span class="text-sm text-red-700">上傳失敗：${file.name} - ${err.message}</span>
+            <button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-xs">✕</button>
+          </div>`;
+        }
+      }
+      input.value = '';
+    }
+
+    function viewSubjectMaterial(button) {
+      const item = button.parentElement;
+      const fileName = item.getAttribute('data-filename') || '檔案';
+      const fileUrl = item.getAttribute('data-fileurl') || '';
+      if (!fileUrl) { alert('沒有檔案可以檢視'); return; }
+      openMaterialViewer(fileName, fileUrl);
+    }
+
+    function openMaterialViewer(fileName, fileUrl) {
+      const ext = (fileName || '').split('.').pop().toLowerCase();
+      if (['mp4','webm','mov','ogg'].includes(ext)) {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#000;">
+          <video controls autoplay style="max-width:100%;max-height:100vh;"><source src="${fileUrl}">您的瀏覽器不支援影片播放</video></body></html>`);
+      } else if (ext === 'pdf') {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><embed src="${fileUrl}" type="application/pdf" width="100%" height="100%"></body></html>`);
+      } else if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;"><img src="${fileUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
+      } else {
+        window.open(fileUrl, '_blank');
+      }
     }
 
     function addTag(value=''){
@@ -2206,7 +2330,17 @@
         const fileUrl  = info.getAttribute('data-fileurl')  || '';
         return fileUrl ? { name:nm, fileName, fileUrl } : nm;
       }).filter(Boolean);
-      const subjects = Array.from(document.querySelectorAll('#subjectList input')).map(i=>i.value.trim()).filter(Boolean);
+      const subjects = Array.from(document.querySelectorAll('#subjectList > .bg-white')).map(item => {
+        const nameInput = item.querySelector('.subject-name-input');
+        const nm = nameInput ? nameInput.value.trim() : '';
+        if (!nm) return null;
+        const materials = Array.from(item.querySelectorAll('.subject-materials > div[data-fileurl]')).map(m => ({
+          fileName: m.getAttribute('data-filename') || '',
+          fileUrl: m.getAttribute('data-fileurl') || '',
+          fileType: m.getAttribute('data-filetype') || ''
+        })).filter(m => m.fileUrl);
+        return materials.length > 0 ? { name: nm, materials } : nm;
+      }).filter(Boolean);
       const tags = Array.from(document.querySelectorAll('#tagList input[type="text"]')).map(i=>i.value.trim()).filter(Boolean);
 
       // 調試：確認 tags 有被收集
@@ -2251,7 +2385,7 @@
         photo: t.photo,
         experiences: [...(t.experiences||[])],
         certificates: (t.certificates||[]).map(c=> typeof c==='string'? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
-        subjects: [...(t.subjects||[])],
+        subjects: (t.subjects||[]).map(s => typeof s==='string' ? s : ({name:s.name, materials:[...(s.materials||[])]})),
         tags: [...(t.tags||[])]
       };
       const i = teachers.findIndex(x=>x.id===teacherId);
@@ -2355,7 +2489,10 @@
           })) return true;
 
           // 講授課程
-          if((t.subjects||[]).some(s => String(s).toLowerCase().includes(kw))) return true;
+          if((t.subjects||[]).some(s => {
+            const sName = typeof s === 'string' ? s : (s.name||'');
+            return String(sName).toLowerCase().includes(kw);
+          })) return true;
 
           return false;
         });
@@ -2426,7 +2563,7 @@
       const internalOnshore = teachers.filter(t=>t.teacherType==='internal' && t.workLocation==='onshore').length;
       const externalOnboard = teachers.filter(t=>t.teacherType==='external' && t.workLocation==='onboard').length;
       const externalOnshore = teachers.filter(t=>t.teacherType==='external' && t.workLocation==='onshore').length;
-      const allSubjects = teachers.flatMap(t=>t.subjects||[]);
+      const allSubjects = teachers.flatMap(t=>(t.subjects||[]).map(s => typeof s==='string' ? s : (s.name||'')).filter(Boolean));
       const uniqueSubjects = [...new Set(allSubjects)];
       const avg = total>0 ? (allSubjects.length/total).toFixed(1) : 0;
 
@@ -2491,7 +2628,7 @@
         workLocation:t.workLocation==='onboard'?'海上工作':'陸地工作',
         experiences:(t.experiences||[]).join('；') || '無',
         certificates:(t.certificates||[]).map(c=> typeof c==='string'? c : (c?.name||'')).filter(Boolean).join('；') || '無',
-        subjects:(t.subjects||[]).join('；') || '無'
+        subjects:(t.subjects||[]).map(s => typeof s==='string' ? s : (s.name||'')).filter(Boolean).join('；') || '無'
       }));
     }
     function forceDownload(dataOrBlob, filename, mime='text/plain;charset=utf-8'){
