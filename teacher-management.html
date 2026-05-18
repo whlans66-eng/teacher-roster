@@ -355,7 +355,7 @@
         </button>
         <button onclick="setActiveTab('leaves')" id="tabLeaves"
           class="nav-tab px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700">
-          <span><i class="ph ph-calendar-x"></i></span><span>請假管理</span>
+          <span><i class="ph ph-calendar-x"></i></span><span>出勤管理</span>
         </button>
       </div>
     </div>
@@ -548,12 +548,12 @@
       </div>
     </div>
 
-    <!-- 請假管理視圖 -->
+    <!-- 出勤管理視圖 -->
     <div id="leaveManagementView" class="hidden fade-in max-w-4xl mx-auto px-4 sm:px-6">
       <div class="bg-white rounded-3xl shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center gap-2 mb-6">
           <i class="ph ph-calendar-x text-red-500" style="font-size: 22px;"></i>
-          <h2 class="text-xl font-bold text-gray-800">師資請假管理</h2>
+          <h2 class="text-xl font-bold text-gray-800">師資出勤管理</h2>
         </div>
 
         <!-- 新增請假表單 -->
@@ -2609,7 +2609,7 @@
       setActiveTab('list');
     }
 
-    // ==================== 請假管理 ====================
+    // ==================== 出勤管理 ====================
 
     function showLeaveManagementView() {
       document.getElementById('teacherList').classList.add('hidden');
@@ -2719,7 +2719,7 @@
       container.innerHTML = html;
     }
 
-    // ==================== 請假管理結束 ====================
+    // ==================== 出勤管理結束 ====================
 
     function renderStatisticsView(){
       const total = teachers.length;
@@ -4146,7 +4146,7 @@
     'maritime': 'maritimeCourseView', // 海事課程系統
     'teacher': 'teacherDetail',     // 師資詳細（編輯）
     'teacher-view': 'teacherDetailView', // 師資詳細（呈現）
-    'leaves': 'leaveManagementView' // 請假管理
+    'leaves': 'leaveManagementView' // 出勤管理
   };
 
   // 獲取當前路由
