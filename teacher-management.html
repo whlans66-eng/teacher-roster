@@ -353,6 +353,10 @@
           class="nav-tab px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700">
           <span><i class="ph ph-chart-bar"></i></span><span>統計分析</span>
         </button>
+        <button onclick="setActiveTab('leaves')" id="tabLeaves"
+          class="nav-tab px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700">
+          <span><i class="ph ph-calendar-x"></i></span><span>請假管理</span>
+        </button>
       </div>
     </div>
 
@@ -540,6 +544,51 @@
             <h4 class="text-lg font-semibold text-gray-700 mb-3">熱門課程排行</h4>
             <div id="popularSubjects" class="space-y-2"></div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 請假管理視圖 -->
+    <div id="leaveManagementView" class="hidden fade-in max-w-4xl mx-auto px-4 sm:px-6">
+      <div class="bg-white rounded-3xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex items-center gap-2 mb-6">
+          <i class="ph ph-calendar-x text-red-500" style="font-size: 22px;"></i>
+          <h2 class="text-xl font-bold text-gray-800">師資請假管理</h2>
+        </div>
+
+        <!-- 新增請假表單 -->
+        <div class="bg-gray-50 rounded-2xl p-5 mb-6 border border-gray-200">
+          <h3 class="text-base font-semibold text-gray-700 mb-4">新增請假紀錄</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">選擇講師</label>
+              <select id="leaveTeacherId" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
+                <option value="">請選擇講師</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">請假日期</label>
+              <input type="date" id="leaveDate" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">原因（選填）</label>
+              <input type="text" id="leaveReason" placeholder="例：事假、病假、公假…" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
+            </div>
+          </div>
+          <button onclick="addLeaveRecord()" class="px-5 py-2.5 rounded-xl text-white text-sm font-medium transition-all" style="background-color:#EF4444;">
+            <i class="ph ph-plus mr-1"></i> 新增請假
+          </button>
+        </div>
+
+        <!-- 請假紀錄列表 -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-semibold text-gray-700">請假紀錄</h3>
+            <div class="flex items-center gap-2">
+              <input type="month" id="leaveFilterMonth" onchange="renderLeaveList()" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent">
+            </div>
+          </div>
+          <div id="leaveRecordList"></div>
         </div>
       </div>
     </div>
@@ -1470,6 +1519,7 @@
 
     /* ---------- 狀態 ---------- */
     let teachers = normalize(JSON.parse(localStorage.getItem('teachers') || '[]'));
+    let teacherLeaves = JSON.parse(localStorage.getItem('teacherLeaves') || '[]');
     let currentTeacherId = null;
     let draggedElement = null;
     let filteredTeachers = [];
@@ -2540,6 +2590,12 @@
         statsTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50');
         statsTab.style.backgroundColor = '#5B8DEF';
         showStatisticsView();
+      } else if (tab === 'leaves') {
+        const leavesTab = document.getElementById('tabLeaves');
+        leavesTab.classList.add('text-white', 'shadow-md');
+        leavesTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50');
+        leavesTab.style.backgroundColor = '#EF4444';
+        showLeaveManagementView();
       }
     }
 
@@ -2552,6 +2608,118 @@
     function backToListFromExecutive(){
       setActiveTab('list');
     }
+
+    // ==================== 請假管理 ====================
+
+    function showLeaveManagementView() {
+      document.getElementById('teacherList').classList.add('hidden');
+      document.getElementById('executiveView').classList.add('hidden');
+      document.getElementById('leaveManagementView').classList.remove('hidden');
+      populateLeaveTeacherSelect();
+      // 預設本月
+      const monthInput = document.getElementById('leaveFilterMonth');
+      if (!monthInput.value) {
+        const now = new Date();
+        monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      }
+      // 預設今天
+      const dateInput = document.getElementById('leaveDate');
+      if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().slice(0, 10);
+      }
+      renderLeaveList();
+    }
+
+    function populateLeaveTeacherSelect() {
+      const sel = document.getElementById('leaveTeacherId');
+      const current = sel.value;
+      sel.innerHTML = '<option value="">請選擇講師</option>';
+      teachers.forEach(t => {
+        sel.innerHTML += `<option value="${escapeHtml(String(t.id))}"${t.id === Number(current) ? ' selected' : ''}>${escapeHtml(t.name)}</option>`;
+      });
+    }
+
+    function addLeaveRecord() {
+      const teacherId = Number(document.getElementById('leaveTeacherId').value);
+      const date = document.getElementById('leaveDate').value;
+      const reason = document.getElementById('leaveReason').value.trim();
+
+      if (!teacherId) { alert('請選擇講師'); return; }
+      if (!date) { alert('請選擇請假日期'); return; }
+
+      const teacher = teachers.find(t => t.id === teacherId);
+      if (!teacher) return;
+
+      // 避免重複
+      const exists = teacherLeaves.some(l => l.teacherId === teacherId && l.date === date);
+      if (exists) { alert(`${teacher.name} 在 ${date} 已有請假紀錄`); return; }
+
+      teacherLeaves.push({
+        id: Date.now(),
+        teacherId,
+        teacherName: teacher.name,
+        date,
+        reason
+      });
+
+      saveTeacherLeaves();
+      document.getElementById('leaveReason').value = '';
+      renderLeaveList();
+    }
+
+    function deleteLeaveRecord(id) {
+      if (!confirm('確定刪除此請假紀錄？')) return;
+      teacherLeaves = teacherLeaves.filter(l => l.id !== id);
+      saveTeacherLeaves();
+      renderLeaveList();
+    }
+
+    function saveTeacherLeaves() {
+      localStorage.setItem('teacherLeaves', JSON.stringify(teacherLeaves));
+    }
+
+    function renderLeaveList() {
+      const container = document.getElementById('leaveRecordList');
+      if (!container) return;
+
+      const monthVal = document.getElementById('leaveFilterMonth').value;
+      let filtered = [...teacherLeaves];
+      if (monthVal) {
+        filtered = filtered.filter(l => l.date && l.date.startsWith(monthVal));
+      }
+      filtered.sort((a, b) => a.date.localeCompare(b.date));
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-400 py-8 text-sm">此月份無請假紀錄</p>';
+        return;
+      }
+
+      let html = '<div class="space-y-2">';
+      filtered.forEach(l => {
+        const dateObj = new Date(l.date + 'T00:00:00');
+        const weekDays = ['日','一','二','三','四','五','六'];
+        const weekDay = weekDays[dateObj.getDay()];
+        html += `
+          <div class="flex items-center justify-between bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-sm">${escapeHtml(String(l.teacherName||'?')[0])}</div>
+              <div>
+                <span class="font-semibold text-gray-800 text-sm">${escapeHtml(l.teacherName)}</span>
+                <span class="mx-2 text-gray-300">·</span>
+                <span class="text-gray-600 text-sm">${escapeHtml(l.date)} (${weekDay})</span>
+                ${l.reason ? `<span class="mx-2 text-gray-300">·</span><span class="text-gray-500 text-sm">${escapeHtml(l.reason)}</span>` : ''}
+              </div>
+            </div>
+            <button onclick="deleteLeaveRecord(${l.id})" class="text-red-400 hover:text-red-600 transition-colors" title="刪除">
+              <i class="ph ph-trash" style="font-size:18px;"></i>
+            </button>
+          </div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // ==================== 請假管理結束 ====================
 
     function renderStatisticsView(){
       const total = teachers.length;
@@ -3977,7 +4145,8 @@
     'courses': 'courseManagementView', // 派課管理
     'maritime': 'maritimeCourseView', // 海事課程系統
     'teacher': 'teacherDetail',     // 師資詳細（編輯）
-    'teacher-view': 'teacherDetailView' // 師資詳細（呈現）
+    'teacher-view': 'teacherDetailView', // 師資詳細（呈現）
+    'leaves': 'leaveManagementView' // 請假管理
   };
 
   // 獲取當前路由
@@ -4004,6 +4173,7 @@
     document.getElementById('maritimeCourseView')?.classList.add('hidden');
     document.getElementById('teacherDetail')?.classList.add('hidden');
     document.getElementById('teacherDetailView')?.classList.add('hidden');
+    document.getElementById('leaveManagementView')?.classList.add('hidden');
 
     // 顯示當前視圖
     const currentView = document.getElementById(viewId);
@@ -4033,6 +4203,10 @@
         // 初始化海事課程系統
         if (typeof initMaritimeCourseSystem === 'function') {
           initMaritimeCourseSystem();
+        }
+      } else if (route === 'leaves') {
+        if (typeof showLeaveManagementView === 'function') {
+          showLeaveManagementView();
         }
       } else if (route === 'list' || route === '') {
         // 返回列表時重新渲染並確保模式狀態正確同步
