@@ -552,7 +552,7 @@
     <div id="leaveManagementView" class="hidden fade-in max-w-4xl mx-auto px-4 sm:px-6">
       <div class="bg-white rounded-3xl shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center gap-2 mb-6">
-          <i class="ph ph-calendar-x text-red-500" style="font-size: 22px;"></i>
+          <i class="ph ph-calendar-x" style="font-size: 22px; color:#41ead4;"></i>
           <h2 class="text-xl font-bold text-gray-800">師資請假管理</h2>
         </div>
 
@@ -575,7 +575,7 @@
               <input type="text" id="leaveReason" placeholder="例：事假、病假、公假…" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
             </div>
           </div>
-          <button onclick="addLeaveRecord()" class="px-5 py-2.5 rounded-xl text-white text-sm font-medium transition-all" style="background-color:#EF4444;">
+          <button onclick="addLeaveRecord()" class="px-5 py-2.5 rounded-xl text-white text-sm font-medium transition-all" style="background-color:#41ead4;">
             <i class="ph ph-plus mr-1"></i> 新增請假
           </button>
         </div>
@@ -2594,7 +2594,7 @@
         const leavesTab = document.getElementById('tabLeaves');
         leavesTab.classList.add('text-white', 'shadow-md');
         leavesTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50');
-        leavesTab.style.backgroundColor = '#EF4444';
+        leavesTab.style.backgroundColor = '#41ead4';
         showLeaveManagementView();
       }
     }
