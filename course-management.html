@@ -1117,7 +1117,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程日期</label>
-            <input type="date" id="courseDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
+            <input type="date" id="courseDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required onchange="loadTeachers(this.value)">
           </div>
           <div>
             <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程類型</label>
@@ -1303,7 +1303,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程日期</label>
-            <input type="date" id="editCourseDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
+            <input type="date" id="editCourseDate" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required onchange="loadEditTeachers(this.value)">
           </div>
           <div>
             <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程類型</label>
@@ -1412,6 +1412,7 @@
     let teachers = loadArray('teachers', typeof normalizeTeacherRecord === 'function' ? normalizeTeacherRecord : undefined);
     let courseAssignments = loadArray('courseAssignments', typeof normalizeCourseAssignment === 'function' ? normalizeCourseAssignment : undefined);
     let calendarEvents = loadArray('calendarEvents');
+    let teacherLeaves = loadArray('teacherLeaves');
 
     let currentDate = new Date();
     let viewMode = 'month';
@@ -1803,18 +1804,33 @@
       }, 15000);
     }
 
-    function loadTeachers() {
+    function getTeachersOnLeave(date) {
+      if (!date) return new Set();
+      // 重新從 localStorage 取得最新請假資料
+      try { teacherLeaves = JSON.parse(localStorage.getItem('teacherLeaves') || '[]'); } catch(e) {}
+      return new Set(teacherLeaves.filter(l => l.date === date).map(l => l.teacherId));
+    }
+
+    function loadTeachers(date) {
+      const onLeaveIds = getTeachersOnLeave(date || document.getElementById('courseDate').value);
+
       const select = document.getElementById('courseTeacherId');
+      const prevTeacher = select.value;
       select.innerHTML = '<option value="">請選擇師資</option>';
       teachers.forEach(t => {
-        select.innerHTML += `<option value="${escapeAttr(t.id)}">${escapeHtml(t.name)}</option>`;
+        const isOnLeave = onLeaveIds.has(t.id);
+        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
+        select.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''}${String(t.id) === prevTeacher ? ' selected' : ''}>${label}</option>`;
       });
 
-      // 同時載入助教選單
+      // 同時載入助教選單（助教請假不強制限制，僅標注）
       const taSelect = document.getElementById('courseTaId');
+      const prevTa = taSelect.value;
       taSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
       teachers.forEach(t => {
-        taSelect.innerHTML += `<option value="${escapeAttr(t.id)}">${escapeHtml(t.name)}</option>`;
+        const isOnLeave = onLeaveIds.has(t.id);
+        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
+        taSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''}${String(t.id) === prevTa ? ' selected' : ''}>${label}</option>`;
       });
     }
 
@@ -2697,7 +2713,11 @@
 
     // ==================== Modal 管理 ====================
     function openAddCourseModal() {
-      document.getElementById('courseDate').value = getLocalDateString(new Date());
+      const today = getLocalDateString(new Date());
+      document.getElementById('courseDate').value = today;
+
+      // 根據今天日期過濾師資
+      loadTeachers(today);
 
       // 載入智慧派課的課程清單
       loadMaritimeCoursesToDatalist();
@@ -3114,22 +3134,49 @@
       document.body.appendChild(modal);
     }
 
+    function loadEditTeachers(date) {
+      const onLeaveIds = getTeachersOnLeave(date);
+      const editTeacherSelect = document.getElementById('editTeacherId');
+      const prevTeacher = editTeacherSelect.value;
+      editTeacherSelect.innerHTML = '<option value="">請選擇師資</option>';
+      teachers.forEach(t => {
+        const isOnLeave = onLeaveIds.has(t.id);
+        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
+        editTeacherSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''}${String(t.id) === prevTeacher ? ' selected' : ''}>${label}</option>`;
+      });
+
+      const editTaSelect = document.getElementById('editTaId');
+      const prevTa = editTaSelect.value;
+      editTaSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
+      teachers.forEach(t => {
+        const isOnLeave = onLeaveIds.has(t.id);
+        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
+        editTaSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''}${String(t.id) === prevTa ? ' selected' : ''}>${label}</option>`;
+      });
+    }
+
     function enterEditMode() {
       const course = courseAssignments.find(c => c.id === editingCourseId);
       if (!course) return;
 
-      // 載入師資列表到編輯表單
+      // 載入師資列表到編輯表單（依照課程日期過濾請假）
+      const onLeaveIds = getTeachersOnLeave(course.date);
+
       const editTeacherSelect = document.getElementById('editTeacherId');
       editTeacherSelect.innerHTML = '<option value="">請選擇師資</option>';
       teachers.forEach(t => {
-        editTeacherSelect.innerHTML += `<option value="${escapeAttr(t.id)}" ${t.id === course.teacherId ? 'selected' : ''}>${escapeHtml(t.name)}</option>`;
+        const isOnLeave = onLeaveIds.has(t.id);
+        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
+        editTeacherSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''} ${t.id === course.teacherId ? 'selected' : ''}>${label}</option>`;
       });
 
       // 載入助教列表到編輯表單
       const editTaSelect = document.getElementById('editTaId');
       editTaSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
       teachers.forEach(t => {
-        editTaSelect.innerHTML += `<option value="${escapeAttr(t.id)}" ${t.id === course.taId ? 'selected' : ''}>${escapeHtml(t.name)}</option>`;
+        const isOnLeave = onLeaveIds.has(t.id);
+        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
+        editTaSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''} ${t.id === course.taId ? 'selected' : ''}>${label}</option>`;
       });
 
       // 填入課程資料

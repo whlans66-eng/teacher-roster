@@ -40,6 +40,10 @@ const SHEETS_CONFIG = {
     name: 'maritimeCourses',
     header: ['id','name','category','method','description','keywords','targetCategories','targetRanks','version','lastModifiedBy','lastModifiedAt','duration','lang','link','materials']
   },
+  teacherLeaves: {
+    name: 'teacherLeaves',
+    header: ['id','teacherId','teacherName','date','reason','createdBy','createdAt']
+  },
   activeSessions: {
     name: 'activeSessions',
     header: ['sessionId','userName','userEmail','pageUrl','lastActiveTime','userAgent','kicked']
