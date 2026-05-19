@@ -2359,13 +2359,6 @@
               </div>
               <div class="space-y-2">
                 ${courses.map(c => {
-                  const statusColors = {
-                    '上班': 'bg-blue-50 text-blue-700 border-blue-200',
-                    '休假': 'bg-green-50 text-green-700 border-green-200',
-                    '出差': 'bg-orange-50 text-orange-700 border-orange-200'
-                  };
-                  const statusClass = statusColors[c.status] || statusColors['上班'];
-
                   // 🔒 檢查鎖定狀態
                   const lock = courseLocks[c.id];
                   const isLocked = lock && lock.userName;
@@ -2379,7 +2372,6 @@
                           <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
                             <span>🕐 ${c.time}</span>
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
-                            <span class="px-2 py-0.5 ${statusClass} rounded border">${c.status || '上班'}</span>
                             ${lockBadge}
                           </div>
                         </div>
@@ -2425,13 +2417,6 @@
               </div>
               <div class="space-y-2">
                 ${courses.map(c => {
-                  const statusColors = {
-                    '上班': 'bg-blue-50 text-blue-700 border-blue-200',
-                    '休假': 'bg-green-50 text-green-700 border-green-200',
-                    '出差': 'bg-orange-50 text-orange-700 border-orange-200'
-                  };
-                  const statusClass = statusColors[c.status] || statusColors['上班'];
-
                   // 🔒 檢查鎖定狀態
                   const lock = courseLocks[c.id];
                   const isLocked = lock && lock.userName;
@@ -2445,7 +2430,6 @@
                           <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
                             <span>🕐 ${c.time}</span>
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
-                            <span class="px-2 py-0.5 ${statusClass} rounded border">${c.status || '上班'}</span>
                             ${lockBadge}
                           </div>
                         </div>
@@ -2853,13 +2837,6 @@
               <div class="flex items-center gap-2">
                 <span><i class="ph ph-books"></i></span>
                 <span class="text-sm font-medium">${course.type}</span>
-              </div>
-            </div>
-            <div>
-              <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">狀態</div>
-              <div class="flex items-center gap-2">
-                <span><i class="ph ph-briefcase"></i></span>
-                <span class="text-sm font-medium">${course.status || '上班'}</span>
               </div>
             </div>
           </div>
@@ -3271,7 +3248,6 @@
         date: courseDate,
         time: newTime,
         type: document.getElementById('editCourseType').value,
-        status: course.status || '上班',
         note: document.getElementById('editCourseNote').value.trim(),
         tags: getCurrentTags(),
         updatedAt: new Date().toISOString()
@@ -3407,7 +3383,6 @@
         date: document.getElementById('courseDate').value,
         time: `${document.getElementById('startTime').value}-${document.getElementById('endTime').value}`,
         type: document.getElementById('courseType').value,
-        status: '上班',
         note: document.getElementById('courseNote').value.trim()
       };
 
