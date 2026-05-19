@@ -4014,9 +4014,6 @@
       closeShareModal();
     }
 
-    document.getElementById('shareModal').addEventListener('click', function(e) {
-      if (e.target === this) closeShareModal();
-    });
 
     // ==================== Phase 3: 社交互動功能 ====================
 
@@ -4320,7 +4317,7 @@
   </svg>
 
   <!-- 分享 Modal -->
-  <div id="shareModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center;">
+  <div id="shareModal" onclick="if(event.target===this)closeShareModal()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:20px; padding:32px 28px; width:90%; max-width:360px; box-shadow:0 24px 60px rgba(0,0,0,0.2); animation:slideUp 0.25s cubic-bezier(0.4,0,0.2,1);">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
         <span style="font-size:17px; font-weight:600; color:#1d1d1f;">分享課程</span>
