@@ -1143,15 +1143,6 @@
         </div>
 
         <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">狀態</label>
-          <select id="courseStatus" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-            <option value="上班">上班</option>
-            <option value="休假">休假</option>
-            <option value="出差">出差</option>
-          </select>
-        </div>
-
-        <div>
           <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">備註</label>
           <textarea id="courseNote" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="選填：課程相關備註..." style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);"></textarea>
         </div>
@@ -1326,15 +1317,6 @@
             <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">結束時間</label>
             <input type="time" id="editEndTime" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
           </div>
-        </div>
-
-        <div>
-          <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">狀態</label>
-          <select id="editCourseStatus" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" required>
-            <option value="上班">上班</option>
-            <option value="休假">休假</option>
-            <option value="出差">出差</option>
-          </select>
         </div>
 
         <div>
@@ -3188,7 +3170,6 @@
       document.getElementById('editStartTime').value = startTime;
       document.getElementById('editEndTime').value = endTime;
 
-      document.getElementById('editCourseStatus').value = course.status || '上班';
       document.getElementById('editCourseNote').value = course.note || '';
 
       // 載入已有的標籤
@@ -3290,7 +3271,7 @@
         date: courseDate,
         time: newTime,
         type: document.getElementById('editCourseType').value,
-        status: document.getElementById('editCourseStatus').value,
+        status: course.status || '上班',
         note: document.getElementById('editCourseNote').value.trim(),
         tags: getCurrentTags(),
         updatedAt: new Date().toISOString()
@@ -3426,7 +3407,7 @@
         date: document.getElementById('courseDate').value,
         time: `${document.getElementById('startTime').value}-${document.getElementById('endTime').value}`,
         type: document.getElementById('courseType').value,
-        status: document.getElementById('courseStatus').value,
+        status: '上班',
         note: document.getElementById('courseNote').value.trim()
       };
 
