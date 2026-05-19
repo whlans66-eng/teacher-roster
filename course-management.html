@@ -3957,60 +3957,66 @@
     }
 
     /**
-     * 功能 1.3: 分享課程（使用 Web Share API 或產生連結）
+     * 功能 1.3: 分享課程（Outlook / Teams）
      */
-    async function shareCourse() {
+    let _shareText = '';
+    let _shareUrl = '';
+
+    function shareCourse() {
       const course = courseAssignments.find(c => c.id === editingCourseId);
       if (!course) return;
 
       const teacher = teachers.find(t => t.id === course.teacherId);
-      const shareText = `課程資訊\n\n` +
-                       `課程：${course.name}\n` +
-                       `教師：${teacher ? teacher.name : '未知'}\n` +
-                       `日期：${course.date}\n` +
-                       `時間：${course.time}\n` +
-                       `類型：${course.type}`;
+      _shareText = `課程資訊\n課程：${course.name}\n教師：${teacher ? teacher.name : '未知'}\n日期：${course.date}\n時間：${course.time}\n類型：${course.type}`;
+      _shareUrl = window.location.href;
 
-      const shareUrl = window.location.href;
-
-      try {
-        // 優先使用 Web Share API（行動裝置支援）
-        if (navigator.share) {
-          await navigator.share({
-            title: course.name,
-            text: shareText,
-            url: shareUrl
-          });
-          showMessage('課程已分享！', 'success');
-        } else {
-          // 降級方案：複製分享文字到剪貼簿
-          const fullText = shareText + `\n\n連結：${shareUrl}`;
-
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(fullText);
-            showMessage('分享連結已複製到剪貼簿！', 'success', '您可以貼到 Line、Email 或其他地方分享');
-          } else {
-            // 最後降級方案
-            const textarea = document.createElement('textarea');
-            textarea.value = fullText;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            showMessage('分享連結已複製！', 'success');
-          }
-        }
-      } catch (err) {
-        console.error('分享失敗:', err);
-        if (err.name === 'AbortError') {
-          // 使用者取消分享，不顯示錯誤
-          return;
-        }
-        showMessage('分享失敗', 'error');
-      }
+      const modal = document.getElementById('shareModal');
+      document.getElementById('shareModalCourseName').textContent = course.name;
+      modal.style.display = 'flex';
     }
+
+    function closeShareModal() {
+      document.getElementById('shareModal').style.display = 'none';
+    }
+
+    function shareViaOutlook() {
+      const subject = encodeURIComponent('課程資訊分享');
+      const body = encodeURIComponent(_shareText + '\n\n連結：' + _shareUrl);
+      window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+      closeShareModal();
+    }
+
+    function shareViaTeams() {
+      const href = encodeURIComponent(_shareUrl);
+      const msg = encodeURIComponent(_shareText);
+      window.open(`https://teams.microsoft.com/share?href=${href}&msgText=${msg}`, '_blank');
+      closeShareModal();
+    }
+
+    async function copyShareLink() {
+      const fullText = _shareText + '\n\n連結：' + _shareUrl;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(fullText);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = fullText;
+          ta.style.cssText = 'position:fixed;opacity:0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        showMessage('連結已複製！', 'success');
+      } catch {
+        showMessage('複製失敗', 'error');
+      }
+      closeShareModal();
+    }
+
+    document.getElementById('shareModal').addEventListener('click', function(e) {
+      if (e.target === this) closeShareModal();
+    });
 
     // ==================== Phase 3: 社交互動功能 ====================
 
@@ -4312,6 +4318,33 @@
       </symbol>
     </defs>
   </svg>
+
+  <!-- 分享 Modal -->
+  <div id="shareModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:20px; padding:32px 28px; width:90%; max-width:360px; box-shadow:0 24px 60px rgba(0,0,0,0.2); animation:slideUp 0.25s cubic-bezier(0.4,0,0.2,1);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+        <span style="font-size:17px; font-weight:600; color:#1d1d1f;">分享課程</span>
+        <button onclick="closeShareModal()" style="background:none; border:none; cursor:pointer; color:#86868b; padding:4px; border-radius:50%; transition:background 0.15s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <p id="shareModalCourseName" style="font-size:14px; color:#6e6e73; margin-bottom:24px; line-height:1.5;"></p>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <button onclick="shareViaOutlook()" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid #e5e5ea; border-radius:12px; background:#fff; cursor:pointer; font-size:15px; font-weight:500; color:#1d1d1f; transition:all 0.2s;" onmouseover="this.style.background='#f5f5f7'; this.style.borderColor='#0078d4'" onmouseout="this.style.background='#fff'; this.style.borderColor='#e5e5ea'">
+          <svg width="28" height="28" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="8" fill="#0078d4"/><path d="M8 16h18v16H8z" fill="#fff" opacity=".15"/><path d="M26 10h14v28H26V10z" fill="#fff" opacity=".2"/><text x="15" y="30" font-family="Arial" font-size="14" font-weight="bold" fill="white">O</text></svg>
+          <div style="text-align:left;"><div style="font-size:15px; font-weight:600;">Outlook</div><div style="font-size:12px; color:#86868b;">以電子郵件分享</div></div>
+        </button>
+        <button onclick="shareViaTeams()" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid #e5e5ea; border-radius:12px; background:#fff; cursor:pointer; font-size:15px; font-weight:500; color:#1d1d1f; transition:all 0.2s;" onmouseover="this.style.background='#f5f5f7'; this.style.borderColor='#6264a7'" onmouseout="this.style.background='#fff'; this.style.borderColor='#e5e5ea'">
+          <svg width="28" height="28" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="8" fill="#6264a7"/><circle cx="30" cy="16" r="6" fill="white"/><path d="M18 22a7 7 0 1 1 0 14 7 7 0 0 1 0-14z" fill="white"/><path d="M27 24h10v12H27z" fill="white" opacity=".7"/></svg>
+          <div style="text-align:left;"><div style="font-size:15px; font-weight:600;">Teams</div><div style="font-size:12px; color:#86868b;">分享至 Microsoft Teams</div></div>
+        </button>
+        <button onclick="copyShareLink()" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid #e5e5ea; border-radius:12px; background:#fff; cursor:pointer; font-size:15px; font-weight:500; color:#1d1d1f; transition:all 0.2s;" onmouseover="this.style.background='#f5f5f7'" onmouseout="this.style.background='#fff'">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#f0f0f0"/><path d="M17 11h2a3 3 0 0 1 0 6h-2M11 17H9a3 3 0 0 1 0-6h2M10 14h8" stroke="#1d1d1f" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div style="text-align:left;"><div style="font-size:15px; font-weight:600;">複製連結</div><div style="font-size:12px; color:#86868b;">複製後可貼至任何地方</div></div>
+        </button>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
