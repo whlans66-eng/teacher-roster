@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>船員入口 - WHL MARITRAIN</title>
+  <style>
+    :root {
+      --brand: #0a4a7a;
+      --brand-hover: #0d5fa0;
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --glass-bg: rgba(255, 255, 255, 0.65);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --input-bg: rgba(255, 255, 255, 0.5);
+      --shadow-soft: 0 20px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #e8f0f8;
+      background-image:
+        radial-gradient(at 80% 0%,  hsla(200, 100%, 56%, 0.6) 0px, transparent 55%),
+        radial-gradient(at 0%  50%, hsla(210, 80%, 70%, 0.5)  0px, transparent 55%),
+        radial-gradient(at 80% 50%, hsla(180, 60%, 60%, 0.4)  0px, transparent 55%),
+        radial-gradient(at 0%  100%,hsla(220, 70%, 75%, 0.5)  0px, transparent 55%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      box-shadow: var(--shadow-soft);
+      width: 100%;
+      max-width: 480px;
+      padding: 56px 40px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      animation: floatIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -50%;
+      width: 200%; height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+      transform: rotate(30deg);
+      pointer-events: none;
+    }
+
+    @keyframes floatIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(10, 74, 122, 0.1);
+      color: var(--brand);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      font-size: 60px;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      letter-spacing: 0.01em;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 36px;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(0,0,0,0.1);
+    }
+
+    .divider span {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    /* 萬海園地 SSO 按鈕 */
+    .sso-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      height: 56px;
+      padding: 12px 24px;
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(10, 74, 122, 0.35);
+      margin-bottom: 16px;
+      text-decoration: none;
+    }
+
+    .sso-btn:hover {
+      background: var(--brand-hover);
+      transform: scale(1.02);
+      box-shadow: 0 6px 16px rgba(10, 74, 122, 0.45);
+    }
+
+    .sso-btn:active { transform: scale(0.98); }
+
+    .sso-hint {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      position: relative;
+      text-align: left;
+    }
+
+    input {
+      width: 100%;
+      height: 52px;
+      padding: 16px 20px;
+      font-size: 16px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background-color: var(--input-bg);
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      background-color: #fff;
+      box-shadow: 0 4px 16px rgba(10, 74, 122, 0.15);
+      transform: translateY(-1px);
+    }
+
+    input::placeholder { color: #98989d; }
+
+    .toggle-password {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 4px;
+      transition: color 0.2s;
+    }
+
+    .toggle-password:hover { color: var(--text-primary); }
+
+    .login-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 52px;
+      margin-top: 8px;
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(10, 74, 122, 0.3);
+    }
+
+    .login-btn:hover {
+      background: var(--brand-hover);
+      transform: scale(1.02);
+      box-shadow: 0 6px 16px rgba(10, 74, 122, 0.4);
+    }
+
+    .login-btn:active { transform: scale(0.98); }
+
+    .login-btn:disabled {
+      background: #d2d2d7;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer-links {
+      margin-top: 32px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .footer-links a {
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover { color: var(--brand); }
+
+    /* 錯誤提示 */
+    .error-popover {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: #ff3b30;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 9999;
+      box-shadow: 0 8px 24px rgba(255,59,48,0.4);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .error-popover.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 480px) {
+      .glass-card { padding: 40px 24px; border-radius: 0; max-width: none; height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="errorToast" class="error-popover">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="errorText">Error</span>
+  </div>
+
+  <div class="glass-card">
+    <div class="badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 14a8 8 0 0 1-6.2-2.95C7.18 15.47 9.5 14.5 12 14.5s4.82.97 6.2 2.55A8 8 0 0 1 12 20z"/></svg>
+      船員入口 Crew Portal
+    </div>
+    <div class="logo">⚓</div>
+    <h1>歡迎回來</h1>
+    <p class="subtitle">萬海智慧航安訓練管理系統</p>
+
+    <!-- 萬海園地 SSO -->
+    <a href="#" class="sso-btn" id="ssoBtn" onclick="loginViaWanhai(event)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      以萬海園地帳號登入
+    </a>
+    <p class="sso-hint">使用公司內網（萬海園地）帳號，免額外設定密碼</p>
+
+    <div class="divider"><span>或使用訓練系統帳號</span></div>
+
+    <!-- 一般帳密登入 -->
+    <form id="loginForm" autocomplete="on">
+      <div class="form-group">
+        <input type="text" id="username" placeholder="帳號（船員編號）" required autocomplete="username" spellcheck="false">
+      </div>
+      <div class="form-group">
+        <input type="password" id="password" placeholder="密碼" required autocomplete="current-password">
+        <button type="button" class="toggle-password" id="togglePwd" title="顯示密碼">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <button type="submit" class="login-btn" id="loginBtn">
+        <span id="btnText">登入</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </form>
+
+    <div class="footer-links">
+      <a href="#">忘記密碼？</a>
+      <div style="margin-top: 24px;">
+        <a href="login.html" class="back-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          返回管理員登入
+        </a>
+      </div>
+      <div style="margin-top: 20px; opacity: 0.6;">&copy; 2025 Wan Hai Lines Ltd.</div>
+    </div>
+  </div>
+
+  <script src="js/security.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const errorToast = document.getElementById('errorToast');
+    const errorText = document.getElementById('errorText');
+
+    document.getElementById('togglePwd').addEventListener('click', () => {
+      const t = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = t;
+      document.getElementById('togglePwd').style.opacity = t === 'text' ? '1' : '0.5';
+    });
+
+    function showError(msg) {
+      errorText.textContent = msg;
+      errorToast.classList.add('show');
+      setTimeout(() => errorToast.classList.remove('show'), 3500);
+    }
+
+    // 萬海園地 SSO（實際部署時替換為內網 SSO 端點）
+    function loginViaWanhai(e) {
+      e.preventDefault();
+      const ssoUrl = sessionStorage.getItem('wanhaiSsoUrl') || '#';
+      if (ssoUrl === '#') {
+        showError('萬海園地 SSO 端點尚未設定，請聯絡系統管理員');
+        return;
+      }
+      window.location.href = ssoUrl;
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        if (typeof api === 'undefined' || !API_CONFIG.baseUrl) {
+          throw new Error('設定錯誤：無法連接 API');
+        }
+
+        const loginResult = await api.login(username, password);
+        const userData = loginResult.user;
+
+        sessionStorage.setItem('authData', JSON.stringify({
+          username: userData.username,
+          role: userData.role,
+          displayName: userData.full_name,
+          token: loginResult.token,
+          timestamp: Date.now(),
+          isCrew: true
+        }));
+        sessionStorage.setItem('currentUser', JSON.stringify({
+          username: userData.username,
+          role: userData.role,
+          displayName: userData.full_name,
+          isCrew: true
+        }));
+
+        loginBtn.style.background = '#34c759';
+        loginBtn.innerHTML = '登入成功';
+        setTimeout(() => { window.location.href = 'maritime-courses.html'; }, 500);
+
+      } catch (error) {
+        showError(error.message || '帳號或密碼錯誤');
+        loginBtn.disabled = false;
+        loginBtn.style.background = '';
+        loginBtn.innerHTML = '<span id="btnText">登入</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+        passwordInput.value = '';
+        passwordInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>
