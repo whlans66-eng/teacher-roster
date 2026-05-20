@@ -3,36 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>教材管理 - WHL MARITRAIN</title>
+  <title>教材管理 | WHL MARITRAIN</title>
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
   <style>
     :root {
+      --apple-blue: #0071e3;
+      --apple-blue-hover: #0077ed;
+      --apple-blue-light: #e8f0fb;
+      --apple-text: #1d1d1f;
+      --apple-gray: #86868b;
+      --apple-gray-2: #6e6e73;
+      --apple-bg: #f5f5f7;
+      --apple-white: #ffffff;
+      --apple-border: rgba(0,0,0,0.06);
+      --apple-shadow-sm: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+      --apple-shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+      --apple-shadow-lg: 0 12px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+      --apple-radius: 20px;
+      --apple-radius-sm: 12px;
+      --apple-radius-xs: 8px;
       --brand: #0a4a7a;
-      --brand-light: #e8f0f8;
-      --brand-mid: #1e6fa8;
-      --text-primary: #1d1d1f;
-      --text-secondary: #6e6e73;
-      --surface: #ffffff;
-      --surface-2: #f5f5f7;
-      --surface-3: #e8e8ed;
-      --border: rgba(0,0,0,0.08);
-      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-      --green: #34c759;
-      --orange: #ff9500;
-      --red: #ff3b30;
-      --purple: #5856d6;
-      --radius: 14px;
-      --radius-sm: 10px;
-      --sidebar-w: 280px;
+      --sidebar-w: 288px;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-      background: var(--surface-2);
-      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background: var(--apple-bg);
+      color: var(--apple-text);
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -41,35 +42,42 @@
 
     /* ── Topbar ── */
     .topbar {
-      height: 52px;
-      background: rgba(255,255,255,0.9);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
+      height: 56px;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid var(--apple-border);
       display: flex;
       align-items: center;
       padding: 0 20px;
       gap: 12px;
       flex-shrink: 0;
-      z-index: 50;
+      z-index: 100;
     }
 
-    .topbar-back {
+    .back-btn {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 13px;
-      color: var(--brand);
+      font-size: 14px;
       font-weight: 500;
+      color: var(--apple-blue);
       text-decoration: none;
-      padding: 5px 10px;
-      border-radius: 8px;
-      transition: background 0.15s;
+      padding: 6px 14px;
+      border-radius: 20px;
+      transition: background 0.2s;
     }
-    .topbar-back:hover { background: var(--brand-light); }
 
-    .topbar-divider { width: 1px; height: 18px; background: var(--border); }
+    .back-btn:hover { background: var(--apple-blue-light); }
 
-    .topbar-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .topbar-sep { width: 1px; height: 18px; background: var(--apple-border); }
+
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--apple-text);
+      letter-spacing: -0.01em;
+    }
 
     .topbar-right {
       margin-left: auto;
@@ -78,41 +86,43 @@
       gap: 10px;
     }
 
-    .user-chip {
+    .user-pill {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
+      background: var(--apple-bg);
+      border: 1px solid var(--apple-border);
+      border-radius: 20px;
+      padding: 5px 12px 5px 6px;
       font-size: 13px;
       font-weight: 500;
-      color: var(--text-primary);
-      background: var(--surface-2);
-      border-radius: 20px;
-      padding: 5px 11px 5px 7px;
+      color: var(--apple-text);
     }
 
     .user-avatar {
-      width: 24px; height: 24px;
+      width: 26px; height: 26px;
       border-radius: 50%;
       background: var(--brand);
-      color: white;
+      color: #fff;
       font-size: 11px;
       font-weight: 700;
       display: flex; align-items: center; justify-content: center;
     }
 
-    .role-badge {
+    .role-pill {
       font-size: 10px;
       font-weight: 700;
+      letter-spacing: 0.03em;
       padding: 2px 7px;
       border-radius: 10px;
     }
 
     .role-admin   { background: #fde8e8; color: #c0392b; }
-    .role-teacher { background: #dbeafe; color: #1e40af; }
+    .role-teacher { background: var(--apple-blue-light); color: #1e40af; }
     .role-crew    { background: #dcfce7; color: #166534; }
 
     /* ── Layout ── */
-    .layout {
+    .app-body {
       display: flex;
       flex: 1;
       overflow: hidden;
@@ -121,100 +131,107 @@
     /* ── Sidebar ── */
     .sidebar {
       width: var(--sidebar-w);
-      background: var(--surface);
-      border-right: 1px solid var(--border);
+      background: var(--apple-white);
+      border-right: 1px solid var(--apple-border);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
       overflow: hidden;
     }
 
-    .sidebar-search {
-      padding: 12px;
-      border-bottom: 1px solid var(--border);
+    .sidebar-header {
+      padding: 16px 14px 10px;
+      border-bottom: 1px solid var(--apple-border);
     }
 
-    .search-input {
+    .sidebar-search {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: var(--surface-2);
-      border-radius: 9px;
+      background: var(--apple-bg);
+      border-radius: 10px;
       padding: 8px 12px;
       font-size: 13px;
-      color: var(--text-secondary);
+      color: var(--apple-gray);
     }
 
-    .search-input input {
-      border: none; background: transparent; outline: none;
-      font-size: 13px; color: var(--text-primary); width: 100%;
+    .sidebar-search input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 13px;
+      color: var(--apple-text);
+      width: 100%;
+      font-family: inherit;
     }
 
-    .sidebar-list {
+    .sidebar-body {
       flex: 1;
       overflow-y: auto;
       padding: 8px;
     }
 
-    .sidebar-list::-webkit-scrollbar { width: 4px; }
-    .sidebar-list::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
+    .sidebar-body::-webkit-scrollbar { width: 0; }
 
-    .course-item {
+    .course-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 10px;
-      border-radius: var(--radius-sm);
+      padding: 9px 10px;
+      border-radius: 12px;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: all 0.18s ease;
     }
 
-    .course-item:hover { background: var(--surface-2); }
-    .course-item.active { background: var(--brand-light); }
+    .course-row:hover { background: var(--apple-bg); }
 
-    .course-item-icon {
-      width: 34px; height: 34px;
-      border-radius: 8px;
+    .course-row.active {
+      background: var(--apple-blue-light);
+    }
+
+    .course-row-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
+      font-size: 17px;
       flex-shrink: 0;
     }
 
-    .course-item-info { flex: 1; min-width: 0; }
+    .course-row-text { flex: 1; min-width: 0; }
 
-    .course-item-name {
+    .course-row-name {
       font-size: 13px;
       font-weight: 600;
-      color: var(--text-primary);
+      color: var(--apple-text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .course-item-active .course-item-name { color: var(--brand); }
+    .course-row.active .course-row-name { color: var(--apple-blue); }
 
-    .course-item-meta {
+    .course-row-cat {
       font-size: 11px;
-      color: var(--text-secondary);
-      margin-top: 2px;
+      color: var(--apple-gray);
+      margin-top: 1px;
     }
 
-    .mat-count-badge {
+    .mat-pill {
       font-size: 10px;
       font-weight: 700;
-      min-width: 18px;
-      height: 18px;
-      background: var(--surface-3);
-      color: var(--text-secondary);
-      border-radius: 9px;
+      min-width: 20px;
+      height: 20px;
+      border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      padding: 0 5px;
+      padding: 0 6px;
       flex-shrink: 0;
+      background: var(--apple-bg);
+      color: var(--apple-gray);
     }
 
-    .mat-count-badge.has-mats {
-      background: var(--brand-light);
-      color: var(--brand);
+    .mat-pill.filled {
+      background: var(--apple-blue-light);
+      color: var(--apple-blue);
     }
 
     /* ── Main ── */
@@ -225,372 +242,480 @@
       flex-direction: column;
     }
 
-    .main-empty {
+    .main::-webkit-scrollbar { width: 6px; }
+    .main::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
+
+    .empty-main {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: var(--text-secondary);
-      gap: 12px;
+      gap: 14px;
+      color: var(--apple-gray);
+      animation: fadeUp 0.5s ease;
     }
 
-    .main-empty i { font-size: 52px; opacity: 0.25; }
-    .main-empty p { font-size: 15px; }
+    .empty-main-icon {
+      font-size: 64px;
+      opacity: 0.15;
+    }
 
+    .empty-main p {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    /* ── Course Header ── */
     .course-header {
-      padding: 20px 24px 16px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      background: var(--apple-white);
+      border-bottom: 1px solid var(--apple-border);
+      padding: 20px 28px;
       display: flex;
       align-items: flex-start;
-      gap: 14px;
+      gap: 16px;
       flex-shrink: 0;
+      animation: fadeUp 0.4s ease;
     }
 
-    .course-header-icon {
-      width: 48px; height: 48px;
-      border-radius: 12px;
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .course-hero-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 24px;
+      font-size: 26px;
       flex-shrink: 0;
+      box-shadow: var(--apple-shadow-sm);
     }
 
-    .course-header-info { flex: 1; }
+    .course-hero-info { flex: 1; }
 
-    .course-header-name {
-      font-size: 18px;
+    .course-hero-name {
+      font-size: 20px;
       font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: var(--apple-text);
+      line-height: 1.2;
     }
 
-    .course-header-meta {
+    .course-hero-tags {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 6px;
+      gap: 6px;
+      margin-top: 8px;
     }
 
     .tag {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 11px; font-weight: 500;
-      padding: 3px 8px; border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
     }
 
-    .tag-blue   { background: #dbeafe; color: #1e40af; }
-    .tag-green  { background: #dcfce7; color: #166534; }
-    .tag-gray   { background: var(--surface-2); color: var(--text-secondary); }
-    .tag-purple { background: #ede9fe; color: #5b21b6; }
+    .tag-blue   { background: var(--apple-blue-light); color: var(--apple-blue); }
+    .tag-green  { background: #dcfce7; color: #15803d; }
+    .tag-gray   { background: var(--apple-bg); color: var(--apple-gray); }
+    .tag-purple { background: #ede9fe; color: #6d28d9; }
 
-    .course-header-actions {
+    .course-hero-actions {
       display: flex;
-      align-items: center;
       gap: 8px;
       flex-shrink: 0;
+      align-items: center;
     }
 
-    .btn-primary {
-      display: flex; align-items: center; gap: 6px;
-      padding: 8px 16px;
-      background: var(--brand);
-      color: white;
+    .btn-apple {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 20px;
       border: none;
-      border-radius: 10px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
 
-    .btn-primary:hover { background: var(--brand-mid); }
-
-    .btn-secondary {
-      display: flex; align-items: center; gap: 6px;
-      padding: 8px 14px;
-      background: var(--surface-2);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s;
+    .btn-apple-primary {
+      background: var(--apple-blue);
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,113,227,0.30);
     }
 
-    .btn-secondary:hover { background: var(--surface-3); }
+    .btn-apple-primary:hover {
+      background: var(--apple-blue-hover);
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0,113,227,0.40);
+    }
 
-    /* ── Tabs ── */
-    .content-tabs {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 24px;
-      display: flex;
-      gap: 4px;
+    .btn-apple-secondary {
+      background: var(--apple-bg);
+      color: var(--apple-text);
+      border: 1px solid var(--apple-border);
+    }
+
+    .btn-apple-secondary:hover { background: #e5e5ea; }
+
+    /* ── Segmented Control ── */
+    .segment-wrap {
+      background: var(--apple-white);
+      border-bottom: 1px solid var(--apple-border);
+      padding: 12px 28px;
       flex-shrink: 0;
     }
 
-    .content-tab {
-      padding: 12px 14px 11px;
+    .segmented-control {
+      display: inline-flex;
+      background: var(--apple-bg);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .seg-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: 8px;
       border: none;
       background: transparent;
       font-size: 13px;
       font-weight: 500;
-      color: var(--text-secondary);
+      color: var(--apple-gray-2);
       cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
 
-    .content-tab:hover { color: var(--text-primary); }
-    .content-tab.active { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+    .seg-btn.active {
+      background: var(--apple-white);
+      color: var(--apple-text);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.06);
+    }
 
-    /* ── Content panels ── */
-    .content-panel { display: none; padding: 20px 24px; }
+    /* ── Content ── */
+    .content-panel { display: none; padding: 24px 28px 40px; animation: fadeUp 0.3s ease; }
     .content-panel.active { display: block; }
 
-    /* ── Materials list ── */
-    .mat-list { display: flex; flex-direction: column; gap: 8px; }
+    /* ── Upload zone ── */
+    .upload-zone {
+      border: 2px dashed rgba(0,113,227,0.25);
+      border-radius: var(--apple-radius);
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(0,113,227,0.02);
+      transition: all 0.25s ease;
+      margin-bottom: 20px;
+    }
 
-    .mat-item {
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--apple-blue);
+      background: var(--apple-blue-light);
+    }
+
+    .upload-zone-icon {
+      font-size: 40px;
+      color: var(--apple-blue);
+      opacity: 0.5;
+      margin-bottom: 10px;
+    }
+
+    .upload-zone p {
+      font-size: 14px;
+      color: var(--apple-gray);
+      line-height: 1.6;
+    }
+
+    .upload-zone strong { color: var(--apple-blue); font-weight: 600; }
+
+    /* ── Material cards ── */
+    .mat-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mat-card {
+      background: var(--apple-white);
+      border: 1px solid var(--apple-border);
+      border-radius: var(--apple-radius-sm);
+      box-shadow: var(--apple-shadow-sm);
       display: flex;
       align-items: center;
-      gap: 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-      transition: box-shadow 0.15s;
+      gap: 14px;
+      padding: 14px 16px;
+      transition: all 0.25s ease;
     }
 
-    .mat-item:hover { box-shadow: var(--shadow); }
+    .mat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--apple-shadow-md);
+      border-color: rgba(0,113,227,0.12);
+    }
 
-    .mat-item-icon {
-      width: 40px; height: 40px;
-      border-radius: 10px;
+    .mat-card-icon {
+      width: 44px; height: 44px;
+      border-radius: 11px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
+      font-size: 22px;
       flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
-    .mat-item-info { flex: 1; min-width: 0; }
+    .mat-card-info { flex: 1; min-width: 0; }
 
-    .mat-item-name {
+    .mat-card-name {
       font-size: 14px;
       font-weight: 600;
-      color: var(--text-primary);
+      color: var(--apple-text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      letter-spacing: -0.01em;
     }
 
-    .mat-item-sub {
+    .mat-card-sub {
       font-size: 12px;
-      color: var(--text-secondary);
-      margin-top: 2px;
-    }
-
-    /* 觀看進度條 */
-    .progress-wrap {
-      margin-top: 6px;
+      color: var(--apple-gray);
+      margin-top: 3px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .progress-bar-bg {
+    /* Progress */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 7px;
+    }
+
+    .progress-track {
       flex: 1;
       height: 4px;
-      background: var(--surface-3);
+      background: var(--apple-bg);
       border-radius: 2px;
       overflow: hidden;
     }
 
-    .progress-bar-fill {
+    .progress-fill {
       height: 100%;
-      background: var(--brand);
+      background: linear-gradient(90deg, var(--apple-blue), #34aadc);
       border-radius: 2px;
-      transition: width 0.3s;
+      transition: width 0.4s ease;
     }
 
-    .progress-label {
+    .progress-pct {
       font-size: 11px;
       font-weight: 600;
-      color: var(--text-secondary);
+      color: var(--apple-blue);
       white-space: nowrap;
     }
 
-    .mat-item-actions {
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .badge-new      { background: var(--apple-bg); color: var(--apple-gray); }
+    .badge-progress { background: #fff7ed; color: #c2410c; }
+    .badge-done     { background: #dcfce7; color: #15803d; }
+
+    .mat-card-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex-shrink: 0;
     }
 
     .btn-view {
-      padding: 6px 14px;
-      background: var(--brand);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 16px;
+      background: var(--apple-blue);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s;
+      font-family: inherit;
+      white-space: nowrap;
     }
 
-    .btn-view:hover { background: var(--brand-mid); }
+    .btn-view:hover {
+      background: var(--apple-blue-hover);
+      transform: scale(1.04);
+    }
 
-    .btn-delete {
-      width: 30px; height: 30px;
+    .btn-trash {
+      width: 32px; height: 32px;
       display: flex; align-items: center; justify-content: center;
-      background: transparent;
-      border: 1px solid #fecaca;
-      color: var(--red);
+      background: rgba(255,59,48,0.06);
+      border: 1px solid rgba(255,59,48,0.15);
+      color: #ff3b30;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 14px;
-      transition: all 0.15s;
-    }
-
-    .btn-delete:hover { background: #fef2f2; }
-
-    .status-chip {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 20px;
-    }
-
-    .status-done     { background: #dcfce7; color: #166534; }
-    .status-progress { background: #fff7ed; color: #c2410c; }
-    .status-new      { background: var(--surface-2); color: var(--text-secondary); }
-
-    /* ── Upload area ── */
-    .upload-area {
-      border: 2px dashed var(--surface-3);
-      border-radius: var(--radius);
-      padding: 28px;
-      text-align: center;
-      cursor: pointer;
+      font-size: 15px;
       transition: all 0.2s;
-      margin-bottom: 16px;
     }
 
-    .upload-area:hover, .upload-area.drag-over {
-      border-color: var(--brand-mid);
-      background: var(--brand-light);
+    .btn-trash:hover { background: rgba(255,59,48,0.12); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 52px 20px;
+      color: var(--apple-gray);
     }
 
-    .upload-area i { font-size: 36px; color: var(--brand); opacity: 0.5; margin-bottom: 8px; }
-    .upload-area p { font-size: 14px; color: var(--text-secondary); }
-    .upload-area strong { color: var(--brand); }
+    .empty-state i { font-size: 52px; opacity: 0.2; display: block; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--apple-gray-2); }
+    .empty-state p { font-size: 13px; line-height: 1.6; }
 
     /* ── Comments ── */
-    .comment-item {
+    .comments-list { display: flex; flex-direction: column; gap: 0; }
+
+    .comment-row {
       display: flex;
-      gap: 10px;
-      margin-bottom: 16px;
+      gap: 12px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--apple-border);
+      animation: fadeUp 0.3s ease;
     }
 
-    .comment-avatar {
-      width: 32px; height: 32px;
+    .comment-row:last-child { border-bottom: none; }
+
+    .comment-ava {
+      width: 34px; height: 34px;
       border-radius: 50%;
       background: var(--brand);
       color: white;
       font-size: 13px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
+      box-shadow: var(--apple-shadow-sm);
     }
 
-    .comment-bubble {
-      flex: 1;
-      background: var(--surface-2);
-      border-radius: 4px 12px 12px 12px;
-      padding: 10px 14px;
-    }
+    .comment-body { flex: 1; }
 
-    .comment-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
-    .comment-author { font-weight: 600; color: var(--text-primary); margin-right: 6px; }
-    .comment-text { font-size: 14px; line-height: 1.6; color: var(--text-primary); }
-
-    .comment-input-row {
+    .comment-meta {
       display: flex;
-      gap: 10px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-      margin-top: 4px;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 5px;
     }
 
-    .comment-input {
+    .comment-author { font-size: 13px; font-weight: 700; color: var(--apple-text); }
+
+    .comment-time { font-size: 11px; color: var(--apple-gray); }
+
+    .comment-text {
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--apple-text);
+    }
+
+    .comment-compose {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--apple-border);
+    }
+
+    .compose-input {
       flex: 1;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 14px;
+      border: 1px solid var(--apple-border);
+      border-radius: var(--apple-radius-sm);
+      padding: 12px 16px;
       font-size: 14px;
       font-family: inherit;
       resize: none;
-      min-height: 64px;
-      color: var(--text-primary);
-      background: var(--surface);
-      transition: border-color 0.15s, box-shadow 0.15s;
+      min-height: 72px;
+      color: var(--apple-text);
+      background: var(--apple-white);
+      transition: all 0.2s;
     }
 
-    .comment-input:focus {
+    .compose-input:focus {
       outline: none;
-      border-color: var(--brand-mid);
-      box-shadow: 0 0 0 3px rgba(10,74,122,0.1);
+      border-color: var(--apple-blue);
+      box-shadow: 0 0 0 4px rgba(0,113,227,0.10);
     }
 
-    .comment-submit {
+    .compose-submit {
       align-self: flex-end;
-      padding: 10px 18px;
-      background: var(--brand);
+      padding: 10px 22px;
+      background: var(--apple-blue);
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 20px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      box-shadow: 0 2px 8px rgba(0,113,227,0.28);
       white-space: nowrap;
-      transition: all 0.15s;
     }
 
-    .comment-submit:hover { background: var(--brand-mid); }
+    .compose-submit:hover {
+      background: var(--apple-blue-hover);
+      transform: scale(1.03);
+    }
 
-    /* ── Viewer overlay ── */
+    /* ── Viewer ── */
     .viewer-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.85);
-      z-index: 500;
+      background: rgba(0,0,0,0.88);
+      z-index: 800;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      animation: fadeIn 0.2s ease;
     }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .viewer-overlay.open { display: flex; }
 
-    .viewer-topbar {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 52px;
-      background: rgba(0,0,0,0.6);
+    .viewer-bar {
+      height: 56px;
+      background: rgba(20,20,20,0.85);
+      backdrop-filter: blur(20px);
       display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 12px;
-      z-index: 10;
+      padding: 0 18px;
+      gap: 14px;
+      flex-shrink: 0;
     }
 
-    .viewer-filename {
+    .viewer-title {
       font-size: 14px;
       font-weight: 600;
-      color: white;
+      color: rgba(255,255,255,0.9);
       flex: 1;
       white-space: nowrap;
       overflow: hidden;
@@ -600,30 +725,29 @@
     .viewer-close {
       width: 32px; height: 32px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.1);
       border: none;
-      color: white;
+      color: rgba(255,255,255,0.85);
       font-size: 16px;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s;
+      transition: all 0.18s;
     }
 
-    .viewer-close:hover { background: rgba(255,255,255,0.25); }
+    .viewer-close:hover { background: rgba(255,255,255,0.2); }
 
-    .viewer-content {
-      margin-top: 52px;
-      width: 100%;
-      height: calc(100vh - 52px);
+    .viewer-body {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
     }
 
     #viewerVideo {
       max-width: 100%;
       max-height: 100%;
-      outline: none;
+      border-radius: 2px;
     }
 
     #viewerIframe {
@@ -633,46 +757,51 @@
     }
 
     #viewerImage {
-      max-width: 95%;
-      max-height: 95%;
+      max-width: 96%;
+      max-height: 96%;
       object-fit: contain;
-      border-radius: 8px;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
 
     /* ── Toast ── */
     .toast {
       position: fixed;
-      bottom: 20px; right: 20px;
-      background: #1d1d1f;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: rgba(29,29,31,0.94);
+      backdrop-filter: blur(16px);
       color: white;
-      padding: 11px 16px;
-      border-radius: 12px;
-      font-size: 14px;
+      padding: 11px 20px;
+      border-radius: 20px;
+      font-size: 13px;
       font-weight: 500;
-      display: flex; align-items: center; gap: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       z-index: 999;
-      transform: translateY(60px);
       opacity: 0;
-      transition: all 0.3s cubic-bezier(0.2,0.8,0.2,1);
+      transition: all 0.35s cubic-bezier(0.2,0.8,0.2,1);
       pointer-events: none;
+      white-space: nowrap;
     }
 
-    .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.success { background: #166534; }
-    .toast.error   { background: #991b1b; }
-
-    .empty-state {
-      text-align: center;
-      padding: 48px 20px;
-      color: var(--text-secondary);
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
     }
 
-    .empty-state i { font-size: 44px; opacity: 0.25; display: block; margin-bottom: 10px; }
-    .empty-state p { font-size: 14px; }
+    .toast.success i { color: #30d158; }
+    .toast.error   i { color: #ff453a; }
 
     @media (max-width: 640px) {
-      :root { --sidebar-w: 220px; }
-      .course-header { flex-wrap: wrap; }
+      :root { --sidebar-w: 64px; }
+      .course-row-text, .course-row-cat, .mat-pill { display: none; }
+      .course-row { justify-content: center; }
+      .course-row-icon { margin: 0; }
+      .course-header { flex-wrap: wrap; padding: 16px; }
+      .content-panel { padding: 16px; }
     }
   </style>
 </head>
@@ -680,141 +809,131 @@
 
   <!-- Topbar -->
   <header class="topbar">
-    <a href="index.html" class="topbar-back">
+    <a href="index.html" class="back-btn">
       <i class="ph ph-caret-left"></i> 返回
     </a>
-    <div class="topbar-divider"></div>
+    <div class="topbar-sep"></div>
     <span class="topbar-title">教材管理</span>
     <div class="topbar-right">
-      <div class="user-chip">
+      <div class="user-pill">
         <div class="user-avatar" id="userInitial">—</div>
         <span id="userName">載入中</span>
-        <span class="role-badge" id="roleBadge"></span>
+        <span class="role-pill" id="rolePill"></span>
       </div>
     </div>
   </header>
 
-  <!-- Layout -->
-  <div class="layout">
+  <!-- App body -->
+  <div class="app-body">
 
-    <!-- Sidebar：課程列表 -->
+    <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="sidebar-search">
-        <div class="search-input">
-          <i class="ph ph-magnifying-glass"></i>
-          <input type="text" id="sidebarSearch" placeholder="搜尋課程..." oninput="filterSidebar()">
+      <div class="sidebar-header">
+        <div class="sidebar-search">
+          <i class="ph ph-magnifying-glass" style="flex-shrink:0;font-size:14px"></i>
+          <input type="text" id="sidebarSearch" placeholder="搜尋課程…" oninput="filterSidebar()">
         </div>
       </div>
-      <div class="sidebar-list" id="sidebarList">
-        <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px">載入中...</div>
+      <div class="sidebar-body" id="sidebarBody">
+        <div style="padding:24px 10px;text-align:center;font-size:13px;color:var(--apple-gray)">載入中…</div>
       </div>
     </aside>
 
-    <!-- Main：課程詳細 -->
+    <!-- Main -->
     <main class="main" id="mainArea">
-      <div class="main-empty">
-        <i class="ph ph-folder-open"></i>
+      <div class="empty-main">
+        <div class="empty-main-icon"><i class="ph ph-books"></i></div>
         <p>請從左側選擇課程</p>
       </div>
     </main>
 
   </div>
 
-  <!-- Viewer overlay -->
+  <!-- Viewer -->
   <div class="viewer-overlay" id="viewerOverlay">
-    <div class="viewer-topbar">
-      <span class="viewer-filename" id="viewerFilename">—</span>
+    <div class="viewer-bar">
+      <span class="viewer-title" id="viewerTitle">—</span>
       <button class="viewer-close" onclick="closeViewer()"><i class="ph ph-x"></i></button>
     </div>
-    <div class="viewer-content" id="viewerContent"></div>
+    <div class="viewer-body" id="viewerBody"></div>
   </div>
 
   <!-- Toast -->
   <div class="toast" id="toast">
-    <i class="ph ph-check-circle"></i>
+    <i class="ph ph-check-circle" id="toastIcon"></i>
     <span id="toastMsg"></span>
   </div>
 
   <script src="js/security.js"></script>
   <script>
-    // ── 全域 ──
+    // ── Globals ──
     let currentUser = null;
     let isAdmin = false;
-    let isCrew = false;
+    let isCrew  = false;
     let allCourses = [];
     let activeCourseId = null;
-    let activeContentTab = 'materials';
-    let progressSaveTimer = null;
+    let activeTab = 'materials';
+    let progressTimer = null;
+    let viewerMeta = null;
 
-    const CATEGORY_ICONS = {
-      'STCW':'🚢','safety':'🛟','navigation':'🧭','engine':'⚙️',
-      'cargo':'📦','medical':'🏥','fire':'🔥','security':'🔒',
-      'environment':'🌊','leadership':'👑','communication':'📡','survival':'⛵'
+    const CAT_ICON = {
+      STCW:'🚢', safety:'🛟', navigation:'🧭', engine:'⚙️',
+      cargo:'📦', medical:'🏥', fire:'🔥', security:'🔒',
+      environment:'🌊', leadership:'👑', communication:'📡', survival:'⛵'
     };
-    const CATEGORY_COLORS = {
-      'STCW':'#dbeafe','safety':'#fef3c7','navigation':'#dcfce7','engine':'#fce7f3',
-      'cargo':'#e0e7ff','medical':'#ffe4e6','fire':'#ffedd5','security':'#f3f4f6',
-      'environment':'#d1fae5','leadership':'#fef9c3','communication':'#ede9fe','survival':'#cffafe'
+    const CAT_BG = {
+      STCW:'#dbeafe', safety:'#fef3c7', navigation:'#dcfce7', engine:'#fce7f3',
+      cargo:'#e0e7ff', medical:'#ffe4e6', fire:'#ffedd5', security:'#f0f0f5',
+      environment:'#d1fae5', leadership:'#fef9c3', communication:'#ede9fe', survival:'#cffafe'
     };
 
-    // ── 初始化 ──
+    // ── Init ──
     document.addEventListener('DOMContentLoaded', () => {
       initAuth();
-      loadCourses();
-      // URL 參數：?courseId=xxx 自動選課
-      const params = new URLSearchParams(location.search);
-      const cid = params.get('courseId');
-      if (cid) {
-        // 等課程載入後再選
-        setTimeout(() => selectCourse(Number(cid) || cid), 200);
-      }
+      loadData();
+      const p = new URLSearchParams(location.search);
+      if (p.get('courseId')) setTimeout(() => selectCourse(p.get('courseId')), 150);
     });
 
     function initAuth() {
       const raw = sessionStorage.getItem('authData') || localStorage.getItem('authData');
-      if (!raw) { window.location.href = 'login.html'; return; }
-      try { currentUser = JSON.parse(raw); } catch { window.location.href = 'login.html'; return; }
-
+      if (!raw) { location.href = 'login.html'; return; }
+      try { currentUser = JSON.parse(raw); } catch { location.href = 'login.html'; return; }
       const role = currentUser.role || '';
       isAdmin = role === 'admin';
-      isCrew  = role === 'crew' || currentUser.isCrew;
-
-      // 非 admin 也可查看，但船員從 crew-login 進來
+      isCrew  = role === 'crew' || !!currentUser.isCrew;
       const name = currentUser.displayName || currentUser.username || '使用者';
       document.getElementById('userName').textContent = name;
       document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
-
-      const badge = document.getElementById('roleBadge');
-      if (isAdmin) { badge.textContent = 'Admin'; badge.className = 'role-badge role-admin'; }
-      else if (isCrew) { badge.textContent = '船員'; badge.className = 'role-badge role-crew'; }
-      else { badge.textContent = '教師'; badge.className = 'role-badge role-teacher'; }
+      const pill = document.getElementById('rolePill');
+      if (isAdmin)      { pill.textContent = 'Admin';  pill.className = 'role-pill role-admin'; }
+      else if (isCrew)  { pill.textContent = '船員';   pill.className = 'role-pill role-crew'; }
+      else              { pill.textContent = '教師';   pill.className = 'role-pill role-teacher'; }
     }
 
-    function loadCourses() {
+    function loadData() {
       allCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
       renderSidebar(allCourses);
     }
 
     // ── Sidebar ──
-    function renderSidebar(courses) {
-      const list = document.getElementById('sidebarList');
-      if (courses.length === 0) {
-        list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px">尚無課程</div>`;
+    function renderSidebar(list) {
+      const body = document.getElementById('sidebarBody');
+      if (!list.length) {
+        body.innerHTML = `<div style="padding:24px 10px;text-align:center;font-size:13px;color:var(--apple-gray)">尚無課程</div>`;
         return;
       }
-      list.innerHTML = courses.map(c => {
-        const icon = CATEGORY_ICONS[c.category] || '📚';
-        const bg   = CATEGORY_COLORS[c.category] || '#f5f5f7';
-        const matCount = (c.materials || []).length;
-        const isActive = String(c.id) === String(activeCourseId);
+      body.innerHTML = list.map(c => {
+        const active = String(c.id) === String(activeCourseId);
+        const cnt = (c.materials || []).length;
         return `
-          <div class="course-item ${isActive ? 'active' : ''}" onclick="selectCourse(${c.id})">
-            <div class="course-item-icon" style="background:${bg}">${icon}</div>
-            <div class="course-item-info">
-              <div class="course-item-name ${isActive ? 'course-item-active' : ''}">${escHtml(c.name)}</div>
-              <div class="course-item-meta">${c.category || ''}</div>
+          <div class="course-row ${active ? 'active' : ''}" onclick="selectCourse(${c.id})">
+            <div class="course-row-icon" style="background:${CAT_BG[c.category]||'#f5f5f7'}">${CAT_ICON[c.category]||'📚'}</div>
+            <div class="course-row-text">
+              <div class="course-row-name">${h(c.name)}</div>
+              <div class="course-row-cat">${h(c.category||'—')}</div>
             </div>
-            <div class="mat-count-badge ${matCount > 0 ? 'has-mats' : ''}">${matCount}</div>
+            <div class="mat-pill ${cnt ? 'filled' : ''}">${cnt}</div>
           </div>`;
       }).join('');
     }
@@ -822,466 +941,368 @@
     function filterSidebar() {
       const q = document.getElementById('sidebarSearch').value.toLowerCase();
       renderSidebar(allCourses.filter(c =>
-        c.name.toLowerCase().includes(q) ||
-        (c.category || '').toLowerCase().includes(q)
+        c.name.toLowerCase().includes(q) || (c.category||'').toLowerCase().includes(q)
       ));
     }
 
-    // ── 選擇課程 ──
-    function selectCourse(courseId) {
-      activeCourseId = courseId;
-      const course = allCourses.find(c => String(c.id) === String(courseId));
+    // ── Select course ──
+    function selectCourse(id) {
+      activeCourseId = String(id);
+      const course = allCourses.find(c => String(c.id) === activeCourseId);
       if (!course) return;
-      renderSidebar(allCourses); // 更新 active 狀態
+      renderSidebar(allCourses);
       renderMain(course);
-
-      // 更新 URL 但不跳頁
       const url = new URL(location.href);
-      url.searchParams.set('courseId', courseId);
-      history.replaceState(null, '', url.toString());
+      url.searchParams.set('courseId', id);
+      history.replaceState(null, '', url);
     }
 
-    // ── 主區域 ──
+    // ── Main ──
     function renderMain(course) {
-      const icon = CATEGORY_ICONS[course.category] || '📚';
-      const bg   = CATEGORY_COLORS[course.category] || '#f5f5f7';
+      const icon = CAT_ICON[course.category] || '📚';
+      const bg   = CAT_BG[course.category]  || '#f5f5f7';
       const mats = course.materials || [];
 
-      const adminActions = isAdmin ? `
-        <button class="btn-primary" onclick="triggerUpload(${course.id})">
+      const uploadBtn = isAdmin ? `
+        <button class="btn-apple btn-apple-primary" onclick="triggerUpload(${course.id})">
           <i class="ph ph-upload-simple"></i> 上傳教材
         </button>
-        <input type="file" id="fileInput_${course.id}" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.webm,.mov,.jpg,.jpeg,.png,.gif,.webp,.zip"
-          style="display:none" onchange="handleUpload(this, ${course.id})">
-      ` : '';
+        <input type="file" id="fi_${course.id}" multiple
+          accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.webm,.mov,.jpg,.jpeg,.png,.gif,.webp,.zip"
+          style="display:none" onchange="handleFiles(this,${course.id})">` : '';
 
-      const tabComment = (isCrew || isAdmin) ? `
-        <button class="content-tab" data-tab="comments" onclick="switchContentTab('comments', this)">
+      const commentTab = (isCrew || isAdmin) ? `
+        <button class="seg-btn" data-tab="comments" onclick="switchTab('comments',this)">
           <i class="ph ph-chat-circle-dots"></i> 留言討論
         </button>` : '';
 
       document.getElementById('mainArea').innerHTML = `
-        <!-- 課程 Header -->
         <div class="course-header">
-          <div class="course-header-icon" style="background:${bg}">${icon}</div>
-          <div class="course-header-info">
-            <div class="course-header-name">${escHtml(course.name)}</div>
-            <div class="course-header-meta">
-              ${course.category ? `<span class="tag tag-blue"><i class="ph ph-tag"></i>${escHtml(course.category)}</span>` : ''}
-              ${course.method   ? `<span class="tag tag-green">${escHtml(course.method)}</span>` : ''}
-              ${course.duration ? `<span class="tag tag-gray"><i class="ph ph-clock"></i>${course.duration} 分鐘</span>` : ''}
+          <div class="course-hero-icon" style="background:${bg}">${icon}</div>
+          <div class="course-hero-info">
+            <div class="course-hero-name">${h(course.name)}</div>
+            <div class="course-hero-tags">
+              ${course.category ? `<span class="tag tag-blue"><i class="ph ph-tag"></i>${h(course.category)}</span>` : ''}
+              ${course.method   ? `<span class="tag tag-green">${h(course.method)}</span>` : ''}
+              ${course.duration ? `<span class="tag tag-gray"><i class="ph ph-clock"></i>${course.duration} 分</span>` : ''}
               <span class="tag tag-gray"><i class="ph ph-folder"></i>${mats.length} 個教材</span>
             </div>
           </div>
-          <div class="course-header-actions">
-            ${adminActions}
+          <div class="course-hero-actions">${uploadBtn}</div>
+        </div>
+
+        <div class="segment-wrap">
+          <div class="segmented-control">
+            <button class="seg-btn active" data-tab="materials" onclick="switchTab('materials',this)">
+              <i class="ph ph-folder-open"></i> 教材附件
+            </button>
+            ${commentTab}
           </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="content-tabs">
-          <button class="content-tab active" data-tab="materials" onclick="switchContentTab('materials', this)">
-            <i class="ph ph-folder-open"></i> 教材附件
-          </button>
-          ${tabComment}
-        </div>
-
-        <!-- 教材 Panel -->
         <div class="content-panel active" id="panel-materials">
-          ${renderMaterialsPanel(course)}
+          ${renderMatsPanel(course)}
         </div>
 
-        <!-- 留言 Panel -->
+        ${(isCrew||isAdmin) ? `
         <div class="content-panel" id="panel-comments">
           ${renderCommentsPanel(course.id)}
-        </div>
+        </div>` : ''}
       `;
 
-      // Drag & drop for admin
+      // drag-drop for admin
       if (isAdmin) {
-        const panels = document.getElementById('panel-materials');
-        panels.addEventListener('dragover', e => { e.preventDefault(); });
-        panels.addEventListener('drop', e => {
+        const panel = document.getElementById('panel-materials');
+        panel.addEventListener('dragover', e => { e.preventDefault(); panel.querySelector('.upload-zone')?.classList.add('drag-over'); });
+        panel.addEventListener('dragleave', () => panel.querySelector('.upload-zone')?.classList.remove('drag-over'));
+        panel.addEventListener('drop', e => {
           e.preventDefault();
-          const files = e.dataTransfer.files;
-          if (files.length) handleUploadFiles(files, course.id);
+          panel.querySelector('.upload-zone')?.classList.remove('drag-over');
+          if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files, course.id);
         });
       }
     }
 
-    function switchContentTab(tab, btn) {
-      activeContentTab = tab;
-      document.querySelectorAll('.content-tab').forEach(b => b.classList.remove('active'));
+    function switchTab(tab, btn) {
+      activeTab = tab;
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('panel-' + tab).classList.add('active');
+      document.getElementById('panel-' + tab)?.classList.add('active');
     }
 
-    // ── 教材 Panel ──
-    function renderMaterialsPanel(course) {
+    // ── Materials panel ──
+    function renderMatsPanel(course) {
       const mats = course.materials || [];
-
-      const uploadZone = isAdmin ? `
-        <div class="upload-area" id="uploadZone" onclick="triggerUpload(${course.id})">
-          <i class="ph ph-cloud-arrow-up"></i>
-          <p>點擊或<strong>拖曳檔案</strong>到此上傳</p>
-          <p style="font-size:12px;margin-top:4px">PDF、Word、PPT、影片、圖片（最大 50MB）</p>
+      const zone = isAdmin ? `
+        <div class="upload-zone" onclick="triggerUpload(${course.id})">
+          <div class="upload-zone-icon"><i class="ph ph-cloud-arrow-up"></i></div>
+          <p>點擊或將檔案<strong>拖曳</strong>到此上傳</p>
+          <p style="font-size:12px;margin-top:4px;opacity:.7">支援 PDF、Word、PPT、MP4、圖片（上限 50 MB）</p>
         </div>` : '';
 
-      if (mats.length === 0) {
-        return `
-          ${uploadZone}
-          <div class="empty-state">
-            <i class="ph ph-folder-open"></i>
-            <p>${isAdmin ? '尚未上傳任何教材，請點上方區域上傳' : '此課程尚未有教材'}</p>
-          </div>`;
-      }
+      if (!mats.length) return `${zone}
+        <div class="empty-state">
+          <i class="ph ph-folder-open"></i>
+          <h3>${isAdmin ? '尚未上傳教材' : '此課程尚無教材'}</h3>
+          <p>${isAdmin ? '點擊上方區域或拖曳檔案即可上傳' : '管理員尚未上傳教材'}</p>
+        </div>`;
 
-      const matItems = mats.map((m, idx) => renderMatItem(m, idx, course.id)).join('');
-      return `${uploadZone}<div class="mat-list">${matItems}</div>`;
+      return `${zone}<div class="mat-grid">${mats.map((m,i) => matCard(m,i,course.id)).join('')}</div>`;
     }
 
-    function renderMatItem(m, idx, courseId) {
-      const { icon, bg, color } = getFileStyle(m.fileName || '');
-      const progress = getProgress(courseId, m.fileName);
-      const isVideo = isVideoFile(m.fileName);
+    function matCard(m, idx, courseId) {
+      const { icon, bg, color } = fileStyle(m.fileName || '');
+      const prog = getProgress(courseId, m.fileName);
+      const isVid = isVideo(m.fileName);
+      const hasUrl = !!(m.fileUrl || m.dataUrl);
 
+      let badgeHtml = `<span class="status-badge badge-new">未觀看</span>`;
       let progressHtml = '';
-      let statusChip = `<span class="status-chip status-new">未觀看</span>`;
 
-      if (progress) {
-        if (progress.completed) {
-          statusChip = `<span class="status-chip status-done">已完成</span>`;
-        } else if (isVideo && progress.percent > 0) {
-          statusChip = `<span class="status-chip status-progress">看到 ${progress.percent}%</span>`;
+      if (prog) {
+        if (prog.completed) {
+          badgeHtml = `<span class="status-badge badge-done"><i class="ph ph-check"></i> 已完成</span>`;
+        } else if (isVid && prog.percent > 0) {
+          badgeHtml = `<span class="status-badge badge-progress">看到 ${prog.percent}%</span>`;
           progressHtml = `
-            <div class="progress-wrap">
-              <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="width:${progress.percent}%"></div>
-              </div>
-              <span class="progress-label">${progress.percent}%</span>
+            <div class="progress-row">
+              <div class="progress-track"><div class="progress-fill" style="width:${prog.percent}%"></div></div>
+              <span class="progress-pct">${prog.percent}%</span>
             </div>`;
-        } else if (!isVideo && progress.viewed) {
-          statusChip = `<span class="status-chip status-done">已開啟</span>`;
+        } else if (!isVid && prog.viewed) {
+          badgeHtml = `<span class="status-badge badge-done"><i class="ph ph-check"></i> 已開啟</span>`;
         }
       }
 
-      const deleteBtn = isAdmin
-        ? `<button class="btn-delete" onclick="deleteMaterial(${courseId}, ${idx})" title="移除"><i class="ph ph-trash"></i></button>`
+      const viewBtn = hasUrl
+        ? `<button class="btn-view" onclick="openMaterial('${a(m.fileName||'')}','${a(m.fileUrl||m.dataUrl||'')}','${courseId}')">
+            <i class="ph ph-${isVid ? 'play' : 'arrow-square-out'}"></i> 開啟
+           </button>`
+        : `<span style="font-size:12px;color:var(--apple-gray)">無連結</span>`;
+
+      const trashBtn = isAdmin
+        ? `<button class="btn-trash" onclick="deleteMat(${courseId},${idx})" title="移除"><i class="ph ph-trash"></i></button>`
         : '';
 
-      const hasUrl = !!(m.fileUrl || m.dataUrl);
-      const viewBtn = hasUrl
-        ? `<button class="btn-view" onclick="openMaterial('${escAttr(m.fileName||'')}','${escAttr(m.fileUrl||m.dataUrl||'')}','${courseId}')">
-            <i class="ph ph-play"></i> 開啟
-           </button>`
-        : `<span style="font-size:12px;color:var(--text-secondary)">無連結</span>`;
-
       return `
-        <div class="mat-item">
-          <div class="mat-item-icon" style="background:${bg};color:${color}">${icon}</div>
-          <div class="mat-item-info">
-            <div class="mat-item-name">${escHtml(m.fileName || m.name || '未命名')}</div>
-            <div class="mat-item-sub">${statusChip}</div>
+        <div class="mat-card">
+          <div class="mat-card-icon" style="background:${bg};color:${color}">${icon}</div>
+          <div class="mat-card-info">
+            <div class="mat-card-name">${h(m.fileName || m.name || '未命名')}</div>
+            <div class="mat-card-sub">${badgeHtml}</div>
             ${progressHtml}
           </div>
-          <div class="mat-item-actions">
+          <div class="mat-card-actions">
             ${viewBtn}
-            ${deleteBtn}
+            ${trashBtn}
           </div>
         </div>`;
     }
 
-    // ── 留言 Panel ──
+    // ── Comments panel ──
     function renderCommentsPanel(courseId) {
-      const comments = getComments(courseId);
-      const canComment = isCrew || isAdmin;
+      const comments = JSON.parse(localStorage.getItem('comments') || '[]')
+        .filter(c => String(c.courseId) === String(courseId))
+        .sort((a,b) => (a.timestamp||0) - (b.timestamp||0));
 
-      const list = comments.length === 0
-        ? `<div class="empty-state" style="padding:30px 0">
-            <i class="ph ph-chat-circle-dots"></i>
-            <p>尚無留言</p>
-           </div>`
-        : comments.map(c => {
-            const initials = (c.author || '?').charAt(0).toUpperCase();
+      const listHtml = comments.length
+        ? comments.map(c => {
+            const init = (c.author||'?').charAt(0).toUpperCase();
             const time = c.timestamp
               ? new Date(c.timestamp).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
               : '';
             return `
-              <div class="comment-item">
-                <div class="comment-avatar">${initials}</div>
-                <div class="comment-bubble">
+              <div class="comment-row">
+                <div class="comment-ava">${init}</div>
+                <div class="comment-body">
                   <div class="comment-meta">
-                    <span class="comment-author">${escHtml(c.author || '匿名')}</span>${time}
+                    <span class="comment-author">${h(c.author||'匿名')}</span>
+                    <span class="comment-time">${time}</span>
                   </div>
-                  <div class="comment-text">${escHtml(c.content || '').replace(/\n/g,'<br>')}</div>
+                  <div class="comment-text">${h(c.content||'').replace(/\n/g,'<br>')}</div>
                 </div>
               </div>`;
-          }).join('');
+          }).join('')
+        : `<div class="empty-state" style="padding:36px 0">
+             <i class="ph ph-chat-circle-dots"></i>
+             <h3>尚無留言</h3>
+             <p>成為第一個留言的人</p>
+           </div>`;
 
-      const inputArea = canComment ? `
-        <div class="comment-input-row">
-          <textarea class="comment-input" id="commentInput" placeholder="輸入留言..." rows="3"></textarea>
-          <button class="comment-submit" onclick="postComment(${courseId})">送出</button>
-        </div>` : '';
-
-      return `<div id="commentList">${list}</div>${inputArea}`;
-    }
-
-    function getComments(courseId) {
-      return JSON.parse(localStorage.getItem('comments') || '[]')
-        .filter(c => String(c.courseId) === String(courseId))
-        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      return `
+        <div class="comments-list" id="commentList">${listHtml}</div>
+        <div class="comment-compose">
+          <textarea class="compose-input" id="commentInput" placeholder="輸入留言…" rows="3"></textarea>
+          <button class="compose-submit" onclick="postComment(${courseId})">送出</button>
+        </div>`;
     }
 
     function postComment(courseId) {
       const input = document.getElementById('commentInput');
-      const content = (input.value || '').trim();
+      const content = (input?.value || '').trim();
       if (!content) { showToast('請輸入留言內容', 'error'); return; }
-
       const comments = JSON.parse(localStorage.getItem('comments') || '[]');
       comments.push({
-        id: Date.now(),
-        courseId: courseId,
+        id: Date.now(), courseId,
         author: currentUser.displayName || currentUser.username,
-        content,
-        timestamp: Date.now()
+        content, timestamp: Date.now()
       });
       localStorage.setItem('comments', JSON.stringify(comments));
-
       document.getElementById('panel-comments').innerHTML = renderCommentsPanel(courseId);
       showToast('留言已送出', 'success');
     }
 
-    // ── 觀看進度 ──
-    function progressKey(courseId, fileName) {
-      const u = currentUser.username || 'unknown';
-      return `vp_${u}_${courseId}_${encodeURIComponent(fileName)}`;
+    // ── Progress ──
+    function progKey(courseId, fileName) {
+      return `vp_${currentUser.username||'u'}_${courseId}_${encodeURIComponent(fileName||'')}`;
     }
 
     function getProgress(courseId, fileName) {
-      try {
-        const raw = localStorage.getItem(progressKey(courseId, fileName));
-        return raw ? JSON.parse(raw) : null;
-      } catch { return null; }
+      try { const r = localStorage.getItem(progKey(courseId, fileName)); return r ? JSON.parse(r) : null; }
+      catch { return null; }
     }
 
     function saveProgress(courseId, fileName, data) {
-      localStorage.setItem(progressKey(courseId, fileName), JSON.stringify({
-        ...data,
-        lastViewed: new Date().toISOString()
-      }));
+      localStorage.setItem(progKey(courseId, fileName), JSON.stringify({ ...data, lastViewed: new Date().toISOString() }));
     }
 
-    // ── 開啟教材 ──
-    let currentViewerMeta = null;
-
+    // ── Viewer ──
     function openMaterial(fileName, fileUrl, courseId) {
       if (!fileUrl) return;
-      currentViewerMeta = { fileName, fileUrl, courseId };
+      viewerMeta = { fileName, fileUrl, courseId };
+      document.getElementById('viewerTitle').textContent = fileName;
+      const body = document.getElementById('viewerBody');
+      body.innerHTML = '';
+      const ext = (fileName||'').split('.').pop().toLowerCase();
 
-      document.getElementById('viewerFilename').textContent = fileName;
-      const content = document.getElementById('viewerContent');
-      content.innerHTML = '';
-
-      const ext = fileName.split('.').pop().toLowerCase();
-
-      if (isVideoFile(fileName)) {
-        // 取上次進度
-        const progress = getProgress(courseId, fileName);
-        const startTime = progress && !progress.completed ? (progress.seconds || 0) : 0;
-
-        const video = document.createElement('video');
-        video.id = 'viewerVideo';
-        video.controls = true;
-        video.autoplay = true;
-        video.src = fileUrl;
-        if (startTime > 5) video.currentTime = startTime;
-
-        // 追蹤進度
-        video.addEventListener('timeupdate', () => {
-          if (!video.duration) return;
-          clearTimeout(progressSaveTimer);
-          progressSaveTimer = setTimeout(() => {
-            const percent = Math.round((video.currentTime / video.duration) * 100);
-            const completed = percent >= 90;
-            saveProgress(courseId, fileName, {
-              seconds: video.currentTime,
-              duration: video.duration,
-              percent,
-              completed
-            });
+      if (isVideo(fileName)) {
+        const prog = getProgress(courseId, fileName);
+        const start = prog && !prog.completed ? (prog.seconds || 0) : 0;
+        const vid = document.createElement('video');
+        vid.id = 'viewerVideo'; vid.controls = true; vid.autoplay = true; vid.src = fileUrl;
+        if (start > 5) vid.currentTime = start;
+        vid.addEventListener('timeupdate', () => {
+          if (!vid.duration) return;
+          clearTimeout(progressTimer);
+          progressTimer = setTimeout(() => {
+            const pct = Math.round(vid.currentTime / vid.duration * 100);
+            saveProgress(courseId, fileName, { seconds: vid.currentTime, duration: vid.duration, percent: pct, completed: pct >= 90 });
           }, 3000);
         });
-
-        video.addEventListener('ended', () => {
+        vid.addEventListener('ended', () => {
           saveProgress(courseId, fileName, { seconds: 0, percent: 100, completed: true });
-          refreshMaterialList(courseId);
+          refreshMats(courseId);
         });
-
-        content.appendChild(video);
-
+        body.appendChild(vid);
       } else if (ext === 'pdf') {
-        const iframe = document.createElement('iframe');
-        iframe.id = 'viewerIframe';
-        iframe.src = fileUrl;
-        content.appendChild(iframe);
-        saveProgress(courseId, fileName, { viewed: true, completed: false });
-
+        const fr = document.createElement('iframe');
+        fr.id = 'viewerIframe'; fr.src = fileUrl;
+        body.appendChild(fr);
+        saveProgress(courseId, fileName, { viewed: true });
       } else if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
         const img = document.createElement('img');
-        img.id = 'viewerImage';
-        img.src = fileUrl;
-        img.alt = fileName;
-        content.appendChild(img);
-        saveProgress(courseId, fileName, { viewed: true, completed: false });
-
+        img.id = 'viewerImage'; img.src = fileUrl; img.alt = fileName;
+        body.appendChild(img);
+        saveProgress(courseId, fileName, { viewed: true });
       } else {
-        // 其他檔案直接開新視窗下載
         window.open(fileUrl, '_blank');
-        saveProgress(courseId, fileName, { viewed: true, completed: false });
-        closeViewer();
-        refreshMaterialList(courseId);
+        saveProgress(courseId, fileName, { viewed: true });
+        refreshMats(courseId);
         return;
       }
 
       document.getElementById('viewerOverlay').classList.add('open');
-      refreshMaterialList(courseId);
+      refreshMats(courseId);
     }
 
     function closeViewer() {
-      const video = document.getElementById('viewerVideo');
-      if (video) { video.pause(); video.src = ''; }
+      const vid = document.getElementById('viewerVideo');
+      if (vid) { vid.pause(); vid.src = ''; }
       document.getElementById('viewerOverlay').classList.remove('open');
-      document.getElementById('viewerContent').innerHTML = '';
-      if (currentViewerMeta) {
-        refreshMaterialList(currentViewerMeta.courseId);
-        currentViewerMeta = null;
-      }
+      document.getElementById('viewerBody').innerHTML = '';
+      if (viewerMeta) { refreshMats(viewerMeta.courseId); viewerMeta = null; }
     }
 
-    // ESC 關閉 viewer
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeViewer(); });
 
-    function refreshMaterialList(courseId) {
+    function refreshMats(courseId) {
       const course = allCourses.find(c => String(c.id) === String(courseId));
-      if (!course) return;
       const panel = document.getElementById('panel-materials');
-      if (panel) panel.innerHTML = renderMaterialsPanel(course);
+      if (course && panel) panel.innerHTML = renderMatsPanel(course);
     }
 
-    // ── 上傳教材（Admin only）──
-    function triggerUpload(courseId) {
-      document.getElementById(`fileInput_${courseId}`)?.click();
-    }
+    // ── Upload ──
+    function triggerUpload(id) { document.getElementById('fi_' + id)?.click(); }
+    function handleFiles(input, id) { if (input.files?.length) processFiles(input.files, id); input.value = ''; }
 
-    function handleUpload(input, courseId) {
-      if (!input.files || !input.files.length) return;
-      handleUploadFiles(input.files, courseId);
-      input.value = '';
-    }
-
-    function handleUploadFiles(files, courseId) {
+    function processFiles(files, courseId) {
       if (!isAdmin) return;
       const course = allCourses.find(c => String(c.id) === String(courseId));
       if (!course) return;
       if (!course.materials) course.materials = [];
-
-      const allowed = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      const ok = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation',
         'video/mp4','video/webm','video/ogg','video/quicktime',
-        'image/jpeg','image/png','image/gif','image/webp',
-        'application/zip'
-      ];
-
-      let added = 0;
+        'image/jpeg','image/png','image/gif','image/webp','application/zip'];
       for (const file of files) {
-        if (!allowed.includes(file.type)) {
-          showToast(`不支援此格式：${file.name}`, 'error'); continue;
-        }
-        if (file.size > 50 * 1024 * 1024) {
-          showToast(`檔案過大（上限 50MB）：${file.name}`, 'error'); continue;
-        }
-
-        // 讀取為 dataUrl 存入 localStorage（小檔案示範；正式環境改為上傳 Azure Blob）
+        if (!ok.includes(file.type)) { showToast(`不支援格式：${file.name}`, 'error'); continue; }
+        if (file.size > 50*1024*1024) { showToast(`檔案過大：${file.name}`, 'error'); continue; }
         const reader = new FileReader();
-        reader.onload = (e) => {
-          course.materials.push({
-            fileName: file.name,
-            fileType: file.type,
-            dataUrl: e.target.result,
-            fileUrl: e.target.result,
-            uploadedAt: new Date().toISOString(),
-            uploadedBy: currentUser.username
-          });
-          saveCourses();
-          refreshMaterialList(courseId);
+        reader.onload = e => {
+          course.materials.push({ fileName: file.name, fileType: file.type, fileUrl: e.target.result, dataUrl: e.target.result, uploadedAt: new Date().toISOString(), uploadedBy: currentUser.username });
+          localStorage.setItem('maritimeCourses', JSON.stringify(allCourses));
+          refreshMats(courseId);
           renderSidebar(allCourses);
           showToast(`已上傳：${file.name}`, 'success');
         };
         reader.readAsDataURL(file);
-        added++;
       }
     }
 
-    function deleteMaterial(courseId, idx) {
+    function deleteMat(courseId, idx) {
       if (!isAdmin) return;
       const course = allCourses.find(c => String(c.id) === String(courseId));
-      if (!course || !course.materials) return;
+      if (!course?.materials) return;
       const name = course.materials[idx]?.fileName || '此教材';
-      if (!confirm(`確定要移除「${name}」嗎？`)) return;
+      if (!confirm(`確定移除「${name}」？`)) return;
       course.materials.splice(idx, 1);
-      saveCourses();
-      refreshMaterialList(courseId);
-      renderSidebar(allCourses);
-      showToast('教材已移除', 'success');
-    }
-
-    function saveCourses() {
       localStorage.setItem('maritimeCourses', JSON.stringify(allCourses));
+      refreshMats(courseId);
+      renderSidebar(allCourses);
+      showToast('已移除', 'success');
     }
 
-    // ── 工具 ──
-    function isVideoFile(name) {
+    // ── Helpers ──
+    function isVideo(name) {
       return ['mp4','webm','mov','ogg'].includes((name||'').split('.').pop().toLowerCase());
     }
 
-    function getFileStyle(name) {
+    function fileStyle(name) {
       const ext = (name||'').split('.').pop().toUpperCase();
-      const map = {
-        'PDF' : { icon:'📄', bg:'#fee2e2', color:'#dc2626' },
-        'DOC' : { icon:'📝', bg:'#dbeafe', color:'#1d4ed8' },
-        'DOCX': { icon:'📝', bg:'#dbeafe', color:'#1d4ed8' },
-        'PPT' : { icon:'📊', bg:'#ffedd5', color:'#c2410c' },
-        'PPTX': { icon:'📊', bg:'#ffedd5', color:'#c2410c' },
-        'MP4' : { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' },
-        'WEBM': { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' },
-        'MOV' : { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' },
-        'JPG' : { icon:'🖼️', bg:'#dcfce7', color:'#15803d' },
-        'PNG' : { icon:'🖼️', bg:'#dcfce7', color:'#15803d' },
-        'ZIP' : { icon:'🗜️', bg:'#fef9c3', color:'#92400e' },
+      const m = {
+        PDF: { icon:'📄', bg:'#fee2e2', color:'#dc2626' },
+        DOC: { icon:'📝', bg:'#dbeafe', color:'#1d4ed8' }, DOCX: { icon:'📝', bg:'#dbeafe', color:'#1d4ed8' },
+        PPT: { icon:'📊', bg:'#ffedd5', color:'#c2410c' }, PPTX: { icon:'📊', bg:'#ffedd5', color:'#c2410c' },
+        MP4: { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' }, WEBM: { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' }, MOV: { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' },
+        JPG: { icon:'🖼️', bg:'#dcfce7', color:'#15803d' }, PNG: { icon:'🖼️', bg:'#dcfce7', color:'#15803d' },
+        ZIP: { icon:'🗜️', bg:'#fef9c3', color:'#92400e' },
       };
-      return map[ext] || { icon:'📎', bg:'#f5f5f7', color:'#6e6e73' };
+      return m[ext] || { icon:'📎', bg:'#f5f5f7', color:'#6e6e73' };
     }
 
     function showToast(msg, type='') {
       const t = document.getElementById('toast');
+      const ic = document.getElementById('toastIcon');
       document.getElementById('toastMsg').textContent = msg;
+      ic.className = type === 'error' ? 'ph ph-warning-circle' : 'ph ph-check-circle';
       t.className = 'toast show' + (type ? ' '+type : '');
-      setTimeout(() => t.className = 'toast', 3000);
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.className = 'toast', 3000);
     }
 
-    function escHtml(str) {
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    function escAttr(str) {
-      return String(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    }
+    function h(s)  { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function a(s)  { return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   </script>
 </body>
 </html>
