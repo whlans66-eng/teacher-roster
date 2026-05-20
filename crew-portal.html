@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>船員入口 - WHL MARITRAIN</title>
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <style>
+    :root {
+      --brand: #0a4a7a;
+      --brand-light: #e8f0f8;
+      --brand-mid: #1e6fa8;
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --surface: #ffffff;
+      --surface-2: #f5f5f7;
+      --surface-3: #e8e8ed;
+      --border: rgba(0,0,0,0.08);
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --green: #34c759;
+      --orange: #ff9500;
+      --red: #ff3b30;
+      --purple: #5856d6;
+      --radius: 14px;
+      --radius-sm: 10px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      background: var(--surface-2);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* ── 頂部導覽 ── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--brand);
+    }
+
+    .topbar-brand .anchor { font-size: 20px; }
+
+    .topbar-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-2);
+      border-radius: 20px;
+      padding: 6px 12px 6px 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .user-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .logout-btn:hover {
+      background: var(--surface-3);
+      color: var(--text-primary);
+    }
+
+    /* ── Tab 列 ── */
+    .tab-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tab-bar::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 16px 13px;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .tab-btn:hover { color: var(--text-primary); }
+
+    .tab-btn.active {
+      color: var(--brand);
+      border-bottom-color: var(--brand);
+      font-weight: 600;
+    }
+
+    .tab-badge {
+      background: var(--brand);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      padding: 0 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── 主內容 ── */
+    .main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 24px 80px;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── 課程卡片 ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .section-sub {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      width: 240px;
+    }
+
+    .search-bar input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 14px;
+      color: var(--text-primary);
+      width: 100%;
+    }
+
+    .course-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .course-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .course-card:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+    }
+
+    .course-card-header {
+      padding: 16px 16px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .course-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .course-card-body { padding: 0 16px 16px; }
+
+    .course-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .course-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .course-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .tag-blue  { background: #dbeafe; color: #1e40af; }
+    .tag-green { background: #dcfce7; color: #166534; }
+    .tag-purple{ background: #ede9fe; color: #5b21b6; }
+    .tag-gray  { background: var(--surface-2); color: var(--text-secondary); }
+
+    .course-card-footer {
+      border-top: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .btn-open {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--brand);
+      background: var(--brand-light);
+      border: none;
+      border-radius: 8px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-open:hover { background: #d0e4f5; }
+
+    /* ── 空狀態 ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state i { font-size: 48px; opacity: 0.3; margin-bottom: 12px; display: block; }
+    .empty-state p { font-size: 15px; }
+
+    /* ── 側邊抽屜 ── */
+    .drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 200;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .drawer-overlay.open { display: block; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(560px, 100vw);
+      height: 100vh;
+      background: var(--surface);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+      z-index: 201;
+      display: flex;
+      flex-direction: column;
+      animation: slideIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .drawer-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .drawer-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .drawer-title { font-size: 17px; font-weight: 700; line-height: 1.3; }
+    .drawer-sub { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+
+    .drawer-close {
+      margin-left: auto;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface-2);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .drawer-close:hover { background: var(--surface-3); }
+
+    .drawer-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+    }
+
+    .drawer-tab {
+      padding: 11px 14px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .drawer-tab.active {
+      color: var(--brand);
+      border-bottom-color: var(--brand);
+      font-weight: 600;
+    }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    /* ── 教材 ── */
+    .material-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      transition: background 0.15s;
+    }
+
+    .material-item:hover { background: #eef4fb; }
+
+    .material-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .material-name {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .material-size {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .material-open {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--brand);
+      background: var(--brand-light);
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .material-open:hover { background: #d0e4f5; }
+
+    /* ── 留言 ── */
+    .comment-item {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .comment-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .comment-bubble {
+      flex: 1;
+      background: var(--surface-2);
+      border-radius: 4px 12px 12px 12px;
+      padding: 10px 14px;
+    }
+
+    .comment-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .comment-author { font-weight: 600; color: var(--text-primary); margin-right: 6px; }
+
+    .comment-text { font-size: 14px; line-height: 1.5; color: var(--text-primary); }
+
+    .comment-input-area {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .comment-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      resize: none;
+      font-family: inherit;
+      color: var(--text-primary);
+      background: var(--surface);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      min-height: 64px;
+    }
+
+    .comment-input:focus {
+      outline: none;
+      border-color: var(--brand-mid);
+      box-shadow: 0 0 0 3px rgba(10,74,122,0.1);
+    }
+
+    .comment-submit {
+      align-self: flex-end;
+      padding: 10px 16px;
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .comment-submit:hover { background: var(--brand-mid); }
+    .comment-submit:active { transform: scale(0.97); }
+
+    /* ── 問卷列表 ── */
+    .survey-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .survey-card-header {
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .survey-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    .status-open   { background: #dcfce7; color: #166534; }
+    .status-closed { background: var(--surface-2); color: var(--text-secondary); }
+    .status-done   { background: #dbeafe; color: #1e40af; }
+
+    .survey-name { font-size: 15px; font-weight: 600; }
+    .survey-course { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+    .survey-action {
+      margin-left: auto;
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .survey-action-primary {
+      background: var(--brand);
+      color: white;
+    }
+
+    .survey-action-primary:hover { background: var(--brand-mid); }
+
+    .survey-action-secondary {
+      background: var(--surface-2);
+      color: var(--text-secondary);
+      cursor: default;
+    }
+
+    /* 問卷填寫 */
+    .survey-form-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .survey-form-overlay.open { display: flex; }
+
+    .survey-form-card {
+      background: var(--surface);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: fadeIn 0.2s ease;
+    }
+
+    .survey-form-header {
+      padding: 22px 24px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .survey-form-header h2 { font-size: 17px; font-weight: 700; }
+    .survey-form-header p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+    .survey-form-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+    }
+
+    .question-block { margin-bottom: 24px; }
+
+    .question-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .question-required { color: var(--red); margin-left: 3px; }
+
+    .question-input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text-primary);
+      background: var(--surface);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .question-input:focus {
+      outline: none;
+      border-color: var(--brand-mid);
+      box-shadow: 0 0 0 3px rgba(10,74,122,0.1);
+    }
+
+    .radio-group, .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .radio-item, .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .radio-item:hover, .checkbox-item:hover {
+      border-color: var(--brand-mid);
+      background: var(--brand-light);
+    }
+
+    .radio-item input, .checkbox-item input { cursor: pointer; accent-color: var(--brand); }
+
+    .rating-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .rating-btn {
+      flex: 1;
+      padding: 10px 4px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .rating-btn:hover, .rating-btn.selected {
+      background: var(--brand);
+      color: white;
+      border-color: var(--brand);
+    }
+
+    .survey-form-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn-cancel {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      padding: 10px 24px;
+      border-radius: 10px;
+      border: none;
+      background: var(--brand);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-submit:hover { background: var(--brand-mid); }
+
+    /* ── 通知 toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1d1d1f;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.2,0.8,0.2,1);
+      pointer-events: none;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: #166534; }
+    .toast.error   { background: #991b1b; }
+
+    /* 排版工具 */
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .text-sm { font-size: 13px; }
+    .text-secondary { color: var(--text-secondary); }
+    .font-semibold { font-weight: 600; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    @media (max-width: 600px) {
+      .topbar { padding: 0 16px; }
+      .tab-bar { padding: 0 16px; }
+      .main { padding: 16px 16px 60px; }
+      .search-bar { width: 160px; }
+      .course-grid { grid-template-columns: 1fr; }
+      .drawer { width: 100vw; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部導覽 -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="anchor">⚓</span>
+      <span>WHL MARITRAIN</span>
+    </div>
+    <div class="topbar-divider"></div>
+    <span class="topbar-title">船員入口</span>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="userInitial">—</div>
+        <span id="userName">載入中...</span>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">
+        <i class="ph ph-sign-out"></i> 登出
+      </button>
+    </div>
+  </header>
+
+  <!-- Tab 列 -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="courses" onclick="switchTab('courses', this)">
+      <i class="ph ph-books"></i> 課程總覽
+    </button>
+    <button class="tab-btn" data-tab="materials" onclick="switchTab('materials', this)">
+      <i class="ph ph-folder-open"></i> 教材資料
+    </button>
+    <button class="tab-btn" data-tab="comments" onclick="switchTab('comments', this)">
+      <i class="ph ph-chat-circle-dots"></i> 留言討論
+      <span class="tab-badge" id="commentBadge" style="display:none">0</span>
+    </button>
+    <button class="tab-btn" data-tab="surveys" onclick="switchTab('surveys', this)">
+      <i class="ph ph-clipboard-text"></i> 問卷回覆
+      <span class="tab-badge" id="surveyBadge" style="display:none">0</span>
+    </button>
+  </div>
+
+  <!-- 主內容 -->
+  <main class="main">
+
+    <!-- ── 課程總覽 ── -->
+    <div class="tab-panel active" id="panel-courses">
+      <div class="section-header">
+        <div>
+          <div class="section-title">智慧派課課程</div>
+          <div class="section-sub">點擊課程可查閱教材與留言討論</div>
+        </div>
+        <div class="search-bar">
+          <i class="ph ph-magnifying-glass"></i>
+          <input type="text" id="courseSearch" placeholder="搜尋課程..." oninput="filterCourses()">
+        </div>
+      </div>
+      <div class="course-grid" id="courseGrid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <i class="ph ph-spinner"></i>
+          <p>載入課程中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 教材資料 ── -->
+    <div class="tab-panel" id="panel-materials">
+      <div class="section-header">
+        <div>
+          <div class="section-title">所有教材與附件</div>
+          <div class="section-sub">來自智慧派課課程的教材資源</div>
+        </div>
+        <div class="search-bar">
+          <i class="ph ph-magnifying-glass"></i>
+          <input type="text" id="materialSearch" placeholder="搜尋教材..." oninput="filterMaterials()">
+        </div>
+      </div>
+      <div id="materialList"></div>
+    </div>
+
+    <!-- ── 留言討論 ── -->
+    <div class="tab-panel" id="panel-comments">
+      <div class="section-header">
+        <div>
+          <div class="section-title">留言討論</div>
+          <div class="section-sub">選擇課程後可查閱或發表留言</div>
+        </div>
+        <div class="search-bar">
+          <i class="ph ph-magnifying-glass"></i>
+          <input type="text" id="commentCourseSearch" placeholder="搜尋課程..." oninput="filterCommentCourses()">
+        </div>
+      </div>
+      <div id="commentCourseList"></div>
+    </div>
+
+    <!-- ── 問卷回覆 ── -->
+    <div class="tab-panel" id="panel-surveys">
+      <div class="section-header">
+        <div>
+          <div class="section-title">問卷回覆</div>
+          <div class="section-sub">開放中的問卷請盡速填寫</div>
+        </div>
+      </div>
+      <div id="surveyList"></div>
+    </div>
+
+  </main>
+
+  <!-- ── 課程抽屜 ── -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="courseDrawer" style="display:none">
+    <div class="drawer-header">
+      <div class="drawer-icon" id="drawerIcon">📚</div>
+      <div>
+        <div class="drawer-title" id="drawerTitle">課程名稱</div>
+        <div class="drawer-sub" id="drawerSub">課程資訊</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="drawer-tabs">
+      <button class="drawer-tab active" onclick="switchDrawerTab('info', this)">課程資訊</button>
+      <button class="drawer-tab" onclick="switchDrawerTab('mats', this)">教材附件</button>
+      <button class="drawer-tab" onclick="switchDrawerTab('chat', this)">留言討論</button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </div>
+
+  <!-- ── 問卷填寫 Modal ── -->
+  <div class="survey-form-overlay" id="surveyFormOverlay">
+    <div class="survey-form-card">
+      <div class="survey-form-header">
+        <div>
+          <h2 id="surveyFormTitle">問卷標題</h2>
+          <p id="surveyFormCourse">所屬課程</p>
+        </div>
+        <button class="drawer-close" style="margin-left:auto" onclick="closeSurveyForm()"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="survey-form-body" id="surveyFormBody"></div>
+      <div class="survey-form-footer">
+        <button class="btn-cancel" onclick="closeSurveyForm()">取消</button>
+        <button class="btn-submit" onclick="submitSurvey()">送出回覆</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <i class="ph ph-check-circle"></i>
+    <span id="toastMsg">已儲存</span>
+  </div>
+
+  <script>
+    // ── 全域資料 ──
+    let currentUser = null;
+    let allCourses = [];       // maritimeCourses
+    let currentCourse = null;  // 抽屜中的課程
+    let currentDrawerTab = 'info';
+    let activeSurvey = null;
+
+    const CATEGORY_ICONS = {
+      'STCW': '🚢', 'safety': '🛟', 'navigation': '🧭',
+      'engine': '⚙️', 'cargo': '📦', 'medical': '🏥',
+      'fire': '🔥', 'security': '🔒', 'environment': '🌊',
+      'leadership': '👑', 'communication': '📡', 'survival': '⛵'
+    };
+
+    const CATEGORY_COLORS = {
+      'STCW': '#dbeafe', 'safety': '#fef3c7', 'navigation': '#dcfce7',
+      'engine': '#fce7f3', 'cargo': '#e0e7ff', 'medical': '#ffe4e6',
+      'fire': '#ffedd5', 'security': '#f3f4f6', 'environment': '#d1fae5',
+      'leadership': '#fef9c3', 'communication': '#ede9fe', 'survival': '#cffafe'
+    };
+
+    // ── 初始化 ──
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+      loadAllData();
+    });
+
+    function checkAuth() {
+      const raw = sessionStorage.getItem('authData') || localStorage.getItem('authData');
+      if (!raw) { window.location.href = 'crew-login.html'; return; }
+      try {
+        currentUser = JSON.parse(raw);
+        if (!currentUser || !currentUser.username) throw new Error();
+      } catch {
+        window.location.href = 'crew-login.html';
+        return;
+      }
+      const name = currentUser.displayName || currentUser.username;
+      document.getElementById('userName').textContent = name;
+      document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
+    }
+
+    function handleLogout() {
+      if (!confirm('確定要登出嗎？')) return;
+      sessionStorage.removeItem('authData');
+      localStorage.removeItem('authData');
+      sessionStorage.removeItem('currentUser');
+      window.location.href = 'crew-login.html';
+    }
+
+    // ── Tab 切換 ──
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + tab).classList.add('active');
+    }
+
+    // ── 載入所有資料 ──
+    function loadAllData() {
+      allCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+      renderCourses(allCourses);
+      renderMaterials(allCourses);
+      renderCommentCourses(allCourses);
+      renderSurveys();
+      updateBadges();
+    }
+
+    // ── 課程總覽 ──
+    function renderCourses(courses) {
+      const grid = document.getElementById('courseGrid');
+      if (courses.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <i class="ph ph-books"></i>
+            <p>目前沒有可用的課程</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = courses.map(c => {
+        const icon = CATEGORY_ICONS[c.category] || '📚';
+        const bg = CATEGORY_COLORS[c.category] || '#f5f5f7';
+        const mats = (c.materials || []).length;
+        const comments = getCommentCount(c.id);
+        return `
+          <div class="course-card" onclick="openCourseDrawer(${c.id})">
+            <div class="course-card-header">
+              <div class="course-icon" style="background:${bg}">${icon}</div>
+              <div>
+                <div class="course-name">${escHtml(c.name)}</div>
+              </div>
+            </div>
+            <div class="course-card-body">
+              ${c.description ? `<div class="course-desc">${escHtml(c.description)}</div>` : ''}
+              <div class="course-meta">
+                ${c.category ? `<span class="tag tag-blue"><i class="ph ph-tag"></i>${escHtml(c.category)}</span>` : ''}
+                ${c.method ? `<span class="tag tag-green">${escHtml(c.method)}</span>` : ''}
+                ${c.duration ? `<span class="tag tag-gray"><i class="ph ph-clock"></i>${c.duration} 分鐘</span>` : ''}
+              </div>
+            </div>
+            <div class="course-card-footer">
+              <span class="footer-stat"><i class="ph ph-folder-open"></i> ${mats} 個教材</span>
+              <span class="footer-stat"><i class="ph ph-chat-circle"></i> ${comments} 則留言</span>
+              <button class="btn-open">開啟 <i class="ph ph-arrow-right"></i></button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function filterCourses() {
+      const q = document.getElementById('courseSearch').value.toLowerCase();
+      const filtered = allCourses.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        (c.description || '').toLowerCase().includes(q) ||
+        (c.category || '').toLowerCase().includes(q) ||
+        (c.keywords || []).some(k => k.toLowerCase().includes(q))
+      );
+      renderCourses(filtered);
+    }
+
+    // ── 教材資料 ──
+    function renderMaterials(courses) {
+      const container = document.getElementById('materialList');
+      const allMats = [];
+      courses.forEach(c => {
+        (c.materials || []).forEach(m => {
+          allMats.push({ ...m, courseName: c.name, courseId: c.id, category: c.category });
+        });
+      });
+
+      if (allMats.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="ph ph-folder-open"></i>
+            <p>目前沒有教材附件</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = allMats.map(m => renderMaterialItem(m, true)).join('');
+    }
+
+    function renderMaterialItem(m, showCourse = false) {
+      const ext = (m.name || '').split('.').pop().toUpperCase();
+      const { icon, bg, color } = getFileStyle(ext);
+      const displayName = m.name || m.url || '未命名附件';
+      const href = m.url || m.dataUrl || '#';
+      return `
+        <div class="material-item">
+          <div class="material-icon" style="background:${bg};color:${color}">${icon}</div>
+          <div style="flex:1;min-width:0">
+            <div class="material-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(displayName)}</div>
+            ${showCourse ? `<div class="text-sm text-secondary">${escHtml(m.courseName || '')}</div>` : ''}
+          </div>
+          ${href !== '#'
+            ? `<a class="material-open" href="${escAttr(href)}" target="_blank" rel="noopener"><i class="ph ph-download-simple"></i> 開啟</a>`
+            : `<span style="font-size:12px;color:var(--text-secondary)">無連結</span>`
+          }
+        </div>`;
+    }
+
+    function filterMaterials() {
+      const q = document.getElementById('materialSearch').value.toLowerCase();
+      const courses = allCourses;
+      const allMats = [];
+      courses.forEach(c => {
+        (c.materials || []).forEach(m => {
+          allMats.push({ ...m, courseName: c.name, courseId: c.id });
+        });
+      });
+      const filtered = allMats.filter(m =>
+        (m.name || '').toLowerCase().includes(q) ||
+        (m.courseName || '').toLowerCase().includes(q)
+      );
+      const container = document.getElementById('materialList');
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="ph ph-magnifying-glass"></i><p>找不到符合的教材</p></div>`;
+        return;
+      }
+      container.innerHTML = filtered.map(m => renderMaterialItem(m, true)).join('');
+    }
+
+    function getFileStyle(ext) {
+      const map = {
+        'PDF':  { icon: '📄', bg: '#fee2e2', color: '#dc2626' },
+        'DOC':  { icon: '📝', bg: '#dbeafe', color: '#1d4ed8' },
+        'DOCX': { icon: '📝', bg: '#dbeafe', color: '#1d4ed8' },
+        'PPT':  { icon: '📊', bg: '#ffedd5', color: '#c2410c' },
+        'PPTX': { icon: '📊', bg: '#ffedd5', color: '#c2410c' },
+        'XLS':  { icon: '📈', bg: '#dcfce7', color: '#15803d' },
+        'XLSX': { icon: '📈', bg: '#dcfce7', color: '#15803d' },
+        'MP4':  { icon: '🎬', bg: '#ede9fe', color: '#7c3aed' },
+        'AVI':  { icon: '🎬', bg: '#ede9fe', color: '#7c3aed' },
+        'MOV':  { icon: '🎬', bg: '#ede9fe', color: '#7c3aed' },
+        'ZIP':  { icon: '🗜️', bg: '#fef9c3', color: '#92400e' },
+      };
+      return map[ext] || { icon: '📎', bg: '#f5f5f7', color: '#6e6e73' };
+    }
+
+    // ── 留言討論 ──
+    function renderCommentCourses(courses) {
+      const container = document.getElementById('commentCourseList');
+      if (courses.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="ph ph-chat-circle-dots"></i><p>目前沒有課程</p></div>`;
+        return;
+      }
+      container.innerHTML = courses.map(c => {
+        const count = getCommentCount(c.id);
+        const icon = CATEGORY_ICONS[c.category] || '📚';
+        return `
+          <div class="material-item" style="cursor:pointer" onclick="openCourseDrawerOnChat(${c.id})">
+            <div class="material-icon" style="background:${CATEGORY_COLORS[c.category]||'#f5f5f7'};font-size:18px">${icon}</div>
+            <div style="flex:1">
+              <div class="material-name">${escHtml(c.name)}</div>
+              <div class="text-sm text-secondary">${count} 則留言</div>
+            </div>
+            <i class="ph ph-caret-right" style="color:var(--text-secondary)"></i>
+          </div>`;
+      }).join('');
+    }
+
+    function filterCommentCourses() {
+      const q = document.getElementById('commentCourseSearch').value.toLowerCase();
+      renderCommentCourses(allCourses.filter(c => c.name.toLowerCase().includes(q)));
+    }
+
+    function getCommentCount(courseId) {
+      const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+      return comments.filter(c => String(c.courseId) === String(courseId)).length;
+    }
+
+    function loadComments(courseId) {
+      return JSON.parse(localStorage.getItem('comments') || '[]')
+        .filter(c => String(c.courseId) === String(courseId))
+        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    }
+
+    function renderCommentsHtml(courseId) {
+      const comments = loadComments(courseId);
+      const commentsHtml = comments.length === 0
+        ? `<div class="empty-state" style="padding:30px 0"><i class="ph ph-chat-circle-dots" style="font-size:36px"></i><p>尚無留言，成為第一個留言的人！</p></div>`
+        : comments.map(c => {
+            const initials = (c.author || '?').charAt(0).toUpperCase();
+            const time = c.timestamp ? new Date(c.timestamp).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+            return `
+              <div class="comment-item">
+                <div class="comment-avatar">${initials}</div>
+                <div class="comment-bubble">
+                  <div class="comment-meta">
+                    <span class="comment-author">${escHtml(c.author || '匿名')}</span>
+                    ${time}
+                  </div>
+                  <div class="comment-text">${escHtml(c.content || '').replace(/\n/g,'<br>')}</div>
+                </div>
+              </div>`;
+          }).join('');
+
+      return `
+        <div id="commentsList">${commentsHtml}</div>
+        <div class="comment-input-area">
+          <textarea class="comment-input" id="newCommentText" placeholder="輸入留言..." rows="3"></textarea>
+          <button class="comment-submit" onclick="postComment(${courseId})">送出</button>
+        </div>`;
+    }
+
+    function postComment(courseId) {
+      const input = document.getElementById('newCommentText');
+      const content = (input.value || '').trim();
+      if (!content) { showToast('請輸入留言內容', 'error'); return; }
+
+      const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+      comments.push({
+        id: Date.now(),
+        courseId: courseId,
+        author: currentUser.displayName || currentUser.username,
+        content: content,
+        timestamp: Date.now()
+      });
+      localStorage.setItem('comments', JSON.stringify(comments));
+
+      // 重新渲染留言區
+      const body = document.getElementById('drawerBody');
+      body.innerHTML = renderCommentsHtml(courseId);
+      showToast('留言已送出', 'success');
+      updateBadges();
+    }
+
+    // ── 問卷 ──
+    function renderSurveys() {
+      const container = document.getElementById('surveyList');
+      const surveys = JSON.parse(localStorage.getItem('surveys') || '[]');
+      const templates = JSON.parse(localStorage.getItem('surveyTemplates') || '[]');
+      const responses = JSON.parse(localStorage.getItem('surveyResponses') || '[]');
+      const assignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+
+      if (surveys.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="ph ph-clipboard-text"></i><p>目前沒有問卷</p></div>`;
+        updateSurveyBadge(0);
+        return;
+      }
+
+      let openCount = 0;
+      const html = surveys.map(s => {
+        const template = templates.find(t => t.id === s.templateId);
+        const assignment = assignments.find(a => String(a.id) === String(s.courseId));
+        const myResponses = responses.filter(r => r.surveyId === s.id && r.username === currentUser.username);
+        const isDone = myResponses.length > 0;
+        const isOpen = s.status === 'active';
+
+        if (isOpen && !isDone) openCount++;
+
+        let statusEl, actionEl;
+        if (isDone) {
+          statusEl = `<span class="survey-status status-done"><i class="ph ph-check"></i> 已填寫</span>`;
+          actionEl = `<button class="survey-action survey-action-secondary" disabled>已完成</button>`;
+        } else if (!isOpen) {
+          statusEl = `<span class="survey-status status-closed"><i class="ph ph-lock"></i> 已關閉</span>`;
+          actionEl = `<button class="survey-action survey-action-secondary" disabled>已關閉</button>`;
+        } else {
+          statusEl = `<span class="survey-status status-open"><i class="ph ph-circle-dashed"></i> 開放中</span>`;
+          actionEl = `<button class="survey-action survey-action-primary" onclick="openSurveyForm('${s.id}')">填寫問卷</button>`;
+        }
+
+        return `
+          <div class="survey-card">
+            <div class="survey-card-header">
+              <i class="ph ph-clipboard-text" style="font-size:22px;color:var(--brand);flex-shrink:0"></i>
+              <div style="flex:1;min-width:0">
+                <div class="survey-name">${escHtml(template ? template.name : s.id)}</div>
+                <div class="survey-course">${assignment ? escHtml(assignment.name) : '課程問卷'} · ${statusEl}</div>
+              </div>
+              ${actionEl}
+            </div>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = html;
+      updateSurveyBadge(openCount);
+    }
+
+    function openSurveyForm(surveyId) {
+      const surveys = JSON.parse(localStorage.getItem('surveys') || '[]');
+      const templates = JSON.parse(localStorage.getItem('surveyTemplates') || '[]');
+      const assignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+
+      const survey = surveys.find(s => s.id === surveyId);
+      if (!survey) return;
+      const template = templates.find(t => t.id === survey.templateId);
+      const assignment = assignments.find(a => String(a.id) === String(survey.courseId));
+
+      activeSurvey = { survey, template };
+
+      document.getElementById('surveyFormTitle').textContent = template ? template.name : '問卷';
+      document.getElementById('surveyFormCourse').textContent = assignment ? assignment.name : '課程問卷';
+
+      const body = document.getElementById('surveyFormBody');
+      if (!template || !Array.isArray(template.questions) || template.questions.length === 0) {
+        body.innerHTML = `
+          <div class="empty-state">
+            <i class="ph ph-clipboard-text"></i>
+            <p>此問卷尚未設定題目</p>
+          </div>`;
+      } else {
+        body.innerHTML = template.questions.map((q, i) => renderQuestion(q, i)).join('');
+      }
+
+      document.getElementById('surveyFormOverlay').classList.add('open');
+    }
+
+    function renderQuestion(q, idx) {
+      const label = `<div class="question-label">${idx + 1}. ${escHtml(q.text || q.question || '')}${q.required ? '<span class="question-required">*</span>' : ''}</div>`;
+      const type = (q.type || 'text').toLowerCase();
+
+      if (type === 'radio' || type === 'single') {
+        const opts = (q.options || []).map((o, oi) => `
+          <label class="radio-item">
+            <input type="radio" name="q_${idx}" value="${escAttr(o)}" onchange="saveAnswer(${idx}, this.value)">
+            ${escHtml(o)}
+          </label>`).join('');
+        return `<div class="question-block">${label}<div class="radio-group">${opts}</div></div>`;
+      }
+
+      if (type === 'checkbox' || type === 'multiple') {
+        const opts = (q.options || []).map((o, oi) => `
+          <label class="checkbox-item">
+            <input type="checkbox" name="q_${idx}_${oi}" value="${escAttr(o)}" onchange="saveCheckbox(${idx})">
+            ${escHtml(o)}
+          </label>`).join('');
+        return `<div class="question-block">${label}<div class="checkbox-group">${opts}</div></div>`;
+      }
+
+      if (type === 'rating' || type === 'scale') {
+        const max = q.max || 5;
+        const btns = Array.from({ length: max }, (_, i) => `
+          <button type="button" class="rating-btn" data-q="${idx}" data-v="${i+1}" onclick="selectRating(this, ${idx})">${i+1}</button>`).join('');
+        return `<div class="question-block">${label}<div class="rating-group">${btns}</div></div>`;
+      }
+
+      // 預設 textarea
+      return `<div class="question-block">${label}<textarea class="question-input" data-q="${idx}" placeholder="請輸入您的回答..." oninput="saveAnswer(${idx}, this.value)"></textarea></div>`;
+    }
+
+    let surveyAnswers = {};
+
+    function saveAnswer(idx, val) { surveyAnswers[idx] = val; }
+
+    function saveCheckbox(idx) {
+      const checked = [...document.querySelectorAll(`[name^="q_${idx}_"]:checked`)].map(el => el.value);
+      surveyAnswers[idx] = checked;
+    }
+
+    function selectRating(btn, idx) {
+      const group = btn.parentElement;
+      group.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      surveyAnswers[idx] = btn.dataset.v;
+    }
+
+    function closeSurveyForm() {
+      document.getElementById('surveyFormOverlay').classList.remove('open');
+      activeSurvey = null;
+      surveyAnswers = {};
+    }
+
+    function submitSurvey() {
+      if (!activeSurvey) return;
+      const { survey, template } = activeSurvey;
+
+      // 必填檢查
+      if (template && Array.isArray(template.questions)) {
+        for (let i = 0; i < template.questions.length; i++) {
+          const q = template.questions[i];
+          if (q.required && (surveyAnswers[i] === undefined || surveyAnswers[i] === '' ||
+              (Array.isArray(surveyAnswers[i]) && surveyAnswers[i].length === 0))) {
+            showToast(`第 ${i+1} 題為必填`, 'error');
+            return;
+          }
+        }
+      }
+
+      const responses = JSON.parse(localStorage.getItem('surveyResponses') || '[]');
+      responses.push({
+        id: Date.now(),
+        surveyId: survey.id,
+        username: currentUser.username,
+        displayName: currentUser.displayName || currentUser.username,
+        answers: { ...surveyAnswers },
+        submittedAt: new Date().toISOString()
+      });
+      localStorage.setItem('surveyResponses', JSON.stringify(responses));
+
+      closeSurveyForm();
+      showToast('問卷已送出，感謝您的回覆！', 'success');
+      renderSurveys();
+    }
+
+    // ── 課程抽屜 ──
+    function openCourseDrawer(courseId) {
+      currentCourse = allCourses.find(c => String(c.id) === String(courseId));
+      if (!currentCourse) return;
+      currentDrawerTab = 'info';
+
+      const icon = CATEGORY_ICONS[currentCourse.category] || '📚';
+      const bg = CATEGORY_COLORS[currentCourse.category] || '#f5f5f7';
+
+      document.getElementById('drawerIcon').textContent = icon;
+      document.getElementById('drawerIcon').style.background = bg;
+      document.getElementById('drawerTitle').textContent = currentCourse.name;
+      document.getElementById('drawerSub').textContent =
+        [currentCourse.category, currentCourse.method, currentCourse.duration ? currentCourse.duration + ' 分鐘' : ''].filter(Boolean).join(' · ');
+
+      // 重置 drawer tabs
+      document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.drawer-tab')[0].classList.add('active');
+
+      renderDrawerBody('info');
+      document.getElementById('drawerOverlay').classList.add('open');
+      document.getElementById('courseDrawer').style.display = 'flex';
+    }
+
+    function openCourseDrawerOnChat(courseId) {
+      openCourseDrawer(courseId);
+      // 自動切到留言討論
+      setTimeout(() => {
+        const tabs = document.querySelectorAll('.drawer-tab');
+        tabs.forEach(t => t.classList.remove('active'));
+        tabs[2].classList.add('active');
+        renderDrawerBody('chat');
+        currentDrawerTab = 'chat';
+      }, 50);
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawerOverlay').classList.remove('open');
+      document.getElementById('courseDrawer').style.display = 'none';
+      currentCourse = null;
+      loadAllData(); // 重整 badges
+    }
+
+    function switchDrawerTab(tab, btn) {
+      document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      currentDrawerTab = tab;
+      renderDrawerBody(tab);
+    }
+
+    function renderDrawerBody(tab) {
+      if (!currentCourse) return;
+      const body = document.getElementById('drawerBody');
+
+      if (tab === 'info') {
+        const kws = (currentCourse.keywords || []).map(k =>
+          `<span class="tag tag-blue">${escHtml(k)}</span>`).join('');
+        body.innerHTML = `
+          ${currentCourse.description
+            ? `<div style="font-size:14px;line-height:1.7;color:var(--text-primary);margin-bottom:20px">${escHtml(currentCourse.description).replace(/\n/g,'<br>')}</div>`
+            : ''}
+          <div style="display:flex;flex-direction:column;gap:12px">
+            ${currentCourse.category ? `
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">課程分類</div>
+                <div style="font-size:14px;font-weight:500">${escHtml(currentCourse.category)}</div>
+              </div>` : ''}
+            ${currentCourse.method ? `
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">上課方式</div>
+                <div style="font-size:14px;font-weight:500">${escHtml(currentCourse.method)}</div>
+              </div>` : ''}
+            ${currentCourse.duration ? `
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">課程時數</div>
+                <div style="font-size:14px;font-weight:500">${currentCourse.duration} 分鐘</div>
+              </div>` : ''}
+            ${currentCourse.link ? `
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">教材連結</div>
+                <a href="${escAttr(currentCourse.link)}" target="_blank" rel="noopener" style="font-size:14px;color:var(--brand);word-break:break-all">${escHtml(currentCourse.link)}</a>
+              </div>` : ''}
+            ${kws ? `
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px">關鍵字</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">${kws}</div>
+              </div>` : ''}
+          </div>`;
+
+      } else if (tab === 'mats') {
+        const mats = currentCourse.materials || [];
+        if (mats.length === 0) {
+          body.innerHTML = `<div class="empty-state"><i class="ph ph-folder-open"></i><p>此課程尚未上傳教材</p></div>`;
+        } else {
+          body.innerHTML = mats.map(m => renderMaterialItem(m, false)).join('');
+        }
+
+      } else if (tab === 'chat') {
+        body.innerHTML = renderCommentsHtml(currentCourse.id);
+      }
+    }
+
+    // ── Badges ──
+    function updateBadges() {
+      // 留言 badge（顯示有留言的課程數）
+      const totalComments = allCourses.reduce((sum, c) => sum + getCommentCount(c.id), 0);
+      const cb = document.getElementById('commentBadge');
+      if (totalComments > 0) { cb.textContent = totalComments; cb.style.display = ''; }
+      else { cb.style.display = 'none'; }
+    }
+
+    function updateSurveyBadge(count) {
+      const sb = document.getElementById('surveyBadge');
+      if (count > 0) { sb.textContent = count; sb.style.display = ''; }
+      else { sb.style.display = 'none'; }
+    }
+
+    // ── Toast ──
+    function showToast(msg, type = '') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.className = 'toast show' + (type ? ' ' + type : '');
+      setTimeout(() => { toast.className = 'toast'; }, 3000);
+    }
+
+    // ── 工具 ──
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escAttr(str) {
+      return String(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+  </script>
+</body>
+</html>
