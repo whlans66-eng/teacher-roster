@@ -2759,6 +2759,10 @@
                       <span class="sidebar-info-main">未設定</span>
                       <span class="sidebar-info-sub">尚未填寫連結</span>
                     `}
+                  <a href="teaching-materials.html?courseId=${course.id}" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;font-weight:600;color:#0a4a7a;background:#e8f0f8;border-radius:8px;padding:5px 10px;text-decoration:none;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    前往教材管理
+                  </a>
                   </div>
                 </div>
               </div>
@@ -2771,6 +2775,7 @@
                   <span class="sidebar-dot" style="background: #8b5cf6;"></span>
                   教材與影片附件
                   <span style="margin-left: auto; font-size: 11px; font-weight: 500; color: var(--apple-gray); background: #f5f5f7; padding: 2px 8px; border-radius: 10px;">${course.materials.length} 個檔案</span>
+                  <a href="teaching-materials.html?courseId=${course.id}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#0a4a7a;background:#e8f0f8;border-radius:6px;padding:3px 8px;text-decoration:none;margin-left:6px;">前往教材管理</a>
                 </h3>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                   ${course.materials.map(m => {
