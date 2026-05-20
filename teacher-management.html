@@ -293,20 +293,19 @@
 
     /* 師資卡片包裝 (多選圓圈定位用) */
     .teacher-card-wrapper { position: relative; }
+
+    /* 權限控制：非管理員隱藏管理功能 */
+    .admin-only { display: none !important; }
+    .admin-only.visible { display: revert !important; }
   </style>
 
-  <!-- API 層：與後端通訊 -->
-  <script src="js/security.js"></script>
+  <!-- MSAL + 系統設定 + 認證 + API 層 -->
+  <script src="js/msal-browser.min.js"></script>
+  <script src="js/sys_config.js"></script>
+  <script src="js/sys_auth.js"></script>
   <script src="js/api.js"></script>
 </head>
 <body class="min-h-screen">
-  <!-- Authentication -->
-  <script src="js/auth.js"></script>
-  <script>
-    // Allow admin (full access) and teacher (read-only preview)
-    const _authData = protectPage(['admin', 'teacher']);
-    const _isReadOnly = _authData && _authData.role === 'teacher';
-  </script>
 
   <!-- 跨頁導覽列 -->
   <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
@@ -384,7 +383,7 @@
 
           <!-- 新增師資按鈕 (編輯模式顯示) -->
           <button onclick="addNewTeacher()" id="addTeacherBtn"
-            class="w-full md:w-auto whitespace-nowrap text-white px-6 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            class="admin-only w-full md:w-auto whitespace-nowrap text-white px-6 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
             style="background-color:#007aff">
             <i class="ph ph-plus-circle"></i>
             <span>新增師資</span>
@@ -397,7 +396,7 @@
 
           <!-- 編輯模式按鈕 -->
           <button onclick="switchMode('display')" id="editModeBtn"
-            class="w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700">
+            class="admin-only w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700">
             <i class="ph ph-pencil-simple"></i>
             <span>編輯中</span>
           </button>
@@ -1079,7 +1078,7 @@
           </div>
 
           <div class="flex justify-between pt-6">
-            <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors hidden">刪除師資</button>
+            <button type="button" onclick="confirmDeleteTeacher()" id="deleteBtn" class="admin-only bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors hidden">刪除師資</button>
             <div class="flex space-x-4 ml-auto">
               <button type="button" onclick="backToList()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">取消</button>
               <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">儲存</button>
@@ -1340,17 +1339,15 @@
   <script>
     /* === 使用新的 API 層（js/api.js） === */
 
-    /* ---------- 檔案上傳（使用新的 API） ---------- */
+    /* ---------- 檔案上傳（目前架構不支援伺服器端上傳，回傳 base64 DataURL） ---------- */
     async function apiUploadToDrive(file){
-      if(!api || !api.uploadFile) throw new Error('API 未初始化');
-      if(file.size > 30*1024*1024) throw new Error('檔案大小不能超過 30MB');
-
-      try {
-        const result = await api.uploadFile(file, file.name);
-        return result; // {ok,id,url,name,size,mime}
-      } catch (error) {
-        throw new Error(error.message || '上傳失敗');
-      }
+      if(file.size > 5*1024*1024) throw new Error('檔案大小不能超過 5MB');
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve({ ok: true, url: e.target.result, name: file.name });
+        reader.onerror = () => reject(new Error('讀取檔案失敗'));
+        reader.readAsDataURL(file);
+      });
     }
 
     /* ---------- API 連線檢查 ---------- */
@@ -1423,63 +1420,20 @@
     }
 
     async function handleApiStatusCheck(manual = false) {
-      if (typeof api === 'undefined' || !api?.ping) {
-        updateApiStatusUI('error', 'API 尚未初始化', '請確認 js/api.js 已正確載入。');
-        if (manual) {
-          showSyncStatus('[Error] API 尚未初始化，請檢查 js/api.js 是否載入成功', 'error');
-        }
-        return;
-      }
-
       setApiStatusButtonLoading(true);
-      updateApiStatusUI('checking', '正在測試 API 連線...', '請稍候，通常會在 1 秒內完成檢查。');
+      updateApiStatusUI('checking', '正在測試 API 連線...', '請稍候。');
 
       const startedAt = performance.now();
-
       try {
-        const result = await api.ping();
-
-        if (!result?.ok) {
-          throw new Error(result?.error || 'API 回應未標示 ok');
-        }
-
+        const data = await getTeachers();
         const elapsed = Math.round(performance.now() - startedAt);
         apiStatusLastChecked = new Date();
-
-        const detailParts = [
-          `最後檢查時間：${formatDateTimeForStatus(apiStatusLastChecked)}`,
-          `延遲：約 ${elapsed} ms`
-        ];
-
-        if (result?.timestamp) {
-          const serverTime = formatDateTimeForStatus(new Date(result.timestamp));
-          if (serverTime) {
-            detailParts.push(`伺服器時間：${serverTime}`);
-          }
-        }
-
-        if (typeof API_CONFIG !== 'undefined' && API_CONFIG?.baseUrl) {
-          detailParts.push(`目前 API URL：${API_CONFIG.baseUrl}`);
-        }
-
-        updateApiStatusUI('success', 'API 連線正常', detailParts.join('｜'));
-
-        if (manual) {
-          showSyncStatus('[Info] API 連線正常', 'success');
-        }
+        const mode = (typeof isLocal !== 'undefined' && isLocal) ? '本地模式（localStorage）' : 'Azure Functions API';
+        updateApiStatusUI('success', `API 連線正常（${mode}）`, `延遲：約 ${elapsed} ms ｜ 最後檢查：${formatDateTimeForStatus(apiStatusLastChecked)}`);
+        if (manual) showSyncStatus('[Info] API 連線正常', 'success');
       } catch (error) {
-        const errorMessage = error?.message || String(error);
-        const detailParts = [`原因：${errorMessage}`];
-
-        if (typeof API_CONFIG !== 'undefined' && API_CONFIG?.baseUrl) {
-          detailParts.push(`目前 API URL：${API_CONFIG.baseUrl}`);
-        }
-
-        updateApiStatusUI('error', 'API 連線失敗', detailParts.join('｜'));
-
-        if (manual) {
-          showSyncStatus(`[Error] API 連線失敗：${errorMessage}`, 'error');
-        }
+        updateApiStatusUI('error', 'API 連線失敗', `原因：${error?.message || String(error)}`);
+        if (manual) showSyncStatus(`[Error] API 連線失敗：${error?.message}`, 'error');
       } finally {
         setApiStatusButtonLoading(false);
       }
@@ -1518,136 +1472,61 @@
     const initial = name => (String(name ?? '').trim()[0] || '?');
 
     /* ---------- 狀態 ---------- */
-    let teachers = normalize(JSON.parse(localStorage.getItem('teachers') || '[]'));
-    let teacherLeaves = JSON.parse(localStorage.getItem('teacherLeaves') || '[]');
+    let teachers = [];
+    let teacherLeaves = [];
     let currentTeacherId = null;
     let draggedElement = null;
     let filteredTeachers = [];
     window.currentMode = 'edit';
 
-    /* ---------- 靜默同步（0.1秒） ---------- */
-    const SYNC_DEBOUNCE_MS = 100;
-    let syncTimer = null, syncing = false, syncAgain = false;
-
-    function slimForLocal(items){
-      return (items||[]).map(t=>({
-        id:t.id, name:t.name, email:t.email,
-        teacherType:t.teacherType, workLocation:t.workLocation,
-        photo:t.photo, experiences:t.experiences||[],
-        certificates:(t.certificates||[]).map(c=> typeof c==='string' ? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
-        subjects:(t.subjects||[]).map(s=> typeof s==='string' ? s : ({name:s.name,materials:s.materials||[]}))
-      }));
-    }
-    function saveLocalSilently(){
-      try{
-        localStorage.setItem('teachers', JSON.stringify(slimForLocal(teachers)));
-      }catch(err){
-        console.warn('localStorage 超額，已改存最小資訊：', err);
-        try{
-          const min = teachers.map(t=>({id:t.id,name:t.name,teacherType:t.teacherType,workLocation:t.workLocation}));
-          localStorage.setItem('teachers', JSON.stringify(min));
-        }catch(e){}
-      }
-    }
-
-    function scheduleCloudSave(){
-      if(!api) return;
-      if(syncTimer) clearTimeout(syncTimer);
-      syncTimer = setTimeout(doCloudSave, SYNC_DEBOUNCE_MS);
-    }
-    async function doCloudSave(){
-      if(syncing){ syncAgain=true; return; }
-      syncing = true;
-      try{
-        if (syncManager) {
-          const result = await syncManager.saveTable('teachers');
-          if (result && result.conflict) {
-            console.warn('[Warning] 師資資料衝突:', result);
-            showConflictAlert('teachers', result);
-          }
-        } else {
-          await api.save('teachers', teachers);
-        }
-        // 師資資料已同步到雲端
-      }catch(e){
-        console.warn('雲端靜默上傳失敗：', e);
-      }finally{
-        syncing=false;
-        if(syncAgain){ syncAgain=false; scheduleCloudSave(); }
-      }
-    }
-
-    async function cloudLoadSilent(){
-      if(!api) return null;
-      try{
-        const data = await api.list('teachers');
-        return Array.isArray(data) ? data : null;
-      }catch(e){
-        console.warn('雲端靜默載入失敗：', e);
-      }
-      return null;
-    }
-
     /* ---------- 啟動 ---------- */
-    document.addEventListener('DOMContentLoaded', async () => {
-      setupApiStatusUI();
-      handleApiStatusCheck(false);
+    document.addEventListener('DOMContentLoaded', () => {
+      initPageWithAuth(async (user) => {
+        // 依角色控制管理功能可見度
+        if (user.isAdmin) {
+          document.querySelectorAll('.admin-only').forEach(el => el.classList.add('visible'));
+        } else {
+          // allowedUser：唯讀模式
+          window.currentMode = 'display';
+          const selectBtn = document.getElementById('teacherSelectBtn');
+          if (selectBtn) selectBtn.classList.add('hidden');
+          window.switchMode = function(mode) {
+            if (mode === 'edit') return;
+            window.currentMode = mode;
+            renderTeacherGrid();
+          };
+          const desc = document.getElementById('modeDescription');
+          if (desc) {
+            desc.className = 'mb-6 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm';
+            desc.innerHTML = '<i class="ph ph-eye" style="font-size: 16px;"></i><span>預覽模式：您具有師資管理的唯讀檢視權限，無法新增或修改資料</span>';
+          }
+        }
 
-      // 唯讀模式：teacher 帳號只能預覽，不能修改
-      if (_isReadOnly) {
-        window.currentMode = 'display';
-        document.getElementById('addTeacherBtn').classList.add('hidden');
-        document.getElementById('editModeBtn').classList.add('hidden');
-        document.getElementById('displayModeBtn').classList.add('hidden');
-        const selectBtn = document.getElementById('teacherSelectBtn');
-        if (selectBtn) selectBtn.classList.add('hidden');
-        // 覆寫 switchMode，阻止 teacher 切換至編輯模式
-        window.switchMode = function(mode) {
-          if (mode === 'edit') return;
-          window.currentMode = mode;
-          renderTeacherGrid();
-        };
-        // 顯示唯讀提示
-        const desc = document.getElementById('modeDescription');
-        desc.className = 'mb-6 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm';
-        desc.innerHTML = '<i class="ph ph-eye" style="font-size: 16px;"></i><span>預覽模式：您具有師資管理的唯讀檢視權限，無法新增或修改資料</span>';
-      }
-
-      renderTeacherGrid();
-      setupLocationSelection();
-
-      const cloud = await cloudLoadSilent();
-      if(Array.isArray(cloud)){
-        teachers = normalize(cloud);
-        saveLocalSilently();
         renderTeacherGrid();
-      }
+        setupLocationSelection();
 
-      // [Important] 重要：從 localStorage 重新載入派課和海事課程數據
-      // 因為 cloudLoadSilent() 可能已經通過 syncManager 更新了 localStorage
-      // 重新載入派課和海事課程數據
-      const localCourses = localStorage.getItem('courseAssignments');
-      const localMaritime = localStorage.getItem('maritimeCourses');
+        try {
+          const [teacherData, leaveData, courseData, calData, maritimeData] = await Promise.all([
+            getTeachers(),
+            getTeacherLeaves(),
+            getCourseAssignments(),
+            getCalendarEvents(),
+            getMaritimeCourses()
+          ]);
 
-      if (localCourses) {
-        courseAssignments = JSON.parse(localCourses);
-        // 從 localStorage 載入派課數據
-      }
+          teachers = normalize(teacherData || []);
+          teacherLeaves = leaveData || [];
+          courseAssignments = courseData || [];
+          calendarEvents = calData || [];
+          maritimeCourses = maritimeData || [];
 
-      if (localMaritime) {
-        maritimeCourses = JSON.parse(localMaritime);
-        // 從 localStorage 載入海事課程數據
-      }
-
-      // 再次嘗試從後端載入（如果有更新的數據）
-      await loadCourseAssignmentsFromBackend();
-      await loadMaritimeCoursesFromBackend();
-
-      // 同步到行事曆
-      if (courseAssignments.length > 0) {
-        // 同步派課數據到行事曆
-        syncCourseAssignmentsToCalendar();
-      }
+          renderTeacherGrid();
+          if (courseAssignments.length > 0) syncCourseAssignmentsToCalendar();
+        } catch (err) {
+          console.warn('[init] 資料載入失敗，使用空白資料:', err.message);
+          renderTeacherGrid();
+        }
+      });
     });
 
     /* ---------- 互動 ---------- */
@@ -1978,11 +1857,11 @@
       if (!confirm(`確定要刪除選取的 ${count} 位師資嗎？此操作無法復原。`)) return;
 
       const ids = new Set(selectedTeacherIds);
+      const toDelete = [...ids];
       teachers = teachers.filter(t => !ids.has(t.id));
-      saveLocalSilently();
-      scheduleCloudSave();
       toggleTeacherSelectMode();
       renderTeacherGrid();
+      Promise.all(toDelete.map(id => deleteTeacher(id))).catch(e => console.warn('批次刪除師資失敗:', e));
     }
     // ── 師資多選模式 end ──────────────────────────────────────────────
 
@@ -2403,23 +2282,22 @@
 
       if(currentTeacherId){
         const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData;
+        updateTeacher(currentTeacherId, teacherData).catch(e => console.warn('更新師資失敗:', e));
       }else{
         teachers.unshift(teacherData);
+        createTeacher(teacherData).catch(e => console.warn('新增師資失敗:', e));
       }
       teachers = normalize(teachers);
-      saveLocalSilently();
-      scheduleCloudSave();
       backToList();
     });
 
-    function deleteTeacher(){
+    function confirmDeleteTeacher(){
       if(!currentTeacherId) return;
-      if(confirm('確定要刪除這位師資嗎？此操作無法復原。')){
-        teachers = teachers.filter(t=>t.id!==currentTeacherId);
-        saveLocalSilently();
-        scheduleCloudSave();
-        backToList();
-      }
+      if(!confirm('確定要刪除這位師資嗎？此操作無法復原。')) return;
+      const targetId = currentTeacherId;
+      teachers = teachers.filter(t=>t.id!==targetId);
+      deleteTeacher(targetId).catch(e => console.warn('刪除師資失敗:', e));
+      backToList();
     }
 
     function copyTeacher(teacherId){
@@ -2441,8 +2319,7 @@
       const i = teachers.findIndex(x=>x.id===teacherId);
       teachers.splice(i+1,0,copy);
       teachers = normalize(teachers);
-      saveLocalSilently();
-      scheduleCloudSave();
+      createTeacher(copy).catch(e => console.warn('複製師資失敗:', e));
       renderTeacherGrid();
     }
 
@@ -2456,8 +2333,6 @@
         const d = teachers[di];
         teachers.splice(di,1);
         teachers.splice(ti,0,d);
-        saveLocalSilently();
-        scheduleCloudSave();
         renderTeacherGrid();
       }
       return false;
@@ -2654,15 +2529,16 @@
       const exists = teacherLeaves.some(l => l.teacherId === teacherId && l.date === date);
       if (exists) { alert(`${teacher.name} 在 ${date} 已有請假紀錄`); return; }
 
-      teacherLeaves.push({
+      const newLeave = {
         id: Date.now(),
         teacherId,
         teacherName: teacher.name,
         date,
         reason
-      });
+      };
 
-      saveTeacherLeaves();
+      teacherLeaves.push(newLeave);
+      createTeacherLeave(newLeave).catch(e => console.warn('新增請假失敗:', e));
       document.getElementById('leaveReason').value = '';
       renderLeaveList();
     }
@@ -2670,12 +2546,8 @@
     function deleteLeaveRecord(id) {
       if (!confirm('確定刪除此請假紀錄？')) return;
       teacherLeaves = teacherLeaves.filter(l => l.id !== id);
-      saveTeacherLeaves();
+      deleteTeacherLeave(id).catch(e => console.warn('刪除請假失敗:', e));
       renderLeaveList();
-    }
-
-    function saveTeacherLeaves() {
-      localStorage.setItem('teacherLeaves', JSON.stringify(teacherLeaves));
     }
 
     function renderLeaveList() {
@@ -2833,10 +2705,10 @@
   let reminderInterval = null;
 
   // 仍沿用前面全域的 teachers
-  let calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
+  let calendarEvents = [];
   // event = { id, date:'YYYY-MM-DD', title, time:'HH:MM'|'', teacherId:null|number, location:'', note:'', color:'bg-xxx-500' }
 
-  function saveCalendarLocal(){ localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents)); }
+  function saveCalendarLocal(){ /* no-op: 行事曆以記憶體為主，由啟動時 API 載入 */ }
   function fmtDate(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
   function todayStr(){ const d=new Date(); return fmtDate(d.getFullYear(), d.getMonth(), d.getDate()); }
 
@@ -2913,8 +2785,9 @@
     const note     = (document.getElementById('eventNote').value||'').trim();
     if(!title || !date) return;
 
-    calendarEvents.push({ id: Date.now(), date, title, time, teacherId, location, note, color: selectedColor });
-    saveCalendarLocal();
+    const newEvent = { id: Date.now(), date, title, time, teacherId, location, note, color: selectedColor };
+    calendarEvents.push(newEvent);
+    createCalendarEvent(newEvent).catch(e => console.warn('新增行事曆事件失敗:', e));
     closeAddEventModal();
     renderCalendar();
   }
@@ -2972,7 +2845,7 @@
     // 設定刪除按鈕事件
     document.getElementById('deleteEventBtn').onclick = function() {
       if (confirm('確定要刪除這個事件嗎？')) {
-        deleteCalendarEvent(eventId);
+        removeCalendarEvent(eventId);
       }
     };
 
@@ -3036,7 +2909,7 @@
     const eventIndex = calendarEvents.findIndex(e => e.id === editingEventId);
     if (eventIndex === -1) return;
 
-    calendarEvents[eventIndex] = {
+    const updated = {
       ...calendarEvents[eventIndex],
       title,
       teacherId: teacherId ? Number(teacherId) : null,
@@ -3045,16 +2918,17 @@
       location,
       note
     };
+    calendarEvents[eventIndex] = updated;
 
-    localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+    updateCalendarEvent(updated.id, updated).catch(e => console.warn('更新行事曆事件失敗:', e));
     renderCalendar();
     closeViewEventModal();
     alert('✓ 事件已更新！');
   }
 
-  function deleteCalendarEvent(eventId) {
+  function removeCalendarEvent(eventId) {
     calendarEvents = calendarEvents.filter(e => e.id !== eventId);
-    localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+    deleteCalendarEvent(eventId).catch(e => console.warn('刪除行事曆事件失敗:', e));
     renderCalendar();
     closeViewEventModal();
     alert('✓ 事件已刪除！');
@@ -3062,7 +2936,7 @@
 
   function deleteEventById(id){
     calendarEvents = calendarEvents.filter(ev=>ev.id!==id);
-    saveCalendarLocal();
+    deleteCalendarEvent(id).catch(e => console.warn('刪除行事曆事件失敗:', e));
     renderCalendar();
   }
 
@@ -3309,58 +3183,10 @@
   injectCalendarCSS();
 
   // ========== 派課管理功能 ==========
-  let courseAssignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+  let courseAssignments = [];
   let currentCourseTeacherId = null;
   let currentCourseStartDate = null;
   let currentCourseEndDate = null;
-
-  // 從後端載入派課數據
-  async function loadCourseAssignmentsFromBackend() {
-    if (!api) {
-      // API 未初始化，跳過從後端載入
-      return;
-    }
-
-    try {
-      // 嘗試從後端 API 載入派課數據
-      const data = await api.list('courseAssignments');
-      console.log('[Debug] 後端回傳派課資料:', Array.isArray(data) ? `${data.length} 筆` : data, data?.[0] ?? '(無資料)');
-
-      if (Array.isArray(data)) {
-        if (data.length > 0) {
-          // 從後端 API 載入派課數據成功
-          courseAssignments = data;
-          localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
-
-          // 同步到行事曆
-          syncCourseAssignmentsToCalendar();
-
-          // 如果正在顯示派課視圖，則更新顯示
-          if (!document.getElementById('courseManagementView').classList.contains('hidden')) {
-            updateCourseView();
-          }
-        } else {
-          console.log('[Note] 後端 API 返回空的派課數據');
-          // 不要清空本地數據，保持現有的 courseAssignments
-          if (courseAssignments.length > 0) {
-            console.log('[Info] 保留本地派課數據，共', courseAssignments.length, '筆');
-          }
-        }
-      }
-    } catch (error) {
-      // Session 已過期（_handleSessionExpired 會處理 alert 和跳轉）
-      if (error.message && error.message.includes('Session 已過期')) {
-        console.warn('[Warning] 派課數據載入失敗：Session 已過期，等待跳轉至登入頁');
-        return;
-      }
-      console.error('[Error] 從後端 API 載入派課數據失敗:', error.message, error);
-      if (courseAssignments.length > 0) {
-        console.log('[Info] 使用本地派課數據，共', courseAssignments.length, '筆');
-      } else {
-        console.error('[Error] 後端失敗且無本地數據可用。請確認 API_URL 設定正確，並嘗試重新登入。');
-      }
-    }
-  }
 
   // 將派課數據同步到行事曆
   function syncCourseAssignmentsToCalendar() {
@@ -3719,7 +3545,7 @@
               <span><i class="ph ph-timer"></i> ${hours.toFixed(1)}小時</span>
             </div>
           </div>
-          <button onclick="deleteCourseAssignment(${course.id})" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
+          <button onclick="removeCourseAssignment(${course.id})" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
             </svg>
@@ -3784,14 +3610,14 @@
     };
 
     courseAssignments.push(newCourse);
-    saveCourseLocal();
+    createCourseAssignment(newCourse).catch(e => console.warn('新增派課失敗:', e));
 
     // 同步到行事曆
     const teacher = teachers.find(t => t.id === currentCourseTeacherId);
     const teacherName = teacher ? teacher.name : '未知師資';
 
-    calendarEvents.push({
-      id: newCourse.id, // 使用相同 ID 以便同步刪除
+    const calEvent = {
+      id: newCourse.id,
       date: courseDate,
       title: `${courseName} - ${teacherName}`,
       time: timeRange,
@@ -3799,58 +3625,28 @@
       location: courseType,
       note: `課程類型：${courseType}`,
       color: getCourseTypeColor(courseType),
-      courseId: newCourse.id // 標記為派課產生的事件
-    });
-    saveCalendarLocal();
+      courseId: newCourse.id
+    };
+    calendarEvents.push(calEvent);
+    createCalendarEvent(calEvent).catch(e => console.warn('新增行事曆事件失敗:', e));
 
     updateCourseView();
     closeAddCourseModal();
-
-    // 顯示成功訊息
-    // alert('✓ 課程新增成功！已同步到行事曆');
   }
 
   // 刪除課程
-  function deleteCourseAssignment(courseId) {
+  function removeCourseAssignment(courseId) {
     if (!confirm('確定要刪除此課程嗎？')) return;
 
     courseAssignments = courseAssignments.filter(c => c.id !== courseId);
-    saveCourseLocal();
+    deleteCourseAssignment(courseId).catch(e => console.warn('刪除派課失敗:', e));
 
     // 同步刪除行事曆中的對應事件
     calendarEvents = calendarEvents.filter(e => e.courseId !== courseId);
-    saveCalendarLocal();
+    deleteCalendarEvent(courseId).catch(e => console.warn('刪除行事曆事件失敗:', e));
 
     updateCourseView();
-
     alert('✓ 課程已刪除，已同步更新行事曆');
-  }
-
-  // 儲存到 localStorage 和後端
-  function saveCourseLocal() {
-    try {
-      localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
-      // 同步到後端
-      saveCourseToBackend();
-    } catch(err) {
-      console.warn('localStorage 超額，課程數據保存失敗：', err);
-      alert('存儲空間已滿，課程數據可能無法保存，請刪除部分數據');
-    }
-  }
-
-  // 儲存派課數據到後端
-  async function saveCourseToBackend() {
-    if (!api || !syncManager) return;
-    try {
-      const result = await syncManager.saveTable('courseAssignments');
-      if (result && result.conflict) {
-        console.warn('[Warning] 派課數據衝突:', result);
-        showConflictAlert('courseAssignments', result);
-      }
-      // 派課數據已同步到後端
-    } catch (error) {
-      console.warn('[Warning] 派課數據後端同步失敗:', error);
-    }
   }
 
   // 點擊 Modal 外部關閉
@@ -4281,8 +4077,8 @@
   // ========== 海事課程系統 JavaScript ==========
   </script>
   <script>
-  // 課程資料儲存
-  let maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses')) || [];
+  // 課程資料
+  let maritimeCourses = [];
   let editingMaritimeCourseId = null;
 
   // 分類對應表
@@ -4299,86 +4095,6 @@
   };
 
 
-  // 儲存課程資料到 localStorage 和後端
-  function saveMaritimeCourses() {
-    localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
-    // 同步到後端
-    saveMaritimeCoursesToBackend();
-  }
-
-  // 儲存海事課程數據到後端
-  async function saveMaritimeCoursesToBackend() {
-    if (!api || !syncManager) return;
-    try {
-      const result = await syncManager.saveTable('maritimeCourses');
-      if (result && result.conflict) {
-        console.warn('[Warning] 海事課程數據衝突:', result);
-        showConflictAlert('maritimeCourses', result);
-      }
-      // 海事課程數據已同步到後端
-    } catch (error) {
-      console.warn('[Warning] 海事課程數據後端同步失敗:', error);
-    }
-  }
-
-  // 顯示衝突警告
-  function showConflictAlert(tableName, result) {
-    const tableNames = {
-      'teachers': '教師資料',
-      'courseAssignments': '課程安排',
-      'maritimeCourses': '海事課程'
-    };
-    const displayName = tableNames[tableName] || tableName;
-    const msg = `⚠️ ${displayName}衝突警告\n\n` +
-      `後端資料已被其他人修改。\n` +
-      `您載入時: ${result.savedCount} 筆\n` +
-      `目前後端: ${result.currentCount} 筆\n\n` +
-      `建議重新整理頁面以取得最新資料。`;
-
-    if (confirm(msg + '\n\n點擊「確定」重新整理頁面')) {
-      window.location.reload();
-    }
-  }
-
-  // 從後端載入海事課程數據
-  async function loadMaritimeCoursesFromBackend() {
-    if (!api) {
-      // API 未初始化，跳過從後端載入海事課程
-      return;
-    }
-
-    try {
-      // 嘗試從後端 API 載入海事課程數據
-      const data = await api.list('maritimeCourses');
-
-      if (Array.isArray(data)) {
-        if (data.length > 0) {
-          // 從後端 API 載入海事課程數據成功
-          maritimeCourses = data;
-          localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
-
-          // 更新顯示（如果正在海事課程頁面）
-          if (window.location.hash === '#maritime') {
-            displayMaritimeCourses();
-            displayManageMaritimeCourses();
-          }
-        } else {
-          console.log('[Note] 後端 API 返回空的海事課程數據');
-          // 不要清空本地數據
-          if (maritimeCourses.length > 0) {
-            console.log('[Info] 保留本地海事課程數據，共', maritimeCourses.length, '筆');
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('[Warning] 從後端 API 載入海事課程數據失敗:', error.message);
-      if (maritimeCourses.length > 0) {
-        // 使用本地海事課程數據
-      } else {
-        console.warn('[Error] 沒有本地海事課程數據可用');
-      }
-    }
-  }
 
   // 頁面切換功能
   function switchMaritimeTab(tab) {
@@ -4522,7 +4238,7 @@
           <button onclick="editMaritimeCourse(${course.id})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600 transition-colors">
             編輯
           </button>
-          <button onclick="deleteMaritimeCourse(${course.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors">
+          <button onclick="removeMaritimeCourse(${course.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors">
             刪除
           </button>
         </div>
@@ -4566,8 +4282,9 @@
     if (!editingMaritimeCourseId) return;
 
     if (confirm('確定要刪除這個課程嗎？此操作無法復原。')) {
-      maritimeCourses = maritimeCourses.filter(c => c.id !== editingMaritimeCourseId);
-      saveMaritimeCourses();
+      const id = editingMaritimeCourseId;
+      maritimeCourses = maritimeCourses.filter(c => c.id !== id);
+      deleteMaritimeCourse(id).catch(e => console.warn('刪除海事課程（modal）失敗:', e));
       displayMaritimeCourses();
       displayManageMaritimeCourses();
       closeMaritimeCourseModal();
@@ -4585,45 +4302,34 @@
     const description = document.getElementById('maritimeCourseDescriptionModal').value.trim();
     const keywordsInput = document.getElementById('maritimeCourseKeywordsModal').value.trim();
     const keywords = keywordsInput ? keywordsInput.split(',').map(k => k.trim()).filter(k => k) : [];
+    const wasEditing = editingMaritimeCourseId;
 
     if (editingMaritimeCourseId) {
       // 更新現有課程
       const courseIndex = maritimeCourses.findIndex(c => c.id === editingMaritimeCourseId);
-      maritimeCourses[courseIndex] = {
-        ...maritimeCourses[courseIndex],
-        name,
-        category,
-        method,
-        description,
-        keywords
-      };
+      const updated = { ...maritimeCourses[courseIndex], name, category, method, description, keywords };
+      maritimeCourses[courseIndex] = updated;
+      updateMaritimeCourse(updated.id, updated).catch(e => console.warn('更新海事課程失敗:', e));
     } else {
       // 新增課程
-      const newCourse = {
-        id: Date.now(),
-        name,
-        category,
-        method,
-        description,
-        keywords
-      };
+      const newCourse = { id: Date.now(), name, category, method, description, keywords };
       maritimeCourses.push(newCourse);
+      createMaritimeCourse(newCourse).catch(e => console.warn('新增海事課程失敗:', e));
     }
 
-    saveMaritimeCourses();
     displayMaritimeCourses();
     displayManageMaritimeCourses();
     closeMaritimeCourseModal();
-    showMaritimeMessage(editingMaritimeCourseId ? '課程已更新' : '課程已新增', 'success');
+    showMaritimeMessage(wasEditing ? '課程已更新' : '課程已新增', 'success');
   }
 
   // 刪除課程
-  function deleteMaritimeCourse(courseId) {
+  function removeMaritimeCourse(courseId) {
     if (confirm('確定要刪除這個課程嗎？')) {
       maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
-      saveMaritimeCourses();
-      displayMaritimeCourses(); // 更新搜尋頁面
-      displayManageMaritimeCourses(); // 更新管理頁面
+      deleteMaritimeCourse(courseId).catch(e => console.warn('刪除海事課程失敗:', e));
+      displayMaritimeCourses();
+      displayManageMaritimeCourses();
       showMaritimeMessage('課程已刪除', 'success');
     }
   }
@@ -4834,29 +4540,17 @@
         if (editingMaritimeCourseId) {
           // 編輯現有課程
           const courseIndex = maritimeCourses.findIndex(c => c.id === editingMaritimeCourseId);
-          maritimeCourses[courseIndex] = {
-            ...maritimeCourses[courseIndex],
-            name,
-            category,
-            method,
-            description,
-            keywords
-          };
+          const updated = { ...maritimeCourses[courseIndex], name, category, method, description, keywords };
+          maritimeCourses[courseIndex] = updated;
+          updateMaritimeCourse(updated.id, updated).catch(e => console.warn('更新海事課程失敗:', e));
           editingMaritimeCourseId = null;
         } else {
           // 新增課程
-          const newCourse = {
-            id: Date.now(),
-            name,
-            category,
-            method,
-            description,
-            keywords
-          };
+          const newCourse = { id: Date.now(), name, category, method, description, keywords };
           maritimeCourses.push(newCourse);
+          createMaritimeCourse(newCourse).catch(e => console.warn('新增海事課程失敗:', e));
         }
 
-        saveMaritimeCourses();
         this.reset();
         displayManageMaritimeCourses();
 
@@ -4893,7 +4587,7 @@
 
   // 將函數暴露到全局作用域
   window.editMaritimeCourse = editMaritimeCourse;
-  window.deleteMaritimeCourse = deleteMaritimeCourse;
+  window.removeMaritimeCourse = removeMaritimeCourse;
 
   // ========== 海事課程系統結束 ==========
   </script>
