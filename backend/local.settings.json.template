@@ -1,0 +1,32 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+
+    "FABRIC_SQL_SERVER": "your-server.database.fabric.microsoft.com",
+    "FABRIC_SQL_DATABASE": "your-database-name",
+    "DB_SCHEMA": "dbo",
+
+    "FABRIC_TENANT_ID": "your-azure-ad-tenant-id",
+    "FABRIC_CLIENT_ID": "your-azure-ad-app-client-id",
+    "FABRIC_CLIENT_SECRET": "your-azure-ad-app-client-secret",
+
+    "FRONTEND_BASE_URL": "https://your-frontend-domain.com",
+
+    "MSAL_CLIENT_ID": "your-azure-ad-app-client-id",
+
+    "FABRIC_STORAGE_ACCOUNT": "your-storage-account-name",
+    "FABRIC_CONTAINER_NAME": "your-container-name",
+    "FABRIC_BASE_PATH": "your/lakehouse/path",
+
+    "JWT_SECRET": "your-jwt-secret-for-sso",
+    "AES_SECRET": "your-aes-secret-32-chars",
+
+    "SSO_ENABLED": "false",
+    "SSO_JWT_AUDIENCE": "your-sso-audience",
+    "SSO_JWT_ISSUER": "your-sso-issuer",
+
+    "SKIP_TOKEN_VALIDATION": "false"
+  }
+}
