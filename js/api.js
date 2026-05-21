@@ -1,1806 +1,630 @@
-// ==================== API 層：與 Google Apps Script 後端通訊 ====================
-
 /**
- * 設定區
- * 部署完 Google Apps Script 後，將取得的 Web App URL 填入下方
+ * api.js — 前端 API 工具集
+ *
+ * 載入順序（HTML head 尾端依序）：
+ *   msal-browser.min.js → sys_config.js → sys_auth.js → api.js
+ *
+ * isLocal 旗標：
+ *   CONFIG.apiBaseUrl 未設定時自動啟用 localStorage 模式，
+ *   所有業務函式均支援 API ↔ localStorage 雙模式 fallback。
+ *
+ * 函式命名規則：全部為全域函式，不使用 window.x 或物件包裝。
  */
-const API_CONFIG = {
-  // 將此 URL 替換為你部署後的 Google Apps Script Web App URL
-  baseUrl: 'https://script.google.com/macros/s/AKfycbyVurn5Y3r2Hi7AT3IPkt-MnfDWUcaONgGPXepRSSwwq_YdPauJNB8YuHpHd1C9-d3iIA/exec',
-  timeout: 30000,  // 30 秒超時
-  enableSessions: false, // 是否啟用 Session 追蹤與鎖定功能
-  debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
-};
 
-/**
- * 從 sessionStorage 取得登入後的 Session Token
- */
-function _getSessionToken() {
-  try {
-    const authData = sessionStorage.getItem('authData') || localStorage.getItem('authData');
-    if (!authData) return '';
-    const parsed = JSON.parse(authData);
-    return parsed.token || '';
-  } catch (e) {
+// ─────────────────────────────────────────────────────────────
+//  XSS / Security helpers
+// ─────────────────────────────────────────────────────────────
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/"/g,  '&quot;')
+        .replace(/'/g,  '&#x27;');
+}
+
+function escapeAttr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g,  '&amp;')
+        .replace(/"/g,  '&quot;')
+        .replace(/'/g,  '&#x27;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;');
+}
+
+function sanitizeUrl(url) {
+    if (!url) return '';
+    const s = String(url).trim();
+    if (/^(https?:\/\/|\/)/i.test(s)) return s;
     return '';
-  }
 }
 
-/**
- * API 類別：統一管理所有後端呼叫
- */
-class TeacherRosterAPI {
-  constructor(config) {
-    this.baseUrl = config.baseUrl;
-    this.timeout = config.timeout;
-    this.debug = config.debug || false;
-  }
+// ─────────────────────────────────────────────────────────────
+//  isLocal 旗標（CONFIG 未設定或 apiBaseUrl 為空時啟用本地模式）
+// ─────────────────────────────────────────────────────────────
 
-  /**
-   * 取得當前 Session Token（動態讀取，不寫死）
-   */
-  get token() {
-    return _getSessionToken();
-  }
+const isLocal = (() => {
+    try { return typeof CONFIG === 'undefined' || !CONFIG?.apiBaseUrl; }
+    catch (_) { return true; }
+})();
 
-  /**
-   * 登入（使用 POST 方法，密碼不會出現在 URL 中）
-   * @param {string} username
-   * @param {string} password
-   * @returns {Object} { user, token }
-   */
-  async login(username, password) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+// ─────────────────────────────────────────────────────────────
+//  localStorage 工具
+// ─────────────────────────────────────────────────────────────
 
+function lsGet(key, defaultVal = []) {
     try {
-      const body = new URLSearchParams();
-      body.append('action', 'login');
-      body.append('username', username);
-      body.append('password', password);
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : defaultVal;
+    } catch (_) { return defaultVal; }
+}
 
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-        body: body.toString(),
-        signal: controller.signal
-      });
+function lsSet(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); }
+    catch (e) { console.warn(`[api] lsSet(${key}) failed:`, e.message); }
+}
 
-      clearTimeout(timeoutId);
+// ─────────────────────────────────────────────────────────────
+//  Core HTTP helper
+// ─────────────────────────────────────────────────────────────
 
-      if (!response.ok) {
-        throw new Error('伺服器回傳狀態碼 ' + response.status);
-      }
-
-      const result = await response.json();
-      if (!result.ok) {
-        throw new Error(result.error || '登入失敗');
-      }
-
-      return result.data;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') throw new Error('請求超時');
-      if (error instanceof TypeError) throw new Error('無法連線到 API：' + error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * 測試連線
-   */
-  async ping() {
-    try {
-      const response = await this._get({ action: 'ping' });
-      return response;
-    } catch (error) {
-      console.error('Ping 失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 讀取特定表格的所有資料
-   * @param {string} table - 表格名稱: 'teachers', 'courseAssignments', 'maritimeCourses'
-   */
-  async list(table) {
-    try {
-      const response = await this._get({ action: 'list', table });
-      return response.data || [];
-    } catch (error) {
-      console.error(`讀取 ${table} 失敗:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 讀取所有表格的資料（含版本指紋，避免額外的 getVersions 請求）
-   * @returns {{ data: Object, versions: Object }}
-   */
-  async listAll() {
-    try {
-      const response = await this._get({ action: 'listall' });
-      return { data: response.data || {}, versions: response.versions || {} };
-    } catch (error) {
-      console.error('讀取所有資料失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 取得資料版本資訊（用於衝突檢測）
-   * @returns {Object} { teachers: {count, fingerprint, lastModified}, ... }
-   */
-  async getVersions() {
-    try {
-      const response = await this._get({ action: 'getversions' });
-      return response.versions || {};
-    } catch (error) {
-      console.error('取得版本資訊失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 儲存特定表格的資料（含 server-side 衝突檢測）
-   * @param {string} table - 表格名稱
-   * @param {Array} data - 資料陣列
-   * @param {Object|null} savedVersion - 本地版本指紋，傳給後端做衝突檢測
-   * @param {boolean} forceOverwrite - 是否略過衝突檢測
-   */
-  async save(table, data, savedVersion = null, forceOverwrite = false) {
-    try {
-      const payload = { action: 'save', table, data };
-      if (savedVersion) payload.savedVersion = savedVersion;
-      if (forceOverwrite) payload.forceOverwrite = 'true';
-      const response = await this._post(payload);
-      return response;
-    } catch (error) {
-      console.error(`儲存 ${table} 失敗:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 批次儲存多個表格（單次 HTTP 請求，含 server-side 衝突檢測）
-   * @param {Object} tables - { tableName: data[] } 格式
-   * @param {Object|null} savedVersions - localStorage 中的版本指紋，傳給後端做衝突檢測
-   * @param {boolean} forceOverwrite - 是否略過衝突檢測強制覆寫
-   */
-  async batchSave(tables, savedVersions = null, forceOverwrite = false) {
-    try {
-      const payload = { action: 'batchsave', tables };
-      if (savedVersions) payload.savedVersions = savedVersions;
-      if (forceOverwrite) payload.forceOverwrite = 'true';
-      const response = await this._post(payload);
-      return response;
-    } catch (error) {
-      console.error('批次儲存失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 上傳檔案到 Google Drive
-   * @param {File|Blob} file - 檔案物件
-   * @param {string} fileName - 檔案名稱（可選）
-   */
-  async uploadFile(file, fileName = null) {
-    try {
-      const formData = new FormData();
-      formData.append('file', file, fileName || file.name);
-      formData.append('token', this.token);
-      formData.append('action', 'uploadfile');
-
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        body: formData
-      });
-
-      const result = await response.json();
-      if (!result.ok) throw new Error(result.error || '上傳失敗');
-      return result;
-    } catch (error) {
-      console.error('上傳檔案失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 上傳 Base64 DataURL
-   * @param {string} dataUrl - Base64 編碼的資料 URL
-   * @param {string} fileName - 檔案名稱
-   */
-  async uploadDataUrl(dataUrl, fileName) {
-    try {
-      const response = await this._post({
-        action: 'uploadfile',
-        dataUrl,
-        fileName
-      });
-      return response;
-    } catch (error) {
-      console.error('上傳 DataURL 失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * GET 請求
-   */
-  async _get(params) {
-    const url = new URL(this.baseUrl);
-    url.searchParams.append('token', this.token);
-    Object.keys(params).forEach(key => {
-      url.searchParams.append(key, params[key]);
-    });
-
-    if (this.debug) {
-      console.log('🌐 發送 GET 請求:', url.toString());
-      console.log('🌐 請求參數:', params);
-    }
+async function callApi(endpoint, options = {}) {
+    let token = await getAccessToken();
+    if (!token) token = await getAccessTokenWithFallback();
+    if (!token) throw new Error('未登入');
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timer = setTimeout(() => controller.abort(), CONFIG.timeout);
 
-    try {
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (this.debug) {
-        console.log('📡 收到響應，狀態碼:', response.status);
-      }
-
-      if (!response.ok) {
-        throw new Error(`後端回傳狀態碼 ${response.status}`);
-      }
-
-      let result;
-      try {
-        const responseText = await response.text();
-        if (this.debug) {
-          console.log('📄 響應內容 (前500字):', responseText.substring(0, 500));
-        }
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('❌ JSON 解析失敗:', parseError);
-        throw new Error('後端回應不是 JSON 格式，請確認 Apps Script 是否有回傳 JSON');
-      }
-
-      if (this.debug) {
-        console.log('✅ JSON 解析成功:', result);
-      }
-
-      if (!result.ok) {
-        if (result.error === 'Unauthorized') {
-          console.warn('Session 已過期，導向登入頁面');
-          _handleSessionExpired();
-          throw new Error('Session 已過期，請重新登入');
-        }
-        throw new Error(result.error || '請求失敗');
-      }
-
-      return result;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      console.error('❌ GET 請求失敗:', error);
-      if (error.name === 'AbortError') {
-        throw new Error('請求超時');
-      }
-      if (error instanceof TypeError) {
-        throw new Error('無法連線到 API，可能是 CORS 或網路連線問題：' + error.message);
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * POST 請求
-   */
-  async _post(data) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    try {
-      const body = new URLSearchParams();
-      body.append('token', this.token);
-      Object.entries(data).forEach(([key, value]) => {
-        if (value === undefined || value === null) return;
-        const serialized = (typeof value === 'object') ? JSON.stringify(value) : value;
-        body.append(key, serialized);
-      });
-
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
+    const config = {
+        ...options,
+        signal: controller.signal,
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            ...options.headers,
         },
-        body: body.toString(),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`後端回傳狀態碼 ${response.status}`);
-      }
-
-      let result;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        throw new Error('後端回應不是 JSON 格式，請確認 Apps Script 是否有回傳 JSON');
-      }
-
-      if (!result.ok) {
-        if (result.error === 'Unauthorized') {
-          console.warn('Session 已過期，導向登入頁面');
-          _handleSessionExpired();
-          throw new Error('Session 已過期，請重新登入');
-        }
-        throw new Error(result.error || '請求失敗');
-      }
-
-      return result;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        throw new Error('請求超時');
-      }
-      if (error instanceof TypeError) {
-        throw new Error('無法連線到 API，可能是 CORS 或網路連線問題：' + error.message);
-      }
-      throw error;
-    }
-  }
-}
-
-// 建立全域 API 實例
-const api = new TeacherRosterAPI(API_CONFIG);
-
-// Session 過期通知 dedup flag（避免同一頁面多個 API 請求同時觸發多個 alert）
-let _sessionExpiredNotified = false;
-
-function _handleSessionExpired() {
-  sessionStorage.removeItem('authData');
-  localStorage.removeItem('authData');
-  if (_sessionExpiredNotified) return; // 已經通知過，不重複
-  _sessionExpiredNotified = true;
-  if (!window.location.pathname.endsWith('login.html')) {
-    alert('登入逾期，請重新登入以載入行事曆資料。');
-    window.location.href = 'login.html';
-  }
-}
-
-function normalizeNumeric(value) {
-  if (value === undefined || value === null || value === '') {
-    return value;
-  }
-
-  const numericValue = Number(value);
-  return Number.isFinite(numericValue) ? numericValue : value;
-}
-
-function normalizeTeacherRecord(record) {
-  if (!record || typeof record !== 'object') {
-    return record;
-  }
-
-  const normalized = { ...record };
-  normalized.id = normalizeNumeric(normalized.id);
-  return normalized;
-}
-
-function normalizeCourseAssignment(record) {
-  if (!record || typeof record !== 'object') {
-    return record;
-  }
-
-  const normalized = { ...record };
-  normalized.id = normalizeNumeric(normalized.id);
-  normalized.teacherId = normalizeNumeric(normalized.teacherId);
-  normalized.taId = normalizeNumeric(normalized.taId);
-
-  if (typeof normalized.date === 'string') {
-    normalized.date = normalized.date.trim();
-  }
-
-  if (typeof normalized.time === 'string') {
-    normalized.time = normalized.time.trim();
-  }
-
-  return normalized;
-}
-
-function loadArrayFromStorage(key, normalizer) {
-  const raw = localStorage.getItem(key);
-  if (!raw) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return typeof normalizer === 'function' ? parsed.map(normalizer) : parsed;
-  } catch (error) {
-    console.warn(`⚠️ 無法解析 ${key}:`, error);
-    return [];
-  }
-}
-
-// 將後端回傳的版本指紋合併寫入 localStorage（updates 為 null 時清除）
-function _mergeDataVersions(updates) {
-  if (!updates || Object.keys(updates).length === 0) {
-    localStorage.removeItem('dataVersions');
-    return;
-  }
-  const current = JSON.parse(localStorage.getItem('dataVersions') || '{}');
-  localStorage.setItem('dataVersions', JSON.stringify({ ...current, ...updates }));
-}
-
-/**
- * 資料同步管理器
- * 負責 localStorage 與後端的雙向同步
- */
-class DataSyncManager {
-  constructor(apiInstance) {
-    this.api = apiInstance;
-    this.syncInterval = null;
-    this.autoSyncEnabled = false;
-  }
-
-  /**
-   * 從後端載入所有資料到 localStorage
-   */
-  async loadFromBackend() {
-    try {
-      if (this.api.debug) {
-        console.log('📥 從後端載入資料...');
-        console.log('🔍 API URL:', this.api.baseUrl);
-        console.log('🔍 Token:', this.api.token ? '已設置' : '未設置');
-      }
-
-      const { data: allData, versions } = await this.api.listAll();
-
-      // 詳細日誌
-      if (this.api.debug) {
-        console.log('🔍 後端返回的原始資料:', allData);
-        console.log('🔍 teachers 數量:', allData.teachers?.length || 0);
-        console.log('🔍 courseAssignments 數量:', allData.courseAssignments?.length || 0);
-        console.log('🔍 maritimeCourses 數量:', allData.maritimeCourses?.length || 0);
-      }
-
-      const normalizedTeachers = Array.isArray(allData.teachers)
-        ? allData.teachers.map(normalizeTeacherRecord)
-        : [];
-      const normalizedCourses = Array.isArray(allData.courseAssignments)
-        ? allData.courseAssignments.map(normalizeCourseAssignment)
-        : [];
-      const maritimeCourses = Array.isArray(allData.maritimeCourses)
-        ? allData.maritimeCourses
-        : [];
-
-      if (this.api.debug) {
-        console.log('🔍 歸一化後的課程數據:', normalizedCourses);
-      }
-
-      // 儲存到 localStorage
-      localStorage.setItem('teachers', JSON.stringify(normalizedTeachers));
-      localStorage.setItem('courseAssignments', JSON.stringify(normalizedCourses));
-      localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
-
-      // listall 已附帶版本指紋，直接使用（省掉一次 getVersions 請求）
-      if (versions && Object.keys(versions).length > 0) {
-        localStorage.setItem('dataVersions', JSON.stringify(versions));
-        if (this.api.debug) {
-          console.log('🔖 已儲存資料版本指紋:', versions);
-        }
-      }
-
-      // 更新最後同步時間
-      localStorage.setItem('lastSyncTime', new Date().toISOString());
-      // 清除本地修改標記（因為已經從後端載入最新資料）
-      localStorage.removeItem('hasLocalChanges');
-
-      if (this.api.debug) {
-        console.log('✅ 資料載入完成');
-        console.log('✅ teachers:', normalizedTeachers.length, '筆');
-        console.log('✅ courseAssignments:', normalizedCourses.length, '筆');
-        console.log('✅ maritimeCourses:', maritimeCourses.length, '筆');
-      }
-
-      return {
-        ...allData,
-        teachers: normalizedTeachers,
-        courseAssignments: normalizedCourses,
-        maritimeCourses
-      };
-    } catch (error) {
-      console.error('❌ 載入資料失敗:', error);
-      console.error('❌ 錯誤詳情:', error.message);
-      console.error('❌ 錯誤堆疊:', error.stack);
-      throw error;
-    }
-  }
-
-  /**
-   * 將 localStorage 資料上傳到後端
-   */
-  async saveToBackend() {
-    try {
-      if (this.api.debug) {
-        console.log('📤 儲存資料到後端...');
-      }
-
-      const teachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
-      const courseAssignments = loadArrayFromStorage('courseAssignments', normalizeCourseAssignment);
-      const maritimeCourses = loadArrayFromStorage('maritimeCourses');
-
-      // 批次儲存三個表格（單次請求，比依序儲存快 3 倍）
-      await this.api.batchSave({ teachers, courseAssignments, maritimeCourses });
-
-      // 更新最後同步時間
-      localStorage.setItem('lastSyncTime', new Date().toISOString());
-
-      if (this.api.debug) {
-        console.log('✅ 資料儲存完成');
-      }
-      return true;
-    } catch (error) {
-      console.error('❌ 儲存資料失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 儲存特定表格（含衝突檢測）
-   * @param {string} tableName - 表格名稱
-   * @param {boolean} forceOverwrite - 是否強制覆蓋（忽略衝突）
-   */
-  async saveTable(tableName, forceOverwrite = false) {
-    try {
-      const normalizer = tableName === 'teachers'
-        ? normalizeTeacherRecord
-        : tableName === 'courseAssignments'
-          ? normalizeCourseAssignment
-          : undefined;
-      const data = loadArrayFromStorage(tableName, normalizer);
-
-      // 衝突檢測由後端執行（省掉一次 getVersions 請求）
-      const savedVersions = JSON.parse(localStorage.getItem('dataVersions') || '{}');
-      const savedVersion = !forceOverwrite ? (savedVersions[tableName] || null) : null;
-
-      // save 接收 savedVersion 做 server-side 衝突檢測，並回傳 newVersion（單次請求完成）
-      const saveResult = await this.api.save(tableName, data, savedVersion, forceOverwrite);
-
-      if (saveResult.conflict) {
-        console.warn(`⚠️ ${tableName} 偵測到資料衝突`);
-        return {
-          conflict: true,
-          conflicts: [{ table: tableName, savedCount: saveResult.savedCount, currentCount: saveResult.currentCount }],
-          message: `${tableName} 資料已被其他人修改`,
-          hint: '您可以選擇「重新載入」獲取最新資料，或「強制覆蓋」使用您的本地資料'
-        };
-      }
-
-      localStorage.setItem('lastSyncTime', new Date().toISOString());
-
-      // 用回傳的新版本指紋更新對應 table（無需額外請求）
-      _mergeDataVersions(saveResult.newVersion ? { [tableName]: saveResult.newVersion } : null);
-
-      if (this.api.debug) {
-        console.log(`✅ ${tableName} 儲存完成`);
-      }
-      return { success: true };
-    } catch (error) {
-      console.error(`❌ 儲存 ${tableName} 失敗:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 啟用自動同步（每 N 分鐘）
-   */
-  enableAutoSync(intervalMinutes = 5) {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-    }
-
-    this.autoSyncEnabled = true;
-    this.syncInterval = setInterval(async () => {
-      try {
-        await this.saveToBackend();
-        if (this.api.debug) {
-          console.log('🔄 自動同步完成');
-        }
-      } catch (error) {
-        console.error('🔄 自動同步失敗:', error);
-      }
-    }, intervalMinutes * 60 * 1000);
-
-    if (this.api.debug) {
-      console.log(`🔄 已啟用自動同步（每 ${intervalMinutes} 分鐘）`);
-    }
-  }
-
-  /**
-   * 停用自動同步
-   */
-  disableAutoSync() {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-      this.syncInterval = null;
-    }
-    this.autoSyncEnabled = false;
-    if (this.api.debug) {
-      console.log('🔄 已停用自動同步');
-    }
-  }
-
-  /**
-   * 取得最後同步時間
-   */
-  getLastSyncTime() {
-    const time = localStorage.getItem('lastSyncTime');
-    return time ? new Date(time) : null;
-  }
-
-  /**
-   * 安全儲存：儲存到後端（含衝突檢測）
-   * 會在儲存前檢查後端資料是否被其他人修改過
-   * @param {boolean} forceOverwrite - 是否強制覆蓋（忽略衝突）
-   */
-  async saveToBackendSafe(forceOverwrite = false) {
-    try {
-      if (this.api.debug) {
-        console.log('📤 儲存資料到後端（含衝突檢測）...');
-      }
-
-      // 取得本地資料
-      const localTeachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
-      const localCourses = loadArrayFromStorage('courseAssignments', normalizeCourseAssignment);
-      const localMaritime = loadArrayFromStorage('maritimeCourses');
-
-      // 檢查是否有修改標記
-      const hasLocalChanges = localStorage.getItem('hasLocalChanges') === 'true';
-
-      if (!hasLocalChanges) {
-        if (this.api.debug) {
-          console.log('⏭️ 本地無修改，跳過儲存');
-        }
-        return { skipped: true, reason: 'no_local_changes' };
-      }
-
-      // 衝突檢測由後端執行（省掉一次 getVersions 請求）
-      const savedVersions = forceOverwrite
-        ? null
-        : JSON.parse(localStorage.getItem('dataVersions') || '{}');
-
-      // 批次儲存：server-side 衝突檢測 + 寫入 + 回傳新版本指紋（單次請求完成）
-      const saveResult = await this.api.batchSave(
-        { teachers: localTeachers, courseAssignments: localCourses, maritimeCourses: localMaritime },
-        savedVersions && Object.keys(savedVersions).length > 0 ? savedVersions : null,
-        forceOverwrite
-      );
-
-      if (saveResult.conflict) {
-        console.warn('⚠️ 偵測到資料衝突:', saveResult.conflicts);
-        return {
-          conflict: true,
-          conflicts: saveResult.conflicts,
-          message: saveResult.message || '後端資料已被其他人修改，請先重新載入資料再進行編輯',
-          hint: '您可以選擇「重新載入」獲取最新資料，或「強制覆蓋」使用您的本地資料'
-        };
-      }
-
-      // 清除修改標記，並用回傳的新版本指紋更新 localStorage（無需額外請求）
-      localStorage.removeItem('hasLocalChanges');
-      localStorage.setItem('lastSyncTime', new Date().toISOString());
-      _mergeDataVersions(saveResult.newVersions);
-
-      if (this.api.debug) {
-        console.log('✅ 資料已儲存完成');
-      }
-      return { success: true };
-    } catch (error) {
-      console.error('❌ 儲存資料失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 標記本地資料已修改
-   */
-  markAsChanged() {
-    localStorage.setItem('hasLocalChanges', 'true');
-    if (this.api.debug) {
-      console.log('🔖 標記資料已修改');
-    }
-  }
-}
-
-// 建立全域同步管理器實例
-const syncManager = new DataSyncManager(api);
-
-/**
- * Session 管理器
- * 負責追蹤使用者在線狀態，支援踢人功能
- */
-class SessionManager {
-  constructor(apiInstance) {
-    this.api = apiInstance;
-    this.sessionId = null;
-    this.userName = null;
-    this.userEmail = null;
-    this.heartbeatInterval = null;
-    this.checkKickedInterval = null;
-    this.isActive = false;
-  }
-
-  /**
-   * 註冊 session（頁面載入時呼叫）
-   */
-  async register(userName = null, userEmail = null) {
-    if (!API_CONFIG.enableSessions) {
-      if (this.api.debug) {
-        console.log('ℹ️ 已停用 Session 追蹤，略過註冊');
-      }
-      return { ok: true, disabled: true };
-    }
-
-    try {
-      // 從 localStorage 取得使用者名稱，若沒有就使用預設值避免彈跳視窗
-      if (!userName) {
-        userName = localStorage.getItem('sessionUserName') || '訪客';
-        localStorage.setItem('sessionUserName', userName);
-      }
-
-      if (!userEmail) {
-        userEmail = localStorage.getItem('sessionUserEmail') || '';
-      }
-
-      // 產生或取得 sessionId
-      this.sessionId = localStorage.getItem('sessionId') || this._generateSessionId();
-      localStorage.setItem('sessionId', this.sessionId);
-
-      this.userName = userName || '訪客';
-      this.userEmail = userEmail;
-
-      const response = await this.api._get({
-        action: 'session_register',
-        sessionId: this.sessionId,
-        userName: this.userName,
-        userEmail: this.userEmail,
-        pageUrl: window.location.href,
-        userAgent: navigator.userAgent
-      });
-
-      if (response.ok) {
-        this.isActive = true;
-        this._startHeartbeat();
-        this._startKickedCheck();
-        if (this.api.debug) {
-          console.log('✅ Session 已註冊:', this.sessionId);
-        }
-      }
-
-      return response;
-    } catch (error) {
-      console.error('❌ Session 註冊失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 更新心跳
-   */
-  async heartbeat() {
-    if (!this.sessionId || !this.isActive) return;
-
-    try {
-      const response = await this.api._get({
-        action: 'session_heartbeat',
-        sessionId: this.sessionId
-      });
-
-      if (response.ok && response.kicked) {
-        this._handleKicked();
-      }
-
-      return response;
-    } catch (error) {
-      console.error('❌ Heartbeat 失敗:', error);
-    }
-  }
-
-  /**
-   * 取得目前活躍的 sessions
-   */
-  async getActiveSessions() {
-    try {
-      const response = await this.api._get({
-        action: 'session_list'
-      });
-
-      return response.sessions || [];
-    } catch (error) {
-      console.error('❌ 取得活躍 sessions 失敗:', error);
-      return [];
-    }
-  }
-
-  /**
-   * 踢出特定使用者
-   */
-  async kickUser(targetSessionId) {
-    try {
-      const response = await this.api._get({
-        action: 'session_kick',
-        sessionId: targetSessionId
-      });
-
-      return response;
-    } catch (error) {
-      console.error('❌ 踢人失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 檢查自己是否被踢出
-   */
-  async checkKicked() {
-    if (!this.sessionId || !this.isActive) return false;
-
-    try {
-      const response = await this.api._get({
-        action: 'session_check_kicked',
-        sessionId: this.sessionId
-      });
-
-      if (response.ok && response.kicked) {
-        this._handleKicked();
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('❌ 檢查踢出狀態失敗:', error);
-      return false;
-    }
-  }
-
-  /**
-   * 取消註冊（離開頁面時呼叫）
-   */
-  unregister() {
-    this.isActive = false;
-    this._stopHeartbeat();
-    this._stopKickedCheck();
-    if (this.api.debug) {
-      console.log('👋 Session 已取消註冊');
-    }
-  }
-
-  /**
-   * 啟動心跳（每 30 秒）
-   */
-  _startHeartbeat() {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-    }
-
-    this.heartbeatInterval = setInterval(() => {
-      this.heartbeat();
-    }, 30 * 1000); // 30 秒
-  }
-
-  /**
-   * 停止心跳
-   */
-  _stopHeartbeat() {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
-    }
-  }
-
-  /**
-   * 啟動踢出檢查（每 10 秒）
-   */
-  _startKickedCheck() {
-    if (this.checkKickedInterval) {
-      clearInterval(this.checkKickedInterval);
-    }
-
-    this.checkKickedInterval = setInterval(() => {
-      this.checkKicked();
-    }, 10 * 1000); // 10 秒
-  }
-
-  /**
-   * 停止踢出檢查
-   */
-  _stopKickedCheck() {
-    if (this.checkKickedInterval) {
-      clearInterval(this.checkKickedInterval);
-      this.checkKickedInterval = null;
-    }
-  }
-
-  /**
-   * 處理被踢出
-   */
-  _handleKicked() {
-    this.unregister();
-    alert('⚠️ 您已被管理員踢出，頁面即將重新載入。');
-    localStorage.removeItem('sessionId'); // 清除舊的 sessionId
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  }
-
-  /**
-   * 產生 sessionId
-   */
-  _generateSessionId() {
-    return 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
-}
-
-// 建立全域 Session Manager 實例
-const sessionManager = new SessionManager(api);
-
-/**
- * 編輯鎖定管理器
- * 實現細粒度鎖定，讓多人可以同時編輯不同資料
- */
-class EditLockManager {
-  constructor(apiInstance, sessionManagerInstance) {
-    this.api = apiInstance;
-    this.sessionManager = sessionManagerInstance;
-    this.activeLocks = new Map(); // 追蹤目前持有的鎖定
-  }
-
-  /**
-   * 取得編輯鎖定
-   */
-  async acquireLock(table, recordId) {
-    if (!API_CONFIG.enableSessions) {
-      return {
-        ok: true,
-        locked: true,
-        ownLock: true,
-        skipped: true
-      };
-    }
-
-    try {
-      const response = await this.api._get({
-        action: 'lock_acquire',
-        table,
-        recordId: String(recordId),
-        sessionId: this.sessionManager.sessionId,
-        userName: this.sessionManager.userName
-      });
-
-      if (response.ok) {
-        if (response.ownLock) {
-          // 成功取得鎖定
-          const lockKey = `${table}:${recordId}`;
-          this.activeLocks.set(lockKey, {
-            table,
-            recordId,
-            lockedAt: new Date()
-          });
-          if (this.api.debug) {
-            console.log(`🔒 已鎖定 ${table}/${recordId}`);
-          }
-          return { locked: true, ownLock: true };
-        } else {
-          // 已被其他人鎖定
-          console.warn(`⚠️ ${table}/${recordId} 已被 ${response.lockedBy} 鎖定`);
-          return {
-            locked: false,
-            lockedBy: response.lockedBy,
-            lockedAt: response.lockedAt
-          };
-        }
-      }
-
-      return { locked: false };
-    } catch (error) {
-      console.error('❌ 取得鎖定失敗:', error);
-      return { locked: false, error: error.message };
-    }
-  }
-
-  /**
-   * 釋放編輯鎖定
-   */
-  async releaseLock(table, recordId) {
-    if (!API_CONFIG.enableSessions) {
-      return { released: true, skipped: true };
-    }
-
-    try {
-      const response = await this.api._get({
-        action: 'lock_release',
-        table,
-        recordId: String(recordId),
-        sessionId: this.sessionManager.sessionId
-      });
-
-      if (response.ok && response.released) {
-        const lockKey = `${table}:${recordId}`;
-        this.activeLocks.delete(lockKey);
-        if (this.api.debug) {
-          console.log(`🔓 已釋放 ${table}/${recordId}`);
-        }
-        return { released: true };
-      }
-
-      return { released: false };
-    } catch (error) {
-      console.error('❌ 釋放鎖定失敗:', error);
-      return { released: false, error: error.message };
-    }
-  }
-
-  /**
-   * 檢查特定資料的鎖定狀態
-   */
-  async checkLock(table, recordId) {
-    if (!API_CONFIG.enableSessions) {
-      return null;
-    }
-
-    try {
-      const response = await this.api._get({
-        action: 'lock_check',
-        table,
-        recordId: String(recordId)
-      });
-
-      return response.lock || null;
-    } catch (error) {
-      console.error('❌ 檢查鎖定失敗:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 取得所有鎖定（可選過濾）
-   */
-  async getAllLocks(table = null) {
-    if (!API_CONFIG.enableSessions) {
-      return { ok: true, locks: [], skipped: true };
-    }
-
-    try {
-      const params = { action: 'lock_list' };
-      if (table) params.table = table;
-
-      const response = await this.api._get(params);
-      return { ok: true, locks: response.locks || [] };
-    } catch (error) {
-      console.error('❌ 取得鎖定列表失敗:', error);
-      return { ok: false, error: error.message };
-    }
-  }
-
-  /**
-   * 釋放所有持有的鎖定
-   */
-  async releaseAllLocks() {
-    if (!API_CONFIG.enableSessions) {
-      return { released: true, skipped: true };
-    }
-
-    const promises = [];
-    for (const [lockKey, lock] of this.activeLocks.entries()) {
-      promises.push(this.releaseLock(lock.table, lock.recordId));
-    }
-
-    await Promise.all(promises);
-    this.activeLocks.clear();
-    if (this.api.debug) {
-      console.log('🔓 已釋放所有鎖定');
-    }
-  }
-}
-
-// 建立全域 Edit Lock Manager 實例
-const editLockManager = new EditLockManager(api, sessionManager);
-
-/**
- * 便利函數：顯示同步狀態訊息
- */
-function showSyncStatus(message, type = 'info', options = {}) {
-  // 如果頁面有 showMessage 函數就使用它
-  if (typeof showMessage === 'function') {
-    showMessage(message, type, options.hint || '');
-  } else {
-    console.log(`[${type.toUpperCase()}] ${message}`);
-    if (options.hint) {
-      console.log('↳', options.hint);
-    }
-  }
-}
-
-/**
- * 頁面載入時自動從後端同步資料
- */
-async function initializeDataSync() {
-  try {
-    // 測試連線
-    await api.ping();
-    if (API_CONFIG.debug) {
-      console.log('✅ 後端連線成功');
-    }
-
-    // 載入資料
-    await syncManager.loadFromBackend();
-    // showSyncStatus('資料已從雲端載入', 'success');
-
-    // 註冊 session（追蹤使用者在線狀態）
-    if (API_CONFIG.enableSessions) {
-      try {
-        await sessionManager.register();
-      } catch (sessionError) {
-        console.warn('⚠️ Session 註冊失敗:', sessionError);
-      }
-    } else if (API_CONFIG.debug) {
-      console.log('ℹ️ Session 功能已停用，略過註冊。');
-    }
-
-    // 可選：啟用自動同步（每 5 分鐘）
-    // syncManager.enableAutoSync(5);
-
-  } catch (error) {
-    console.warn('⚠️ 無法連線到後端，使用本地資料:', error);
-    // showSyncStatus('使用離線模式', 'warning', {
-    //   hint: '請確認 API URL 與 TOKEN 設定是否正確，或檢查網路連線狀態。'
-    // });
-  }
-}
-
-// 頁面離開時取消註冊 session 並釋放所有鎖定
-window.addEventListener('beforeunload', () => {
-  // 同步釋放鎖定（使用 Navigator.sendBeacon 確保請求送出）
-  editLockManager.releaseAllLocks().catch(err => {
-    console.warn('釋放鎖定失敗:', err);
-  });
-  if (API_CONFIG.enableSessions) {
-    sessionManager.unregister();
-  }
-});
-
-// ==================== AI 對話管理器 ====================
-
-/**
- * AI 對話管理器
- * 透過後端 GAS 呼叫 Gemini API，實現智慧課程顧問功能
- */
-class AIChatManager {
-  constructor(apiInstance) {
-    this.api = apiInstance;
-    this.conversationHistory = [];
-    this.memories = [];             // 長期記憶（跨對話持久保存的重要資訊）
-    this.isStreaming = false;
-    this.onToken = null;
-    this.onComplete = null;
-    this.onError = null;
-    this._lastRequestTime = 0;
-    this._minInterval = 5000; // 最少間隔 5 秒（免費 API 配額保護）
-    this._cooldownUntil = 0;
-    this._consecutiveFailures = 0; // 連續失敗計數
-    this._cachedContext = null;    // 系統上下文快取
-    this._contextCacheTime = 0;   // 上下文快取時間
-    this._memoriesKey = 'aiMemories';     // 長期記憶 localStorage key
-    this._sessionsKey = 'aiChatSessions'; // 所有 session 列表 localStorage key
-    this._maxDisplayHistory = 200;        // UI 顯示用：最多保留 200 則
-    this._maxApiHistory = 50;             // 送給 Gemini API：最多 50 則
-    this._maxSessions = 30;               // 最多保留 30 個 session
-    this.currentSessionId = null;
-    this.sessions = [];
-    this._loadSessions();
-    this._loadMemories();
-    // 自動進入最近的 session，若沒有則建立新的
-    if (this.sessions.length > 0) {
-      this.switchSession(this.sessions[0].id);
-    } else {
-      this.createSession();
-    }
-  }
-
-  // ==================== Session 管理 ====================
-
-  /**
-   * 從 localStorage 載入所有 session 列表
-   */
-  _loadSessions() {
-    try {
-      const saved = localStorage.getItem(this._sessionsKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          this.sessions = parsed;
-        }
-      }
-    } catch (e) {
-      console.warn('載入 AI sessions 失敗:', e);
-      this.sessions = [];
-    }
-    // 相容舊版：如果有舊的 aiChatHistory 單一對話，遷移到第一個 session
-    this._migrateOldHistory();
-  }
-
-  /**
-   * 遷移舊版單一對話記錄到新的 session 系統
-   */
-  _migrateOldHistory() {
-    try {
-      const oldHistory = localStorage.getItem('aiChatHistory');
-      if (oldHistory && this.sessions.length === 0) {
-        const messages = JSON.parse(oldHistory);
-        if (Array.isArray(messages) && messages.length > 0) {
-          const id = this._generateId();
-          const firstMsg = messages.find(m => m.role === 'user');
-          const title = firstMsg ? firstMsg.content.substring(0, 30) : '舊對話記錄';
-          const session = {
-            id,
-            title,
-            createdAt: new Date().toISOString(),
-            lastMessageAt: new Date().toISOString(),
-            messageCount: messages.length
-          };
-          this.sessions.unshift(session);
-          localStorage.setItem('aiSession_' + id, JSON.stringify(messages));
-          this._saveSessions();
-          localStorage.removeItem('aiChatHistory');
-        }
-      }
-    } catch (e) {
-      console.warn('遷移舊對話失敗:', e);
-    }
-  }
-
-  /**
-   * 儲存 session 列表
-   */
-  _saveSessions() {
-    try {
-      localStorage.setItem(this._sessionsKey, JSON.stringify(this.sessions));
-    } catch (e) {
-      console.warn('儲存 AI sessions 失敗:', e);
-    }
-  }
-
-  /**
-   * 產生唯一 ID
-   */
-  _generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
-  }
-
-  /**
-   * 建立新的 session
-   * @returns {string} 新 session 的 ID
-   */
-  createSession() {
-    const id = this._generateId();
-    const session = {
-      id,
-      title: '新對話',
-      createdAt: new Date().toISOString(),
-      lastMessageAt: new Date().toISOString(),
-      messageCount: 0
     };
-    this.sessions.unshift(session);
-    // 超過上限時刪除最舊的
-    while (this.sessions.length > this._maxSessions) {
-      const removed = this.sessions.pop();
-      localStorage.removeItem('aiSession_' + removed.id);
-    }
-    this._saveSessions();
-    this.currentSessionId = id;
-    this.conversationHistory = [];
-    this._saveCurrentSession();
-    return id;
-  }
-
-  /**
-   * 切換到指定 session
-   */
-  switchSession(id) {
-    const session = this.sessions.find(s => s.id === id);
-    if (!session) return false;
-    this.currentSessionId = id;
-    // 載入該 session 的對話記錄
-    try {
-      const saved = localStorage.getItem('aiSession_' + id);
-      this.conversationHistory = saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      this.conversationHistory = [];
-    }
-    return true;
-  }
-
-  /**
-   * 刪除指定 session
-   */
-  deleteSession(id) {
-    this.sessions = this.sessions.filter(s => s.id !== id);
-    localStorage.removeItem('aiSession_' + id);
-    this._saveSessions();
-    // 如果刪除的是當前 session，切到最近的或建新的
-    if (this.currentSessionId === id) {
-      if (this.sessions.length > 0) {
-        this.switchSession(this.sessions[0].id);
-      } else {
-        this.createSession();
-      }
-    }
-  }
-
-  /**
-   * 重新命名 session
-   */
-  renameSession(id, newTitle) {
-    const session = this.sessions.find(s => s.id === id);
-    if (session) {
-      session.title = newTitle;
-      this._saveSessions();
-    }
-  }
-
-  /**
-   * 取得所有 sessions
-   */
-  getSessions() {
-    return [...this.sessions];
-  }
-
-  /**
-   * 儲存當前 session 的對話記錄
-   */
-  _saveCurrentSession() {
-    if (!this.currentSessionId) return;
-    try {
-      localStorage.setItem('aiSession_' + this.currentSessionId, JSON.stringify(this.conversationHistory));
-      // 更新 session metadata
-      const session = this.sessions.find(s => s.id === this.currentSessionId);
-      if (session) {
-        session.lastMessageAt = new Date().toISOString();
-        session.messageCount = this.conversationHistory.length;
-        // 用第一則 user 訊息當標題（如果還是預設的「新對話」）
-        if (session.title === '新對話' && this.conversationHistory.length > 0) {
-          const firstUserMsg = this.conversationHistory.find(m => m.role === 'user');
-          if (firstUserMsg) {
-            session.title = firstUserMsg.content.substring(0, 30);
-            if (firstUserMsg.content.length > 30) session.title += '…';
-          }
-        }
-        this._saveSessions();
-      }
-    } catch (e) {
-      console.warn('儲存 session 對話失敗:', e);
-    }
-  }
-
-  /**
-   * 從 localStorage 載入長期記憶
-   */
-  _loadMemories() {
-    try {
-      const saved = localStorage.getItem(this._memoriesKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          this.memories = parsed;
-        }
-      }
-    } catch (e) {
-      console.warn('載入 AI 記憶失敗:', e);
-      this.memories = [];
-    }
-  }
-
-  /**
-   * 將長期記憶存入 localStorage
-   */
-  _saveMemories() {
-    try {
-      localStorage.setItem(this._memoriesKey, JSON.stringify(this.memories));
-    } catch (e) {
-      console.warn('儲存 AI 記憶失敗:', e);
-    }
-  }
-
-  /**
-   * 從 AI 回覆中擷取 [MEMORY: ...] 標記並存入長期記憶
-   * @param {string} reply - AI 的原始回覆
-   * @returns {string} 移除記憶標記後的乾淨回覆
-   */
-  _extractMemories(reply) {
-    const memoryPattern = /\[MEMORY:\s*(.+?)\]/g;
-    let match;
-    while ((match = memoryPattern.exec(reply)) !== null) {
-      const fact = match[1].trim();
-      // 避免重複記憶
-      if (fact && !this.memories.some(m => m.fact === fact)) {
-        this.memories.push({
-          fact: fact,
-          createdAt: new Date().toISOString()
-        });
-      }
-    }
-    if (this.memories.length > 50) {
-      this.memories = this.memories.slice(-50);
-    }
-    this._saveMemories();
-    // 移除標記，回傳乾淨的回覆給使用者看
-    return reply.replace(/\s*\[MEMORY:\s*.+?\]/g, '').trim();
-  }
-
-  /**
-   * 取得所有長期記憶
-   */
-  getMemories() {
-    return [...this.memories];
-  }
-
-  /**
-   * 手動新增一條記憶
-   */
-  addMemory(fact) {
-    if (fact && !this.memories.some(m => m.fact === fact)) {
-      this.memories.push({ fact, createdAt: new Date().toISOString() });
-      this._saveMemories();
-    }
-  }
-
-  /**
-   * 刪除指定記憶
-   */
-  removeMemory(index) {
-    if (index >= 0 && index < this.memories.length) {
-      this.memories.splice(index, 1);
-      this._saveMemories();
-    }
-  }
-
-  /**
-   * 清除所有長期記憶
-   */
-  clearMemories() {
-    this.memories = [];
-    this._saveMemories();
-  }
-
-  /**
-   * 建構系統提示詞（含課程上下文），5 分鐘內使用快取
-   */
-  _buildSystemContext() {
-    const now = Date.now();
-    if (this._cachedContext && (now - this._contextCacheTime) < 300000) {
-      return this._cachedContext;
-    }
-
-    const courses = loadArrayFromStorage('maritimeCourses');
-    const teachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
-
-    const coursesSummary = courses.map(c => {
-      const keywords = Array.isArray(c.keywords) ? c.keywords.join('、') : '';
-      const targets = [];
-      if (Array.isArray(c.targetCategories)) targets.push(...c.targetCategories.map(t => t === 'existing' ? '現有船員' : '新進船員'));
-      if (Array.isArray(c.targetRanks)) targets.push(...c.targetRanks);
-      return `- ${c.name}（分類: ${c.category}, 方式: ${c.method || '未設定'}, 關鍵字: ${keywords}, 適用: ${targets.join('、') || '全員'}）`;
-    }).join('\n');
-
-    const teachersSummary = teachers.slice(0, 20).map(t =>
-      `- ${t.name}（類別: ${t.teacherType || '未設定'}, 職等: ${t.rank || '未設定'}, 專長: ${(Array.isArray(t.subjects) ? t.subjects.join('、') : '') || '未設定'}）`
-    ).join('\n');
-
-    const emptyCourseWarning = courses.length === 0
-      ? '\n⚠️ 注意：目前系統中沒有任何課程資料，請先在課程管理頁面新增課程。'
-      : '';
-
-    // 組合長期記憶區塊
-    let memoriesBlock = '';
-    if (this.memories.length > 0) {
-      const memList = this.memories.map(m => `- ${m.fact}`).join('\n');
-      memoriesBlock = `\n\n【關於這位使用者的記憶】\n以下是你從過去對話中記住的重要資訊，請善用這些資訊提供更個人化的回答：\n${memList}\n`;
-    }
-
-    this._cachedContext = `你是「萬海智慧航安訓練管理系統」的 AI 課程顧問。請用繁體中文回答，語氣專業但親切。
-你具有「長期記憶」能力，能記住使用者告訴你的重要資訊。
-
-【重要限制】
-- 推薦課程時，只能從以下系統課程資料中選擇，不得推薦不存在的課程
-- 若找不到符合的課程，請明確告知「目前系統中沒有符合條件的課程」
-
-【AI 操作指令】
-當使用者明確要求「新增課程」、「幫我建立一門課」、「新增一堂課」時，請在回覆末尾附上以下 JSON 指令（格式必須完全正確）：
-[WHAI_ACTION]{"type":"CREATE_COURSE","data":{"name":"課程名稱","category":"01","method":"實體課程","duration":60,"description":"課程描述","keywords":["關鍵字1"],"targetCategories":["existing"],"targetRanks":["大副","二副"]}}[/WHAI_ACTION]
-
-當使用者要求「修改課程」、「更新課程資料」、「反映意見」、「調整教學方式」時，請在回覆末尾附上：
-[WHAI_ACTION]{"type":"UPDATE_COURSE","data":{"name":"現有課程名稱（必填）","changes":{"description":"新描述","keywords":["新關鍵字"],"method":"線上課程"}}}[/WHAI_ACTION]
-
-指令格式規則：
-- category 必須是 "01"~"10" 其中一個（01=船舶操縱、02=領導統御、03=事故分析、04=設備操作、05=法規知識、06=貨物裝卸、07=經驗交流、08=職級轉換、09=其他、10=資料分析）
-- method 必須是 "實體課程"、"線上課程" 或 "混合課程"
-- targetCategories 只能包含 "existing"（現有船員）或 "new"（新進船員）
-- targetRanks 可填：船長、大副、二副、三副、輪機長、大管輪、二管輪、三管輪、電機員等
-- 只在使用者明確要求操作時才附上指令，一般問答不要加
-${memoriesBlock}
-以下是目前系統中的課程資料（共 ${courses.length} 門課程）：${emptyCourseWarning}
-${coursesSummary}
-
-以下是教師名單（前 20 位）：
-${teachersSummary}
-
-你的職責：
-1. 根據使用者需求推薦課程（只從上方清單選）
-2. 解答課程相關問題
-3. 協助新增或修改課程（用 AI 操作指令格式）
-4. 處理學員/教師反映的意見並建議修改方向
-
-回答注意事項：
-- 回答請簡潔有力，使用項目符號整理
-- 附上 [WHAI_ACTION] 指令時，先在正文說明你的建議內容，讓使用者確認後才執行
-- 若系統資料不足，請直接說明並建議補充課程資料
-
-【記憶功能】
-當使用者告訴你關於自己的重要資訊（如職等、部門、專長、偏好、姓名等），請在回答的最末尾加上記憶標記，格式為：[MEMORY: 資訊內容]
-例如使用者說「我是二副」，你回答完後加上 [MEMORY: 使用者的職等是二副]
-每次對話只在發現新資訊時加標記，已經記住的不要重複。標記不會顯示給使用者看。`;
-    this._contextCacheTime = now;
-    return this._cachedContext;
-  }
-
-  /**
-   * 觸發冷卻並拋出帶 rateLimited 標記的錯誤
-   */
-  _triggerCooldown(message) {
-    this._cooldownUntil = Date.now() + 60000;
-    this.conversationHistory.pop(); // 移除失敗的使用者訊息
-    const err = new Error(message);
-    err.rateLimited = true;
-    throw err;
-  }
-
-  /**
-   * 傳送訊息給 AI（透過後端 GAS）
-   * 含防抖（debounce）、冷卻期（cooldown）、連續失敗防護
-   * @param {string} userMessage - 使用者的問題
-   * @returns {Promise<string>} AI 回覆
-   */
-  async chat(userMessage) {
-    if (this.isStreaming) {
-      throw new Error('AI 正在回覆中，請稍候');
-    }
-
-    // 冷卻期檢查
-    const now = Date.now();
-    if (this._cooldownUntil > now) {
-      const waitSec = Math.ceil((this._cooldownUntil - now) / 1000);
-      const err = new Error(`AI 服務冷卻中，請等待 ${waitSec} 秒後再試`);
-      err.rateLimited = true;
-      throw err;
-    }
-
-    // 防抖：確保最少間隔
-    const elapsed = now - this._lastRequestTime;
-    if (elapsed < this._minInterval) {
-      await new Promise(resolve => setTimeout(resolve, this._minInterval - elapsed));
-    }
-
-    this.isStreaming = true;
-    this._lastRequestTime = Date.now();
-    this.conversationHistory.push({ role: 'user', content: userMessage });
 
     try {
-      // 記憶有更新時，清除 context 快取以重新帶入最新記憶
-      this._cachedContext = null;
-      const systemContext = this._buildSystemContext();
+        const response = await fetch(`${CONFIG.apiBaseUrl}${endpoint}`, config);
 
-      // 只送最近的對話給 Gemini API（節省 token，但保留完整歷史給 UI）
-      const apiHistory = this.conversationHistory.slice(-this._maxApiHistory);
-
-      const response = await this.api._post({
-        action: 'askgemini',
-        systemContext: systemContext,
-        conversationHistory: apiHistory,
-        userMessage: userMessage
-      });
-
-      // 第一優先：檢查後端結構化 rateLimited 旗標
-      if (response.rateLimited) {
-        this._consecutiveFailures++;
-        this._triggerCooldown(response.reply || 'AI 請求已達上限，請稍後再試。');
-      }
-
-      const rawReply = response.reply || '抱歉，我無法回答這個問題。';
-
-      // 第二防線：連續失敗偵測
-      if (rawReply.startsWith('⚠️') || rawReply.startsWith('⚠')) {
-        this._consecutiveFailures++;
-        if (this._consecutiveFailures >= 2) {
-          this._triggerCooldown('AI 服務連續異常，已啟動 60 秒冷卻保護。');
+        if (response.status === 401) {
+            const newToken = await getAccessTokenWithFallback();
+            if (newToken) {
+                config.headers['Authorization'] = `Bearer ${newToken}`;
+                const retry = await fetch(`${CONFIG.apiBaseUrl}${endpoint}`, config);
+                const retryData = await retry.json();
+                if (!retry.ok) throw new Error(retryData.error || `HTTP ${retry.status}`);
+                return retryData;
+            }
         }
-      } else {
-        this._consecutiveFailures = 0;
-      }
 
-      // 從回覆中擷取記憶標記並儲存，回傳乾淨的回覆
-      const aiReply = this._extractMemories(rawReply);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+        return data;
 
-      this.conversationHistory.push({ role: 'assistant', content: aiReply });
-
-      // 保留最多 200 則（供 UI 顯示），送 API 時會另外截取最近 50 則
-      if (this.conversationHistory.length > this._maxDisplayHistory) {
-        this.conversationHistory = this.conversationHistory.slice(-this._maxDisplayHistory);
-      }
-
-      this._saveCurrentSession();
-
-      if (this.onComplete) this.onComplete(aiReply);
-      return aiReply;
-    } catch (error) {
-      console.error('AI 對話失敗:', error);
-      if (!error.rateLimited) {
-        this._consecutiveFailures++;
-        // 任何錯誤連續 3 次也觸發冷卻
-        if (this._consecutiveFailures >= 3) {
-          this._cooldownUntil = Date.now() + 60000;
-          error.rateLimited = true;
-        }
-        if (this.conversationHistory.length > 0 &&
-            this.conversationHistory[this.conversationHistory.length - 1].role === 'user') {
-          this.conversationHistory.pop();
-        }
-      }
-      if (this.onError) this.onError(error);
-      throw error;
+    } catch (err) {
+        if (err.name === 'AbortError') throw new Error('請求逾時，請稍後再試');
+        throw err;
     } finally {
-      this.isStreaming = false;
+        clearTimeout(timer);
     }
-  }
-
-  /**
-   * 解析 AI 回覆中的操作指令
-   * 支援 [WHAI_ACTION]{...}[/WHAI_ACTION] 格式
-   * @param {string} text - AI 回覆全文
-   * @returns {Array} 解析出的 action 陣列，每筆含 { type, data }
-   */
-  parseAIActions(text) {
-    const actions = [];
-    const regex = /\[WHAI_ACTION\]([\s\S]*?)\[\/WHAI_ACTION\]/g;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      try {
-        const parsed = JSON.parse(match[1].trim());
-        if (parsed.type && parsed.data) {
-          actions.push(parsed);
-        }
-      } catch (e) {
-        console.warn('AI 指令 JSON 解析失敗:', e, match[1]);
-      }
-    }
-    return actions;
-  }
-
-  /**
-   * 移除回覆中的 [WHAI_ACTION]...[/WHAI_ACTION] 區塊，只保留給使用者看的文字
-   * @param {string} text - AI 回覆全文
-   * @returns {string} 清理後的文字
-   */
-  cleanDisplayText(text) {
-    return text.replace(/\[WHAI_ACTION\][\s\S]*?\[\/WHAI_ACTION\]/g, '').trim();
-  }
-
-  /**
-   * 模擬串流顯示效果（打字機效果）
-   * @param {string} text - 要顯示的文字
-   * @param {function} onChar - 每個字元的回呼
-   * @param {number} speed - 每字元間隔（毫秒）
-   */
-  async simulateStream(text, onChar, speed = 20) {
-    for (let i = 0; i < text.length; i++) {
-      onChar(text[i], i, text.substring(0, i + 1));
-      await new Promise(resolve => setTimeout(resolve, speed));
-    }
-  }
-
-  /**
-   * 智慧匹配課程
-   * 根據使用者的職等、專長等條件，計算每門課程的匹配分數
-   * @param {Object} userProfile - 使用者資訊 { rank, category, keywords }
-   * @returns {Array} 排序後的課程（含匹配分數）
-   */
-  smartMatch(userProfile = {}) {
-    const courses = loadArrayFromStorage('maritimeCourses');
-    const { rank, category, keywords } = userProfile;
-
-    return courses.map(course => {
-      let score = 0;
-
-      // 職等匹配（權重 40）
-      if (rank && Array.isArray(course.targetRanks) && course.targetRanks.length > 0) {
-        if (course.targetRanks.includes(rank)) {
-          score += 40;
-        }
-      }
-
-      // 人員類別匹配（權重 20）
-      if (category && Array.isArray(course.targetCategories) && course.targetCategories.length > 0) {
-        if (course.targetCategories.includes(category)) {
-          score += 20;
-        }
-      }
-
-      // 關鍵字匹配（權重 30）
-      if (keywords && Array.isArray(keywords) && Array.isArray(course.keywords)) {
-        const matchCount = keywords.filter(kw =>
-          course.keywords.some(ck =>
-            typeof ck === 'string' && ck.toLowerCase().includes(kw.toLowerCase())
-          )
-        ).length;
-        if (keywords.length > 0) {
-          score += Math.round((matchCount / keywords.length) * 30);
-        }
-      }
-
-      // 基礎分（有描述、有關鍵字的課程品質較高）
-      if (course.description && course.description.length > 20) score += 5;
-      if (Array.isArray(course.keywords) && course.keywords.length > 0) score += 5;
-
-      return { ...course, matchScore: score };
-    }).sort((a, b) => b.matchScore - a.matchScore);
-  }
-
-  /**
-   * 清除當前對話歷史（長期記憶預設保留）
-   * @param {boolean} clearMemoriesToo - 是否同時清除長期記憶
-   */
-  clearHistory(clearMemoriesToo = false) {
-    this.conversationHistory = [];
-    this._saveCurrentSession();
-    if (clearMemoriesToo) {
-      this.clearMemories();
-    }
-  }
-
-  /**
-   * 開始新對話 session（保留記憶）
-   * @returns {string} 新 session 的 ID
-   */
-  startNewSession() {
-    return this.createSession();
-  }
 }
 
-// 建立全域 AI Chat Manager 實例
-const aiChat = new AIChatManager(api);
+// ─────────────────────────────────────────────────────────────
+//  師資  Teachers
+// ─────────────────────────────────────────────────────────────
 
-// 匯出給其他模組使用
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    api,
-    syncManager,
-    aiChat,
-    initializeDataSync,
-    normalizeTeacherRecord,
-    normalizeCourseAssignment,
-    loadArrayFromStorage
-  };
+async function getTeachers() {
+    if (isLocal) return lsGet('teachers', []);
+    try {
+        const res = await callApi('/teachers');
+        const data = res.data || [];
+        lsSet('teachers', data);
+        return data;
+    } catch (err) {
+        console.warn('[api] getTeachers → localStorage fallback:', err.message);
+        return lsGet('teachers', []);
+    }
+}
+
+async function getTeacher(id) {
+    if (isLocal) {
+        return lsGet('teachers', []).find(t => t.id === id || t.id === Number(id)) || null;
+    }
+    try {
+        const res = await callApi(`/teachers/${id}`);
+        return res.data || null;
+    } catch (err) {
+        console.warn('[api] getTeacher → localStorage fallback:', err.message);
+        return lsGet('teachers', []).find(t => t.id === Number(id)) || null;
+    }
+}
+
+async function createTeacher(data) {
+    _lsCacheUpsertTeacher(data);
+    if (isLocal) return { success: true, id: data.id };
+    try {
+        const res = await callApi('/teachers', { method: 'POST', body: JSON.stringify(data) });
+        return res;
+    } catch (err) {
+        console.warn('[api] createTeacher → saved locally only:', err.message);
+        return { success: true, id: data.id, _localOnly: true };
+    }
+}
+
+async function updateTeacher(id, data) {
+    _lsCacheUpsertTeacher(data);
+    if (isLocal) return { success: true };
+    try {
+        return await callApi(`/teachers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    } catch (err) {
+        console.warn('[api] updateTeacher → saved locally only:', err.message);
+        return { success: true, _localOnly: true };
+    }
+}
+
+async function deleteTeacher(id) {
+    const teachers = lsGet('teachers', []);
+    lsSet('teachers', teachers.filter(t => t.id !== id && t.id !== Number(id)));
+    if (isLocal) return { success: true };
+    try {
+        return await callApi(`/teachers/${id}`, { method: 'DELETE' });
+    } catch (err) {
+        console.warn('[api] deleteTeacher → deleted locally only:', err.message);
+        return { success: true, _localOnly: true };
+    }
+}
+
+function _lsCacheUpsertTeacher(teacher) {
+    const teachers = lsGet('teachers', []);
+    const idx = teachers.findIndex(t => t.id === teacher.id || t.id === Number(teacher.id));
+    if (idx >= 0) teachers[idx] = teacher;
+    else teachers.unshift(teacher);
+    lsSet('teachers', teachers);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  請假紀錄  Teacher Leaves
+// ─────────────────────────────────────────────────────────────
+
+async function getTeacherLeaves(params = {}) {
+    if (isLocal) return _lsFilterLeaves(params);
+    try {
+        const qs = new URLSearchParams();
+        if (params.teacherId) qs.set('teacherId', params.teacherId);
+        if (params.month)     qs.set('month', params.month);
+        const res = await callApi(`/teacher-leaves${qs.toString() ? '?' + qs : ''}`);
+        const data = res.data || [];
+        lsSet('teacherLeaves', data);
+        return data;
+    } catch (err) {
+        console.warn('[api] getTeacherLeaves → localStorage fallback:', err.message);
+        return _lsFilterLeaves(params);
+    }
+}
+
+async function createTeacherLeave(data) {
+    const leaves = lsGet('teacherLeaves', []);
+    leaves.push(data);
+    lsSet('teacherLeaves', leaves);
+    if (isLocal) return { success: true, id: data.id };
+    try {
+        return await callApi('/teacher-leaves', { method: 'POST', body: JSON.stringify(data) });
+    } catch (err) {
+        console.warn('[api] createTeacherLeave → saved locally only:', err.message);
+        return { success: true, id: data.id, _localOnly: true };
+    }
+}
+
+async function deleteTeacherLeave(id) {
+    lsSet('teacherLeaves', lsGet('teacherLeaves', []).filter(l => l.id !== id && l.id !== Number(id)));
+    if (isLocal) return { success: true };
+    try {
+        return await callApi(`/teacher-leaves/${id}`, { method: 'DELETE' });
+    } catch (err) {
+        console.warn('[api] deleteTeacherLeave → deleted locally only:', err.message);
+        return { success: true, _localOnly: true };
+    }
+}
+
+function _lsFilterLeaves({ teacherId, month } = {}) {
+    let leaves = lsGet('teacherLeaves', []);
+    if (teacherId) leaves = leaves.filter(l => l.teacherId === Number(teacherId));
+    if (month)     leaves = leaves.filter(l => l.date?.startsWith(month));
+    return leaves.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  派課管理  Course Assignments
+// ─────────────────────────────────────────────────────────────
+
+async function getCourseAssignments(params = {}) {
+    if (isLocal) return _lsFilterCourses(params);
+    try {
+        const qs = new URLSearchParams();
+        if (params.teacherId) qs.set('teacherId', params.teacherId);
+        if (params.start)     qs.set('start', params.start);
+        if (params.end)       qs.set('end', params.end);
+        const res = await callApi(`/course-assignments${qs.toString() ? '?' + qs : ''}`);
+        const data = res.data || [];
+        lsSet('courseAssignments', data);
+        return data;
+    } catch (err) {
+        console.warn('[api] getCourseAssignments → localStorage fallback:', err.message);
+        return _lsFilterCourses(params);
+    }
+}
+
+async function createCourseAssignment(data) {
+    const courses = lsGet('courseAssignments', []);
+    courses.push(data);
+    lsSet('courseAssignments', courses);
+    if (isLocal) return { success: true, id: data.id };
+    try {
+        return await callApi('/course-assignments', { method: 'POST', body: JSON.stringify(data) });
+    } catch (err) {
+        console.warn('[api] createCourseAssignment → saved locally only:', err.message);
+        return { success: true, id: data.id, _localOnly: true };
+    }
+}
+
+async function deleteCourseAssignment(id) {
+    lsSet('courseAssignments', lsGet('courseAssignments', []).filter(c => c.id !== id && c.id !== Number(id)));
+    if (isLocal) return { success: true };
+    try {
+        return await callApi(`/course-assignments/${id}`, { method: 'DELETE' });
+    } catch (err) {
+        console.warn('[api] deleteCourseAssignment → deleted locally only:', err.message);
+        return { success: true, _localOnly: true };
+    }
+}
+
+function _lsFilterCourses({ teacherId, start, end } = {}) {
+    let courses = lsGet('courseAssignments', []);
+    if (teacherId) courses = courses.filter(c => Number(c.teacherId) === Number(teacherId));
+    if (start)     courses = courses.filter(c => c.date >= start);
+    if (end)       courses = courses.filter(c => c.date <= end);
+    return courses.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  行事曆  Calendar Events
+// ─────────────────────────────────────────────────────────────
+
+async function getCalendarEvents(params = {}) {
+    if (isLocal) return _lsFilterCalendar(params);
+    try {
+        const qs = new URLSearchParams();
+        if (params.year)  qs.set('year',  params.year);
+        if (params.month) qs.set('month', params.month);
+        const res = await callApi(`/calendar-events${qs.toString() ? '?' + qs : ''}`);
+        const data = res.data || [];
+        lsSet('calendarEvents', data);
+        return data;
+    } catch (err) {
+        console.warn('[api] getCalendarEvents → localStorage fallback:', err.message);
+        return _lsFilterCalendar(params);
+    }
+}
+
+async function createCalendarEvent(data) {
+    const events = lsGet('calendarEvents', []);
+    events.push(data);
+    lsSet('calendarEvents', events);
+    if (isLocal) return { success: true, id: data.id };
+    try {
+        return await callApi('/calendar-events', { method: 'POST', body: JSON.stringify(data) });
+    } catch (err) {
+        console.warn('[api] createCalendarEvent → saved locally only:', err.message);
+        return { success: true, id: data.id, _localOnly: true };
+    }
+}
+
+async function updateCalendarEvent(id, data) {
+    const events = lsGet('calendarEvents', []);
+    const idx = events.findIndex(e => e.id === id || e.id === Number(id));
+    if (idx >= 0) events[idx] = { ...events[idx], ...data };
+    lsSet('calendarEvents', events);
+    if (isLocal) return { success: true };
+    try {
+        return await callApi(`/calendar-events/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    } catch (err) {
+        console.warn('[api] updateCalendarEvent → saved locally only:', err.message);
+        return { success: true, _localOnly: true };
+    }
+}
+
+async function deleteCalendarEvent(id) {
+    lsSet('calendarEvents', lsGet('calendarEvents', []).filter(e => e.id !== id && e.id !== Number(id)));
+    if (isLocal) return { success: true };
+    try {
+        return await callApi(`/calendar-events/${id}`, { method: 'DELETE' });
+    } catch (err) {
+        console.warn('[api] deleteCalendarEvent → deleted locally only:', err.message);
+        return { success: true, _localOnly: true };
+    }
+}
+
+function _lsFilterCalendar({ year, month } = {}) {
+    let events = lsGet('calendarEvents', []);
+    if (year && month) {
+        const prefix = `${year}-${String(month).padStart(2, '0')}`;
+        events = events.filter(e => e.date?.startsWith(prefix));
+    } else if (year) {
+        events = events.filter(e => e.date?.startsWith(String(year)));
+    }
+    return events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  海事課程  Maritime Courses
+// ─────────────────────────────────────────────────────────────
+
+async function getMaritimeCourses() {
+    if (isLocal) return lsGet('maritimeCourses', []);
+    try {
+        const res = await callApi('/maritime-courses');
+        const data = res.data || [];
+        lsSet('maritimeCourses', data);
+        return data;
+    } catch (err) {
+        console.warn('[api] getMaritimeCourses → localStorage fallback:', err.message);
+        return lsGet('maritimeCourses', []);
+    }
+}
+
+async function createMaritimeCourse(data) {
+    const courses = lsGet('maritimeCourses', []);
+    courses.push(data);
+    lsSet('maritimeCourses', courses);
+    if (isLocal) return { success: true, id: data.id };
+    try {
+        return await callApi('/maritime-courses', { method: 'POST', body: JSON.stringify(data) });
+    } catch (err) {
+        console.warn('[api] createMaritimeCourse → saved locally only:', err.message);
+        return { success: true, id: data.id, _localOnly: true };
+    }
+}
+
+async function updateMaritimeCourse(id, data) {
+    const courses = lsGet('maritimeCourses', []);
+    const idx = courses.findIndex(c => c.id === id || c.id === Number(id));
+    if (idx >= 0) courses[idx] = { ...courses[idx], ...data, id };
+    lsSet('maritimeCourses', courses);
+    if (isLocal) return { success: true };
+    try {
+        return await callApi(`/maritime-courses/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    } catch (err) {
+        console.warn('[api] updateMaritimeCourse → saved locally only:', err.message);
+        return { success: true, _localOnly: true };
+    }
+}
+
+async function deleteMaritimeCourse(id) {
+    lsSet('maritimeCourses', lsGet('maritimeCourses', []).filter(c => c.id !== id && c.id !== Number(id)));
+    if (isLocal) return { success: true };
+    try {
+        return await callApi(`/maritime-courses/${id}`, { method: 'DELETE' });
+    } catch (err) {
+        console.warn('[api] deleteMaritimeCourse → deleted locally only:', err.message);
+        return { success: true, _localOnly: true };
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  檔案 API  Files
+// ─────────────────────────────────────────────────────────────
+
+async function listFiles(folder) {
+    const result = await callApi(`/files?folder=${encodeURIComponent(folder)}`);
+    return Array.isArray(result) ? result : (result.files || []);
+}
+
+async function uploadFile(folder, fileName, dataUrl) {
+    return await callApi('/files', {
+        method: 'POST',
+        body: JSON.stringify({ folder, fileName, dataUrl }),
+    });
+}
+
+async function deleteFile(folder, fileName) {
+    return await callApi(
+        `/files?folder=${encodeURIComponent(folder)}&file=${encodeURIComponent(fileName)}`,
+        { method: 'DELETE' }
+    );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  權限 API  Permissions
+// ─────────────────────────────────────────────────────────────
+
+async function getPermissions() {
+    const result = await callApi('/permissions');
+    return result.data || { superAdmins: [], admins: [], allowedUsers: [] };
+}
+
+async function updatePermissions(permissions) {
+    return await callApi('/permissions', {
+        method: 'POST',
+        body: JSON.stringify(permissions),
+    });
+}
+
+async function addUser(email, role) {
+    return await callApi('/permissions/user', {
+        method: 'POST',
+        body: JSON.stringify({ email, role }),
+    });
+}
+
+async function removeUser(email, role) {
+    return await callApi('/permissions/user', {
+        method: 'DELETE',
+        body: JSON.stringify({ email, role }),
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SSO API
+// ─────────────────────────────────────────────────────────────
+
+async function verifySsoToken(encryptedToken) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CONFIG.timeout);
+    try {
+        const response = await fetch(`${CONFIG.apiBaseUrl}/auth/sso`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: encryptedToken }),
+            signal: controller.signal,
+        });
+        return await response.json();
+    } catch (err) {
+        if (err.name === 'AbortError') throw new Error('驗證請求逾時，請稍後再試');
+        throw err;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  健康檢查  Health Check
+// ─────────────────────────────────────────────────────────────
+
+async function pingApi() {
+    try {
+        const result = await fetch(`${CONFIG.apiBaseUrl}/ping`);
+        return await result.json();
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  UI helpers  ( Alert / Confirm / Loading )
+// ─────────────────────────────────────────────────────────────
+
+function showSystemAlert(message, title = '航海訓練管理系統') {
+    const rawTitle   = String(title ?? '');
+    const safeTitle  = escapeHtml(rawTitle);
+    const safeMsg    = escapeHtml(message);
+    const icon       = rawTitle.includes('錯誤') || rawTitle.includes('失敗') ? '❌' : '✅';
+
+    const old = document.getElementById('custom-alert-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'custom-alert-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:99999;display:flex;justify-content:center;align-items:center;backdrop-filter:blur(2px);animation:fadeIn .2s ease-out;';
+    overlay.innerHTML = `
+        <div style="background:white;padding:24px;border-radius:16px;width:85%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:popIn .2s cubic-bezier(.175,.885,.32,1.275) forwards;">
+            <div style="font-size:40px;margin-bottom:12px;">${icon}</div>
+            <h3 style="color:#1a5276;margin:0 0 12px;font-size:1.1rem;font-weight:700;">${safeTitle}</h3>
+            <p style="color:#4a4a4a;margin:0 0 24px;font-size:1rem;line-height:1.5;">${safeMsg}</p>
+            <button onclick="document.getElementById('custom-alert-overlay').remove()" style="background:#1a5276;color:white;border:none;padding:10px 0;width:100%;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;">確定</button>
+        </div>
+        <style>@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}</style>`;
+
+    document.body.appendChild(overlay);
+    const fn = e => { if (e.key === 'Enter') { overlay.remove(); document.removeEventListener('keydown', fn); } };
+    document.addEventListener('keydown', fn);
+}
+
+function showSystemConfirm(message, onConfirm) {
+    const safeMsg = escapeHtml(message);
+    const old = document.getElementById('custom-confirm-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'custom-confirm-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:99999;display:flex;justify-content:center;align-items:center;backdrop-filter:blur(2px);animation:fadeIn .2s ease-out;';
+    overlay.innerHTML = `
+        <div style="background:white;padding:24px;border-radius:16px;width:85%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:popIn .2s cubic-bezier(.175,.885,.32,1.275) forwards;">
+            <div style="font-size:40px;margin-bottom:12px;">❓</div>
+            <h3 style="color:#1a5276;margin:0 0 12px;font-size:1.1rem;font-weight:700;">確認操作</h3>
+            <p style="color:#4a4a4a;margin:0 0 24px;font-size:1rem;line-height:1.5;">${safeMsg}</p>
+            <div style="display:flex;gap:10px;">
+                <button id="sys-cancel-btn" style="flex:1;background:#e8e8e8;color:#333;border:none;padding:10px 0;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;">取消</button>
+                <button id="sys-confirm-btn" style="flex:1;background:#c0392b;color:white;border:none;padding:10px 0;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;">確認</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(overlay);
+    document.getElementById('sys-cancel-btn').onclick  = () => overlay.remove();
+    document.getElementById('sys-confirm-btn').onclick = () => { overlay.remove(); onConfirm(); };
+}
+
+function showLoading(message = '載入中...') {
+    const safeMsg = escapeHtml(message);
+    const existing = document.getElementById('global-loading-overlay');
+    if (existing) { document.getElementById('loading-text').textContent = safeMsg; return; }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'global-loading-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.8);z-index:99999;display:flex;flex-direction:column;justify-content:center;align-items:center;backdrop-filter:blur(4px);animation:fadeIn .3s ease-out;';
+    overlay.innerHTML = `
+        <div class="loading-spinner"></div>
+        <div id="loading-text" style="margin-top:20px;color:#1a5276;font-weight:600;font-size:1.1rem;letter-spacing:1px;">${safeMsg}</div>
+        <style>.loading-spinner{width:50px;height:50px;border:5px solid #e8f4f8;border-top:5px solid #1a5276;border-radius:50%;animation:spin 1s linear infinite;}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}</style>`;
+    document.body.appendChild(overlay);
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('global-loading-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity .3s';
+        setTimeout(() => overlay.remove(), 300);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  批次操作  Batch Operations（泛型，供其他頁面使用）
+// ─────────────────────────────────────────────────────────────
+
+async function createBatch(tableName, dataArray) {
+    return await callApi('/batch', {
+        method: 'POST',
+        body: JSON.stringify({ table: tableName, data: dataArray }),
+    });
+}
+
+async function updateBatch(tableName, dataArray) {
+    return await callApi('/batch', {
+        method: 'PUT',
+        body: JSON.stringify({ table: tableName, data: dataArray }),
+    });
+}
+
+async function deleteBatch(tableName, idArray) {
+    return await callApi('/batch', {
+        method: 'DELETE',
+        body: JSON.stringify({ table: tableName, ids: idArray }),
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  泛型 CRUD（舊版相容，供尚未遷移的頁面使用）
+// ─────────────────────────────────────────────────────────────
+
+async function loadTable(tableName) {
+    const result = await callApi(`/list?table=${tableName}`);
+    return result.data || [];
+}
+
+async function loadAllTables() {
+    const result = await callApi('/listall');
+    return result.data || {};
+}
+
+async function saveTable(tableName, data) {
+    return await callApi('/save', {
+        method: 'POST',
+        body: JSON.stringify({ table: tableName, data }),
+    });
 }
