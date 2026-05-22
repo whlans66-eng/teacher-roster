@@ -2720,9 +2720,9 @@
 
       let html = '<div class="space-y-2">';
       filtered.forEach(l => {
-        const dateObj = new Date(l.date + 'T00:00:00');
-        const weekDays = ['日','一','二','三','四','五','六'];
-        const weekDay = weekDays[dateObj.getDay()];
+        const rangeText = (l.date && l.endDate && l.startTime && l.endTime)
+          ? `${escapeHtml(l.date)} ${escapeHtml(l.startTime)} – ${escapeHtml(l.endDate)} ${escapeHtml(l.endTime)}`
+          : escapeHtml(l.date || '');
         html += `
           <div class="flex items-center justify-between bg-red-50 border border-red-100 rounded-xl px-4 py-3">
             <div class="flex items-center gap-3">
@@ -2730,8 +2730,7 @@
               <div>
                 <span class="font-semibold text-gray-800 text-sm">${escapeHtml(l.teacherName)}</span>
                 <span class="mx-2 text-gray-300">·</span>
-                <span class="text-gray-600 text-sm">${l.endDate && l.endDate !== l.date ? `${escapeHtml(l.date)} – ${escapeHtml(l.endDate)}` : `${escapeHtml(l.date)} (${weekDay})`}</span>
-                ${(l.startTime && l.endTime) ? `<span class="mx-2 text-gray-300">·</span><span class="text-gray-600 text-sm">${escapeHtml(l.startTime)} – ${escapeHtml(l.endTime)}</span>` : ''}
+                <span class="text-gray-600 text-sm">${rangeText}</span>
                 ${l.reason ? `<span class="mx-2 text-gray-300">·</span><span class="text-gray-500 text-sm">${escapeHtml(l.reason)}</span>` : ''}
               </div>
             </div>
