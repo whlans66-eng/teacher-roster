@@ -1656,6 +1656,7 @@
       // 再次嘗試從後端載入（如果有更新的數據）
       await loadCourseAssignmentsFromBackend();
       await loadMaritimeCoursesFromBackend();
+      await loadTeacherLeavesFromBackend();
 
       // 同步到行事曆
       if (courseAssignments.length > 0) {
@@ -2700,6 +2701,9 @@
 
     function saveTeacherLeaves() {
       localStorage.setItem('teacherLeaves', JSON.stringify(teacherLeaves));
+      if (typeof api !== 'undefined' && api && typeof syncManager !== 'undefined' && syncManager) {
+        syncManager.saveTable('teacherLeaves').catch(e => console.error('請假紀錄同步失敗:', e));
+      }
     }
 
     function renderLeaveList() {
@@ -4365,6 +4369,20 @@
   }
 
   // 從後端載入海事課程數據
+  async function loadTeacherLeavesFromBackend() {
+    if (!api) return;
+    try {
+      const data = await api.list('teacherLeaves');
+      if (Array.isArray(data) && data.length > 0) {
+        teacherLeaves = data;
+        localStorage.setItem('teacherLeaves', JSON.stringify(teacherLeaves));
+        renderLeaveList();
+      }
+    } catch (error) {
+      console.warn('[Warning] 從後端載入請假紀錄失敗:', error.message);
+    }
+  }
+
   async function loadMaritimeCoursesFromBackend() {
     if (!api) {
       // API 未初始化，跳過從後端載入海事課程

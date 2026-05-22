@@ -495,6 +495,8 @@ class DataSyncManager {
       localStorage.setItem('teachers', JSON.stringify(normalizedTeachers));
       localStorage.setItem('courseAssignments', JSON.stringify(normalizedCourses));
       localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+      const teacherLeaves = Array.isArray(allData.teacherLeaves) ? allData.teacherLeaves : [];
+      localStorage.setItem('teacherLeaves', JSON.stringify(teacherLeaves));
 
       // listall 已附帶版本指紋，直接使用（省掉一次 getVersions 請求）
       if (versions && Object.keys(versions).length > 0) {
@@ -542,9 +544,10 @@ class DataSyncManager {
       const teachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
       const courseAssignments = loadArrayFromStorage('courseAssignments', normalizeCourseAssignment);
       const maritimeCourses = loadArrayFromStorage('maritimeCourses');
+      const teacherLeaves = loadArrayFromStorage('teacherLeaves');
 
-      // 批次儲存三個表格（單次請求，比依序儲存快 3 倍）
-      await this.api.batchSave({ teachers, courseAssignments, maritimeCourses });
+      // 批次儲存四個表格（單次請求，比依序儲存快）
+      await this.api.batchSave({ teachers, courseAssignments, maritimeCourses, teacherLeaves });
 
       // 更新最後同步時間
       localStorage.setItem('lastSyncTime', new Date().toISOString());
@@ -667,6 +670,7 @@ class DataSyncManager {
       const localTeachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
       const localCourses = loadArrayFromStorage('courseAssignments', normalizeCourseAssignment);
       const localMaritime = loadArrayFromStorage('maritimeCourses');
+      const localLeaves = loadArrayFromStorage('teacherLeaves');
 
       // 檢查是否有修改標記
       const hasLocalChanges = localStorage.getItem('hasLocalChanges') === 'true';
@@ -685,7 +689,7 @@ class DataSyncManager {
 
       // 批次儲存：server-side 衝突檢測 + 寫入 + 回傳新版本指紋（單次請求完成）
       const saveResult = await this.api.batchSave(
-        { teachers: localTeachers, courseAssignments: localCourses, maritimeCourses: localMaritime },
+        { teachers: localTeachers, courseAssignments: localCourses, maritimeCourses: localMaritime, teacherLeaves: localLeaves },
         savedVersions && Object.keys(savedVersions).length > 0 ? savedVersions : null,
         forceOverwrite
       );
