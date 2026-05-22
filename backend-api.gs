@@ -42,7 +42,7 @@ const SHEETS_CONFIG = {
   },
   teacherLeaves: {
     name: 'teacherLeaves',
-    header: ['id','teacherId','teacherName','date','reason','createdBy','createdAt']
+    header: ['id','teacherId','teacherName','date','startTime','endTime','reason','createdBy','createdAt']
   },
   activeSessions: {
     name: 'activeSessions',
