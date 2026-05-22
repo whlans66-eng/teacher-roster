@@ -567,15 +567,15 @@
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">請假日期</label>
+              <label class="block text-sm font-medium text-gray-600 mb-1">開始日期</label>
               <input type="date" id="leaveDate" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">原因（選填）</label>
-              <input type="text" id="leaveReason" placeholder="例：事假、病假、公假…" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
+              <label class="block text-sm font-medium text-gray-600 mb-1">結束日期</label>
+              <input type="date" id="leaveEndDate" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label class="block text-sm font-medium text-gray-600 mb-1">開始時間</label>
               <input type="time" id="leaveStartTime" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
@@ -583,6 +583,10 @@
             <div>
               <label class="block text-sm font-medium text-gray-600 mb-1">結束時間</label>
               <input type="time" id="leaveEndTime" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">原因（選填）</label>
+              <input type="text" id="leaveReason" placeholder="例：事假、病假、公假…" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
             </div>
           </div>
           <button onclick="addLeaveRecord()" class="px-5 py-2.5 rounded-xl text-white text-sm font-medium transition-all" style="background-color:#41ead4;">
@@ -2652,15 +2656,18 @@
     function addLeaveRecord() {
       const teacherId = Number(document.getElementById('leaveTeacherId').value);
       const date = document.getElementById('leaveDate').value;
+      const endDate = document.getElementById('leaveEndDate').value;
       const startTime = document.getElementById('leaveStartTime').value;
       const endTime = document.getElementById('leaveEndTime').value;
       const reason = document.getElementById('leaveReason').value.trim();
 
       if (!teacherId) { alert('請選擇講師'); return; }
-      if (!date) { alert('請選擇請假日期'); return; }
+      if (!date) { alert('請選擇開始日期'); return; }
+      if (!endDate) { alert('請選擇結束日期'); return; }
+      if (endDate < date) { alert('結束日期不能早於開始日期'); return; }
       if (!startTime) { alert('請填寫開始時間'); return; }
       if (!endTime) { alert('請填寫結束時間'); return; }
-      if (endTime <= startTime) { alert('結束時間必須晚於開始時間'); return; }
+      if (endDate === date && endTime <= startTime) { alert('同一天內結束時間必須晚於開始時間'); return; }
 
       const teacher = teachers.find(t => t.id === teacherId);
       if (!teacher) return;
@@ -2670,12 +2677,14 @@
         teacherId,
         teacherName: teacher.name,
         date,
+        endDate,
         startTime,
         endTime,
         reason
       });
 
       saveTeacherLeaves();
+      document.getElementById('leaveEndDate').value = '';
       document.getElementById('leaveStartTime').value = '';
       document.getElementById('leaveEndTime').value = '';
       document.getElementById('leaveReason').value = '';
@@ -2721,7 +2730,7 @@
               <div>
                 <span class="font-semibold text-gray-800 text-sm">${escapeHtml(l.teacherName)}</span>
                 <span class="mx-2 text-gray-300">·</span>
-                <span class="text-gray-600 text-sm">${escapeHtml(l.date)} (${weekDay})</span>
+                <span class="text-gray-600 text-sm">${l.endDate && l.endDate !== l.date ? `${escapeHtml(l.date)} – ${escapeHtml(l.endDate)}` : `${escapeHtml(l.date)} (${weekDay})`}</span>
                 ${(l.startTime && l.endTime) ? `<span class="mx-2 text-gray-300">·</span><span class="text-gray-600 text-sm">${escapeHtml(l.startTime)} – ${escapeHtml(l.endTime)}</span>` : ''}
                 ${l.reason ? `<span class="mx-2 text-gray-300">·</span><span class="text-gray-500 text-sm">${escapeHtml(l.reason)}</span>` : ''}
               </div>
