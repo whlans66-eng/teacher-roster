@@ -1136,3 +1136,22 @@ function fixCourseAssignmentsHeaders() {
   Logger.log('[fixHeaders] Done. New headers: ' + newHeaders.join(' | '));
   Logger.log('[fixHeaders] 請重新整理前端頁面，行事曆課程應正常顯示。');
 }
+
+/**
+ * 新增 Admin 帳號：Kim
+ * 在 Apps Script 編輯器中手動執行此函數一次即可
+ */
+function addAdminKim() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName('users');
+  if (!sheet) {
+    Logger.log('users table not found, please run setupDatabase() first');
+    return;
+  }
+  const lastRow = sheet.getLastRow();
+  const newId = String(lastRow);
+  const salt = _generateSalt();
+  const hashedPassword = _hashPassword('Kim123123', salt);
+  sheet.appendRow([newId, 'Kim', hashedPassword, 'Kim', 'admin', salt]);
+  Logger.log('Admin user "Kim" created successfully!');
+}
