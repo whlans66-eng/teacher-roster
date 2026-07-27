@@ -1143,6 +1143,7 @@ function addAdminKim() {
   const newId = String(lastRow);
   const salt = _generateSalt();
   const hashedPassword = _hashPassword('Kim123123', salt);
-  sheet.appendRow([newId, 'Kim', hashedPassword, 'Kim', 'admin', salt]);
+  // 依照實際 Sheet 欄位順序：id, username, password, role, (空), salt, full_name
+  sheet.appendRow([newId, 'Kim', hashedPassword, 'admin', '', salt, 'Kim']);
   Logger.log('Admin user "Kim" created successfully!');
 }
