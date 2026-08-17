@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教材管理 | WHL MARITRAIN</title>
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <style>
+    :root {
+      --apple-blue: #0071e3;
+      --apple-blue-hover: #0077ed;
+      --apple-blue-light: #e8f0fb;
+      --apple-text: #1d1d1f;
+      --apple-gray: #86868b;
+      --apple-gray-2: #6e6e73;
+      --apple-bg: #f5f5f7;
+      --apple-white: #ffffff;
+      --apple-border: rgba(0,0,0,0.06);
+      --apple-shadow-sm: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+      --apple-shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+      --apple-shadow-lg: 0 12px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+      --apple-radius: 20px;
+      --apple-radius-sm: 12px;
+      --apple-radius-xs: 8px;
+      --brand: #0a4a7a;
+      --sidebar-w: 288px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background: var(--apple-bg);
+      color: var(--apple-text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      height: 56px;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid var(--apple-border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--apple-blue);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 20px;
+      transition: background 0.2s;
+    }
+
+    .back-btn:hover { background: var(--apple-blue-light); }
+
+    .topbar-sep { width: 1px; height: 18px; background: var(--apple-border); }
+
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--apple-text);
+      letter-spacing: -0.01em;
+    }
+
+    .topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--apple-bg);
+      border: 1px solid var(--apple-border);
+      border-radius: 20px;
+      padding: 5px 12px 5px 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--apple-text);
+    }
+
+    .user-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .role-pill {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    .role-admin   { background: #fde8e8; color: #c0392b; }
+    .role-teacher { background: var(--apple-blue-light); color: #1e40af; }
+    .role-crew    { background: #dcfce7; color: #166534; }
+
+    /* ── Layout ── */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--apple-white);
+      border-right: 1px solid var(--apple-border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 16px 14px 10px;
+      border-bottom: 1px solid var(--apple-border);
+    }
+
+    .sidebar-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--apple-bg);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--apple-gray);
+    }
+
+    .sidebar-search input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 13px;
+      color: var(--apple-text);
+      width: 100%;
+      font-family: inherit;
+    }
+
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .sidebar-body::-webkit-scrollbar { width: 0; }
+
+    .course-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .course-row:hover { background: var(--apple-bg); }
+
+    .course-row.active {
+      background: var(--apple-blue-light);
+    }
+
+    .course-row-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .course-row-text { flex: 1; min-width: 0; }
+
+    .course-row-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--apple-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .course-row.active .course-row-name { color: var(--apple-blue); }
+
+    .course-row-cat {
+      font-size: 11px;
+      color: var(--apple-gray);
+      margin-top: 1px;
+    }
+
+    .mat-pill {
+      font-size: 10px;
+      font-weight: 700;
+      min-width: 20px;
+      height: 20px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 6px;
+      flex-shrink: 0;
+      background: var(--apple-bg);
+      color: var(--apple-gray);
+    }
+
+    .mat-pill.filled {
+      background: var(--apple-blue-light);
+      color: var(--apple-blue);
+    }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main::-webkit-scrollbar { width: 6px; }
+    .main::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
+
+    .empty-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--apple-gray);
+      animation: fadeUp 0.5s ease;
+    }
+
+    .empty-main-icon {
+      font-size: 64px;
+      opacity: 0.15;
+    }
+
+    .empty-main p {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    /* ── Course Header ── */
+    .course-header {
+      background: var(--apple-white);
+      border-bottom: 1px solid var(--apple-border);
+      padding: 20px 28px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      flex-shrink: 0;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .course-hero-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+      box-shadow: var(--apple-shadow-sm);
+    }
+
+    .course-hero-info { flex: 1; }
+
+    .course-hero-name {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--apple-text);
+      line-height: 1.2;
+    }
+
+    .course-hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    .tag-blue   { background: var(--apple-blue-light); color: var(--apple-blue); }
+    .tag-green  { background: #dcfce7; color: #15803d; }
+    .tag-gray   { background: var(--apple-bg); color: var(--apple-gray); }
+    .tag-purple { background: #ede9fe; color: #6d28d9; }
+
+    .course-hero-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+      align-items: center;
+    }
+
+    .btn-apple {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-apple-primary {
+      background: var(--apple-blue);
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,113,227,0.30);
+    }
+
+    .btn-apple-primary:hover {
+      background: var(--apple-blue-hover);
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0,113,227,0.40);
+    }
+
+    .btn-apple-secondary {
+      background: var(--apple-bg);
+      color: var(--apple-text);
+      border: 1px solid var(--apple-border);
+    }
+
+    .btn-apple-secondary:hover { background: #e5e5ea; }
+
+    /* ── Segmented Control ── */
+    .segment-wrap {
+      background: var(--apple-white);
+      border-bottom: 1px solid var(--apple-border);
+      padding: 12px 28px;
+      flex-shrink: 0;
+    }
+
+    .segmented-control {
+      display: inline-flex;
+      background: var(--apple-bg);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .seg-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--apple-gray-2);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .seg-btn.active {
+      background: var(--apple-white);
+      color: var(--apple-text);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.06);
+    }
+
+    /* ── Content ── */
+    .content-panel { display: none; padding: 24px 28px 40px; animation: fadeUp 0.3s ease; }
+    .content-panel.active { display: block; }
+
+    /* ── Upload zone ── */
+    .upload-zone {
+      border: 2px dashed rgba(0,113,227,0.25);
+      border-radius: var(--apple-radius);
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(0,113,227,0.02);
+      transition: all 0.25s ease;
+      margin-bottom: 20px;
+    }
+
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--apple-blue);
+      background: var(--apple-blue-light);
+    }
+
+    .upload-zone-icon {
+      font-size: 40px;
+      color: var(--apple-blue);
+      opacity: 0.5;
+      margin-bottom: 10px;
+    }
+
+    .upload-zone p {
+      font-size: 14px;
+      color: var(--apple-gray);
+      line-height: 1.6;
+    }
+
+    .upload-zone strong { color: var(--apple-blue); font-weight: 600; }
+
+    /* ── Material cards ── */
+    .mat-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mat-card {
+      background: var(--apple-white);
+      border: 1px solid var(--apple-border);
+      border-radius: var(--apple-radius-sm);
+      box-shadow: var(--apple-shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      transition: all 0.25s ease;
+    }
+
+    .mat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--apple-shadow-md);
+      border-color: rgba(0,113,227,0.12);
+    }
+
+    .mat-card-icon {
+      width: 44px; height: 44px;
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .mat-card-info { flex: 1; min-width: 0; }
+
+    .mat-card-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--apple-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: -0.01em;
+    }
+
+    .mat-card-sub {
+      font-size: 12px;
+      color: var(--apple-gray);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Progress */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 7px;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 4px;
+      background: var(--apple-bg);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--apple-blue), #34aadc);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-pct {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--apple-blue);
+      white-space: nowrap;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .badge-new      { background: var(--apple-bg); color: var(--apple-gray); }
+    .badge-progress { background: #fff7ed; color: #c2410c; }
+    .badge-done     { background: #dcfce7; color: #15803d; }
+
+    .mat-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-view {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 16px;
+      background: var(--apple-blue);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .btn-view:hover {
+      background: var(--apple-blue-hover);
+      transform: scale(1.04);
+    }
+
+    .btn-trash {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,59,48,0.06);
+      border: 1px solid rgba(255,59,48,0.15);
+      color: #ff3b30;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+
+    .btn-trash:hover { background: rgba(255,59,48,0.12); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 52px 20px;
+      color: var(--apple-gray);
+    }
+
+    .empty-state i { font-size: 52px; opacity: 0.2; display: block; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--apple-gray-2); }
+    .empty-state p { font-size: 13px; line-height: 1.6; }
+
+    /* ── Comments ── */
+    .comments-list { display: flex; flex-direction: column; gap: 0; }
+
+    .comment-row {
+      display: flex;
+      gap: 12px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--apple-border);
+      animation: fadeUp 0.3s ease;
+    }
+
+    .comment-row:last-child { border-bottom: none; }
+
+    .comment-ava {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: white;
+      font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: var(--apple-shadow-sm);
+    }
+
+    .comment-body { flex: 1; }
+
+    .comment-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .comment-author { font-size: 13px; font-weight: 700; color: var(--apple-text); }
+
+    .comment-time { font-size: 11px; color: var(--apple-gray); }
+
+    .comment-text {
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--apple-text);
+    }
+
+    .comment-compose {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--apple-border);
+    }
+
+    .compose-input {
+      flex: 1;
+      border: 1px solid var(--apple-border);
+      border-radius: var(--apple-radius-sm);
+      padding: 12px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      min-height: 72px;
+      color: var(--apple-text);
+      background: var(--apple-white);
+      transition: all 0.2s;
+    }
+
+    .compose-input:focus {
+      outline: none;
+      border-color: var(--apple-blue);
+      box-shadow: 0 0 0 4px rgba(0,113,227,0.10);
+    }
+
+    .compose-submit {
+      align-self: flex-end;
+      padding: 10px 22px;
+      background: var(--apple-blue);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      box-shadow: 0 2px 8px rgba(0,113,227,0.28);
+      white-space: nowrap;
+    }
+
+    .compose-submit:hover {
+      background: var(--apple-blue-hover);
+      transform: scale(1.03);
+    }
+
+    /* ── Viewer ── */
+    .viewer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 800;
+      flex-direction: column;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .viewer-overlay.open { display: flex; }
+
+    .viewer-bar {
+      height: 56px;
+      background: rgba(20,20,20,0.85);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .viewer-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .viewer-close {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: rgba(255,255,255,0.85);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.18s;
+    }
+
+    .viewer-close:hover { background: rgba(255,255,255,0.2); }
+
+    .viewer-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #viewerVideo {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 2px;
+    }
+
+    #viewerIframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    #viewerImage {
+      max-width: 96%;
+      max-height: 96%;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: rgba(29,29,31,0.94);
+      backdrop-filter: blur(16px);
+      color: white;
+      padding: 11px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 999;
+      opacity: 0;
+      transition: all 0.35s cubic-bezier(0.2,0.8,0.2,1);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success i { color: #30d158; }
+    .toast.error   i { color: #ff453a; }
+
+    @media (max-width: 640px) {
+      :root { --sidebar-w: 64px; }
+      .course-row-text, .course-row-cat, .mat-pill { display: none; }
+      .course-row { justify-content: center; }
+      .course-row-icon { margin: 0; }
+      .course-header { flex-wrap: wrap; padding: 16px; }
+      .content-panel { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <a href="index.html" class="back-btn">
+      <i class="ph ph-caret-left"></i> 返回
+    </a>
+    <div class="topbar-sep"></div>
+    <span class="topbar-title">教材管理</span>
+    <div class="topbar-right">
+      <div class="user-pill">
+        <div class="user-avatar" id="userInitial">—</div>
+        <span id="userName">載入中</span>
+        <span class="role-pill" id="rolePill"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- App body -->
+  <div class="app-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-search">
+          <i class="ph ph-magnifying-glass" style="flex-shrink:0;font-size:14px"></i>
+          <input type="text" id="sidebarSearch" placeholder="搜尋課程…" oninput="filterSidebar()">
+        </div>
+      </div>
+      <div class="sidebar-body" id="sidebarBody">
+        <div style="padding:24px 10px;text-align:center;font-size:13px;color:var(--apple-gray)">載入中…</div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main" id="mainArea">
+      <div class="empty-main">
+        <div class="empty-main-icon"><i class="ph ph-books"></i></div>
+        <p>請從左側選擇課程</p>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Viewer -->
+  <div class="viewer-overlay" id="viewerOverlay">
+    <div class="viewer-bar">
+      <span class="viewer-title" id="viewerTitle">—</span>
+      <button class="viewer-close" onclick="closeViewer()"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="viewer-body" id="viewerBody"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <i class="ph ph-check-circle" id="toastIcon"></i>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script src="js/security.js"></script>
+  <script>
+    // ── Globals ──
+    let currentUser = null;
+    let isAdmin = false;
+    let isCrew  = false;
+    let allCourses = [];
+    let activeCourseId = null;
+    let activeTab = 'materials';
+    let progressTimer = null;
+    let viewerMeta = null;
+
+    const CAT_ICON = {
+      STCW:'🚢', safety:'🛟', navigation:'🧭', engine:'⚙️',
+      cargo:'📦', medical:'🏥', fire:'🔥', security:'🔒',
+      environment:'🌊', leadership:'👑', communication:'📡', survival:'⛵'
+    };
+    const CAT_BG = {
+      STCW:'#dbeafe', safety:'#fef3c7', navigation:'#dcfce7', engine:'#fce7f3',
+      cargo:'#e0e7ff', medical:'#ffe4e6', fire:'#ffedd5', security:'#f0f0f5',
+      environment:'#d1fae5', leadership:'#fef9c3', communication:'#ede9fe', survival:'#cffafe'
+    };
+
+    // ── Init ──
+    document.addEventListener('DOMContentLoaded', () => {
+      initAuth();
+      loadData();
+      const p = new URLSearchParams(location.search);
+      if (p.get('courseId')) setTimeout(() => selectCourse(p.get('courseId')), 150);
+    });
+
+    function initAuth() {
+      const raw = sessionStorage.getItem('authData') || localStorage.getItem('authData');
+      if (!raw) { location.href = 'login.html'; return; }
+      try { currentUser = JSON.parse(raw); } catch { location.href = 'login.html'; return; }
+      const role = currentUser.role || '';
+      isAdmin = role === 'admin';
+      isCrew  = role === 'crew' || !!currentUser.isCrew;
+      const name = currentUser.displayName || currentUser.username || '使用者';
+      document.getElementById('userName').textContent = name;
+      document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
+      const pill = document.getElementById('rolePill');
+      if (isAdmin)      { pill.textContent = 'Admin';  pill.className = 'role-pill role-admin'; }
+      else if (isCrew)  { pill.textContent = '船員';   pill.className = 'role-pill role-crew'; }
+      else              { pill.textContent = '教師';   pill.className = 'role-pill role-teacher'; }
+    }
+
+    function loadData() {
+      allCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+      renderSidebar(allCourses);
+    }
+
+    // ── Sidebar ──
+    function renderSidebar(list) {
+      const body = document.getElementById('sidebarBody');
+      if (!list.length) {
+        body.innerHTML = `<div style="padding:24px 10px;text-align:center;font-size:13px;color:var(--apple-gray)">尚無課程</div>`;
+        return;
+      }
+      body.innerHTML = list.map(c => {
+        const active = String(c.id) === String(activeCourseId);
+        const cnt = (c.materials || []).length;
+        return `
+          <div class="course-row ${active ? 'active' : ''}" onclick="selectCourse(${c.id})">
+            <div class="course-row-icon" style="background:${CAT_BG[c.category]||'#f5f5f7'}">${CAT_ICON[c.category]||'📚'}</div>
+            <div class="course-row-text">
+              <div class="course-row-name">${h(c.name)}</div>
+              <div class="course-row-cat">${h(c.category||'—')}</div>
+            </div>
+            <div class="mat-pill ${cnt ? 'filled' : ''}">${cnt}</div>
+          </div>`;
+      }).join('');
+    }
+
+    function filterSidebar() {
+      const q = document.getElementById('sidebarSearch').value.toLowerCase();
+      renderSidebar(allCourses.filter(c =>
+        c.name.toLowerCase().includes(q) || (c.category||'').toLowerCase().includes(q)
+      ));
+    }
+
+    // ── Select course ──
+    function selectCourse(id) {
+      activeCourseId = String(id);
+      const course = allCourses.find(c => String(c.id) === activeCourseId);
+      if (!course) return;
+      renderSidebar(allCourses);
+      renderMain(course);
+      const url = new URL(location.href);
+      url.searchParams.set('courseId', id);
+      history.replaceState(null, '', url);
+    }
+
+    // ── Main ──
+    function renderMain(course) {
+      const icon = CAT_ICON[course.category] || '📚';
+      const bg   = CAT_BG[course.category]  || '#f5f5f7';
+      const mats = course.materials || [];
+
+      const uploadBtn = isAdmin ? `
+        <button class="btn-apple btn-apple-primary" onclick="triggerUpload(${course.id})">
+          <i class="ph ph-upload-simple"></i> 上傳教材
+        </button>
+        <input type="file" id="fi_${course.id}" multiple
+          accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.webm,.mov,.jpg,.jpeg,.png,.gif,.webp,.zip"
+          style="display:none" onchange="handleFiles(this,${course.id})">` : '';
+
+      const commentTab = (isCrew || isAdmin) ? `
+        <button class="seg-btn" data-tab="comments" onclick="switchTab('comments',this)">
+          <i class="ph ph-chat-circle-dots"></i> 留言討論
+        </button>` : '';
+
+      document.getElementById('mainArea').innerHTML = `
+        <div class="course-header">
+          <div class="course-hero-icon" style="background:${bg}">${icon}</div>
+          <div class="course-hero-info">
+            <div class="course-hero-name">${h(course.name)}</div>
+            <div class="course-hero-tags">
+              ${course.category ? `<span class="tag tag-blue"><i class="ph ph-tag"></i>${h(course.category)}</span>` : ''}
+              ${course.method   ? `<span class="tag tag-green">${h(course.method)}</span>` : ''}
+              ${course.duration ? `<span class="tag tag-gray"><i class="ph ph-clock"></i>${course.duration} 分</span>` : ''}
+              <span class="tag tag-gray"><i class="ph ph-folder"></i>${mats.length} 個教材</span>
+            </div>
+          </div>
+          <div class="course-hero-actions">${uploadBtn}</div>
+        </div>
+
+        <div class="segment-wrap">
+          <div class="segmented-control">
+            <button class="seg-btn active" data-tab="materials" onclick="switchTab('materials',this)">
+              <i class="ph ph-folder-open"></i> 教材附件
+            </button>
+            ${commentTab}
+          </div>
+        </div>
+
+        <div class="content-panel active" id="panel-materials">
+          ${renderMatsPanel(course)}
+        </div>
+
+        ${(isCrew||isAdmin) ? `
+        <div class="content-panel" id="panel-comments">
+          ${renderCommentsPanel(course.id)}
+        </div>` : ''}
+      `;
+
+      // drag-drop for admin
+      if (isAdmin) {
+        const panel = document.getElementById('panel-materials');
+        panel.addEventListener('dragover', e => { e.preventDefault(); panel.querySelector('.upload-zone')?.classList.add('drag-over'); });
+        panel.addEventListener('dragleave', () => panel.querySelector('.upload-zone')?.classList.remove('drag-over'));
+        panel.addEventListener('drop', e => {
+          e.preventDefault();
+          panel.querySelector('.upload-zone')?.classList.remove('drag-over');
+          if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files, course.id);
+        });
+      }
+    }
+
+    function switchTab(tab, btn) {
+      activeTab = tab;
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + tab)?.classList.add('active');
+    }
+
+    // ── Materials panel ──
+    function renderMatsPanel(course) {
+      const mats = course.materials || [];
+      const zone = isAdmin ? `
+        <div class="upload-zone" onclick="triggerUpload(${course.id})">
+          <div class="upload-zone-icon"><i class="ph ph-cloud-arrow-up"></i></div>
+          <p>點擊或將檔案<strong>拖曳</strong>到此上傳</p>
+          <p style="font-size:12px;margin-top:4px;opacity:.7">支援 PDF、Word、PPT、MP4、圖片（上限 50 MB）</p>
+        </div>` : '';
+
+      if (!mats.length) return `${zone}
+        <div class="empty-state">
+          <i class="ph ph-folder-open"></i>
+          <h3>${isAdmin ? '尚未上傳教材' : '此課程尚無教材'}</h3>
+          <p>${isAdmin ? '點擊上方區域或拖曳檔案即可上傳' : '管理員尚未上傳教材'}</p>
+        </div>`;
+
+      return `${zone}<div class="mat-grid">${mats.map((m,i) => matCard(m,i,course.id)).join('')}</div>`;
+    }
+
+    function matCard(m, idx, courseId) {
+      const { icon, bg, color } = fileStyle(m.fileName || '');
+      const prog = getProgress(courseId, m.fileName);
+      const isVid = isVideo(m.fileName);
+      const hasUrl = !!(m.fileUrl || m.dataUrl);
+
+      let badgeHtml = `<span class="status-badge badge-new">未觀看</span>`;
+      let progressHtml = '';
+
+      if (prog) {
+        if (prog.completed) {
+          badgeHtml = `<span class="status-badge badge-done"><i class="ph ph-check"></i> 已完成</span>`;
+        } else if (isVid && prog.percent > 0) {
+          badgeHtml = `<span class="status-badge badge-progress">看到 ${prog.percent}%</span>`;
+          progressHtml = `
+            <div class="progress-row">
+              <div class="progress-track"><div class="progress-fill" style="width:${prog.percent}%"></div></div>
+              <span class="progress-pct">${prog.percent}%</span>
+            </div>`;
+        } else if (!isVid && prog.viewed) {
+          badgeHtml = `<span class="status-badge badge-done"><i class="ph ph-check"></i> 已開啟</span>`;
+        }
+      }
+
+      const viewBtn = hasUrl
+        ? `<button class="btn-view" onclick="openMaterial('${a(m.fileName||'')}','${a(m.fileUrl||m.dataUrl||'')}','${courseId}')">
+            <i class="ph ph-${isVid ? 'play' : 'arrow-square-out'}"></i> 開啟
+           </button>`
+        : `<span style="font-size:12px;color:var(--apple-gray)">無連結</span>`;
+
+      const trashBtn = isAdmin
+        ? `<button class="btn-trash" onclick="deleteMat(${courseId},${idx})" title="移除"><i class="ph ph-trash"></i></button>`
+        : '';
+
+      return `
+        <div class="mat-card">
+          <div class="mat-card-icon" style="background:${bg};color:${color}">${icon}</div>
+          <div class="mat-card-info">
+            <div class="mat-card-name">${h(m.fileName || m.name || '未命名')}</div>
+            <div class="mat-card-sub">${badgeHtml}</div>
+            ${progressHtml}
+          </div>
+          <div class="mat-card-actions">
+            ${viewBtn}
+            ${trashBtn}
+          </div>
+        </div>`;
+    }
+
+    // ── Comments panel ──
+    function renderCommentsPanel(courseId) {
+      const comments = JSON.parse(localStorage.getItem('comments') || '[]')
+        .filter(c => String(c.courseId) === String(courseId))
+        .sort((a,b) => (a.timestamp||0) - (b.timestamp||0));
+
+      const listHtml = comments.length
+        ? comments.map(c => {
+            const init = (c.author||'?').charAt(0).toUpperCase();
+            const time = c.timestamp
+              ? new Date(c.timestamp).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
+              : '';
+            return `
+              <div class="comment-row">
+                <div class="comment-ava">${init}</div>
+                <div class="comment-body">
+                  <div class="comment-meta">
+                    <span class="comment-author">${h(c.author||'匿名')}</span>
+                    <span class="comment-time">${time}</span>
+                  </div>
+                  <div class="comment-text">${h(c.content||'').replace(/\n/g,'<br>')}</div>
+                </div>
+              </div>`;
+          }).join('')
+        : `<div class="empty-state" style="padding:36px 0">
+             <i class="ph ph-chat-circle-dots"></i>
+             <h3>尚無留言</h3>
+             <p>成為第一個留言的人</p>
+           </div>`;
+
+      return `
+        <div class="comments-list" id="commentList">${listHtml}</div>
+        <div class="comment-compose">
+          <textarea class="compose-input" id="commentInput" placeholder="輸入留言…" rows="3"></textarea>
+          <button class="compose-submit" onclick="postComment(${courseId})">送出</button>
+        </div>`;
+    }
+
+    function postComment(courseId) {
+      const input = document.getElementById('commentInput');
+      const content = (input?.value || '').trim();
+      if (!content) { showToast('請輸入留言內容', 'error'); return; }
+      const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+      comments.push({
+        id: Date.now(), courseId,
+        author: currentUser.displayName || currentUser.username,
+        content, timestamp: Date.now()
+      });
+      localStorage.setItem('comments', JSON.stringify(comments));
+      document.getElementById('panel-comments').innerHTML = renderCommentsPanel(courseId);
+      showToast('留言已送出', 'success');
+    }
+
+    // ── Progress ──
+    function progKey(courseId, fileName) {
+      return `vp_${currentUser.username||'u'}_${courseId}_${encodeURIComponent(fileName||'')}`;
+    }
+
+    function getProgress(courseId, fileName) {
+      try { const r = localStorage.getItem(progKey(courseId, fileName)); return r ? JSON.parse(r) : null; }
+      catch { return null; }
+    }
+
+    function saveProgress(courseId, fileName, data) {
+      localStorage.setItem(progKey(courseId, fileName), JSON.stringify({ ...data, lastViewed: new Date().toISOString() }));
+    }
+
+    // ── Viewer ──
+    function openMaterial(fileName, fileUrl, courseId) {
+      if (!fileUrl) return;
+      viewerMeta = { fileName, fileUrl, courseId };
+      document.getElementById('viewerTitle').textContent = fileName;
+      const body = document.getElementById('viewerBody');
+      body.innerHTML = '';
+      const ext = (fileName||'').split('.').pop().toLowerCase();
+
+      if (isVideo(fileName)) {
+        const prog = getProgress(courseId, fileName);
+        const start = prog && !prog.completed ? (prog.seconds || 0) : 0;
+        const vid = document.createElement('video');
+        vid.id = 'viewerVideo'; vid.controls = true; vid.autoplay = true; vid.src = fileUrl;
+        if (start > 5) vid.currentTime = start;
+        vid.addEventListener('timeupdate', () => {
+          if (!vid.duration) return;
+          clearTimeout(progressTimer);
+          progressTimer = setTimeout(() => {
+            const pct = Math.round(vid.currentTime / vid.duration * 100);
+            saveProgress(courseId, fileName, { seconds: vid.currentTime, duration: vid.duration, percent: pct, completed: pct >= 90 });
+          }, 3000);
+        });
+        vid.addEventListener('ended', () => {
+          saveProgress(courseId, fileName, { seconds: 0, percent: 100, completed: true });
+          refreshMats(courseId);
+        });
+        body.appendChild(vid);
+      } else if (ext === 'pdf') {
+        const fr = document.createElement('iframe');
+        fr.id = 'viewerIframe'; fr.src = fileUrl;
+        body.appendChild(fr);
+        saveProgress(courseId, fileName, { viewed: true });
+      } else if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+        const img = document.createElement('img');
+        img.id = 'viewerImage'; img.src = fileUrl; img.alt = fileName;
+        body.appendChild(img);
+        saveProgress(courseId, fileName, { viewed: true });
+      } else {
+        window.open(fileUrl, '_blank');
+        saveProgress(courseId, fileName, { viewed: true });
+        refreshMats(courseId);
+        return;
+      }
+
+      document.getElementById('viewerOverlay').classList.add('open');
+      refreshMats(courseId);
+    }
+
+    function closeViewer() {
+      const vid = document.getElementById('viewerVideo');
+      if (vid) { vid.pause(); vid.src = ''; }
+      document.getElementById('viewerOverlay').classList.remove('open');
+      document.getElementById('viewerBody').innerHTML = '';
+      if (viewerMeta) { refreshMats(viewerMeta.courseId); viewerMeta = null; }
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeViewer(); });
+
+    function refreshMats(courseId) {
+      const course = allCourses.find(c => String(c.id) === String(courseId));
+      const panel = document.getElementById('panel-materials');
+      if (course && panel) panel.innerHTML = renderMatsPanel(course);
+    }
+
+    // ── Upload ──
+    function triggerUpload(id) { document.getElementById('fi_' + id)?.click(); }
+    function handleFiles(input, id) { if (input.files?.length) processFiles(input.files, id); input.value = ''; }
+
+    function processFiles(files, courseId) {
+      if (!isAdmin) return;
+      const course = allCourses.find(c => String(c.id) === String(courseId));
+      if (!course) return;
+      if (!course.materials) course.materials = [];
+      const ok = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'video/mp4','video/webm','video/ogg','video/quicktime',
+        'image/jpeg','image/png','image/gif','image/webp','application/zip'];
+      for (const file of files) {
+        if (!ok.includes(file.type)) { showToast(`不支援格式：${file.name}`, 'error'); continue; }
+        if (file.size > 50*1024*1024) { showToast(`檔案過大：${file.name}`, 'error'); continue; }
+        const reader = new FileReader();
+        reader.onload = e => {
+          course.materials.push({ fileName: file.name, fileType: file.type, fileUrl: e.target.result, dataUrl: e.target.result, uploadedAt: new Date().toISOString(), uploadedBy: currentUser.username });
+          localStorage.setItem('maritimeCourses', JSON.stringify(allCourses));
+          refreshMats(courseId);
+          renderSidebar(allCourses);
+          showToast(`已上傳：${file.name}`, 'success');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function deleteMat(courseId, idx) {
+      if (!isAdmin) return;
+      const course = allCourses.find(c => String(c.id) === String(courseId));
+      if (!course?.materials) return;
+      const name = course.materials[idx]?.fileName || '此教材';
+      if (!confirm(`確定移除「${name}」？`)) return;
+      course.materials.splice(idx, 1);
+      localStorage.setItem('maritimeCourses', JSON.stringify(allCourses));
+      refreshMats(courseId);
+      renderSidebar(allCourses);
+      showToast('已移除', 'success');
+    }
+
+    // ── Helpers ──
+    function isVideo(name) {
+      return ['mp4','webm','mov','ogg'].includes((name||'').split('.').pop().toLowerCase());
+    }
+
+    function fileStyle(name) {
+      const ext = (name||'').split('.').pop().toUpperCase();
+      const m = {
+        PDF: { icon:'📄', bg:'#fee2e2', color:'#dc2626' },
+        DOC: { icon:'📝', bg:'#dbeafe', color:'#1d4ed8' }, DOCX: { icon:'📝', bg:'#dbeafe', color:'#1d4ed8' },
+        PPT: { icon:'📊', bg:'#ffedd5', color:'#c2410c' }, PPTX: { icon:'📊', bg:'#ffedd5', color:'#c2410c' },
+        MP4: { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' }, WEBM: { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' }, MOV: { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' },
+        JPG: { icon:'🖼️', bg:'#dcfce7', color:'#15803d' }, PNG: { icon:'🖼️', bg:'#dcfce7', color:'#15803d' },
+        ZIP: { icon:'🗜️', bg:'#fef9c3', color:'#92400e' },
+      };
+      return m[ext] || { icon:'📎', bg:'#f5f5f7', color:'#6e6e73' };
+    }
+
+    function showToast(msg, type='') {
+      const t = document.getElementById('toast');
+      const ic = document.getElementById('toastIcon');
+      document.getElementById('toastMsg').textContent = msg;
+      ic.className = type === 'error' ? 'ph ph-warning-circle' : 'ph ph-check-circle';
+      t.className = 'toast show' + (type ? ' '+type : '');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.className = 'toast', 3000);
+    }
+
+    function h(s)  { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function a(s)  { return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  </script>
+</body>
+</html>

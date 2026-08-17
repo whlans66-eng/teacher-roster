@@ -35,6 +35,10 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 
   /* 頂部導航 */
   .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
@@ -1219,6 +1223,9 @@
   #courseSelectBar .bar-cancel:hover { background: rgba(255,255,255,0.25); }
   #courseSelectBar .bar-all { background: rgba(255,255,255,0.15); color: #fff; }
   #courseSelectBar .bar-all:hover { background: rgba(255,255,255,0.25); }
+  #courseSelectBar .bar-copy { background: #007aff; color: #fff; }
+  #courseSelectBar .bar-copy:hover { background: #0063d1; }
+  #courseSelectBar .bar-copy:disabled { background: rgba(0,122,255,0.35); cursor: not-allowed; }
   #courseSelectBar .bar-delete { background: #ff3b30; color: #fff; }
   #courseSelectBar .bar-delete:hover { background: #e02e23; }
   #courseSelectBar .bar-delete:disabled { background: rgba(255,59,48,0.35); cursor: not-allowed; }
@@ -1226,6 +1233,10 @@
 
   <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <!-- PptxGenJS for PowerPoint export -->
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
@@ -1278,11 +1289,22 @@
     <!-- 1. 課程瀏覽頁面 -->
     <div id="maritimeViewPage">
       <div class="glass-panel">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
           <h2 style="font-size: 20px; font-weight: 600; margin:0;">🔍 課程搜尋</h2>
-          <button id="courseSelectBtn" onclick="toggleCourseSelectMode()">
-            <i class="ph ph-check-square"></i> 選取
-          </button>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button id="courseSelectBtn" onclick="toggleCourseSelectMode()" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; font-size:13px; font-weight:500; cursor:pointer;">
+              <i class="ph ph-check-square"></i> 選取
+            </button>
+            <button onclick="exportToExcel()" title="匯出 Excel" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #16a34a; border-radius:10px; background:#f0fdf4; color:#16a34a; font-size:13px; font-weight:600; cursor:pointer;">
+              <i class="ph ph-microsoft-excel-logo"></i> Excel
+            </button>
+            <button onclick="exportToPDF()" title="匯出 PDF" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #dc2626; border-radius:10px; background:#fef2f2; color:#dc2626; font-size:13px; font-weight:600; cursor:pointer;">
+              <i class="ph ph-file-pdf"></i> PDF
+            </button>
+            <button onclick="exportToPPT()" title="匯出 PowerPoint" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #d97706; border-radius:10px; background:#fffbeb; color:#d97706; font-size:13px; font-weight:600; cursor:pointer;">
+              <i class="ph ph-presentation-chart"></i> PPT
+            </button>
+          </div>
         </div>
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
           <input type="text" id="maritimeSearchInput" placeholder="輸入課程名稱或關鍵字..." class="ios-input" oninput="displayMaritimeCourses()">
@@ -1309,6 +1331,9 @@
       <button class="bar-cancel" onclick="toggleCourseSelectMode()"><i class="ph ph-x"></i> 取消</button>
       <span class="bar-count" id="courseSelectCount">已選 0 個</span>
       <button class="bar-all" onclick="courseSelectAll()"><i class="ph ph-selection-all"></i> 全選</button>
+      <button class="bar-copy" id="courseSelectCopyBtn" onclick="copySelectedCourses()" disabled>
+        <i class="ph ph-copy"></i> 複製
+      </button>
       <button class="bar-delete" id="courseSelectDeleteBtn" onclick="deleteSelectedCourses()" disabled>
         <i class="ph ph-trash"></i> 刪除
       </button>
@@ -1397,6 +1422,8 @@
             <button class="ai-quick-btn" onclick="sendAIQuickMessage('新進船員需要上哪些課？')"><i class="ph ph-users-three"></i> 新進船員課程</button>
             <button class="ai-quick-btn" onclick="sendAIQuickMessage('領導統御相關的課程有哪些？')"><i class="ph ph-book-open"></i> 領導統御</button>
             <button class="ai-quick-btn" onclick="sendAIQuickMessage('請分析目前課程分佈是否均衡')"><i class="ph ph-chart-pie"></i> 課程分佈分析</button>
+            <button class="ai-quick-btn" onclick="openFeedbackMode()" style="background:rgba(255,149,0,0.18); color:#ff9500; border-color:rgba(255,149,0,0.35);"><i class="ph ph-chat-dots"></i> 反映課程意見</button>
+            <button class="ai-quick-btn" onclick="sendAIQuickMessage('幫我新增一門課程')" style="background:rgba(52,199,89,0.18); color:#248a3d; border-color:rgba(52,199,89,0.35);"><i class="ph ph-plus-circle"></i> 新增課程</button>
           </div>
           <div class="ai-input-wrapper">
             <div class="ai-input-glow"></div>
@@ -1560,6 +1587,13 @@
                   <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
                     <i class="ph ph-user-check" style="font-size: 16px; color: #14b8a6;"></i>
                     <div><div style="font-weight: 600; font-size: 13px;">幹練水手</div><div style="font-size: 10px; color: #86868b;">A.B.</div></div>
+                  </div>
+                </label>
+                <label class="target-checkbox" style="cursor: pointer;">
+                  <input type="checkbox" name="targetRank" value="OS" style="display: none;">
+                  <div class="rank-option-new" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #e5e5ea; border-radius: 10px; transition: all 0.2s; background: white;">
+                    <i class="ph ph-user" style="font-size: 16px; color: #64748b;"></i>
+                    <div><div style="font-weight: 600; font-size: 13px;">普通水手</div><div style="font-size: 10px; color: #86868b;">O.S.</div></div>
                   </div>
                 </label>
                 <label class="target-checkbox" style="cursor: pointer;">
@@ -1761,6 +1795,20 @@
           </div>
         </div>
 
+        <!-- 教材檔案上傳 -->
+        <div style="margin-bottom: 20px; background: #f5f5f7; border-radius: 12px; padding: 16px;">
+          <label style="font-size: 13px; font-weight: 700; color: #1d1d1f; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="ph ph-folder-open" style="margin-right: 6px;"></i>教材與影片附件</span>
+            <button type="button" onclick="document.getElementById('maritimeMatFileInput').click()" style="font-size: 12px; font-weight: 600; color: white; background: #8b5cf6; border: none; border-radius: 8px; padding: 6px 14px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <i class="ph ph-upload-simple"></i> 上傳檔案
+            </button>
+          </label>
+          <input type="file" id="maritimeMatFileInput" accept=".jpg,.jpeg,.png,.pdf,.mp4,.webm,.mov,.ppt,.pptx,.doc,.docx" class="hidden" onchange="handleMaritimeCourseMaterialUpload(this)" multiple style="display:none;">
+          <div style="font-size: 11px; color: var(--apple-gray); margin-bottom: 10px;">支援格式：圖片、PDF、影片（MP4/WebM/MOV）、PPT、DOC｜上限 50MB</div>
+          <div id="maritimeMaterialListModal" style="display: flex; flex-direction: column; gap: 8px;">
+          </div>
+        </div>
+
         <!-- 適用對象 Modal -->
         <div style="margin-bottom: 20px; background: #f5f5f7; border-radius: 12px; padding: 16px;">
           <label style="font-size: 13px; font-weight: 700; color: #1d1d1f; margin-bottom: 12px; display: block;">
@@ -1797,6 +1845,7 @@
               <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="bosun" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">水手長</div></label>
               <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="carpenter" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">木匠</div></label>
               <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="AB" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">幹練水手</div></label>
+              <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="OS" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">普通水手</div></label>
               <label class="target-checkbox-modal" style="cursor: pointer;"><input type="checkbox" name="targetRankModal" value="deckCadet" style="display: none;"><div class="rank-option-modal" style="padding: 4px 10px; border: 2px solid #e5e5ea; border-radius: 6px; font-size: 11px; font-weight: 600; background: white;">甲板實習生</div></label>
             </div>
           </div>
@@ -2279,6 +2328,11 @@
       const grid = document.getElementById('maritimeCourseResults');
       const total = grid.querySelectorAll('.course-card').length;
       document.getElementById('courseSelectCount').textContent = `已選 ${count} 個`;
+      const copyBtn = document.getElementById('courseSelectCopyBtn');
+      copyBtn.disabled = count === 0;
+      copyBtn.innerHTML = count > 0
+        ? `<i class="ph ph-copy"></i> 複製 (${count})`
+        : `<i class="ph ph-copy"></i> 複製`;
       const delBtn = document.getElementById('courseSelectDeleteBtn');
       delBtn.disabled = count === 0;
       delBtn.innerHTML = count > 0
@@ -2291,6 +2345,29 @@
           ? '<i class="ph ph-selection-slash"></i> 取消全選'
           : '<i class="ph ph-selection-all"></i> 全選';
       }
+    }
+
+    async function copySelectedCourses() {
+      const count = selectedCourseIds.size;
+      if (count === 0) return;
+
+      const ids = Array.from(selectedCourseIds);
+      const copiedCourses = [];
+      ids.forEach(id => {
+        const original = maritimeCourses.find(c => c.id === id);
+        if (original) {
+          const copy = JSON.parse(JSON.stringify(original));
+          copy.id = Date.now() + Math.floor(Math.random() * 1000) + copiedCourses.length;
+          copy.name = original.name + ' (副本)';
+          copiedCourses.push(copy);
+        }
+      });
+      copiedCourses.forEach(c => maritimeCourses.push(c));
+      await saveMaritimeCourses();
+      showMaritimeMessage(`✓ 已複製 ${copiedCourses.length} 個課程`, 'success');
+      toggleCourseSelectMode();
+      displayMaritimeCourses();
+      displayManageMaritimeCourses();
     }
 
     async function deleteSelectedCourses() {
@@ -2682,9 +2759,59 @@
                       <span class="sidebar-info-main">未設定</span>
                       <span class="sidebar-info-sub">尚未填寫連結</span>
                     `}
+                  <a href="teaching-materials.html?courseId=${course.id}" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;font-weight:600;color:#0a4a7a;background:#e8f0f8;border-radius:8px;padding:5px 10px;text-decoration:none;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    前往教材管理
+                  </a>
                   </div>
                 </div>
               </div>
+            </div>
+
+              <!-- 教材與影片附件 -->
+              ${(course.materials && course.materials.length > 0) ? `
+              <div class="sidebar-section" style="margin-top: 16px;">
+                <h3 class="sidebar-section-title">
+                  <span class="sidebar-dot" style="background: #8b5cf6;"></span>
+                  教材與影片附件
+                  <span style="margin-left: auto; font-size: 11px; font-weight: 500; color: var(--apple-gray); background: #f5f5f7; padding: 2px 8px; border-radius: 10px;">${course.materials.length} 個檔案</span>
+                  <a href="teaching-materials.html?courseId=${course.id}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#0a4a7a;background:#e8f0f8;border-radius:6px;padding:3px 8px;text-decoration:none;margin-left:6px;">前往教材管理</a>
+                </h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${course.materials.map(m => {
+                    const ext = (m.fileName||'').split('.').pop().toLowerCase();
+                    const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
+                    const isPdf = ext === 'pdf';
+                    const isPpt = ['ppt','pptx'].includes(ext);
+                    const isDoc = ['doc','docx'].includes(ext);
+                    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext);
+                    const iconClass = isVideo ? 'ph-video-camera' : (isPdf ? 'ph-file-pdf' : (isPpt ? 'ph-presentation' : (isDoc ? 'ph-file-doc' : (isImg ? 'ph-image' : 'ph-file'))));
+                    const iconColor = isVideo ? '#ef4444' : (isPdf ? '#dc2626' : (isPpt ? '#f97316' : (isDoc ? '#3b82f6' : (isImg ? '#10b981' : '#6b7280'))));
+                    return `<div style="display:flex;align-items:center;gap:10px;background:white;padding:10px 14px;border-radius:10px;border:1px solid #e5e5ea;">
+                      <i class="ph ${iconClass}" style="font-size:20px;color:${iconColor};flex-shrink:0;"></i>
+                      <span style="flex:1;font-size:13px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.fileName}">${m.fileName}</span>
+                      <button onclick="openMaritimeCourseMaterial('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" style="flex-shrink:0;font-size:11px;font-weight:600;color:white;background:#8b5cf6;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;">檢視</button>
+                    </div>`;
+                  }).join('')}
+                </div>
+              </div>
+              ` : `
+              ${_isReadOnly ? '' : `
+              <div class="sidebar-section" style="margin-top: 16px;">
+                <h3 class="sidebar-section-title">
+                  <span class="sidebar-dot" style="background: #8b5cf6;"></span>
+                  教材與影片附件
+                </h3>
+                <div class="empty-state-sidebar">
+                  <div class="empty-state-sidebar-icon">
+                    <i class="ph ph-folder-open"></i>
+                  </div>
+                  <p>尚未上傳教材檔案</p>
+                  <button onclick="editMaritimeCourse(${course.id})" class="empty-state-btn">前往上傳</button>
+                </div>
+              </div>
+              `}
+              `}
             </div>
 
             <!-- 適用對象卡片 -->
@@ -2812,6 +2939,7 @@
         'bosun': '水手長',
         'carpenter': '木匠',
         'AB': '幹練水手',
+        'OS': '普通水手',
         'deckCadet': '甲板實習生',
         'C/E': 'C/E 輪機長',
         '2/E': '2/E 大管',
@@ -2837,6 +2965,9 @@
       document.getElementById('maritimeCourseDescriptionModal').value = c.description;
       setMaritimeLangModal(c.lang || 'zh');
       document.getElementById('maritimeCourseLinkModal').value = c.link || '';
+
+      // 載入教材附件
+      loadMaterialsToModal(c.materials || []);
 
       const list = document.getElementById('maritimeKeywordListModal');
       list.innerHTML = '';
@@ -2894,6 +3025,92 @@
       document.getElementById('langBtnEn').classList.toggle('lang-btn-active', lang === 'en');
     }
 
+    // ── 教材檔案上傳功能 ─────────────────────────────────
+    function renderMaritimeMaterialItem(mat) {
+      const ext = (mat.fileName||'').split('.').pop().toLowerCase();
+      const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
+      const isPdf = ext === 'pdf';
+      const isPpt = ['ppt','pptx'].includes(ext);
+      const isDoc = ['doc','docx'].includes(ext);
+      const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext);
+      const iconClass = isVideo ? 'ph-video-camera' : (isPdf ? 'ph-file-pdf' : (isPpt ? 'ph-presentation' : (isDoc ? 'ph-file-doc' : (isImg ? 'ph-image' : 'ph-file'))));
+      const iconColor = isVideo ? '#ef4444' : (isPdf ? '#dc2626' : (isPpt ? '#f97316' : (isDoc ? '#3b82f6' : (isImg ? '#10b981' : '#6b7280'))));
+      return `<div class="maritime-mat-item" data-filename="${mat.fileName||''}" data-fileurl="${mat.fileUrl||''}" data-filetype="${mat.fileType||''}" style="display:flex;align-items:center;gap:10px;background:white;padding:10px 14px;border-radius:10px;border:1px solid #e5e5ea;">
+        <i class="ph ${iconClass}" style="font-size:18px;color:${iconColor};flex-shrink:0;"></i>
+        <span style="flex:1;font-size:12px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${mat.fileName}">${mat.fileName}</span>
+        <button type="button" onclick="openMaritimeCourseMaterial('${(mat.fileName||'').replace(/'/g,"\\'")}','${(mat.fileUrl||'').replace(/'/g,"\\'")}')" style="font-size:11px;font-weight:600;color:#8b5cf6;background:none;border:1px solid #8b5cf6;border-radius:6px;padding:4px 10px;cursor:pointer;">檢視</button>
+        <button type="button" onclick="this.closest('.maritime-mat-item').remove()" style="font-size:11px;font-weight:600;color:#ef4444;background:none;border:1px solid #ef4444;border-radius:6px;padding:4px 8px;cursor:pointer;">移除</button>
+      </div>`;
+    }
+
+    function loadMaterialsToModal(materials) {
+      const list = document.getElementById('maritimeMaterialListModal');
+      list.innerHTML = '';
+      if (materials && materials.length > 0) {
+        materials.forEach(m => {
+          list.insertAdjacentHTML('beforeend', renderMaritimeMaterialItem(m));
+        });
+      }
+    }
+
+    function collectMaterialsFromModal() {
+      return Array.from(document.querySelectorAll('#maritimeMaterialListModal .maritime-mat-item')).map(el => ({
+        fileName: el.getAttribute('data-filename') || '',
+        fileUrl: el.getAttribute('data-fileurl') || '',
+        fileType: el.getAttribute('data-filetype') || ''
+      })).filter(m => m.fileUrl);
+    }
+
+    async function handleMaritimeCourseMaterialUpload(input) {
+      if (!input.files || !input.files.length) return;
+      const list = document.getElementById('maritimeMaterialListModal');
+      const okTypes = ['image/jpeg','image/jpg','image/png','image/gif','image/webp','application/pdf',
+        'video/mp4','video/webm','video/ogg','video/quicktime',
+        'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+      for (const file of input.files) {
+        if (!okTypes.includes(file.type)) { alert(`不支援的檔案格式：${file.name}\n支援：JPG, PNG, PDF, MP4, WebM, MOV, PPT, PPTX, DOC, DOCX`); continue; }
+        if (file.size > 50*1024*1024) { alert(`檔案太大：${file.name}（上限 50MB）`); continue; }
+
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = 'display:flex;align-items:center;gap:10px;background:#fefce8;padding:10px 14px;border-radius:10px;border:1px solid #fde68a;';
+        placeholder.innerHTML = `<i class="ph ph-spinner" style="font-size:18px;color:#f59e0b;animation:spin 1s linear infinite;"></i><span style="font-size:12px;color:#92400e;">上傳中... ${file.name}</span>`;
+        list.appendChild(placeholder);
+
+        try {
+          const r = await api.uploadFile(file, file.name);
+          const mat = { fileName: r.name || file.name, fileUrl: r.url, fileType: file.type };
+          placeholder.outerHTML = renderMaritimeMaterialItem(mat);
+        } catch(err) {
+          console.error(err);
+          placeholder.outerHTML = `<div style="display:flex;align-items:center;gap:10px;background:#fef2f2;padding:10px 14px;border-radius:10px;border:1px solid #fecaca;">
+            <i class="ph ph-warning" style="font-size:18px;color:#ef4444;"></i>
+            <span style="flex:1;font-size:12px;color:#991b1b;">上傳失敗：${file.name} - ${err.message}</span>
+            <button type="button" onclick="this.parentElement.remove()" style="font-size:11px;color:#ef4444;background:none;border:none;cursor:pointer;">✕</button>
+          </div>`;
+        }
+      }
+      input.value = '';
+    }
+
+    function openMaritimeCourseMaterial(fileName, fileUrl) {
+      const ext = (fileName || '').split('.').pop().toLowerCase();
+      if (['mp4','webm','mov','ogg'].includes(ext)) {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#000;">
+          <video controls autoplay style="max-width:100%;max-height:100vh;"><source src="${fileUrl}">您的瀏覽器不支援影片播放</video></body></html>`);
+      } else if (ext === 'pdf') {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;"><embed src="${fileUrl}" type="application/pdf" width="100%" height="100%"></body></html>`);
+      } else if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+        const w = window.open('', '_blank');
+        w.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;"><img src="${fileUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
+      } else {
+        window.open(fileUrl, '_blank');
+      }
+    }
+
     async function saveMaritimeCourseFromModal(e) {
       e.preventDefault();
       const newData = {
@@ -2906,7 +3123,8 @@
         link: document.getElementById('maritimeCourseLinkModal').value.trim(),
         keywords: Array.from(document.querySelectorAll('#maritimeKeywordListModal input')).map(i => i.value.trim()).filter(v => v),
         targetCategories: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetCategoryModal"]:checked')).map(i => i.value),
-        targetRanks: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetRankModal"]:checked')).map(i => i.value)
+        targetRanks: Array.from(document.querySelectorAll('#maritimeCourseModalForm input[name="targetRankModal"]:checked')).map(i => i.value),
+        materials: collectMaterialsFromModal()
       };
 
       const idx = maritimeCourses.findIndex(x => x.id === editingMaritimeCourseId);
@@ -3522,20 +3740,41 @@
         // 移除打字指示器
         typingRow.remove();
 
-        // 建立 AI 回覆元素（帶頭像）
+        // 解析是否含有 AI 操作指令
+        const actions = typeof aiChat.parseAIActions === 'function' ? aiChat.parseAIActions(reply) : [];
+        const displayText = typeof aiChat.cleanDisplayText === 'function' ? aiChat.cleanDisplayText(reply) : reply;
+
+        // 建立 AI 回覆元素（帶頭像，使用新版 createMsgRow）
         const aiMsgRow = createMsgRow('assistant', '');
         messages.appendChild(aiMsgRow);
         const aiBubble = aiMsgRow.querySelector('.ai-msg-bubble');
 
-        // 串流打字效果
-        await aiChat.simulateStream(reply, (char, idx, partial) => {
+        // 串流打字效果（只顯示清理後的文字）
+        await aiChat.simulateStream(displayText, (char, idx, partial) => {
           aiBubble.innerHTML = formatAIResponse(partial);
           messages.scrollTop = messages.scrollHeight;
         }, 15);
 
-        // 更新記憶計數和側邊欄（AI 可能在回覆中記住了新資訊，session 標題可能更新）
+        // 更新記憶計數和側邊欄
         updateMemoryCount();
         renderSessionList();
+
+        // 若有操作指令，顯示確認按鈕
+        if (actions.length > 0) {
+          const actionBtnDiv = document.createElement('div');
+          actionBtnDiv.style.cssText = 'background:rgba(0,122,255,0.08); border:1px solid rgba(0,122,255,0.2); border-radius:12px; padding:10px 14px; margin-top:6px; margin-left:44px;';
+          actionBtnDiv.innerHTML = `
+            <div style="font-size:13px; color:#007aff; font-weight:600; margin-bottom:8px;"><i class="ph ph-lightning"></i> AI 偵測到操作指令</div>
+            ${actions.map((a, i) => `
+              <button onclick="showAIActionConfirmation(${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; background:#007aff; color:white; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; margin-right:6px; margin-bottom:4px;">
+                <i class="ph ph-${a.type === 'CREATE_COURSE' ? 'plus-circle' : 'pencil-simple'}"></i>
+                ${a.type === 'CREATE_COURSE' ? '新增課程：' + (a.data.name || '未命名') : '修改課程：' + (a.data.name || '未知')}
+              </button>
+            `).join('')}
+          `;
+          messages.appendChild(actionBtnDiv);
+          window._pendingAIActions = actions;
+        }
       } catch (error) {
         typingRow.remove();
 
@@ -3601,6 +3840,227 @@
       sendAIMessage();
     }
 
+    /** 開啟課程意見反映模式：在輸入框填入引導語 */
+    function openFeedbackMode() {
+      if (_aiCooldownTimer) { showMaritimeMessage('AI 冷卻中，請稍候…', 'info'); return; }
+      const input = document.getElementById('aiChatInput');
+      input.value = '我要反映課程意見：課程「」的教學方式建議調整為：';
+      input.focus();
+      // 將游標移到引號中間
+      const pos = input.value.indexOf('」') - (input.value.length - input.value.indexOf('「')) + 1;
+      try { input.setSelectionRange(pos, pos); } catch(e) {}
+    }
+
+    // ── AI 操作確認 Modal ──────────────────────────────
+    let _currentAIAction = null;
+
+    function showAIActionConfirmation(index) {
+      const action = (window._pendingAIActions || [])[index];
+      if (!action) return;
+      _currentAIAction = action;
+
+      const modal = document.getElementById('aiActionModal');
+      const title = document.getElementById('aiActionModalTitle');
+      const body = document.getElementById('aiActionModalBody');
+
+      if (action.type === 'CREATE_COURSE') {
+        title.textContent = '新增課程確認';
+        const d = action.data;
+        const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+        body.innerHTML = `
+          <div style="display:grid;gap:8px;">
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">課程名稱</span><div style="font-size:15px;font-weight:700;color:#1d1d1f;margin-top:2px;">${d.name || '（未設定）'}</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div><span style="font-weight:600;color:#86868b;font-size:12px;">分類</span><div style="margin-top:2px;">${catMap[d.category] || d.category || '未設定'}</div></div>
+              <div><span style="font-weight:600;color:#86868b;font-size:12px;">授課方式</span><div style="margin-top:2px;">${d.method || '未設定'}</div></div>
+              <div><span style="font-weight:600;color:#86868b;font-size:12px;">時數（分鐘）</span><div style="margin-top:2px;">${d.duration || 0}</div></div>
+            </div>
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">課程描述</span><div style="margin-top:2px;font-size:13px;">${d.description || '（無）'}</div></div>
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">關鍵字</span><div style="margin-top:4px;">${(d.keywords||[]).map(k=>`<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:12px;margin-right:4px;">${k}</span>`).join('') || '（無）'}</div></div>
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">適用對象</span><div style="margin-top:2px;font-size:13px;">${(d.targetRanks||[]).join('、') || '全員'}</div></div>
+          </div>`;
+      } else if (action.type === 'UPDATE_COURSE') {
+        title.textContent = '修改課程確認';
+        const d = action.data;
+        const changes = d.changes || {};
+        body.innerHTML = `
+          <div style="display:grid;gap:8px;">
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">目標課程</span><div style="font-size:15px;font-weight:700;color:#1d1d1f;margin-top:2px;">${d.name || '（未指定）'}</div></div>
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">建議修改內容</span>
+              <div style="margin-top:6px;display:grid;gap:6px;">
+                ${Object.entries(changes).map(([k,v])=>`<div style="background:#fff;border-radius:8px;padding:8px 10px;border:1px solid #e5e7eb;font-size:13px;"><strong>${k}：</strong>${Array.isArray(v)?v.join('、'):v}</div>`).join('')}
+              </div>
+            </div>
+          </div>`;
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    function closeAIActionModal() {
+      document.getElementById('aiActionModal').style.display = 'none';
+      _currentAIAction = null;
+    }
+
+    async function confirmAIAction() {
+      if (!_currentAIAction) return;
+      const action = _currentAIAction;
+      const btn = document.getElementById('aiActionConfirmBtn');
+      btn.disabled = true;
+      btn.textContent = '執行中…';
+
+      try {
+        if (action.type === 'CREATE_COURSE') {
+          const d = action.data;
+          const courseName = (d.name || '').trim();
+          if (!courseName) { alert('課程名稱不能為空'); btn.disabled = false; btn.innerHTML = '<i class="ph ph-check-circle"></i> 確認執行'; return; }
+          const duplicate = maritimeCourses.find(c => c.name.trim() === courseName);
+          if (duplicate) { alert(`課程「${courseName}」已存在，無法重複新增。`); closeAIActionModal(); return; }
+          const course = {
+            id: Date.now(),
+            name: courseName,
+            category: d.category || '09',
+            method: d.method || '實體課程',
+            duration: parseInt(d.duration) || 0,
+            description: d.description || '',
+            keywords: Array.isArray(d.keywords) ? d.keywords : [],
+            targetCategories: Array.isArray(d.targetCategories) ? d.targetCategories : [],
+            targetRanks: Array.isArray(d.targetRanks) ? d.targetRanks : [],
+            lang: 'zh', link: ''
+          };
+          maritimeCourses.push(course);
+          await saveMaritimeCourses();
+          showMaritimeMessage(`✓ 已新增課程：${courseName}`, 'success');
+          displayMaritimeCourses();
+          displayManageMaritimeCourses();
+          aiChat._cachedContext = null; // 清除快取，讓 AI 看到新課程
+
+        } else if (action.type === 'UPDATE_COURSE') {
+          const d = action.data;
+          const idx = maritimeCourses.findIndex(c => c.name.trim() === (d.name || '').trim());
+          if (idx === -1) { alert(`找不到課程「${d.name}」，請確認課程名稱是否正確。`); closeAIActionModal(); return; }
+          const changes = d.changes || {};
+          maritimeCourses[idx] = { ...maritimeCourses[idx], ...changes };
+          await saveMaritimeCourses();
+          showMaritimeMessage(`✓ 已更新課程：${d.name}`, 'success');
+          displayMaritimeCourses();
+          displayManageMaritimeCourses();
+          aiChat._cachedContext = null;
+        }
+        closeAIActionModal();
+      } catch (err) {
+        console.error('AI 操作執行失敗:', err);
+        alert('操作失敗，請稍後再試。');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph ph-check-circle"></i> 確認執行';
+      }
+    }
+
+    // ── 匯出功能 ──────────────────────────────────────
+    function exportToExcel() {
+      if (typeof XLSX === 'undefined') { showMaritimeMessage('Excel 匯出模組載入中，請稍後再試', 'info'); return; }
+      const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+      const rows = maritimeCourses.map(c => ({
+        '課程名稱': c.name || '',
+        '分類': (catMap[c.category] || c.category || ''),
+        '授課方式': c.method || '',
+        '時數(分鐘)': c.duration || 0,
+        '語言': c.lang || 'zh',
+        '關鍵字': Array.isArray(c.keywords) ? c.keywords.join('、') : '',
+        '適用職等': Array.isArray(c.targetRanks) ? c.targetRanks.join('、') : '',
+        '適用類別': Array.isArray(c.targetCategories) ? c.targetCategories.map(t=>t==='existing'?'現有船員':'新進船員').join('、') : '',
+        '課程描述': c.description || '',
+        '課程連結': c.link || ''
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      // 設定欄寬
+      ws['!cols'] = [{wch:28},{wch:14},{wch:10},{wch:10},{wch:6},{wch:24},{wch:28},{wch:14},{wch:40},{wch:30}];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '課程清單');
+      XLSX.writeFile(wb, `萬海訓練課程_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.xlsx`);
+      showMaritimeMessage('✓ Excel 已下載', 'success');
+    }
+
+    function exportToPDF() {
+      const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+      const printArea = document.getElementById('pdfPrintArea');
+      const today = new Date().toLocaleDateString('zh-TW');
+      printArea.innerHTML = `
+        <div style="font-family:-apple-system,sans-serif;color:#1d1d1f;max-width:900px;margin:0 auto;">
+          <div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #007aff;">
+            <h1 style="font-size:22px;font-weight:700;margin:0 0 4px;">萬海智慧航安訓練管理系統</h1>
+            <h2 style="font-size:16px;font-weight:500;color:#6b7280;margin:0;">課程清單（共 ${maritimeCourses.length} 門）　列印日期：${today}</h2>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="background:#eff6ff;">
+                <th style="padding:8px;text-align:left;border:1px solid #e5e7eb;font-weight:600;width:28%;">課程名稱</th>
+                <th style="padding:8px;text-align:center;border:1px solid #e5e7eb;font-weight:600;width:12%;">分類</th>
+                <th style="padding:8px;text-align:center;border:1px solid #e5e7eb;font-weight:600;width:10%;">方式</th>
+                <th style="padding:8px;text-align:center;border:1px solid #e5e7eb;font-weight:600;width:8%;">時數</th>
+                <th style="padding:8px;text-align:left;border:1px solid #e5e7eb;font-weight:600;width:20%;">關鍵字</th>
+                <th style="padding:8px;text-align:left;border:1px solid #e5e7eb;font-weight:600;">適用對象</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${maritimeCourses.map((c,i)=>`
+                <tr style="background:${i%2===0?'#fff':'#f9fafb'};">
+                  <td style="padding:8px;border:1px solid #e5e7eb;font-weight:600;">${c.name||''}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;">${catMap[c.category]||c.category||''}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;">${c.method||''}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;">${c.duration||0}分</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;font-size:11px;">${Array.isArray(c.keywords)?c.keywords.join('、'):''}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;font-size:11px;">${Array.isArray(c.targetRanks)?c.targetRanks.join('、'):'全員'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      printArea.style.display = 'block';
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => { printArea.style.display = 'none'; }, 1000);
+      }, 100);
+    }
+
+    async function exportToPPT() {
+      if (typeof PptxGenJS === 'undefined') { showMaritimeMessage('PPT 匯出模組載入中，請稍後再試', 'info'); return; }
+      const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+      const pptx = new PptxGenJS();
+      pptx.layout = 'LAYOUT_WIDE';
+      pptx.author = '萬海智慧航安訓練管理系統';
+
+      // 封面頁
+      const cover = pptx.addSlide();
+      cover.background = { color: '0051d5' };
+      cover.addText('萬海智慧航安訓練管理系統', { x:0.5, y:2.5, w:'90%', fontSize:32, bold:true, color:'FFFFFF', align:'center' });
+      cover.addText('課程資料總覽', { x:0.5, y:3.4, w:'90%', fontSize:20, color:'BFD7FF', align:'center' });
+      cover.addText(`共 ${maritimeCourses.length} 門課程　${new Date().toLocaleDateString('zh-TW')}`, { x:0.5, y:4.2, w:'90%', fontSize:14, color:'93C5FD', align:'center' });
+
+      // 每 6 門課一頁
+      const perPage = 6;
+      for (let p = 0; p < maritimeCourses.length; p += perPage) {
+        const slide = pptx.addSlide();
+        slide.background = { color: 'F5F5F7' };
+        const pageNum = Math.floor(p / perPage) + 1;
+        slide.addText(`課程清單（第 ${pageNum} 頁）`, { x:0.4, y:0.2, w:'90%', fontSize:16, bold:true, color:'0051d5' });
+        const chunk = maritimeCourses.slice(p, p + perPage);
+        chunk.forEach((c, i) => {
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          const x = col === 0 ? 0.4 : 6.8;
+          const y = 0.7 + row * 1.55;
+          slide.addShape(pptx.ShapeType.rect, { x, y, w:5.9, h:1.45, fill:{color:'FFFFFF'}, line:{color:'E5E7EB',width:0.5}, rectRadius:0.12 });
+          slide.addText(c.name || '未命名', { x:x+0.15, y:y+0.08, w:5.6, fontSize:11, bold:true, color:'1D1D1F' });
+          slide.addText(`${catMap[c.category]||c.category||''}  ·  ${c.method||''}  ·  ${c.duration||0} 分鐘`, { x:x+0.15, y:y+0.38, w:5.6, fontSize:9, color:'6B7280' });
+          slide.addText(Array.isArray(c.keywords) && c.keywords.length ? '🏷 ' + c.keywords.slice(0,4).join('、') : '', { x:x+0.15, y:y+0.62, w:5.6, fontSize:9, color:'1D4ED8' });
+          slide.addText(Array.isArray(c.targetRanks) && c.targetRanks.length ? '👤 ' + c.targetRanks.slice(0,4).join('、') : '適用全員', { x:x+0.15, y:y+0.88, w:5.6, fontSize:9, color:'374151' });
+        });
+      }
+
+      await pptx.writeFile({ fileName: `萬海訓練課程_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.pptx` });
+      showMaritimeMessage('✓ PowerPoint 已下載', 'success');
+    }
+
     /**
      * 將 AI 回覆的 Markdown 格式轉為 HTML
      */
@@ -3657,5 +4117,37 @@
       </div>
     </div>
   </div>
+
+  <!-- AI 操作確認 Modal -->
+  <div id="aiActionModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:20000; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this)closeAIActionModal()">
+    <div style="background:#fff; border-radius:20px; padding:32px; max-width:560px; width:100%; box-shadow:0 24px 64px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+        <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#007aff,#0051d5);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;">
+          <i class="ph ph-robot"></i>
+        </div>
+        <div>
+          <h3 id="aiActionModalTitle" style="font-size:18px;font-weight:700;color:#1d1d1f;margin:0;">AI 建議操作</h3>
+          <p style="font-size:12px;color:#86868b;margin:2px 0 0;">請確認以下內容後再執行</p>
+        </div>
+      </div>
+      <div id="aiActionModalBody" style="background:#f5f5f7;border-radius:12px;padding:16px;margin-bottom:20px;font-size:14px;line-height:1.6;max-height:320px;overflow-y:auto;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeAIActionModal()" style="flex:1;padding:12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;color:#6b7280;">取消</button>
+        <button id="aiActionConfirmBtn" onclick="confirmAIAction()" style="flex:2;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,#007aff,#0051d5);color:white;font-size:14px;font-weight:700;cursor:pointer;">
+          <i class="ph ph-check-circle"></i> 確認執行
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF 列印樣式 -->
+  <style id="printStyles">
+    @media print {
+      body > *:not(#pdfPrintArea) { display: none !important; }
+      #pdfPrintArea { display: block !important; }
+      @page { margin: 20mm; }
+    }
+  </style>
+  <div id="pdfPrintArea" style="display:none;"></div>
 </body>
 </html>

@@ -397,7 +397,7 @@
         <p class="card-description">海事專業課程管理與分析</p>
       </a>
 
-      <a href="#" class="card" id="teaching-materials-card">
+      <a href="teaching-materials.html" class="card" id="teaching-materials-card">
         <span class="card-icon">
           <img src="teaching-materials-icon.png" alt="教材管理">
         </span>
@@ -418,11 +418,7 @@
     // 主頁初始化完成
     // 系統已載入
 
-    // 教材管理卡片點擊事件
-    document.getElementById('teaching-materials-card')?.addEventListener('click', function(e) {
-      e.preventDefault();
-      showComingSoonModal('教材管理', '書籍、影片與數位資源管理功能');
-    });
+    // 教材管理卡片直接連結，不再需要 click handler
 
     // 顯示「即將推出」模態視窗
     function showComingSoonModal(title, description) {
