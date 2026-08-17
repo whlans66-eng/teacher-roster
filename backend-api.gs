@@ -1098,11 +1098,16 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
   const payload = {
     contents: contents,
     generationConfig: {
-      temperature: 0.7,
+      // 課程比對／缺口分析屬事實推理任務，降低隨機性以求一致
+      temperature: 0.3,
       topP: 0.95,
       topK: 40,
-      maxOutputTokens: 8192,
-      thinkingConfig: { thinkingBudget: 0 }
+      // 注意：Gemini 2.5 的 thinking token 會計入 maxOutputTokens，
+      // 因此放大額度並給定固定思考預算，兼顧推理品質與回覆完整度
+      // （原本設 thinkingBudget: 0 是為了解 2048 額度下的截斷問題，
+      //   額度已放大，不需再犧牲推理能力）
+      maxOutputTokens: 16384,
+      thinkingConfig: { thinkingBudget: 4096 }
     },
     safetySettings: [
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
