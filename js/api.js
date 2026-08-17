@@ -300,10 +300,14 @@ class TeacherRosterAPI {
 
   /**
    * POST 請求
+   * @param {Object} data - 送出的參數
+   * @param {Object} [options] - { timeoutMs } 可覆寫預設逾時
+   *   （AI 問答需抓取外部網址時，耗時遠超過一般請求的 30 秒）
    */
-  async _post(data) {
+  async _post(data, options = {}) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutMs = options.timeoutMs || this.timeout;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const body = new URLSearchParams();
@@ -1627,12 +1631,17 @@ ${teachersSummary}
       // 只送最近的對話給 Gemini API（節省 token，但保留完整歷史給 UI）
       const apiHistory = this.conversationHistory.slice(-this._maxApiHistory);
 
+      // AI 問答本身就比一般 CRUD 慢（模型思考），訊息含網址時後端還要先連外抓取，
+      // 沿用預設的 30 秒必定逾時，因此依情況放寬
+      const hasUrl = /https?:\/\//i.test(userMessage);
+      const aiTimeoutMs = hasUrl ? 180000 : 60000;
+
       const response = await this.api._post({
         action: 'askgemini',
         systemContext: systemContext,
         conversationHistory: apiHistory,
         userMessage: userMessage
-      });
+      }, { timeoutMs: aiTimeoutMs });
 
       // 第一優先：檢查後端結構化 rateLimited 旗標
       if (response.rateLimited) {

@@ -775,11 +775,16 @@ function _cleanupStaleSessions(){}
  * 避免模型憑網址「猜」文件內容。
  */
 var EXTERNAL_FETCH = {
-  MAX_URLS: 3,             // 單則訊息最多抓幾個網址（控制延遲）
+  MAX_URLS: 2,              // 單則訊息最多抓幾個網址（控制延遲）
   MAX_CHARS_PER_DOC: 18000, // 單份文件截斷長度
   MAX_TOTAL_CHARS: 40000,   // 所有文件合計上限
-  CACHE_TTL_SECONDS: 21600  // 抓取結果快取 6 小時
+  CACHE_TTL_SECONDS: 21600, // 抓取結果快取 6 小時
+  BUDGET_MS: 60000          // 抓取階段最多佔用的時間
 };
+
+// 整趟 _callGemini 的時間預算。前端對含網址的 AI 請求採 180 秒逾時，
+// 這裡抓 150 秒，留餘裕讓後端能回傳「部分成功」而不是被前端直接中斷。
+var GEMINI_TIME_BUDGET_MS = 150000;
 
 /**
  * 從文字中取出網址（去重、去除結尾標點）
@@ -949,7 +954,7 @@ function _fetchOneReference(url) {
 /**
  * 抓取訊息中所有網址
  */
-function _fetchExternalReferences(userMessage) {
+function _fetchExternalReferences(userMessage, deadlineAt) {
   var urls = _extractUrls(userMessage);
   if (urls.length === 0) return [];
 
@@ -957,6 +962,14 @@ function _fetchExternalReferences(userMessage) {
   var totalChars = 0;
 
   for (var i = 0; i < urls.length; i++) {
+    // 逾時保護：前一個網址若拖太久，剩下的直接標記未處理，
+    // 讓模型知道少了哪份資料，而不是整個請求被前端中斷
+    if (deadlineAt && Date.now() > deadlineAt) {
+      refs.push({ url: urls[i], ok: false, error: '抓取時間已達上限，此網址未處理' });
+      Logger.log('外部抓取 ' + urls[i] + ' → 略過（已超出時間預算）');
+      continue;
+    }
+
     var ref = _fetchOneReference(urls[i]);
 
     if (ref.ok) {
@@ -1090,7 +1103,8 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
 
   // 若訊息中含網址，先由後端實際抓回內容，連同問題一起送出
   // （與當前訊息合併為同一輪，避免出現連續兩個 user role）
-  var externalRefs = _fetchExternalReferences(userMessage);
+  var startedAt = Date.now();
+  var externalRefs = _fetchExternalReferences(userMessage, startedAt + EXTERNAL_FETCH.BUDGET_MS);
   var externalBlock = _buildExternalReferenceBlock(externalRefs);
 
   var finalUserText = externalBlock
@@ -1154,7 +1168,9 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
 
       if (RETRYABLE_STATUS.indexOf(status) !== -1) {
         Logger.log('Gemini API ' + status + ' (attempt ' + (attempt + 1) + '/' + (maxRetries + 1) + '): ' + JSON.stringify(body));
-        if (attempt < maxRetries) {
+        // 抓取階段可能已用掉不少時間，重試前先確認還在預算內，
+        // 否則寧可回可讀的訊息，也不要讓前端等到逾時
+        if (attempt < maxRetries && (Date.now() - startedAt) < GEMINI_TIME_BUDGET_MS) {
           // 指數退避：1 秒、2 秒、4 秒
           Utilities.sleep(Math.pow(2, attempt) * 1000);
           continue;
@@ -1188,9 +1204,9 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
 
       return '抱歉，AI 未能產生有效回覆，請再試一次。';
     } catch (error) {
-      // 連線層級失敗（DNS、逾時等），同樣重試
+      // 連線層級失敗（DNS、逾時等），同樣重試（一樣受整體時間預算約束）
       Logger.log('Gemini API call failed (attempt ' + (attempt + 1) + '/' + (maxRetries + 1) + '): ' + error);
-      if (attempt < maxRetries) {
+      if (attempt < maxRetries && (Date.now() - startedAt) < GEMINI_TIME_BUDGET_MS) {
         Utilities.sleep(Math.pow(2, attempt) * 1000);
         continue;
       }
