@@ -3734,10 +3734,24 @@
       messages.appendChild(typingRow);
       messages.scrollTop = messages.scrollHeight;
 
+      // 訊息含網址時後端要先連外抓取，等待時間明顯較長，
+      // 補一行狀態說明避免使用者以為當掉
+      let _fetchHintTimer = null;
+      if (/https?:\/\//i.test(message)) {
+        const hint = document.createElement('div');
+        hint.style.cssText = 'font-size:12px; color:#8e8e93; margin-left:44px; margin-top:4px;';
+        hint.innerHTML = '<i class="ph ph-globe"></i> 正在讀取連結內容…（外部網頁較慢，請稍候）';
+        typingRow.appendChild(hint);
+        _fetchHintTimer = setTimeout(() => {
+          hint.innerHTML = '<i class="ph ph-globe"></i> 已讀取連結，正在比對課程資料…';
+        }, 12000);
+      }
+
       try {
         const reply = await aiChat.chat(message);
 
         // 移除打字指示器
+        if (_fetchHintTimer) clearTimeout(_fetchHintTimer);
         typingRow.remove();
 
         // 解析是否含有 AI 操作指令
@@ -3776,6 +3790,7 @@
           window._pendingAIActions = actions;
         }
       } catch (error) {
+        if (_fetchHintTimer) clearTimeout(_fetchHintTimer);
         typingRow.remove();
 
         const errorMsg = error.message || '連線失敗，請稍後再試';
