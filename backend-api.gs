@@ -853,8 +853,10 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
     ]
   };
 
-  // 含自動重試（429 時指數退避，最多 2 次）
-  var maxRetries = 2;
+  // 含自動重試：429（額度上限）與 5xx（Gemini 服務端暫時性錯誤，如 503 模型過載）
+  // 都採指數退避重試；其餘狀態碼視為永久性錯誤直接回報
+  var RETRYABLE_STATUS = [429, 500, 502, 503, 504];
+  var maxRetries = 3;
   for (var attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       var response = UrlFetchApp.fetch(url, {
@@ -865,16 +867,28 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
       });
 
       var status = response.getResponseCode();
-      var body = JSON.parse(response.getContentText());
+      var rawText = response.getContentText();
 
-      if (status === 429) {
-        Logger.log('Gemini API 429 (attempt ' + (attempt + 1) + '/' + (maxRetries + 1) + ')');
+      // 5xx 有時會回 HTML 而非 JSON，因此解析失敗不可直接當成連線錯誤
+      var body;
+      try {
+        body = JSON.parse(rawText);
+      } catch (parseError) {
+        body = { _rawText: String(rawText).slice(0, 500) };
+      }
+
+      if (RETRYABLE_STATUS.indexOf(status) !== -1) {
+        Logger.log('Gemini API ' + status + ' (attempt ' + (attempt + 1) + '/' + (maxRetries + 1) + '): ' + JSON.stringify(body));
         if (attempt < maxRetries) {
-          // 指數退避：2 秒、4 秒
-          Utilities.sleep((attempt + 1) * 2000);
+          // 指數退避：1 秒、2 秒、4 秒
+          Utilities.sleep(Math.pow(2, attempt) * 1000);
           continue;
         }
-        return { ok: true, reply: 'Gemini API 請求已達上限，請等候 1 分鐘後再試。', rateLimited: true };
+        // 重試耗盡：依狀態碼給出可行動的訊息
+        if (status === 429) {
+          return { ok: true, reply: 'Gemini API 請求已達上限，請等候 1 分鐘後再試。', rateLimited: true };
+        }
+        return '⚠️ AI 服務忙碌中（錯誤碼：' + status + '），已自動重試 ' + (maxRetries + 1) + ' 次仍未成功。這是 Gemini 服務端暫時過載，請稍候再試一次。';
       }
 
       if (status !== 200) {
@@ -899,9 +913,10 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
 
       return '抱歉，AI 未能產生有效回覆，請再試一次。';
     } catch (error) {
-      Logger.log('Gemini API call failed (attempt ' + (attempt + 1) + '): ' + error);
+      // 連線層級失敗（DNS、逾時等），同樣重試
+      Logger.log('Gemini API call failed (attempt ' + (attempt + 1) + '/' + (maxRetries + 1) + '): ' + error);
       if (attempt < maxRetries) {
-        Utilities.sleep((attempt + 1) * 2000);
+        Utilities.sleep(Math.pow(2, attempt) * 1000);
         continue;
       }
       return '⚠️ 無法連線到 AI 服務：' + String(error.message || error);
