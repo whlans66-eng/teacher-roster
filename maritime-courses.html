@@ -2070,11 +2070,11 @@
       }
     }
 
-    // 顯示課程列表（關鍵字優先搜尋 + 高亮）
-    function displayMaritimeCourses() {
-      const search = document.getElementById('maritimeSearchInput').value.toLowerCase();
-      const catFilter = document.getElementById('maritimeCategoryFilter').value;
-      const container = document.getElementById('maritimeCourseResults');
+    // 取得目前搜尋／篩選後的課程（畫面顯示與匯出共用，確保匯出範圍＝畫面看到的範圍）
+    function getFilteredMaritimeCourses() {
+      const searchRaw = (document.getElementById('maritimeSearchInput')?.value ?? '').trim();
+      const search = searchRaw.toLowerCase();
+      const catFilter = document.getElementById('maritimeCategoryFilter')?.value ?? '';
 
       // 智慧匹配設定
       const smartMatchEnabled = document.getElementById('smartMatchEnabled')?.checked ?? false;
@@ -2144,6 +2144,30 @@
         scored.sort((a, b) => b.matchScore - a.matchScore);
         filteredCourses = scored;
       }
+
+      return {
+        courses: filteredCourses,
+        isKeywordMatch,
+        search,
+        searchRaw,
+        catFilter,
+        smartMatchEnabled,
+        smartRank,
+        smartCategory
+      };
+    }
+
+    // 顯示課程列表（關鍵字優先搜尋 + 高亮）
+    function displayMaritimeCourses() {
+      const container = document.getElementById('maritimeCourseResults');
+      const {
+        courses: filteredCourses,
+        isKeywordMatch,
+        search,
+        smartMatchEnabled,
+        smartRank,
+        smartCategory
+      } = getFilteredMaritimeCourses();
 
       if (filteredCourses.length === 0) {
         container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#86868b; padding:40px;">沒有找到相關課程</div>';
@@ -3972,10 +3996,48 @@
     }
 
     // ── 匯出功能 ──────────────────────────────────────
+    // 匯出範圍：多選模式有勾選時匯出勾選的課程，否則匯出目前搜尋／分類篩選後的結果
+    function getMaritimeExportScope() {
+      const { courses, searchRaw, catFilter } = getFilteredMaritimeCourses();
+
+      if (selectedCourseIds.size > 0) {
+        const selected = maritimeCourses.filter(c => c && selectedCourseIds.has(c.id));
+        if (selected.length > 0) {
+          return { courses: selected, label: `已選取 ${selected.length} 門課程`, fileTag: '已選取' };
+        }
+      }
+
+      const labelParts = [];
+      const tagParts = [];
+      if (searchRaw) {
+        labelParts.push(`關鍵字「${searchRaw}」`);
+        tagParts.push(searchRaw);
+      }
+      if (catFilter) {
+        const catName = maritimeCategoryNames[catFilter] || catFilter;
+        labelParts.push(`分類「${catName}」`);
+        tagParts.push(catName);
+      }
+
+      return {
+        courses,
+        label: labelParts.length ? labelParts.join('・') : '全部課程',
+        // 檔名去除作業系統不允許的字元
+        fileTag: tagParts.join('_').replace(/[\\/:*?"<>|]/g, '').slice(0, 40)
+      };
+    }
+
+    function maritimeExportFileName(ext, fileTag) {
+      const today = new Date().toLocaleDateString('zh-TW').replace(/\//g, '-');
+      return `萬海訓練課程${fileTag ? '_' + fileTag : ''}_${today}.${ext}`;
+    }
+
     function exportToExcel() {
       if (typeof XLSX === 'undefined') { showMaritimeMessage('Excel 匯出模組載入中，請稍後再試', 'info'); return; }
+      const scope = getMaritimeExportScope();
+      if (scope.courses.length === 0) { showMaritimeMessage('目前沒有可匯出的課程', 'info'); return; }
       const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
-      const rows = maritimeCourses.map(c => ({
+      const rows = scope.courses.map(c => ({
         '課程名稱': c.name || '',
         '分類': (catMap[c.category] || c.category || ''),
         '授課方式': c.method || '',
@@ -3992,11 +4054,13 @@
       ws['!cols'] = [{wch:28},{wch:14},{wch:10},{wch:10},{wch:6},{wch:24},{wch:28},{wch:14},{wch:40},{wch:30}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '課程清單');
-      XLSX.writeFile(wb, `萬海訓練課程_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.xlsx`);
-      showMaritimeMessage('✓ Excel 已下載', 'success');
+      XLSX.writeFile(wb, maritimeExportFileName('xlsx', scope.fileTag));
+      showMaritimeMessage(`✓ Excel 已下載：${scope.label}（${scope.courses.length} 門課程）`, 'success');
     }
 
     function exportToPDF() {
+      const scope = getMaritimeExportScope();
+      if (scope.courses.length === 0) { showMaritimeMessage('目前沒有可匯出的課程', 'info'); return; }
       const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
       const printArea = document.getElementById('pdfPrintArea');
       const today = new Date().toLocaleDateString('zh-TW');
@@ -4004,7 +4068,7 @@
         <div style="font-family:-apple-system,sans-serif;color:#1d1d1f;max-width:900px;margin:0 auto;">
           <div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #007aff;">
             <h1 style="font-size:22px;font-weight:700;margin:0 0 4px;">萬海智慧航安訓練管理系統</h1>
-            <h2 style="font-size:16px;font-weight:500;color:#6b7280;margin:0;">課程清單（共 ${maritimeCourses.length} 門）　列印日期：${today}</h2>
+            <h2 style="font-size:16px;font-weight:500;color:#6b7280;margin:0;">課程清單・${escapeHtml(scope.label)}（共 ${scope.courses.length} 門）　列印日期：${today}</h2>
           </div>
           <table style="width:100%;border-collapse:collapse;font-size:12px;">
             <thead>
@@ -4018,7 +4082,7 @@
               </tr>
             </thead>
             <tbody>
-              ${maritimeCourses.map((c,i)=>`
+              ${scope.courses.map((c,i)=>`
                 <tr style="background:${i%2===0?'#fff':'#f9fafb'};">
                   <td style="padding:8px;border:1px solid #e5e7eb;font-weight:600;">${c.name||''}</td>
                   <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;">${catMap[c.category]||c.category||''}</td>
@@ -4039,7 +4103,9 @@
 
     async function exportToPPT() {
       if (typeof PptxGenJS === 'undefined') { showMaritimeMessage('PPT 匯出模組載入中，請稍後再試', 'info'); return; }
-      const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+      const scope = getMaritimeExportScope();
+      if (scope.courses.length === 0) { showMaritimeMessage('目前沒有可匯出的課程', 'info'); return; }
+      const catMap ={'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
       const pptx = new PptxGenJS();
       pptx.layout = 'LAYOUT_WIDE';
       pptx.author = '萬海智慧航安訓練管理系統';
@@ -4048,17 +4114,17 @@
       const cover = pptx.addSlide();
       cover.background = { color: '0051d5' };
       cover.addText('萬海智慧航安訓練管理系統', { x:0.5, y:2.5, w:'90%', fontSize:32, bold:true, color:'FFFFFF', align:'center' });
-      cover.addText('課程資料總覽', { x:0.5, y:3.4, w:'90%', fontSize:20, color:'BFD7FF', align:'center' });
-      cover.addText(`共 ${maritimeCourses.length} 門課程　${new Date().toLocaleDateString('zh-TW')}`, { x:0.5, y:4.2, w:'90%', fontSize:14, color:'93C5FD', align:'center' });
+      cover.addText(`課程資料總覽・${scope.label}`, { x:0.5, y:3.4, w:'90%', fontSize:20, color:'BFD7FF', align:'center' });
+      cover.addText(`共 ${scope.courses.length} 門課程　${new Date().toLocaleDateString('zh-TW')}`, { x:0.5, y:4.2, w:'90%', fontSize:14, color:'93C5FD', align:'center' });
 
       // 每 6 門課一頁
       const perPage = 6;
-      for (let p = 0; p < maritimeCourses.length; p += perPage) {
+      for (let p = 0; p < scope.courses.length; p += perPage) {
         const slide = pptx.addSlide();
         slide.background = { color: 'F5F5F7' };
         const pageNum = Math.floor(p / perPage) + 1;
         slide.addText(`課程清單（第 ${pageNum} 頁）`, { x:0.4, y:0.2, w:'90%', fontSize:16, bold:true, color:'0051d5' });
-        const chunk = maritimeCourses.slice(p, p + perPage);
+        const chunk = scope.courses.slice(p, p + perPage);
         chunk.forEach((c, i) => {
           const col = i % 2;
           const row = Math.floor(i / 2);
@@ -4072,8 +4138,8 @@
         });
       }
 
-      await pptx.writeFile({ fileName: `萬海訓練課程_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.pptx` });
-      showMaritimeMessage('✓ PowerPoint 已下載', 'success');
+      await pptx.writeFile({ fileName: maritimeExportFileName('pptx', scope.fileTag) });
+      showMaritimeMessage(`✓ PowerPoint 已下載：${scope.label}（${scope.courses.length} 門課程）`, 'success');
     }
 
     /**
