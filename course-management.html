@@ -1398,6 +1398,25 @@
     let calendarEvents = loadArray('calendarEvents');
     let teacherLeaves = loadArray('teacherLeaves');
 
+    // 排課後回寫師資的課程紀錄：主講 → 講授課程（teach）、助教 → 助教經驗（ta）。
+    // 每筆存成 { name, category, materials }，師資頁再依 category 分成三個區塊顯示。
+    function addSubjectToTeacher(teacher, courseName, category, teacherLabel) {
+      if (!teacher || !courseName) return;
+      if (!Array.isArray(teacher.subjects)) teacher.subjects = [];
+
+      // 同一門課可能同時有「講授」和「助教經驗」兩筆，因此要連分類一起比對
+      const exists = teacher.subjects.some(s => {
+        const name = typeof s === 'string' ? s : s?.name;
+        const cat = typeof s === 'string' ? 'teach' : (s?.category || 'teach');
+        return name === courseName && cat === category;
+      });
+      if (exists) return;
+
+      teacher.subjects.push({ name: courseName, category, materials: [] });
+      const label = category === 'ta' ? '助教經驗' : '講授課程';
+      console.log(`✓ 已自動將「${courseName}」加入 ${teacherLabel || teacher.name} 的${label}`);
+    }
+
     let currentDate = new Date();
     let viewMode = 'month';
     let courseTypeChart = null;
@@ -2871,8 +2890,10 @@
         <!-- 教材附件 -->
         ${(() => {
           const teacherSubjects = teacher ? (teacher.subjects || []) : [];
-          const matchedSubject = teacherSubjects.find(s => (typeof s === 'object' ? s.name : s) === course.name);
-          const mats = (typeof matchedSubject === 'object' && matchedSubject) ? (matchedSubject.materials || []) : [];
+          // 同一門課可能有講授／助教兩筆，取有教材的那筆
+          const matched = teacherSubjects.filter(s => (typeof s === 'object' ? s.name : s) === course.name);
+          const withMats = matched.find(s => typeof s === 'object' && (s.materials || []).length > 0);
+          const mats = withMats ? (withMats.materials || []) : [];
           if (mats.length > 0) {
             return `<div class="info-card" style="margin-top: 12px;">
               <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 8px;">教材與影片</div>
@@ -3276,38 +3297,10 @@
         updatedAt: new Date().toISOString()
       };
 
-      // 🎓 自動填充講授課程（編輯模式）
+      // 🎓 自動填充講授課程（編輯模式）：主講記為「講授」、助教記為「助教經驗」
       const courseName = newCourseName.trim();
-
-      // 為主講師自動填充
-      if (teacher && courseName) {
-        // 確保 subjects 陣列存在
-        if (!teacher.subjects) {
-          teacher.subjects = [];
-        }
-
-        // 檢查課程名稱是否已存在於講授課程中（避免重複）
-        const teacherHasSubject = teacher.subjects.some(s => (typeof s === 'string' ? s : s.name) === courseName);
-        if (!teacherHasSubject) {
-          teacher.subjects.push(courseName);
-          console.log(`✓ 已自動將「${courseName}」加入 ${teacherName} 的講授課程`);
-        }
-      }
-
-      // 為助教自動填充
-      if (ta && courseName) {
-        // 確保 subjects 陣列存在
-        if (!ta.subjects) {
-          ta.subjects = [];
-        }
-
-        // 檢查課程名稱是否已存在於講授課程中（避免重複）
-        const taHasSubject = ta.subjects.some(s => (typeof s === 'string' ? s : s.name) === courseName);
-        if (!taHasSubject) {
-          ta.subjects.push(courseName);
-          console.log(`✓ 已自動將「${courseName}」加入 ${taName} 的講授課程（助教）`);
-        }
-      }
+      addSubjectToTeacher(teacher, courseName, 'teach', teacherName);
+      addSubjectToTeacher(ta, courseName, 'ta', taName);
 
       // 同步更新行事曆事件
       const eventIndex = calendarEvents.findIndex(e => e.courseId === editingCourseId);
@@ -3431,38 +3424,10 @@
 
       courseAssignments.push(courseData);
 
-      // 🎓 自動填充講授課程
+      // 🎓 自動填充講授課程：主講記為「講授」、助教記為「助教經驗」
       const courseName = courseData.name.trim();
-
-      // 為主講師自動填充
-      if (teacher && courseName) {
-        // 確保 subjects 陣列存在
-        if (!teacher.subjects) {
-          teacher.subjects = [];
-        }
-
-        // 檢查課程名稱是否已存在於講授課程中（避免重複）
-        const teacherHasCourse = teacher.subjects.some(s => (typeof s === 'string' ? s : s.name) === courseName);
-        if (!teacherHasCourse) {
-          teacher.subjects.push(courseName);
-          console.log(`✓ 已自動將「${courseName}」加入 ${teacherName} 的講授課程`);
-        }
-      }
-
-      // 為助教自動填充
-      if (ta && courseName) {
-        // 確保 subjects 陣列存在
-        if (!ta.subjects) {
-          ta.subjects = [];
-        }
-
-        // 檢查課程名稱是否已存在於講授課程中（避免重複）
-        const taHasCourse = ta.subjects.some(s => (typeof s === 'string' ? s : s.name) === courseName);
-        if (!taHasCourse) {
-          ta.subjects.push(courseName);
-          console.log(`✓ 已自動將「${courseName}」加入 ${taName} 的講授課程（助教）`);
-        }
-      }
+      addSubjectToTeacher(teacher, courseName, 'teach', teacherName);
+      addSubjectToTeacher(ta, courseName, 'ta', taName);
 
       // 同步到行事曆
       calendarEvents.push({

@@ -47,6 +47,14 @@
     .location-option.selected{border-color:#007aff;background-color:#f0f5ff}
     .location-option.selected.onboard{border-color:#007aff;background-color:#e6f0ff}
     .location-option.selected.onshore{border-color:#34c759;background-color:#e8f9ed}
+    .location-option.selected.retired{border-color:#8e8e93;background-color:#f2f2f7}
+
+    /* 課程／經驗清單：空白時的提示（三個區塊共用） */
+    .subject-list:empty::before{
+      content:attr(data-empty);display:block;padding:20px;text-align:center;
+      color:#9ca3af;font-size:13px;background:#fff;
+      border:1px dashed #d8dade;border-radius:12px;
+    }
     .teacher-type-option.selected{border-color:#007aff;background-color:#f0f5ff}
     .teacher-type-option.selected.internal{border-color:#007aff;background-color:#e6f0ff}
     .teacher-type-option.selected.external{border-color:#5856d6;background-color:#f0efff}
@@ -494,7 +502,7 @@
             </div>
           </div>
           <div class="bg-white bg-opacity-70 rounded-xl p-6 shadow-sm">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2"><i class="ph ph-map-pin"></i></span>工作地點分析</h3>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2"><i class="ph ph-map-pin"></i></span>工作狀態分析</h3>
             <div class="space-y-4">
               <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
                 <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-orange-500 rounded-full"></div><span class="font-medium text-gray-700">海上工作</span></div>
@@ -503,6 +511,10 @@
               <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
                 <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-green-500 rounded-full"></div><span class="font-medium text-gray-700">陸地工作</span></div>
                 <div class="text-right"><div class="font-bold text-green-600" id="onshoreCountDetail">0 位</div><div class="text-sm text-gray-500" id="onshorePercentDetail">0%</div></div>
+              </div>
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-gray-400 rounded-full"></div><span class="font-medium text-gray-700">已退休</span></div>
+                <div class="text-right"><div class="font-bold text-gray-500" id="retiredCountDetail">0 位</div><div class="text-sm text-gray-500" id="retiredPercentDetail">0%</div></div>
               </div>
             </div>
           </div>
@@ -1025,8 +1037,8 @@
               </div>
 
               <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-3">工作地點 *</label>
-                <div class="flex space-x-4">
+                <label class="block text-sm font-medium text-gray-700 mb-3">工作狀態 *</label>
+                <div class="flex flex-wrap gap-4">
                   <label class="flex items-center cursor-pointer">
                     <input type="radio" name="workLocation" value="onboard" id="locationOnboard" class="sr-only">
                     <div class="location-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-orange-400 hover:bg-orange-50">
@@ -1039,7 +1051,14 @@
                       <div class="text-2xl"><i class="ph ph-building"></i></div><div><div class="font-medium text-gray-800">在岸</div><div class="text-sm text-gray-500">陸地工作</div></div>
                     </div>
                   </label>
+                  <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="workLocation" value="retired" id="locationRetired" class="sr-only">
+                    <div class="location-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-gray-400 hover:bg-gray-100">
+                      <div class="text-2xl text-gray-500"><i class="ph ph-armchair"></i></div><div><div class="font-medium text-gray-800">退休</div><div class="text-sm text-gray-500">不對外顯示</div></div>
+                    </div>
+                  </label>
                 </div>
+                <p class="text-xs text-gray-500 mt-2">選擇「退休」後，此師資不會出現在呈現模式，但資料保留可供日後追溯。</p>
               </div>
 
               <div class="md:col-span-2">
@@ -1071,13 +1090,38 @@
             <div id="certificateList" class="space-y-3"></div>
           </div>
 
-          <!-- 課程 -->
+          <!-- 課程：講授 / 助教 / 影片協作 -->
           <div class="bg-gray-50 p-6 rounded-lg">
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-xl font-semibold text-gray-800">講授課程</h3>
-              <button type="button" onclick="addSubject()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增課程</button>
+              <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center"><i class="ph ph-books"></i></span>
+                講授課程
+              </h3>
+              <button type="button" onclick="addSubject('', [], 'teach')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增課程</button>
             </div>
-            <div id="subjectList" class="space-y-3"></div>
+            <div id="subjectList" class="subject-list space-y-3" data-empty="尚未新增講授課程，點右上角「新增課程」"></div>
+          </div>
+
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center"><i class="ph ph-users-three"></i></span>
+                助教經驗
+              </h3>
+              <button type="button" onclick="addSubject('', [], 'ta')" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增助教經驗</button>
+            </div>
+            <div id="taSubjectList" class="subject-list space-y-3" data-empty="尚未新增助教經驗，排課時擔任助教會自動帶入"></div>
+          </div>
+
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center"><i class="ph ph-video-camera"></i></span>
+                影片協作
+              </h3>
+              <button type="button" onclick="addSubject('', [], 'video')" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增影片協作</button>
+            </div>
+            <div id="videoSubjectList" class="subject-list space-y-3" data-empty="尚未新增影片協作項目"></div>
           </div>
 
           <!-- Tags 標籤 -->
@@ -1501,6 +1545,21 @@
 
     window.checkApiStatus = handleApiStatusCheck;
 
+    /* ---------- 講授課程分類（講授／助教／影片協作） ---------- */
+    // 三種分類共用同一份 subjects 陣列，靠每筆的 category 區分，
+    // 後端 teachers 表頭不需要新增欄位。舊資料（字串或沒有 category）一律視為「講授」。
+    const SUBJECT_CATEGORIES = {
+      teach: { key:'teach', label:'講授課程', short:'講授',   listId:'subjectList',      icon:'ph-books',       placeholder:'請輸入講授課程...',   border:'border-l-purple-500', chip:'bg-purple-100 text-purple-700', btn:'bg-purple-500 hover:bg-purple-600' },
+      ta:    { key:'ta',    label:'助教經驗', short:'助教',   listId:'taSubjectList',    icon:'ph-users-three', placeholder:'請輸入助教經驗課程...', border:'border-l-amber-500',  chip:'bg-amber-100 text-amber-700',   btn:'bg-amber-500 hover:bg-amber-600' },
+      video: { key:'video', label:'影片協作', short:'影片協作', listId:'videoSubjectList', icon:'ph-video-camera', placeholder:'請輸入影片協作項目...', border:'border-l-teal-500',   chip:'bg-teal-100 text-teal-700',     btn:'bg-teal-500 hover:bg-teal-600' }
+    };
+    const SUBJECT_CATEGORY_KEYS = Object.keys(SUBJECT_CATEGORIES);
+    function subjectCategory(value){
+      const key = typeof value === 'object' && value ? value.category : value;
+      return SUBJECT_CATEGORIES[key] ? key : 'teach';
+    }
+    function subjectName(s){ return typeof s === 'string' ? s : String(s?.name || ''); }
+
     /* ---------- 正常化 ---------- */
     function normalize(list){
       if (!Array.isArray(list)) return [];
@@ -1511,7 +1570,7 @@
         name: toStr(t?.name),
         email: toStr(t?.email),
         teacherType: (t?.teacherType === 'external' ? 'external' : 'internal'),
-        workLocation: (t?.workLocation === 'onboard' ? 'onboard' : 'onshore'),
+        workLocation: (['onboard','onshore','retired'].includes(t?.workLocation) ? t.workLocation : 'onshore'),
         photo: toStr(t?.photo), // URL（Drive）
         experiences: arrStr(t?.experiences),
         certificates: Array.isArray(t?.certificates)
@@ -1521,15 +1580,29 @@
             )).filter(x => (typeof x === 'string' ? x : x.name))
           : [],
         subjects: Array.isArray(t?.subjects)
-          ? t.subjects.map(s => (typeof s === 'string'
-              ? toStr(s)
-              : { name: toStr(s?.name), materials: Array.isArray(s?.materials) ? s.materials.map(m => ({fileName: toStr(m?.fileName), fileUrl: toStr(m?.fileUrl), fileType: toStr(m?.fileType)})).filter(m => m.fileUrl) : [] }
-            )).filter(x => (typeof x === 'string' ? x : x.name))
+          ? t.subjects.map(s => ({
+              name: toStr(typeof s === 'string' ? s : s?.name),
+              category: subjectCategory(s),
+              materials: (typeof s === 'object' && Array.isArray(s?.materials))
+                ? s.materials.map(m => ({fileName: toStr(m?.fileName), fileUrl: toStr(m?.fileUrl), fileType: toStr(m?.fileType)})).filter(m => m.fileUrl)
+                : []
+            })).filter(x => x.name)
           : [],
         tags: arrStr(t?.tags), 
       }));
     }
     const initial = name => (String(name ?? '').trim()[0] || '?');
+
+    /* ---------- 工作狀態（在船／在岸／退休） ---------- */
+    const WORK_STATUS = {
+      onboard: { label:'在船', text:'海上工作', icon:'ph-boat',     tag:'[Sea]',  textClass:'text-orange-600', badgeClass:'bg-orange-500' },
+      onshore: { label:'在岸', text:'陸地工作', icon:'ph-building', tag:'[Land]', textClass:'text-green-600',  badgeClass:'bg-green-600' },
+      retired: { label:'退休', text:'已退休',   icon:'ph-armchair', tag:'[Ret]',  textClass:'text-gray-500',   badgeClass:'bg-gray-500' }
+    };
+    const workStatus = t => WORK_STATUS[t?.workLocation] || WORK_STATUS.onshore;
+    const isRetired = t => t?.workLocation === 'retired';
+    // 呈現模式對外展示，退休師資不列入；編輯模式維持全部可見
+    const visibleTeachers = list => (list || []).filter(t => currentMode === 'edit' || !isRetired(t));
 
     /* ---------- 狀態 ---------- */
     let teachers = normalize(JSON.parse(localStorage.getItem('teachers') || '[]'));
@@ -1549,7 +1622,9 @@
         teacherType:t.teacherType, workLocation:t.workLocation,
         photo:t.photo, experiences:t.experiences||[],
         certificates:(t.certificates||[]).map(c=> typeof c==='string' ? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
-        subjects:(t.subjects||[]).map(s=> typeof s==='string' ? s : ({name:s.name,materials:s.materials||[]}))
+        subjects:(t.subjects||[]).map(s=> typeof s==='string'
+          ? ({name:s, category:'teach', materials:[]})
+          : ({name:s.name, category:subjectCategory(s), materials:s.materials||[]}))
       }));
     }
     function saveLocalSilently(){
@@ -1630,11 +1705,14 @@
       renderTeacherGrid();
       setupLocationSelection();
 
+      openTeacherFromQuery();
+
       const cloud = await cloudLoadSilent();
       if(Array.isArray(cloud)){
         teachers = normalize(cloud);
         saveLocalSilently();
         renderTeacherGrid();
+        openTeacherFromQuery();
       }
 
       // [Important] 重要：從 localStorage 重新載入派課和海事課程數據
@@ -1664,11 +1742,28 @@
       }
     });
 
+    // 由課程詳情頁的「授課講師」點進來：?teacherId=123 直接開啟該位師資的資料卡
+    let _openedTeacherFromQuery = false;
+    function openTeacherFromQuery(){
+      if (_openedTeacherFromQuery) return;
+      const id = new URLSearchParams(location.search).get('teacherId');
+      if (!id) return;
+      const teacher = teachers.find(t => String(t.id) === String(id));
+      if (!teacher) return;
+      _openedTeacherFromQuery = true;
+      viewTeacherDetail(teacher.id);
+      // 本頁有 hash 路由，載入完成時會依路由重新切換視圖，
+      // 所以要一併把路由指到師資詳細，詳細頁才不會又被收起來
+      if (window.location.hash.slice(1) !== 'teacher-view') {
+        window.location.hash = 'teacher-view';
+      }
+    }
+
     /* ---------- 互動 ---------- */
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
         if (e.target.name === 'workLocation') {
-          document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
+          document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
           e.target.closest('label').querySelector('.location-option').classList.add('selected', e.target.value);
         }
         if (e.target.name === 'teacherType') {
@@ -1730,10 +1825,22 @@
         ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
         : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8';
 
-      const displayTeachers = teachersToRender || teachers;
+      // 呈現模式（對外展示）不顯示已退休的師資；編輯模式仍看得到，資料保留可追溯
+      const sourceTeachers = teachersToRender || teachers;
+      const displayTeachers = visibleTeachers(sourceTeachers);
       if (displayTeachers.length === 0) {
         const searchInput = document.getElementById('searchInput');
         const isSearching = searchInput && searchInput.value.trim() !== '';
+        // 全部被退休狀態濾掉時，說明原因而不是說「沒有師資」
+        if (!isSearching && sourceTeachers.length > 0) {
+          grid.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <div class="text-6xl mb-4 text-gray-400"><i class="ph ph-armchair" style="font-size: 3.75rem;"></i></div>
+            <h3 class="text-xl font-medium text-gray-600 mb-2">目前沒有可展示的師資</h3>
+            <p class="text-gray-500">${sourceTeachers.length} 位師資皆為退休狀態，呈現模式不顯示</p>
+          </div>`;
+          return;
+        }
         grid.innerHTML = isSearching ? `
           <div class="col-span-full text-center py-12">
             <div class="text-6xl mb-4"><i class="ph ph-magnifying-glass" style="font-size: 3.75rem;"></i></div>
@@ -1782,21 +1889,18 @@
                   <div class="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                     <span><i class="ph ph-graduation-cap"></i></span><span>外部</span>
                   </div>`}
-                ${teacher.workLocation==='onboard' ? `
-                  <div class="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                    <span><i class="ph ph-boat"></i></span><span>在船</span>
-                  </div>` : `
-                  <div class="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                    <span><i class="ph ph-building"></i></span><span>在岸</span>
-                  </div>`}
+                <div class="${workStatus(teacher).badgeClass} text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                  <span><i class="ph ${workStatus(teacher).icon}"></i></span><span>${workStatus(teacher).label}</span>
+                </div>
               </div>
               <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
                 ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : initial(teacher.name)}
               </div>
               <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
-              <div class="mt-1 text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">
-                ${teacher.workLocation==='onboard'?'<i class="ph ph-boat"></i> 海上工作':'<i class="ph ph-building"></i> 陸地工作'}
+              <div class="mt-1 text-sm ${workStatus(teacher).textClass} font-medium">
+                <i class="ph ${workStatus(teacher).icon}"></i> ${workStatus(teacher).text}
               </div>
+              ${isRetired(teacher) ? '<div class="mt-1 text-xs text-gray-400">呈現模式不顯示</div>' : ''}
               <div class="mt-2 text-xs text-gray-500 cursor-move"><i class="ph ph-dots-six-vertical"></i> 拖拽排序</div>
               <button onclick="event.stopPropagation(); copyTeacher(${teacher.id})"
                 class="absolute top-2 right-2 bg-green-500 hover:bg-green-600 text-white p-2 rounded-full text-xs transition-colors shadow-lg opacity-0 group-hover:opacity-100" title="複製師資"><i class="ph ph-clipboard-text"></i></button>
@@ -1842,8 +1946,8 @@
                 </div>
               </div>
               <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}</h3>
-              <div class="text-sm ${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium mb-2">
-                ${teacher.workLocation==='onboard'?'<i class="ph ph-boat"></i> 海上工作':'<i class="ph ph-building"></i> 陸地工作'}
+              <div class="text-sm ${workStatus(teacher).textClass} font-medium mb-2">
+                <i class="ph ${workStatus(teacher).icon}"></i> ${workStatus(teacher).text}
               </div>
               <div class="text-xs text-gray-500 opacity-70">點擊預覽詳細資料</div>
             </div>`;
@@ -1862,9 +1966,9 @@
       photoBox.innerHTML = '<i class="ph ph-user"></i>'; photoBox.removeAttribute('data-url');
       document.getElementById('experienceList').innerHTML = '';
       document.getElementById('certificateList').innerHTML = '';
-      document.getElementById('subjectList').innerHTML = '';
+      SUBJECT_CATEGORY_KEYS.forEach(k => document.getElementById(SUBJECT_CATEGORIES[k].listId).innerHTML = '');
       document.getElementById('tagList').innerHTML = '';
-      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
+      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
       document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
       addExperience(); addCertificate(); addSubject(); addTag();
     }
@@ -1879,12 +1983,12 @@
       document.getElementById('teacherEmail').value = teacher.email || '';
       const teacherType = teacher.teacherType || 'internal';
       document.getElementById(teacherType==='internal'?'typeInternal':'typeExternal').checked = true;
-      const workLocation = teacher.workLocation || 'onshore';
-      document.getElementById(workLocation==='onboard'?'locationOnboard':'locationOnshore').checked = true;
+      const workLocation = ['onboard','onshore','retired'].includes(teacher.workLocation) ? teacher.workLocation : 'onshore';
+      document.getElementById({onboard:'locationOnboard', onshore:'locationOnshore', retired:'locationRetired'}[workLocation]).checked = true;
 
       document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
       document.querySelector(`input[value="${teacherType}"]`).closest('label').querySelector('.teacher-type-option').classList.add('selected',teacherType);
-      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore'));
+      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
       document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
 
       const photoBox = document.getElementById('photoPreview');
@@ -1903,10 +2007,10 @@
         if (typeof cert === 'string') addCertificate(cert);
         else addCertificate(cert.name||'', cert.fileName||'', cert.fileUrl||'');
       });
-      document.getElementById('subjectList').innerHTML = '';
+      SUBJECT_CATEGORY_KEYS.forEach(k => document.getElementById(SUBJECT_CATEGORIES[k].listId).innerHTML = '');
       (teacher.subjects||[]).forEach(s=> {
-        if (typeof s === 'string') addSubject(s);
-        else addSubject(s.name, s.materials || []);
+        if (typeof s === 'string') addSubject(s, [], 'teach');
+        else addSubject(s.name, s.materials || [], subjectCategory(s));
       });
       document.getElementById('tagList').innerHTML = '';
       (teacher.tags||[]).forEach(t=>addTag(t));
@@ -2000,6 +2104,48 @@
     }
     // ── 師資多選模式 end ──────────────────────────────────────────────
 
+    // 師資詳細頁的課程區塊（講授課程／助教經驗／影片協作 共用同一種版型）
+    const SUBJECT_SECTION_STYLE = {
+      teach: { iconBox:'bg-purple-100 text-purple-600', border:'border-l-purple-500', pill:'bg-purple-100 text-purple-700', btn:'bg-purple-500 hover:bg-purple-600' },
+      ta:    { iconBox:'bg-amber-100 text-amber-600',   border:'border-l-amber-500',  pill:'bg-amber-100 text-amber-700',   btn:'bg-amber-500 hover:bg-amber-600' },
+      video: { iconBox:'bg-teal-100 text-teal-600',     border:'border-l-teal-500',   pill:'bg-teal-100 text-teal-700',     btn:'bg-teal-500 hover:bg-teal-600' }
+    };
+
+    function renderSubjectSection(teacher, catKey){
+      const cat = SUBJECT_CATEGORIES[catKey];
+      const style = SUBJECT_SECTION_STYLE[catKey];
+      const items = (teacher.subjects || []).filter(s => subjectCategory(s) === catKey);
+      // 助教經驗與影片協作沒有資料時整塊不出現，維持展示頁面乾淨
+      if (items.length === 0 && catKey !== 'teach') return '';
+
+      return `
+        <div class="bg-gray-50 rounded-xl p-6 mt-8">
+          <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3">
+            <span class="w-11 h-11 rounded-xl ${style.iconBox} flex items-center justify-center text-2xl"><i class="ph ${cat.icon}"></i></span>
+            <span>${cat.label}</span>
+            ${items.length > 0 ? `<span class="ml-auto text-sm font-medium ${style.pill} px-3 py-1 rounded-full">${items.length} 項</span>` : ''}
+          </h3>
+          ${items.length > 0 ? `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${items.map(s => {
+                const mats = (typeof s === 'object' && s) ? (s.materials || []) : [];
+                return `<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 ${style.border}">
+                  <p class="text-gray-700 font-medium mb-2">${subjectName(s)}</p>
+                  ${mats.length > 0 ? `<div class="space-y-1">
+                    ${mats.map(m => `
+                      <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded text-sm">
+                        <span>${getMaterialIcon(m.fileName || '')}</span>
+                        <span class="flex-1 truncate text-gray-600" title="${m.fileName}">${m.fileName}</span>
+                        <button onclick="openMaterialViewer('${String(m.fileName||'').replace(/'/g,"\\'")}','${String(m.fileUrl||'').replace(/'/g,"\\'")}')" class="${style.btn} text-white px-2 py-1 rounded text-xs">檢視</button>
+                      </div>`).join('')}
+                  </div>` : ''}
+                </div>`;
+              }).join('')}
+            </div>` : `
+            <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2"><i class="ph ${cat.icon}"></i></div><p>尚未填寫${cat.label}</p></div>`}
+        </div>`;
+    }
+
     function viewTeacherDetail(teacherId){
       const teacher = teachers.find(t=>t.id===teacherId); if(!teacher) return;
       document.getElementById('teacherList').classList.add('hidden');
@@ -2035,8 +2181,8 @@
                   ${teacher.teacherCategory==='new' ? '<span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs ml-2">新進</span>' : ''}
                 </div>` : ''}
                 <div class="flex items-center justify-center md:justify-start space-x-2">
-                  <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'}">${teacher.workLocation==='onboard'?'[Sea]':'[Land]'}</span>
-                  <span class="${teacher.workLocation==='onboard'?'text-orange-600':'text-green-600'} font-medium">${teacher.workLocation==='onboard'?'海上工作':'陸地工作'}</span>
+                  <span class="${workStatus(teacher).textClass}">${workStatus(teacher).tag}</span>
+                  <span class="${workStatus(teacher).textClass} font-medium">${workStatus(teacher).text}</span>
                 </div>
               </div>
             </div>
@@ -2071,32 +2217,7 @@
           </div>
         </div>
 
-        <div class="bg-gray-50 rounded-xl p-6 mt-8">
-          <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl"><i class="ph ph-books"></i></span>講授課程</h3>
-          ${(teacher.subjects&&teacher.subjects.length>0)?`
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              ${teacher.subjects.map(s => {
-                const subName = typeof s === 'string' ? s : s.name;
-                const mats = typeof s === 'object' ? (s.materials || []) : [];
-                return `<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-purple-500">
-                  <p class="text-gray-700 font-medium mb-2">${subName}</p>
-                  ${mats.length > 0 ? `<div class="space-y-1">
-                    ${mats.map(m => {
-                      const ext = (m.fileName||'').split('.').pop().toLowerCase();
-                      const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
-                      const icon = isVideo ? '<i class="ph ph-video-camera"></i>' : (['pdf'].includes(ext) ? '<i class="ph ph-file-pdf"></i>' : (['ppt','pptx'].includes(ext) ? '<i class="ph ph-presentation"></i>' : (['doc','docx'].includes(ext) ? '<i class="ph ph-file-doc"></i>' : (['jpg','jpeg','png','gif','webp'].includes(ext) ? '<i class="ph ph-image"></i>' : '<i class="ph ph-file"></i>'))));
-                      return `<div class="flex items-center space-x-2 bg-gray-50 p-2 rounded text-sm">
-                        <span>${icon}</span>
-                        <span class="flex-1 truncate text-gray-600" title="${m.fileName}">${m.fileName}</span>
-                        <button onclick="openMaterialViewer('${m.fileName.replace(/'/g,"\\'")}','${m.fileUrl.replace(/'/g,"\\'")}')" class="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs">檢視</button>
-                      </div>`;
-                    }).join('')}
-                  </div>` : ''}
-                </div>`;
-              }).join('')}
-            </div>`:`
-            <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2"><i class="ph ph-book"></i></div><p>尚未填寫講授課程</p></div>`}
-        </div>
+        ${SUBJECT_CATEGORY_KEYS.map(k => renderSubjectSection(teacher, k)).join('')}
 
         <div class="bg-gray-50 rounded-xl p-6 mt-8">
           <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-3 text-3xl"><i class="ph ph-tag"></i></span>標籤 Tags</h3>
@@ -2211,12 +2332,14 @@
       }
     }
 
-    function addSubject(value='', materials=[]){
-      const c = document.getElementById('subjectList');
+    function addSubject(value='', materials=[], category='teach'){
+      const cat = SUBJECT_CATEGORIES[subjectCategory(typeof value === 'object' && value?.category ? value : category)];
+      const c = document.getElementById(cat.listId);
       const div = document.createElement('div');
       const uid = 'subj_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
-      div.className = 'bg-white p-4 rounded-lg border border-gray-200 move-transition';
+      div.className = `subject-item bg-white p-4 rounded-lg border border-gray-200 border-l-4 ${cat.border} move-transition`;
       div.setAttribute('data-subject-id', uid);
+      div.setAttribute('data-subject-category', cat.key);
 
       const name = typeof value === 'object' ? (value.name || '') : value;
       const mats = typeof value === 'object' ? (value.materials || []) : materials;
@@ -2228,10 +2351,10 @@
             <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
           </div>
           <div class="flex-1 space-y-3">
-            <input type="text" value="${name}" placeholder="請輸入講授課程..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent subject-name-input">
+            <input type="text" value="${name}" placeholder="${cat.placeholder}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent subject-name-input">
             <div class="flex items-center space-x-2">
               <input type="file" id="matFile_${uid}" accept=".jpg,.jpeg,.png,.pdf,.mp4,.webm,.mov,.ppt,.pptx,.doc,.docx" class="hidden" onchange="handleSubjectMaterialFile(this, '${uid}')" multiple>
-              <button type="button" onclick="document.getElementById('matFile_${uid}').click()" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg text-sm flex items-center space-x-1">
+              <button type="button" onclick="document.getElementById('matFile_${uid}').click()" class="${cat.btn} text-white px-3 py-2 rounded-lg text-sm flex items-center space-x-1">
                 <i class="ph ph-upload-simple"></i><span>上傳教材/影片</span>
               </button>
               <span class="text-xs text-gray-400">支援：圖片、PDF、影片、PPT、DOC</span>
@@ -2240,7 +2363,7 @@
               ${mats.map((m, idx) => renderMaterialItem(uid, m, idx)).join('')}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
+          <button type="button" onclick="this.closest('.subject-item').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
         </div>`;
       c.appendChild(div);
     }
@@ -2382,7 +2505,7 @@
       const workLocation = document.querySelector('input[name="workLocation"]:checked')?.value;
       if(!name){ alert('請輸入師資姓名'); return; }
       if(!teacherType){ alert('請選擇師資類型'); return; }
-      if(!workLocation){ alert('請選擇工作地點'); return; }
+      if(!workLocation){ alert('請選擇工作狀態'); return; }
       if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('請輸入正確的Email格式'); return; }
 
       const experiences = Array.from(document.querySelectorAll('#experienceList input')).map(i=>i.value.trim()).filter(Boolean);
@@ -2394,17 +2517,19 @@
         const fileUrl  = info.getAttribute('data-fileurl')  || '';
         return fileUrl ? { name:nm, fileName, fileUrl } : nm;
       }).filter(Boolean);
-      const subjects = Array.from(document.querySelectorAll('#subjectList > .bg-white')).map(item => {
-        const nameInput = item.querySelector('.subject-name-input');
-        const nm = nameInput ? nameInput.value.trim() : '';
-        if (!nm) return null;
-        const materials = Array.from(item.querySelectorAll('.subject-materials > div[data-fileurl]')).map(m => ({
-          fileName: m.getAttribute('data-filename') || '',
-          fileUrl: m.getAttribute('data-fileurl') || '',
-          fileType: m.getAttribute('data-filetype') || ''
-        })).filter(m => m.fileUrl);
-        return materials.length > 0 ? { name: nm, materials } : nm;
-      }).filter(Boolean);
+      const subjects = SUBJECT_CATEGORY_KEYS.flatMap(catKey =>
+        Array.from(document.querySelectorAll(`#${SUBJECT_CATEGORIES[catKey].listId} > .subject-item`)).map(item => {
+          const nameInput = item.querySelector('.subject-name-input');
+          const nm = nameInput ? nameInput.value.trim() : '';
+          if (!nm) return null;
+          const materials = Array.from(item.querySelectorAll('.subject-materials > div[data-fileurl]')).map(m => ({
+            fileName: m.getAttribute('data-filename') || '',
+            fileUrl: m.getAttribute('data-fileurl') || '',
+            fileType: m.getAttribute('data-filetype') || ''
+          })).filter(m => m.fileUrl);
+          return { name: nm, category: catKey, materials };
+        })
+      ).filter(Boolean);
       const tags = Array.from(document.querySelectorAll('#tagList input[type="text"]')).map(i=>i.value.trim()).filter(Boolean);
 
       // 調試：確認 tags 有被收集
@@ -2449,7 +2574,9 @@
         photo: t.photo,
         experiences: [...(t.experiences||[])],
         certificates: (t.certificates||[]).map(c=> typeof c==='string'? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
-        subjects: (t.subjects||[]).map(s => typeof s==='string' ? s : ({name:s.name, materials:[...(s.materials||[])]})),
+        subjects: (t.subjects||[]).map(s => typeof s==='string'
+          ? ({name:s, category:'teach', materials:[]})
+          : ({name:s.name, category:subjectCategory(s), materials:[...(s.materials||[])]})),
         tags: [...(t.tags||[])]
       };
       const i = teachers.findIndex(x=>x.id===teacherId);
@@ -2518,7 +2645,7 @@
         filteredTeachers = tagMatchedTeachers;
         searchResults.classList.remove('hidden');
         const kwText = keywords.length > 1 ? `「${keywords.join('」、「')}」` : `「${keywords[0]}」`;
-        searchResults.querySelector('span').textContent = `找到 ${filteredTeachers.length} 位符合標籤 ${kwText} 的師資 [Tag]`;
+        searchResults.querySelector('span').textContent = `找到 ${visibleTeachers(filteredTeachers).length} 位符合標籤 ${kwText} 的師資 [Tag]`;
         renderTeacherGrid(filteredTeachers);
         return;
       }
@@ -2539,9 +2666,10 @@
           if(t.teacherType === 'internal' && ('internal'.includes(kw) || '內部'.includes(kw) || '內部師資'.includes(kw))) return true;
           if(t.teacherType === 'external' && ('external'.includes(kw) || '外部'.includes(kw) || '外部師資'.includes(kw))) return true;
 
-          // 工作地點（支援中英文）
+          // 工作狀態（支援中英文）
           if(t.workLocation === 'onboard' && ('onboard'.includes(kw) || '在船'.includes(kw) || '海上'.includes(kw))) return true;
           if(t.workLocation === 'onshore' && ('onshore'.includes(kw) || '在岸'.includes(kw) || '陸地'.includes(kw))) return true;
+          if(t.workLocation === 'retired' && ('retired'.includes(kw) || '退休'.includes(kw))) return true;
 
           // 工作經歷
           if((t.experiences||[]).some(x => String(x).toLowerCase().includes(kw))) return true;
@@ -2552,10 +2680,11 @@
             return String(c.name||'').toLowerCase().includes(kw);
           })) return true;
 
-          // 講授課程
+          // 講授課程／助教經驗／影片協作（含分類名稱）
           if((t.subjects||[]).some(s => {
-            const sName = typeof s === 'string' ? s : (s.name||'');
-            return String(sName).toLowerCase().includes(kw);
+            if(String(subjectName(s)).toLowerCase().includes(kw)) return true;
+            const cat = SUBJECT_CATEGORIES[subjectCategory(s)];
+            return cat.label.includes(kw) || cat.short.includes(kw);
           })) return true;
 
           return false;
@@ -2565,7 +2694,7 @@
       if(filteredTeachers.length > 0){
         searchResults.classList.remove('hidden');
         const kwText = keywords.length > 1 ? `「${keywords.join('」、「')}」` : `「${keywords[0]}」`;
-        searchResults.querySelector('span').textContent = `找到 ${filteredTeachers.length} 位符合 ${kwText} 的師資`;
+        searchResults.querySelector('span').textContent = `找到 ${visibleTeachers(filteredTeachers).length} 位符合 ${kwText} 的師資`;
       } else {
         searchResults.classList.add('hidden');
       }
@@ -2751,6 +2880,7 @@
       const external = teachers.filter(t=>t.teacherType==='external').length;
       const onboard = teachers.filter(t=>t.workLocation==='onboard').length;
       const onshore = teachers.filter(t=>t.workLocation==='onshore').length;
+      const retired = teachers.filter(isRetired).length;
       const internalOnboard = teachers.filter(t=>t.teacherType==='internal' && t.workLocation==='onboard').length;
       const internalOnshore = teachers.filter(t=>t.teacherType==='internal' && t.workLocation==='onshore').length;
       const externalOnboard = teachers.filter(t=>t.teacherType==='external' && t.workLocation==='onboard').length;
@@ -2769,6 +2899,7 @@
       const ep = total>0 ? ((external/total)*100).toFixed(1) : 0;
       const obp = total>0 ? ((onboard/total)*100).toFixed(1) : 0;
       const osp = total>0 ? ((onshore/total)*100).toFixed(1) : 0;
+      const rtp = total>0 ? ((retired/total)*100).toFixed(1) : 0;
 
       document.getElementById('internalPercent').textContent = `${ip}%`;
       document.getElementById('externalPercent').textContent = `${ep}%`;
@@ -2782,6 +2913,8 @@
       document.getElementById('onboardPercentDetail').textContent = `${obp}%`;
       document.getElementById('onshoreCountDetail').textContent = `${onshore} 位`;
       document.getElementById('onshorePercentDetail').textContent = `${osp}%`;
+      document.getElementById('retiredCountDetail').textContent = `${retired} 位`;
+      document.getElementById('retiredPercentDetail').textContent = `${rtp}%`;
 
       document.getElementById('internalOnboard').textContent = internalOnboard;
       document.getElementById('internalOnshore').textContent = internalOnshore;
@@ -2817,7 +2950,7 @@
         name:t.name||'',
         email:t.email||'',
         teacherType:t.teacherType==='internal'?'內部師資':'外部師資',
-        workLocation:t.workLocation==='onboard'?'海上工作':'陸地工作',
+        workLocation:workStatus(t).text,
         experiences:(t.experiences||[]).join('；') || '無',
         certificates:(t.certificates||[]).map(c=> typeof c==='string'? c : (c?.name||'')).filter(Boolean).join('；') || '無',
         subjects:(t.subjects||[]).map(s => typeof s==='string' ? s : (s.name||'')).filter(Boolean).join('；') || '無'
