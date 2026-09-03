@@ -732,10 +732,10 @@
         </div>
         <div class="flex space-x-4">
           <button type="button" onclick="closeAddEventModal()" class="btn btn-ghost flex-1">
-            ✗ 取消
+            <i class="ph ph-x"></i> 取消
           </button>
           <button type="submit" class="btn btn-primary flex-1">
-            ✓ 儲存
+            <i class="ph ph-check"></i> 儲存
           </button>
         </div>
       </form>
@@ -1454,7 +1454,7 @@
       } else {
         button.disabled = false;
         button.classList.remove('opacity-60', 'cursor-not-allowed');
-        button.innerHTML = '<span class="mr-2">🩺</span>測試 API 連線';
+        button.innerHTML = '<i class="ph ph-stethoscope"></i> 測試 API 連線';
       }
     }
 
@@ -2247,7 +2247,7 @@
           <button type="button" onclick="moveDown(this)" class="btn btn-secondary btn-sm">↓</button>
         </div>
         <input type="text" value="${value}" placeholder="請輸入工作經歷..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="btn btn-icon btn-danger btn-sm"><i class="ph ph-x"></i></button>`;
       c.appendChild(div);
     }
 
@@ -2271,7 +2271,7 @@
               ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="btn btn-secondary btn-sm">檢視</button>`:''}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.bg-white').remove()" class="btn btn-danger btn-sm">✕</button>
+          <button type="button" onclick="this.closest('.bg-white').remove()" class="btn btn-icon btn-danger btn-sm"><i class="ph ph-x"></i></button>
         </div>`;
       c.appendChild(div);
     }
@@ -2352,7 +2352,7 @@
               ${mats.map((m, idx) => renderMaterialItem(uid, m, idx)).join('')}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.subject-item').remove()" class="btn btn-danger btn-sm">✕</button>
+          <button type="button" onclick="this.closest('.subject-item').remove()" class="btn btn-icon btn-danger btn-sm"><i class="ph ph-x"></i></button>
         </div>`;
       c.appendChild(div);
     }
@@ -2403,7 +2403,7 @@
           console.error(err);
           placeholder.outerHTML = `<div class="flex items-center space-x-2 bg-red-50 p-2 rounded border border-red-300">
             <span class="text-sm text-red-700">上傳失敗：${file.name} - ${err.message}</span>
-            <button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-xs">✕</button>
+            <button type="button" onclick="this.parentElement.remove()" class="btn btn-icon btn-plain btn-sm" style="color:#ff3b30;"><i class="ph ph-x"></i></button>
           </div>`;
         }
       }
@@ -4242,7 +4242,7 @@
       `;
 
       if (dayEvents.length === 0) {
-        html += '<div class="text-xs text-green-600 bg-green-50 rounded px-2 py-1">✓ 全天可用</div>';
+        html += '<div class="text-xs text-green-600 bg-green-50 rounded px-2 py-1"><i class="ph ph-check"></i> 全天可用</div>';
       } else {
         dayEvents.forEach(event => {
           const bgColor = event.source === '派課' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700';

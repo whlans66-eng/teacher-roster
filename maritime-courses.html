@@ -1181,7 +1181,7 @@
     transform: translate(-50%, -50%); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
   .pie-chart::after {
-    content: '📊\A課程分布'; position: absolute; top: 50%; left: 50%;
+    content: '課程分布'; position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%); font-size: 13px; font-weight: 600;
     color: #1d1d1f; z-index: 1; text-align: center; white-space: pre; line-height: 1.4;
   }
@@ -1340,7 +1340,7 @@
     <div id="maritimeViewPage">
       <div class="glass-panel">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-          <h2 style="font-size: 20px; font-weight: 600; margin:0;">🔍 課程搜尋</h2>
+          <h2 style="font-size: 20px; font-weight: 600; margin:0;"><i class="ph ph-magnifying-glass"></i> 課程搜尋</h2>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             <button id="courseSelectBtn" onclick="toggleCourseSelectMode()">
               <i class="ph ph-check-square"></i> 選取
@@ -1773,7 +1773,7 @@
       <div class="glass-panel" style="margin-top: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h3 style="font-size: 16px; font-weight: 600; display: flex; align-items: center;">
-            🔑 熱門關鍵字
+            <i class="ph ph-key"></i> 熱門關鍵字
           </h3>
         </div>
         <div id="maritimeKeywordsCloud" style="display: flex; flex-wrap: wrap; gap: 12px;"></div>
@@ -3170,7 +3170,7 @@
           placeholder.outerHTML = `<div style="display:flex;align-items:center;gap:10px;background:#fef2f2;padding:10px 14px;border-radius:10px;border:1px solid #fecaca;">
             <i class="ph ph-warning" style="font-size:18px;color:#ef4444;"></i>
             <span style="flex:1;font-size:12px;color:#991b1b;">上傳失敗：${file.name} - ${err.message}</span>
-            <button type="button" onclick="this.parentElement.remove()" style="font-size:11px;color:#ef4444;background:none;border:none;cursor:pointer;">✕</button>
+            <button type="button" onclick="this.parentElement.remove()" class="btn btn-icon btn-plain btn-sm" style="color:#ff3b30;"><i class="ph ph-x"></i></button>
           </div>`;
         }
       }
@@ -3457,7 +3457,7 @@
       div.className = 'modal-backdrop show';
       div.innerHTML = `
         <div class="conflict-dialog">
-          <h2 style="margin: 0 0 10px 0; font-size: 20px; color: #ff9500;">⚠️ 資料衝突警告</h2>
+          <h2 style="margin: 0 0 10px 0; font-size: 20px; color: #ff9500;"><i class="ph ph-warning-circle"></i> 資料衝突警告</h2>
           <p style="color: #374151; margin: 10px 0;">${result.message || '後端有較新的資料'}</p>
           ${conflictDetailsHTML}
           ${result.activeSessions && result.activeSessions.length > 0 ? `
