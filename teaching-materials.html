@@ -21,9 +21,8 @@
       --apple-shadow-sm: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
       --apple-shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
       --apple-shadow-lg: 0 12px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
-      --apple-radius: 20px;
-      --apple-radius-sm: 12px;
-      --apple-radius-xs: 8px;
+      --apple-radius: 20px;      /* 卡片、Modal */
+      --apple-radius-sm: 12px;   /* 卡片內層、按鈕、輸入框 */
       --brand: #0a4a7a;
       --sidebar-w: 288px;
     }
@@ -317,8 +316,8 @@
       gap: 4px;
       font-size: 11px;
       font-weight: 600;
-      padding: 3px 9px;
-      border-radius: 20px;
+      padding: 4px 10px;
+      border-radius: 999px;
     }
 
     .tag-blue   { background: var(--apple-blue-light); color: var(--apple-blue); }
@@ -460,7 +459,7 @@
     }
 
     .mat-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-4px);
       box-shadow: var(--apple-shadow-md);
       border-color: rgba(0,113,227,0.12);
     }
@@ -525,15 +524,15 @@
       white-space: nowrap;
     }
 
+    /* 併入 .tag 同一套尺寸，只留顏色差異 */
     .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      padding: 2px 8px;
-      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
     }
 
     .badge-new      { background: var(--apple-bg); color: var(--apple-gray); }
@@ -875,9 +874,9 @@
     let viewerMeta = null;
 
     const CAT_ICON = {
-      STCW:'🚢', safety:'🛟', navigation:'🧭', engine:'⚙️',
-      cargo:'📦', medical:'🏥', fire:'🔥', security:'🔒',
-      environment:'🌊', leadership:'👑', communication:'📡', survival:'⛵'
+      STCW:'<i class="ph ph-boat"></i>', safety:'<i class="ph ph-lifebuoy"></i>', navigation:'<i class="ph ph-compass"></i>', engine:'<i class="ph ph-gear"></i>',
+      cargo:'<i class="ph ph-package"></i>', medical:'<i class="ph ph-first-aid-kit"></i>', fire:'<i class="ph ph-fire"></i>', security:'<i class="ph ph-lock"></i>',
+      environment:'<i class="ph ph-waves"></i>', leadership:'<i class="ph ph-crown"></i>', communication:'<i class="ph ph-broadcast"></i>', survival:'<i class="ph ph-sailboat"></i>'
     };
     const CAT_BG = {
       STCW:'#dbeafe', safety:'#fef3c7', navigation:'#dcfce7', engine:'#fce7f3',
@@ -926,7 +925,7 @@
         const cnt = (c.materials || []).length;
         return `
           <div class="course-row ${active ? 'active' : ''}" onclick="selectCourse(${c.id})">
-            <div class="course-row-icon" style="background:${CAT_BG[c.category]||'#f5f5f7'}">${CAT_ICON[c.category]||'📚'}</div>
+            <div class="course-row-icon" style="background:${CAT_BG[c.category]||'#f5f5f7'}">${CAT_ICON[c.category]||'<i class="ph ph-books"></i>'}</div>
             <div class="course-row-text">
               <div class="course-row-name">${h(c.name)}</div>
               <div class="course-row-cat">${h(c.category||'—')}</div>
@@ -957,7 +956,7 @@
 
     // ── Main ──
     function renderMain(course) {
-      const icon = CAT_ICON[course.category] || '📚';
+      const icon = CAT_ICON[course.category] || '<i class="ph ph-books"></i>';
       const bg   = CAT_BG[course.category]  || '#f5f5f7';
       const mats = course.materials || [];
 
@@ -1279,14 +1278,14 @@
     function fileStyle(name) {
       const ext = (name||'').split('.').pop().toUpperCase();
       const m = {
-        PDF: { icon:'📄', bg:'#fee2e2', color:'#dc2626' },
-        DOC: { icon:'📝', bg:'#dbeafe', color:'#1d4ed8' }, DOCX: { icon:'📝', bg:'#dbeafe', color:'#1d4ed8' },
-        PPT: { icon:'📊', bg:'#ffedd5', color:'#c2410c' }, PPTX: { icon:'📊', bg:'#ffedd5', color:'#c2410c' },
-        MP4: { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' }, WEBM: { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' }, MOV: { icon:'🎬', bg:'#ede9fe', color:'#7c3aed' },
-        JPG: { icon:'🖼️', bg:'#dcfce7', color:'#15803d' }, PNG: { icon:'🖼️', bg:'#dcfce7', color:'#15803d' },
-        ZIP: { icon:'🗜️', bg:'#fef9c3', color:'#92400e' },
+        PDF: { icon:'<i class="ph ph-file-pdf"></i>', bg:'#fee2e2', color:'#dc2626' },
+        DOC: { icon:'<i class="ph ph-file-doc"></i>', bg:'#dbeafe', color:'#1d4ed8' }, DOCX: { icon:'<i class="ph ph-file-doc"></i>', bg:'#dbeafe', color:'#1d4ed8' },
+        PPT: { icon:'<i class="ph ph-file-ppt"></i>', bg:'#ffedd5', color:'#c2410c' }, PPTX: { icon:'<i class="ph ph-file-ppt"></i>', bg:'#ffedd5', color:'#c2410c' },
+        MP4: { icon:'<i class="ph ph-file-video"></i>', bg:'#ede9fe', color:'#7c3aed' }, WEBM: { icon:'<i class="ph ph-file-video"></i>', bg:'#ede9fe', color:'#7c3aed' }, MOV: { icon:'<i class="ph ph-file-video"></i>', bg:'#ede9fe', color:'#7c3aed' },
+        JPG: { icon:'<i class="ph ph-file-image"></i>', bg:'#dcfce7', color:'#15803d' }, PNG: { icon:'<i class="ph ph-file-image"></i>', bg:'#dcfce7', color:'#15803d' },
+        ZIP: { icon:'<i class="ph ph-file-zip"></i>', bg:'#fef9c3', color:'#92400e' },
       };
-      return m[ext] || { icon:'📎', bg:'#f5f5f7', color:'#6e6e73' };
+      return m[ext] || { icon:'<i class="ph ph-paperclip"></i>', bg:'#f5f5f7', color:'#6e6e73' };
     }
 
     function showToast(msg, type='') {

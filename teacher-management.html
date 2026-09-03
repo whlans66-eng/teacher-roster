@@ -13,8 +13,8 @@
   <!-- 字體樣式表 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
 
-  <!-- Phosphor Icons -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Phosphor Icons：regular 粗細，鎖定 2.1.1 -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 
   <!-- Tailwind CDN - 使用 defer 避免阻塞渲染 -->
   <script defer src="https://cdn.tailwindcss.com"></script>
@@ -26,7 +26,7 @@
 
     .card {
       background: #ffffff;
-      border-radius: 18px;
+      border-radius: 20px;
       border: 1px solid rgba(0, 0, 0, 0.06);
       box-shadow:
         0 1px 3px rgba(0, 0, 0, 0.04),
@@ -35,7 +35,7 @@
     }
 
     .card-hover:hover {
-      transform: translateY(-2px);
+      transform: translateY(-4px);
       box-shadow:
         0 4px 12px rgba(0, 0, 0, 0.08),
         0 2px 6px rgba(0, 0, 0, 0.04);
@@ -63,7 +63,7 @@
     .calendar-cell{min-height:110px;border:1px solid rgba(0,0,0,.06);border-radius:12px;transition:all .3s cubic-bezier(0.4,0,0.2,1)}
     .calendar-cell:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.08)}
 
-    .status-badge{display:inline-flex;align-items:center;justify-content:center;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.875rem;font-weight:600;transition:all .2s ease;border-width:1px;border-style:solid}
+    .status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;transition:all .2s ease;border-width:1px;border-style:solid}
 
     /* 海事課程系統樣式 */
     .highlight{background-color:#fef3c7;padding:2px 4px;border-radius:3px}
@@ -82,8 +82,8 @@
     .donut-chart{position:relative;width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(from 0deg,var(--color) 0deg,var(--color) var(--angle,0deg),#e5e7eb var(--angle,0deg),#e5e7eb 360deg);box-shadow:0 4px 20px rgba(0,0,0,0.1)}
     .donut-chart::before{content:'';position:absolute;width:70px;height:70px;background:white;border-radius:50%;box-shadow:inset 0 2px 8px rgba(0,0,0,0.1)}
     .donut-chart-label{position:absolute;font-size:14px;font-weight:bold;color:#374151;z-index:1}
-    .method-card{background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:12px;padding:20px;text-align:center;transition:all .3s ease;border:1px solid rgba(255,255,255,0.2)}
-    .method-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,0.15)}
+    .method-card{background:#ffffff;border-radius:20px;padding:20px;text-align:center;transition:all .3s ease;border:1px solid rgba(255,255,255,0.2)}
+    .method-card:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(0,0,0,0.15)}
     @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
     .pulse-animation{animation:pulse 2s infinite}
 
@@ -732,10 +732,10 @@
         </div>
         <div class="flex space-x-4">
           <button type="button" onclick="closeAddEventModal()" class="btn btn-ghost flex-1">
-            ✗ 取消
+            <i class="ph ph-x"></i> 取消
           </button>
           <button type="submit" class="btn btn-primary flex-1">
-            ✓ 儲存
+            <i class="ph ph-check"></i> 儲存
           </button>
         </div>
       </form>
@@ -1454,7 +1454,7 @@
       } else {
         button.disabled = false;
         button.classList.remove('opacity-60', 'cursor-not-allowed');
-        button.innerHTML = '<span class="mr-2">🩺</span>測試 API 連線';
+        button.innerHTML = '<i class="ph ph-stethoscope"></i> 測試 API 連線';
       }
     }
 
@@ -2247,7 +2247,7 @@
           <button type="button" onclick="moveDown(this)" class="btn btn-secondary btn-sm">↓</button>
         </div>
         <input type="text" value="${value}" placeholder="請輸入工作經歷..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="btn btn-icon btn-danger btn-sm"><i class="ph ph-x"></i></button>`;
       c.appendChild(div);
     }
 
@@ -2271,7 +2271,7 @@
               ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="btn btn-secondary btn-sm">檢視</button>`:''}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.bg-white').remove()" class="btn btn-danger btn-sm">✕</button>
+          <button type="button" onclick="this.closest('.bg-white').remove()" class="btn btn-icon btn-danger btn-sm"><i class="ph ph-x"></i></button>
         </div>`;
       c.appendChild(div);
     }
@@ -2352,7 +2352,7 @@
               ${mats.map((m, idx) => renderMaterialItem(uid, m, idx)).join('')}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.subject-item').remove()" class="btn btn-danger btn-sm">✕</button>
+          <button type="button" onclick="this.closest('.subject-item').remove()" class="btn btn-icon btn-danger btn-sm"><i class="ph ph-x"></i></button>
         </div>`;
       c.appendChild(div);
     }
@@ -2403,7 +2403,7 @@
           console.error(err);
           placeholder.outerHTML = `<div class="flex items-center space-x-2 bg-red-50 p-2 rounded border border-red-300">
             <span class="text-sm text-red-700">上傳失敗：${file.name} - ${err.message}</span>
-            <button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-xs">✕</button>
+            <button type="button" onclick="this.parentElement.remove()" class="btn btn-icon btn-plain btn-sm" style="color:#ff3b30;"><i class="ph ph-x"></i></button>
           </div>`;
         }
       }
@@ -3402,16 +3402,6 @@
   // 把必要樣式注入（補齊你原本沒關閉的函式）
   function injectCalendarCSS(){
     const css = `
-      .calendar-day{
-        min-height:140px;
-        transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        border-radius: 10px;
-      }
-      .calendar-day:hover{
-        transform:translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
-      }
       .week-day{min-height:450px;transition:all .3s ease;}
       .week-day:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.1);}
       .event-item{font-size:.8rem;padding:8px 12px;margin:4px 0;border-radius:8px;cursor:pointer;transition:all .3s ease;box-shadow:0 2px 8px rgba(0,0,0,.1);backdrop-filter: blur(10px);}
@@ -3427,7 +3417,7 @@
         min-height: 120px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid rgba(0, 0, 0, 0.08);
-        border-radius: 10px;
+        border-radius: 12px;
       }
       .calendar-day:hover{
         transform: translateY(-1px);
@@ -4252,7 +4242,7 @@
       `;
 
       if (dayEvents.length === 0) {
-        html += '<div class="text-xs text-green-600 bg-green-50 rounded px-2 py-1">✓ 全天可用</div>';
+        html += '<div class="text-xs text-green-600 bg-green-50 rounded px-2 py-1"><i class="ph ph-check"></i> 全天可用</div>';
       } else {
         dayEvents.forEach(event => {
           const bgColor = event.source === '派課' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700';

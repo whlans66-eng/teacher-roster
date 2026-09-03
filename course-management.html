@@ -14,8 +14,8 @@
   <!-- 字體樣式表 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
 
-  <!-- Phosphor Icons -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Phosphor Icons：regular 粗細，鎖定 2.1.1 -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 
   <!-- Tailwind CDN - 使用 defer 避免阻塞渲染 -->
   <script defer src="https://cdn.tailwindcss.com"></script>
@@ -59,7 +59,7 @@
 
     .card {
       background: #ffffff;
-      border-radius: 18px;
+      border-radius: 20px;
       border: 1px solid rgba(0, 0, 0, 0.06);
       box-shadow:
         0 1px 3px rgba(0, 0, 0, 0.04),
@@ -68,7 +68,7 @@
     }
 
     .card-hover:hover {
-      transform: translateY(-2px);
+      transform: translateY(-4px);
       box-shadow:
         0 4px 12px rgba(0, 0, 0, 0.08),
         0 2px 6px rgba(0, 0, 0, 0.04);
@@ -138,7 +138,7 @@
     /* Apple 風格的資訊卡片 */
     .info-card {
       background: #FFFFFF;
-      border-radius: 16px;
+      border-radius: 12px;
       padding: 16px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       border: 0.5px solid rgba(0, 0, 0, 0.04);
@@ -147,7 +147,7 @@
     /* TimeTree 風格的功能區塊 */
     .feature-block {
       background: var(--apple-gray-light);
-      border-radius: 14px;
+      border-radius: 12px;
       padding: 14px 16px;
       margin: 12px 0;
       border: 0.5px solid rgba(0, 0, 0, 0.04);
@@ -256,12 +256,12 @@
 
     /* Modal 卡片容器 - 使用 Flexbox 三層結構 */
     .modal-card {
-      background: rgba(255, 255, 255, 0.95) !important;
-      backdrop-filter: blur(30px) saturate(180%);
-      -webkit-backdrop-filter: blur(30px) saturate(180%);
-      border: 0.5px solid rgba(255, 255, 255, 0.3);
-      border-radius: 20px !important;
-      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.15);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      border-radius: 20px;
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.18);
 
       /* 關鍵：Flexbox 佈局 */
       display: flex;
@@ -441,34 +441,16 @@
     }
 
     /* ========== Modal 內 SVG Icon 樣式 ========== */
-    .modal-icon {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      vertical-align: -3px;
-      margin-right: 6px;
-    }
-
-    .modal-icon-sm {
-      width: 14px;
-      height: 14px;
-      vertical-align: -2px;
-    }
 
     /* ========== 自動標籤樣式 ========== */
     .auto-tag {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 16px;
-      font-size: 13px;
-      font-weight: 500;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
       border: 1px solid;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -784,7 +766,7 @@
           </div>
         </div>
         <button type="button" onclick="dismissSyncStatus()" class="text-gray-400 hover:text-gray-600 transition" aria-label="關閉提醒">
-          ✕
+          <i class="ph ph-x"></i>
         </button>
       </div>
     </div>
@@ -823,7 +805,7 @@
             </button>
           </div>
           <button onclick="goToToday()" class="btn btn-secondary">
-            🎯 今天
+            <i class="ph ph-target"></i> 今天
           </button>
         </div>
 
@@ -904,7 +886,7 @@
             </div>
           </div>
           <button onclick="clearDateSelection()" class="btn btn-on-color">
-            ✕ 清除
+            <i class="ph ph-x"></i> 清除
           </button>
         </div>
       </div>
@@ -939,7 +921,7 @@
               <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">範圍內總時數</p>
               <p id="monthlyHoursCount" class="font-bold text-blue-600" style="font-size: 32px; letter-spacing: -0.02em;">0</p>
             </div>
-            <div style="font-size: 36px;">📊</div>
+            <div style="font-size: 36px; color:#007aff;"><i class="ph ph-chart-bar"></i></div>
           </div>
         </div>
       </div>
@@ -949,7 +931,7 @@
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-chalkboard-teacher"></i> 師資時數分析</h2>
           <button onclick="toggleTeacherHoursAnalysis()" class="btn btn-secondary btn-sm">
-            <span id="toggleAnalysisIcon">👁️</span> <span id="toggleAnalysisText">隱藏</span>
+            <span id="toggleAnalysisIcon"><i class="ph ph-eye"></i></span> <span id="toggleAnalysisText">隱藏</span>
           </button>
         </div>
         <div id="teacherHoursAnalysis">
@@ -958,7 +940,7 @@
             <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <span class="text-2xl">🎉</span>
+                  <span style="font-size:24px;color:#34c759;"><i class="ph ph-confetti"></i></span>
                 </div>
                 <div class="ml-3">
                   <p class="text-sm font-medium text-green-800">
@@ -971,7 +953,7 @@
           <!-- 搜尋框 -->
           <div class="mb-4">
             <input type="text" id="teacherSearchInput"
-                   placeholder="🔍 搜尋師資姓名..."
+                   placeholder="搜尋師資姓名..."
                    oninput="filterTeachers()"
                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                    style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
@@ -991,7 +973,7 @@
 
       <!-- 課程類型分佈 -->
       <div class="card p-6 fade-in" style="animation-delay: 0.4s">
-        <h2 class="text-gray-900 mb-6" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;">📊 課程類型分佈</h2>
+        <h2 class="text-gray-900 mb-6" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-chart-pie"></i> 課程類型分佈</h2>
         <div style="position: relative; height: 300px; max-width: 600px; margin: 0 auto;">
           <canvas id="courseTypeChart"></canvas>
         </div>
@@ -1163,7 +1145,7 @@
 
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p class="text-sm text-blue-800">
-              <svg class="modal-icon modal-icon-sm"><use href="#icon-lightbulb"></use></svg>
+              <i class="ph ph-lightbulb" style="font-size:14px;"></i>
               課程將會保留所有資訊（師資、時間、備註等），僅更改日期。
             </p>
           </div>
@@ -1258,7 +1240,7 @@
           <div class="mt-3">
             <div class="flex items-center justify-between mb-2">
               <label class="block font-medium text-gray-700" style="font-size: 13px;">
-                <svg class="modal-icon modal-icon-sm"><use href="#icon-tag"></use></svg>
+                <i class="ph ph-tag" style="font-size:14px;"></i>
                 自動標籤
               </label>
               <button type="button" onclick="autoGenerateTags()" class="btn btn-plain btn-sm">重新生成</button>
@@ -1275,7 +1257,7 @@
         <div id="viewModeButtons">
           <div class="flex flex-wrap gap-3 items-center">
             <button onclick="toggleContextMenu()" class="btn btn-secondary" style="margin-right: auto;">
-              <svg class="modal-icon"><use href="#icon-more"></use></svg>
+              <i class="ph ph-dots-three"></i>
               更多
             </button>
 
@@ -1283,7 +1265,7 @@
               關閉
             </button>
             <button onclick="enterEditMode()" class="btn btn-primary">
-              <svg class="modal-icon"><use href="#icon-edit"></use></svg>
+              <i class="ph ph-pencil-simple"></i>
               編輯
             </button>
           </div>
@@ -1295,7 +1277,7 @@
             取消
           </button>
           <button onclick="saveEditedCourse()" class="btn btn-primary">
-            <svg class="modal-icon"><use href="#icon-save"></use></svg>
+            <i class="ph ph-floppy-disk"></i>
             儲存變更
           </button>
         </div>
@@ -1374,19 +1356,19 @@
       const typeStyles = {
         info: {
           wrapper: 'bg-blue-50 border-blue-200 text-blue-800',
-          icon: 'ℹ️'
+          icon: 'ph-info'
         },
         success: {
           wrapper: 'bg-green-50 border-green-200 text-green-700',
-          icon: '✓'
+          icon: 'ph-check-circle'
         },
         warning: {
           wrapper: 'bg-amber-50 border-amber-200 text-amber-700',
-          icon: '⚠️'
+          icon: 'ph-warning-circle'
         },
         error: {
           wrapper: 'bg-red-50 border-red-200 text-red-700',
-          icon: '✗'
+          icon: 'ph-x-circle'
         }
       };
 
@@ -1394,7 +1376,7 @@
 
       banner.className = `card p-4 mb-6 border border-transparent ${style.wrapper}`;
       textElement.textContent = message;
-      iconElement.textContent = style.icon;
+      iconElement.innerHTML = `<i class="ph ${style.icon}"></i>`;
 
       if (hint) {
         hintElement.textContent = hint;
@@ -1469,9 +1451,9 @@
           background: rgba(0,0,0,0.5); display: flex; align-items: center;
           justify-content: center; z-index: 10000;">
           <div style="
-            background: white; padding: 30px; border-radius: 12px;
-            max-width: 550px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
-            <h2 style="margin: 0 0 15px 0; color: #d97706;">⚠️ 資料衝突警告</h2>
+            background: white; padding: 24px; border-radius: 20px;
+            max-width: 550px; width: 90%; box-shadow: 0 12px 48px rgba(0,0,0,0.18); max-height: 90vh; overflow-y: auto;">
+            <h2 style="margin: 0 0 15px 0; color: #d97706;"><i class="ph ph-warning-circle"></i> 資料衝突警告</h2>
             <p style="color: #374151; margin: 10px 0;">${result.message || '後端資料已被修改'}</p>
             ${conflictDetailsHTML}
             ${userListHTML}
@@ -1967,7 +1949,7 @@
           const isMainTeacher = Number(c.teacherId) === Number(teacher.id);
           const roleLabel = isMainTeacher ? '主講' : '助教';
           const roleColor = isMainTeacher ? 'background:#dbeafe;color:#1e40af;' : 'background:#fef3c7;color:#92400e;';
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:4px;">
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f9fafb;border-radius:12px;margin-bottom:4px;">
             <div style="flex:1;min-width:0;">
               <span style="font-size:13px;font-weight:500;color:#1f2937;">${c.name || '未命名課程'}</span>
               <span style="font-size:11px;color:#6b7280;margin-left:8px;">${c.date || ''} ${c.time || ''}</span>
@@ -2187,12 +2169,12 @@
 
       if (isVisible) {
         analysisContent.style.display = 'none';
-        toggleIcon.textContent = '👁️‍🗨️';
+        toggleIcon.innerHTML = '<i class="ph ph-eye-slash"></i>';
         toggleText.textContent = '顯示';
         localStorage.setItem('teacherHoursAnalysisVisible', 'false');
       } else {
         analysisContent.style.display = 'block';
-        toggleIcon.textContent = '👁️';
+        toggleIcon.innerHTML = '<i class="ph ph-eye"></i>';
         toggleText.textContent = '隱藏';
         localStorage.setItem('teacherHoursAnalysisVisible', 'true');
       }
@@ -2207,7 +2189,7 @@
         const toggleText = document.getElementById('toggleAnalysisText');
 
         analysisContent.style.display = 'none';
-        toggleIcon.textContent = '👁️‍🗨️';
+        toggleIcon.innerHTML = '<i class="ph ph-eye-slash"></i>';
         toggleText.textContent = '顯示';
       }
     }
@@ -2275,7 +2257,7 @@
 
         container.innerHTML = `
           <div class="text-center py-8 text-gray-500">
-            <div class="text-4xl mb-2">✨</div>
+            <div class="mb-2" style="font-size:48px;color:#007aff;"><i class="ph ph-sparkle"></i></div>
             <p>${emptyMessage}</p>
           </div>
         `;
@@ -2318,7 +2300,7 @@
                         <div class="flex-1">
                           <p class="font-medium text-gray-800">${c.name}</p>
                           <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
-                            <span>🕐 ${c.time}</span>
+                            <span><i class="ph ph-clock"></i> ${c.time}</span>
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
                             ${lockBadge}
                           </div>
@@ -2376,7 +2358,7 @@
                         <div class="flex-1">
                           <p class="font-medium text-gray-800">${c.name}</p>
                           <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
-                            <span>🕐 ${c.time}</span>
+                            <span><i class="ph ph-clock"></i> ${c.time}</span>
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
                             ${lockBadge}
                           </div>
@@ -2798,7 +2780,7 @@
                 ${course.tags.map(tag => {
                   // 判斷標籤類型並給予對應顏色
                   let tagClass = 'tag-default';
-                  let tagIcon = 'icon-tag';
+                  let tagIcon = 'ph-tag';
                   for (const [key, rule] of Object.entries(TAG_RULES)) {
                     if (rule.keywords.includes(tag)) {
                       tagClass = rule.class;
@@ -2806,7 +2788,7 @@
                       break;
                     }
                   }
-                  return `<span class="auto-tag ${tagClass}" style="cursor: default;"><svg class="modal-icon-sm"><use href="#${tagIcon}"></use></svg><span>${tag}</span></span>`;
+                  return `<span class="auto-tag ${tagClass}" style="cursor: default;"><i class="ph ${tagIcon}"></i><span>${tag}</span></span>`;
                 }).join('')}
               </div>
             ` : ''}
@@ -2829,8 +2811,8 @@
                   const ext = (m.fileName||'').split('.').pop().toLowerCase();
                   const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
                   const isPdf = ext === 'pdf';
-                  const icon = isVideo ? '🎬' : (isPdf ? '📄' : (['ppt','pptx'].includes(ext) ? '📊' : (['doc','docx'].includes(ext) ? '📝' : (['jpg','jpeg','png','gif','webp'].includes(ext) ? '🖼️' : '📎'))));
-                  return `<div style="display:flex;align-items:center;gap:8px;background:#f5f5f7;padding:8px 12px;border-radius:8px;">
+                  const icon = isVideo ? '<i class="ph ph-file-video"></i>' : (isPdf ? '<i class="ph ph-file-pdf"></i>' : (['ppt','pptx'].includes(ext) ? '<i class="ph ph-file-ppt"></i>' : (['doc','docx'].includes(ext) ? '<i class="ph ph-file-doc"></i>' : (['jpg','jpeg','png','gif','webp'].includes(ext) ? '<i class="ph ph-file-image"></i>' : '<i class="ph ph-paperclip"></i>'))));
+                  return `<div style="display:flex;align-items:center;gap:8px;background:#f5f5f7;padding:8px 12px;border-radius:12px;">
                     <span>${icon}</span>
                     <span style="flex:1;font-size:13px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.fileName}">${m.fileName}</span>
                     <button onclick="openCourseMaterialViewer('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" class="btn btn-secondary btn-sm" style="flex-shrink:0;">檢視</button>
@@ -2846,7 +2828,7 @@
         <div class="feature-block feature-block-blue">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🔔</span>
+              <span style="font-size:24px;"><i class="ph ph-bell"></i></span>
               <div>
                 <div class="text-sm font-semibold" style="color: var(--apple-gray-dark);">提醒設定</div>
                 <div class="text-xs" style="color: var(--apple-gray);">${course.reminderTime || '未設定提醒'}</div>
@@ -2861,7 +2843,7 @@
         <!-- 留言討論區 -->
         <div>
           <div class="section-title">
-            <span>💬</span>
+            <span><i class="ph ph-chat-circle"></i></span>
             <span>討論區</span>
           </div>
 
@@ -2884,7 +2866,7 @@
               </div>
             `).join('') : `
               <div class="text-center py-8" style="color: var(--apple-gray);">
-                <div class="text-3xl mb-2">💬</div>
+                <div class="mb-2" style="font-size:48px;color:#007aff;"><i class="ph ph-chat-circle"></i></div>
                 <div class="text-sm">尚無留言，成為第一個留言的人！</div>
               </div>
             `}
@@ -2904,7 +2886,7 @@
         <!-- 操作歷史 -->
         <div>
           <div class="section-title">
-            <span>📜</span>
+            <span><i class="ph ph-scroll"></i></span>
             <span>操作歷史</span>
           </div>
           <div class="space-y-1 max-h-48 overflow-y-auto">
@@ -3128,7 +3110,7 @@
           return {
             text: tagText,
             class: 'tag-default',
-            icon: '🏷️',
+            icon: 'ph-tag',
             type: 'custom'
           };
         });
@@ -3140,7 +3122,7 @@
 
       // 切換到編輯模式
       const modalTitle = document.getElementById('modalTitle');
-      modalTitle.textContent = '✏️ 編輯課程';
+      modalTitle.textContent = '編輯課程';
       modalTitle.style.cssText = 'font-size: 28px; font-weight: 600; letter-spacing: -0.015em;';
       document.getElementById('viewMode').style.display = 'none';
       document.getElementById('editCourseForm').style.display = 'block';
@@ -3496,27 +3478,27 @@
       important: {
         keywords: ['重要', '必須', '注意', '務必', '切記', '關鍵', '緊急'],
         class: 'tag-important',
-        icon: 'icon-alert'
+        icon: 'ph-warning-circle'
       },
       exam: {
         keywords: ['考試', '測驗', '評量', '期中', '期末', '小考', '大考'],
         class: 'tag-exam',
-        icon: 'icon-file'
+        icon: 'ph-file-text'
       },
       experiment: {
         keywords: ['實驗', '實習', '實作', '實務', '操作', '練習'],
         class: 'tag-experiment',
-        icon: 'icon-flask'
+        icon: 'ph-flask'
       },
       project: {
         keywords: ['專題', '報告', '作業', '習題', '繳交', '截止'],
         class: 'tag-project',
-        icon: 'icon-presentation'
+        icon: 'ph-presentation-chart'
       },
       meeting: {
         keywords: ['會議', '討論', '說明', '講解', '演講', '座談'],
         class: 'tag-meeting',
-        icon: 'icon-users'
+        icon: 'ph-users-three'
       }
     };
 
@@ -3560,7 +3542,7 @@
           detectedTags.push({
             text: keyword,
             class: 'tag-default',
-            icon: '🏷️',
+            icon: 'ph-tag',
             type: 'custom'
           });
         }
@@ -3600,7 +3582,7 @@
 
       container.innerHTML = currentTags.map((tag, index) => `
         <div class="auto-tag ${tag.class}">
-          <svg class="modal-icon-sm"><use href="#${tag.icon}"></use></svg>
+          <i class="ph ${tag.icon}"></i>
           <span>${tag.text}</span>
           <span class="auto-tag-remove" onclick="removeTag(${index}); event.stopPropagation();">×</span>
         </div>
@@ -4123,58 +4105,6 @@
     window.addEventListener('DOMContentLoaded', init);
   </script>
 
-  <!-- SVG Icon 定義庫（僅用於 Modal） -->
-  <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <symbol id="icon-edit" viewBox="0 0 24 24">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-      </symbol>
-      <symbol id="icon-save" viewBox="0 0 24 24">
-        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-        <polyline points="7 3 7 8 15 8"></polyline>
-      </symbol>
-      <symbol id="icon-more" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="1"></circle>
-        <circle cx="19" cy="12" r="1"></circle>
-        <circle cx="5" cy="12" r="1"></circle>
-      </symbol>
-      <symbol id="icon-tag" viewBox="0 0 24 24">
-        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-        <line x1="7" y1="7" x2="7.01" y2="7"></line>
-      </symbol>
-      <symbol id="icon-alert" viewBox="0 0 24 24">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-        <line x1="12" y1="9" x2="12" y2="13"></line>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </symbol>
-      <symbol id="icon-file" viewBox="0 0 24 24">
-        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-        <polyline points="13 2 13 9 20 9"></polyline>
-      </symbol>
-      <symbol id="icon-flask" viewBox="0 0 24 24">
-        <path d="M9 3h6"></path>
-        <path d="M10 3v7.586a2 2 0 0 1-.586 1.414L4 17.414A2 2 0 0 0 5.414 21h13.172a2 2 0 0 0 1.414-3.586l-5.414-5.414A2 2 0 0 1 14 10.586V3"></path>
-      </symbol>
-      <symbol id="icon-presentation" viewBox="0 0 24 24">
-        <path d="M2 3h20"></path>
-        <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path>
-        <path d="M7 21l5-5 5 5"></path>
-      </symbol>
-      <symbol id="icon-users" viewBox="0 0 24 24">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-        <circle cx="9" cy="7" r="4"></circle>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-      </symbol>
-      <symbol id="icon-lightbulb" viewBox="0 0 24 24">
-        <path d="M9 18h6"></path>
-        <path d="M10 22h4"></path>
-        <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
-      </symbol>
-    </defs>
-  </svg>
 
   <!-- 分享 Modal -->
   <div id="shareModal" onclick="if(event.target===this)closeShareModal()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center;">

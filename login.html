@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign in - WHL MARITRAIN</title>
+  <!-- Phosphor Icons：regular 粗細，鎖定 2.1.1 -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+
   <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
   <link rel="stylesheet" href="shared/ui.css">
   <style>
@@ -52,7 +55,7 @@
       backdrop-filter: blur(24px) saturate(180%);
       -webkit-backdrop-filter: blur(24px) saturate(180%);
       border: 1px solid var(--glass-border);
-      border-radius: 24px;
+      border-radius: 20px;
       box-shadow: var(--shadow-soft);
       
       width: 100%;
@@ -123,7 +126,7 @@
       padding: 18px 20px;
       font-size: 17px;
       border: 1px solid transparent; /* 預設無邊框 */
-      border-radius: 14px;
+      border-radius: 12px;
       background-color: var(--input-bg);
       color: var(--text-primary);
       transition: all 0.3s ease;
@@ -133,8 +136,8 @@
     input:focus {
       outline: none;
       background-color: #fff;
-      box-shadow: 0 4px 16px rgba(0, 113, 227, 0.15);
-      transform: translateY(-1px);
+      border-color: var(--apple-blue);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
     }
 
     input::placeholder {
@@ -243,7 +246,7 @@
       color: #d70015;
       border: 1px solid rgba(255, 59, 48, 0.2);
       padding: 10px 20px;
-      border-radius: 50px;
+      border-radius: 999px;
       font-size: 14px;
       font-weight: 500;
       box-shadow: 0 8px 24px rgba(255, 59, 48, 0.15);
@@ -302,7 +305,7 @@
 
   <div class="glass-card">
     <div class="header">
-      <div class="logo">🚢</div>
+      <div class="logo"><i class="ph ph-boat"></i></div>
       <h1>Sign in to Maritrain</h1>
       <div class="subtitle">WHL 智慧航安訓練管理系統</div>
     </div>

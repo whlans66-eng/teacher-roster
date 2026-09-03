@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>船員入口 - WHL MARITRAIN</title>
+  <!-- Phosphor Icons：regular 粗細，鎖定 2.1.1 -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+
   <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
   <link rel="stylesheet" href="shared/ui.css">
   <style>
@@ -46,7 +49,7 @@
       backdrop-filter: blur(24px) saturate(180%);
       -webkit-backdrop-filter: blur(24px) saturate(180%);
       border: 1px solid var(--glass-border);
-      border-radius: 24px;
+      border-radius: 20px;
       box-shadow: var(--shadow-soft);
       width: 100%;
       max-width: 480px;
@@ -78,9 +81,9 @@
       gap: 6px;
       background: rgba(10, 74, 122, 0.1);
       color: var(--brand);
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 12px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
       margin-bottom: 20px;
@@ -182,8 +185,8 @@
     input:focus {
       outline: none;
       background-color: #fff;
-      box-shadow: 0 4px 16px rgba(10, 74, 122, 0.15);
-      transform: translateY(-1px);
+      border-color: var(--btn-primary);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
     }
 
     input::placeholder { color: #98989d; }
@@ -301,22 +304,22 @@
 <body>
 
   <div id="errorToast" class="error-popover">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <i class="ph ph-warning-circle" style="font-size:16px;"></i>
     <span id="errorText">Error</span>
   </div>
 
   <div class="glass-card">
     <div class="badge">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 14a8 8 0 0 1-6.2-2.95C7.18 15.47 9.5 14.5 12 14.5s4.82.97 6.2 2.55A8 8 0 0 1 12 20z"/></svg>
+      <i class="ph ph-user" style="font-size:12px;"></i>
       船員入口 Crew Portal
     </div>
-    <div class="logo">⚓</div>
+    <div class="logo"><i class="ph ph-anchor"></i></div>
     <h1>歡迎回來</h1>
     <p class="subtitle">萬海智慧航安訓練管理系統</p>
 
     <!-- 萬海園地 SSO -->
     <a href="#" class="sso-btn" id="ssoBtn" onclick="loginViaWanhai(event)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <i class="ph ph-lock" style="font-size:20px;"></i>
       以萬海園地帳號登入
     </a>
     <p class="sso-hint">使用公司內網（萬海園地）帳號，免額外設定密碼</p>
@@ -331,12 +334,12 @@
       <div class="form-group">
         <input type="password" id="password" placeholder="密碼" required autocomplete="current-password">
         <button type="button" class="toggle-password" id="togglePwd" title="顯示密碼">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <i class="ph ph-eye" style="font-size:18px;"></i>
         </button>
       </div>
       <button type="submit" class="login-btn" id="loginBtn">
         <span id="btnText">登入</span>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <i class="ph ph-arrow-right" style="font-size:18px;"></i>
       </button>
     </form>
 
@@ -344,7 +347,7 @@
       <a href="#">忘記密碼？</a>
       <div style="margin-top: 24px;">
         <a href="login.html" class="back-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <i class="ph ph-caret-left" style="font-size:14px;"></i>
           返回管理員登入
         </a>
       </div>
@@ -424,7 +427,7 @@
         showError(error.message || '帳號或密碼錯誤');
         loginBtn.disabled = false;
         loginBtn.style.background = '';
-        loginBtn.innerHTML = '<span id="btnText">登入</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+        loginBtn.innerHTML = '<span id="btnText">登入</span><i class="ph ph-arrow-right" style="font-size:18px;"></i>';
         passwordInput.value = '';
         passwordInput.focus();
       }

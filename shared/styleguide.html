@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>按鈕規範 · WHL MARITRAIN</title>
+<title>UI 規範 · WHL MARITRAIN</title>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="ui.css">
 <style>
@@ -39,8 +39,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>按鈕規範</h1>
-  <p class="lede">全站唯一的按鈕來源是 <code>shared/ui.css</code>。八個頁面都引它，頁面內不要再自訂一套。</p>
+  <h1>UI 規範</h1>
+  <p class="lede">按鈕、標籤、輸入框的唯一來源是 <code>shared/ui.css</code>；圓角與色票是全站共用的規則。首頁 <code>index.html</code> 未納入本次改動。</p>
 
   <section>
     <h2>五種樣式 × 三種尺寸</h2>
@@ -106,13 +106,74 @@
   </section>
 
   <section>
+    <h2>標籤</h2>
+    <p class="hint">pill · 11px / 600 · padding 4×10 · 圖示 12px。中文不套 uppercase 與 letter-spacing。</p>
+    <div class="demo" style="margin-top:18px;">
+      <span class="tag tag-blue"><i class="ph ph-anchor"></i>基本訓練</span>
+      <span class="tag tag-green"><i class="ph ph-check-circle"></i>已完成</span>
+      <span class="tag tag-orange"><i class="ph ph-clock"></i>進行中</span>
+      <span class="tag tag-red"><i class="ph ph-warning-circle"></i>重要</span>
+      <span class="tag tag-gray">未開始</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>輸入框</h2>
+    <p class="hint">radius 12 · padding 12×16 · 15px。focus ring 一律 <code>0 0 0 4px rgba(0,122,255,.15)</code>，打字時不位移。</p>
+    <div style="max-width:360px; margin-top:18px;">
+      <input class="input" placeholder="點一下看 focus ring">
+    </div>
+  </section>
+
+  <section>
+    <h2>圓角層級</h2>
+    <p class="hint">原本全站有 15 種圓角，收成這四級。4 · 6 · 8 · 9 · 10 · 14 · 16 · 18 · 24 · 30px 全數淘汰。</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-top:20px;">
+      <div style="border:1px solid rgba(0,0,0,0.08); border-radius:12px; padding:16px;">
+        <strong style="font-size:15px;">12px</strong>
+        <div style="font-size:13px; color:#6e6e73; margin-top:4px;">按鈕、輸入框、卡片內層</div>
+      </div>
+      <div style="border:1px solid rgba(0,0,0,0.08); border-radius:20px; padding:16px;">
+        <strong style="font-size:15px;">20px</strong>
+        <div style="font-size:13px; color:#6e6e73; margin-top:4px;">卡片、Modal、登入卡</div>
+      </div>
+      <div style="border:1px solid rgba(0,0,0,0.08); border-radius:999px; padding:16px 20px;">
+        <strong style="font-size:15px;">pill</strong>
+        <div style="font-size:13px; color:#6e6e73; margin-top:4px;">標籤、狀態徽章</div>
+      </div>
+      <div style="border:1px solid rgba(0,0,0,0.08); border-radius:50%; padding:16px; text-align:center;">
+        <strong style="font-size:15px;">50%</strong>
+        <div style="font-size:13px; color:#6e6e73; margin-top:4px;">頭像、關閉鈕</div>
+      </div>
+    </div>
+    <div class="rules">
+      <div><strong>例外</strong><br>師資多選浮動列 16px；分段控制項內層 8–9px（12px 外框內縮後的正確內圓角）。</div>
+      <div><strong>卡片 hover</strong><br>統一 <code>translateY(-4px)</code>。原本散落 -2、-5、-8 三種。</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>圖示</h2>
+    <p class="hint">全站只用 Phosphor <strong>regular</strong>，鎖定 2.1.1。載入寫法固定一行，不再用未鎖版本、四種粗細全載的 JS bundle。</p>
+    <pre style="margin:14px 0 0; overflow-x:auto;"><code>&lt;link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"&gt;</code></pre>
+    <div class="rules">
+      <div><strong>尺寸</strong><br>16px 內文 · 18px 按鈕 · 20px 區塊標題 · 48px 空狀態</div>
+      <div><strong>顏色</strong><br>繼承文字色，不另外指定。只有主動作與空狀態圖示用 <code>#007aff</code>。</div>
+      <div><strong>禁止</strong><br>emoji 當圖示、PNG 圖示、手寫 inline SVG、同頁混用 regular／bold／fill。</div>
+    </div>
+  </section>
+
+  <section>
     <h2>怎麼用</h2>
     <p class="hint">在 <code>&lt;head&gt;</code> 加一行，然後只組合 class，不要再寫 inline style。</p>
     <pre style="margin:0;overflow-x:auto;"><code>&lt;link rel="stylesheet" href="shared/ui.css"&gt;
 
 &lt;button class="btn btn-primary"&gt;&lt;i class="ph ph-plus-circle"&gt;&lt;/i&gt;新增課程&lt;/button&gt;
 &lt;button class="btn btn-ghost btn-sm"&gt;取消&lt;/button&gt;
-&lt;button class="btn btn-icon btn-danger btn-sm"&gt;&lt;i class="ph ph-trash"&gt;&lt;/i&gt;&lt;/button&gt;</code></pre>
+&lt;button class="btn btn-icon btn-danger btn-sm"&gt;&lt;i class="ph ph-trash"&gt;&lt;/i&gt;&lt;/button&gt;
+
+&lt;span class="tag tag-blue"&gt;&lt;i class="ph ph-anchor"&gt;&lt;/i&gt;基本訓練&lt;/span&gt;
+&lt;input class="input" placeholder="搜尋課程"&gt;</code></pre>
   </section>
 </div>
 </body>
