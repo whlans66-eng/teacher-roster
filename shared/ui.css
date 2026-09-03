@@ -42,8 +42,11 @@
   --ui-border:         rgba(0, 0, 0, 0.12);
   --ui-disabled:       #d2d2d7;
 
-  /* 圓角 */
-  --ui-radius-btn:     12px;
+  /* 圓角層級：全站只留這四級 */
+  --ui-radius-btn:     12px;   /* 按鈕、輸入框、卡片內層區塊 */
+  --ui-radius-card:    20px;   /* 卡片、Modal、登入卡 */
+  --ui-radius-pill:    999px;  /* 標籤、狀態徽章、使用者膠囊 */
+  --ui-radius-round:   50%;    /* 頭像、關閉鈕 */
 }
 
 /* ── 基底：等同 md 尺寸 ────────────────────────────────────────────────── */
@@ -222,6 +225,61 @@
 .btn-icon.btn-secondary { background: var(--ui-fill);          border-color: transparent; color: var(--ui-primary); }
 .btn-icon.btn-plain     { background: transparent;             border-color: transparent; color: var(--ui-text-secondary); }
 .btn-icon.btn-plain:not(:disabled):hover { background: var(--ui-surface-hover); color: var(--ui-text); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   標籤 .tag — pill · 11px / 600 · padding 4×10 · 圖示 12px
+   顏色由 .tag-blue / .tag-green 這類修飾 class 提供。
+   ══════════════════════════════════════════════════════════════════════ */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--ui-radius-pill);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  /* 中文沒有大小寫，uppercase 與 letter-spacing 只會擠壓字距 */
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.tag i,
+.tag .ph { font-size: 12px; line-height: 1; }
+
+.tag-blue   { background: var(--ui-primary-light); color: var(--ui-primary); }
+.tag-green  { background: rgba(52, 199, 89, 0.12);  color: #1e7c3a; }
+.tag-orange { background: rgba(255, 149, 0, 0.12);  color: #b35f00; }
+.tag-red    { background: var(--ui-danger-bg);      color: var(--ui-danger); }
+.tag-gray   { background: var(--ui-fill);           color: var(--ui-text-secondary); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   輸入框 .input — radius 12 · padding 12×16 · 15px
+   focus ring 一律 0 0 0 4px rgba(0,122,255,0.15)，不位移。
+   ══════════════════════════════════════════════════════════════════════ */
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-btn);
+  background: var(--ui-surface);
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--ui-text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.input::placeholder { color: var(--ui-text-secondary); }
+
+.input:focus {
+  outline: none;
+  border-color: var(--ui-primary);
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+}
+
+.input:disabled { background: var(--ui-fill); cursor: not-allowed; }
 
 /* ── 排列輔助 ─────────────────────────────────────────────────────────── */
 .btn-block { width: 100%; }

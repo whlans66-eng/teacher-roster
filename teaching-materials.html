@@ -21,9 +21,8 @@
       --apple-shadow-sm: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
       --apple-shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
       --apple-shadow-lg: 0 12px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
-      --apple-radius: 20px;
-      --apple-radius-sm: 12px;
-      --apple-radius-xs: 8px;
+      --apple-radius: 20px;      /* 卡片、Modal */
+      --apple-radius-sm: 12px;   /* 卡片內層、按鈕、輸入框 */
       --brand: #0a4a7a;
       --sidebar-w: 288px;
     }
@@ -317,8 +316,8 @@
       gap: 4px;
       font-size: 11px;
       font-weight: 600;
-      padding: 3px 9px;
-      border-radius: 20px;
+      padding: 4px 10px;
+      border-radius: 999px;
     }
 
     .tag-blue   { background: var(--apple-blue-light); color: var(--apple-blue); }
@@ -460,7 +459,7 @@
     }
 
     .mat-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-4px);
       box-shadow: var(--apple-shadow-md);
       border-color: rgba(0,113,227,0.12);
     }
@@ -525,15 +524,15 @@
       white-space: nowrap;
     }
 
+    /* 併入 .tag 同一套尺寸，只留顏色差異 */
     .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      padding: 2px 8px;
-      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
     }
 
     .badge-new      { background: var(--apple-bg); color: var(--apple-gray); }

@@ -26,8 +26,8 @@
       --orange: #ff9500;
       --red: #ff3b30;
       --purple: #5856d6;
-      --radius: 14px;
-      --radius-sm: 10px;
+      --radius: 20px;      /* 卡片、Modal */
+      --radius-sm: 12px;   /* 卡片內層 */
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -217,7 +217,7 @@
       gap: 8px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 9px 14px;
       font-size: 14px;
       color: var(--text-secondary);
@@ -251,7 +251,7 @@
 
     .course-card:hover {
       box-shadow: var(--shadow);
-      transform: translateY(-2px);
+      transform: translateY(-4px);
     }
 
     .course-card-header {
@@ -304,9 +304,9 @@
       align-items: center;
       gap: 4px;
       font-size: 11px;
-      font-weight: 500;
-      padding: 3px 8px;
-      border-radius: 6px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
     }
 
     .tag-blue  { background: #dbeafe; color: #1e40af; }
@@ -576,8 +576,8 @@
 
     .comment-input:focus {
       outline: none;
-      border-color: var(--brand-mid);
-      box-shadow: 0 0 0 3px rgba(10,74,122,0.1);
+      border-color: var(--btn-primary);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
     }
 
     .comment-submit {
@@ -726,8 +726,8 @@
 
     .question-input:focus {
       outline: none;
-      border-color: var(--brand-mid);
-      box-shadow: 0 0 0 3px rgba(10,74,122,0.1);
+      border-color: var(--btn-primary);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
     }
 
     .radio-group, .checkbox-group {
