@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智慧派課 | 海事專業訓練課程系統</title>
 
+  <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
+  <link rel="stylesheet" href="shared/ui.css">
   <style>
   :root {
-    --apple-blue: #0071e3;
-    --apple-blue-hover: #0077ed;
+    --apple-blue: #007aff;
+    --apple-blue-hover: #0051d5;
     --apple-text: #1d1d1f;
     --apple-gray: #86868b;
     --glass-bg: rgba(255, 255, 255, 0.65);
@@ -45,11 +47,11 @@
   .back-btn {
     display: flex; align-items: center; gap: 6px; color: var(--apple-text);
     text-decoration: none; font-weight: 500; font-size: 15px; padding: 10px 20px;
-    background: #ffffff; border-radius: 30px;
+    background: #ffffff; border-radius: 12px;
     border: 1px solid rgba(0, 0, 0, 0.04); transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
   }
-  .back-btn:hover { background: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+  .back-btn:hover { background: #f5f5f7; }
   .page-title { text-align: center; flex: 1; }
   .page-title h1 { font-size: 28px; font-weight: 700; }
   .page-title p { font-size: 13px; color: var(--apple-gray); margin-top: 4px; font-weight: 500; }
@@ -81,14 +83,14 @@
     border: 1px solid rgba(0, 0, 0, 0.1);
     background: #f5f5f7; font-size: 15px; transition: all 0.2s;
   }
-  .ios-input:focus { outline: none; background: #fff; border-color: var(--apple-blue); box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15); }
+  .ios-input:focus { outline: none; background: #fff; border-color: var(--apple-blue); box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15); }
 
   /* 按鈕 */
   .primary-btn {
     background: var(--apple-blue); color: white; border: none; border-radius: 12px;
     padding: 12px 24px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 15px;
   }
-  .primary-btn:hover { background: var(--apple-blue-hover); transform: scale(1.02); }
+  .primary-btn:hover { background: var(--apple-blue-hover); }
 
   .secondary-btn {
     background: rgba(0, 0, 0, 0.05); color: var(--apple-text); border: none;
@@ -214,10 +216,10 @@
   .ai-sidebar-new-btn {
     width: 100%;
     padding: 10px 16px;
-    background: #2563eb;
+    background: var(--apple-blue);
     border: none;
     color: #ffffff;
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -228,7 +230,7 @@
     transition: all 0.2s;
     box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
   }
-  .ai-sidebar-new-btn:hover { background: #1d4ed8; }
+  .ai-sidebar-new-btn:hover { background: var(--apple-blue-hover); }
   .ai-sidebar-new-btn:active { transform: scale(0.98); }
   .ai-sidebar-list-label {
     padding: 8px 20px 4px;
@@ -300,7 +302,7 @@
     cursor: pointer;
     font-size: 14px;
     padding: 4px 6px;
-    border-radius: 6px;
+    border-radius: 12px;
     flex-shrink: 0;
     transition: opacity 0.15s, color 0.15s, background 0.15s;
   }
@@ -319,7 +321,7 @@
     gap: 8px;
     width: 100%;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: 12px;
     background: none;
     border: none;
     color: #64748b;
@@ -557,10 +559,10 @@
     align-items: center;
     gap: 6px;
     padding: 9px 16px;
-    border-radius: 16px;
+    border-radius: 12px;
     border: 1px solid #bfdbfe;
     background: rgba(239, 246, 255, 0.5);
-    color: #1d4ed8;
+    color: var(--apple-blue);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -568,13 +570,11 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   }
   .ai-quick-btn:hover {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: var(--apple-blue);
+    border-color: var(--apple-blue);
     color: white;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    transform: translateY(-1px);
   }
-  .ai-quick-btn:active { transform: translateY(0); }
+  .ai-quick-btn:active { transform: scale(0.98); }
   .ai-quick-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -963,7 +963,7 @@
   /* 語言選擇按鈕 */
   .lang-btn {
     display: inline-flex; align-items: center; gap: 5px;
-    padding: 7px 14px; border: 2px solid #e5e5ea; border-radius: 8px;
+    padding: 7px 14px; border: 1px solid #e5e5ea; border-radius: 12px;
     background: white; font-size: 13px; font-weight: 600; cursor: pointer;
     color: #6e6e73; transition: all 0.2s;
   }
@@ -1007,7 +1007,7 @@
   .instructor-more-btn {
     align-self: flex-start; margin-top: 2px; padding: 5px 10px;
     font-size: 11px; font-weight: 600; color: #be123c;
-    background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; cursor: pointer;
+    background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; cursor: pointer;
   }
   .instructor-more-btn:hover { background: #ffe4e6; }
   .instructor-empty {
@@ -1067,8 +1067,8 @@
     border: 1px solid #e2e8f0;
     color: #3b82f6;
     font-size: 12px;
-    font-weight: 700;
-    border-radius: 8px;
+    font-weight: 600;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 1px 2px rgba(0,0,0,0.04);
@@ -1084,50 +1084,60 @@
     position: sticky;
     bottom: 24px;
   }
+  /* 熱門關鍵字：可點方塊，比照按鈕規範（純色、hover 只換底色） */
+  .keyword-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: var(--apple-blue);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  .keyword-chip:hover { background: var(--apple-blue-hover); }
+
   .action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 16px 24px;
-    border-radius: 16px;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 12px;
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    border: 1px solid transparent;
   }
   .action-btn i { font-size: 18px; }
   .action-btn-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: var(--apple-blue);
     color: white;
-    box-shadow: 0 8px 24px rgba(59,130,246,0.35);
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
   }
   .action-btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(59,130,246,0.4);
+    background: var(--apple-blue-hover);
   }
   .action-btn-primary:active { transform: scale(0.98); }
   .action-btn-secondary {
     background: #ffffff;
-    color: #475569;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    color: #1d1d1f;
+    border-color: rgba(0, 0, 0, 0.12);
   }
   .action-btn-secondary:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
+    background: #f5f5f7;
   }
   .action-btn-secondary:active { transform: scale(0.98); }
   .action-btn-danger {
-    background: transparent;
+    background: rgba(255, 59, 48, 0.1);
     color: #ff3b30;
-    border: 1px solid transparent;
-    box-shadow: none;
   }
   .action-btn-danger:hover {
-    background: #fff0f0;
-    border-color: transparent;
+    background: rgba(255, 59, 48, 0.18);
   }
   .action-btn-danger:active { transform: scale(0.98); }
 
@@ -1199,10 +1209,11 @@
 
   /* ── 多選模式 ── */
   #courseSelectBtn {
-    padding: 8px 18px; border-radius: 20px; border: none; cursor: pointer;
-    font-size: 14px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 12px; border: 1px solid transparent; cursor: pointer;
+    font-family: inherit; font-size: 15px; font-weight: 600;
     background: rgba(0,122,255,0.1); color: #007aff;
-    transition: all 0.2s;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   #courseSelectBtn.active {
     background: #007aff; color: #fff;
@@ -1330,16 +1341,16 @@
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
           <h2 style="font-size: 20px; font-weight: 600; margin:0;">🔍 課程搜尋</h2>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <button id="courseSelectBtn" onclick="toggleCourseSelectMode()" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; font-size:13px; font-weight:500; cursor:pointer;">
+            <button id="courseSelectBtn" onclick="toggleCourseSelectMode()">
               <i class="ph ph-check-square"></i> 選取
             </button>
-            <button onclick="exportToExcel()" title="匯出 Excel" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #16a34a; border-radius:10px; background:#f0fdf4; color:#16a34a; font-size:13px; font-weight:600; cursor:pointer;">
+            <button onclick="exportToExcel()" title="匯出 Excel" class="btn btn-secondary btn-sm">
               <i class="ph ph-microsoft-excel-logo"></i> Excel
             </button>
-            <button onclick="exportToPDF()" title="匯出 PDF" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #dc2626; border-radius:10px; background:#fef2f2; color:#dc2626; font-size:13px; font-weight:600; cursor:pointer;">
+            <button onclick="exportToPDF()" title="匯出 PDF" class="btn btn-secondary btn-sm">
               <i class="ph ph-file-pdf"></i> PDF
             </button>
-            <button onclick="exportToPPT()" title="匯出 PowerPoint" style="display:flex; align-items:center; gap:5px; padding:8px 14px; border:1px solid #d97706; border-radius:10px; background:#fffbeb; color:#d97706; font-size:13px; font-weight:600; cursor:pointer;">
+            <button onclick="exportToPPT()" title="匯出 PowerPoint" class="btn btn-secondary btn-sm">
               <i class="ph ph-presentation-chart"></i> PPT
             </button>
           </div>
@@ -1436,7 +1447,7 @@
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <strong style="color:#1e293b; display:flex; align-items:center; gap:6px;"><i class="ph ph-brain" style="color:#3b82f6;"></i> AI 長期記憶</strong>
             <button onclick="if(confirm('確定要清除所有記憶嗎？AI 將忘記關於你的所有資訊。')){aiChat.clearMemories(); renderAIMemoryPanel();}"
-              style="background:#ef4444; color:white; border:none; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer;">
+              class="btn btn-danger btn-sm">
               全部清除
             </button>
           </div>
@@ -1447,7 +1458,7 @@
               onfocus="this.style.borderColor='#60a5fa'" onblur="this.style.borderColor='#e2e8f0'"
               onkeydown="if(event.key==='Enter'){addManualMemory();}">
             <button onclick="addManualMemory()"
-              style="background:#2563eb; color:white; border:none; padding:8px 16px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;">
+              class="btn btn-primary btn-sm">
               新增
             </button>
           </div>
@@ -1704,7 +1715,7 @@
           <div style="margin-bottom: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px;">關鍵字標籤</label>
-              <button type="button" onclick="addMaritimeKeyword()" style="border: none; background: none; color: var(--apple-blue); font-size: 13px; font-weight: 600; cursor: pointer;">+ 新增關鍵字</button>
+              <button type="button" onclick="addMaritimeKeyword()" class="btn btn-plain btn-sm">+ 新增關鍵字</button>
             </div>
             <div id="maritimeKeywordList" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: rgba(255,255,255,0.5); border-radius: 12px; min-height: 50px;"></div>
           </div>
@@ -1837,7 +1848,7 @@
         <div style="margin-bottom: 20px; background: #f5f5f7; border-radius: 12px; padding: 16px;">
           <label style="font-size: 13px; font-weight: 700; color: #1d1d1f; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
             <span><i class="ph ph-folder-open" style="margin-right: 6px;"></i>教材與影片附件</span>
-            <button type="button" onclick="document.getElementById('maritimeMatFileInput').click()" style="font-size: 12px; font-weight: 600; color: white; background: #8b5cf6; border: none; border-radius: 8px; padding: 6px 14px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <button type="button" onclick="document.getElementById('maritimeMatFileInput').click()" class="btn btn-secondary btn-sm">
               <i class="ph ph-upload-simple"></i> 上傳檔案
             </button>
           </label>
@@ -1905,7 +1916,7 @@
         <div style="margin-bottom: 24px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray);">關鍵字</label>
-            <button type="button" onclick="addMaritimeKeywordModal()" style="border:none; background:none; color:var(--apple-blue); font-weight:600; font-size:12px; cursor:pointer;">+ 新增</button>
+            <button type="button" onclick="addMaritimeKeywordModal()" class="btn btn-plain btn-sm">+ 新增</button>
           </div>
           <div id="maritimeKeywordListModal" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px;"></div>
         </div>
@@ -2861,7 +2872,7 @@
                     return `<div style="display:flex;align-items:center;gap:10px;background:white;padding:10px 14px;border-radius:10px;border:1px solid #e5e5ea;">
                       <i class="ph ${iconClass}" style="font-size:20px;color:${iconColor};flex-shrink:0;"></i>
                       <span style="flex:1;font-size:13px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.fileName}">${m.fileName}</span>
-                      <button onclick="openMaritimeCourseMaterial('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" style="flex-shrink:0;font-size:11px;font-weight:600;color:white;background:#8b5cf6;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;">檢視</button>
+                      <button onclick="openMaritimeCourseMaterial('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" class="btn btn-secondary btn-sm" style="flex-shrink:0;">檢視</button>
                     </div>`;
                   }).join('')}
                 </div>
@@ -3109,8 +3120,8 @@
       return `<div class="maritime-mat-item" data-filename="${mat.fileName||''}" data-fileurl="${mat.fileUrl||''}" data-filetype="${mat.fileType||''}" style="display:flex;align-items:center;gap:10px;background:white;padding:10px 14px;border-radius:10px;border:1px solid #e5e5ea;">
         <i class="ph ${iconClass}" style="font-size:18px;color:${iconColor};flex-shrink:0;"></i>
         <span style="flex:1;font-size:12px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${mat.fileName}">${mat.fileName}</span>
-        <button type="button" onclick="openMaritimeCourseMaterial('${(mat.fileName||'').replace(/'/g,"\\'")}','${(mat.fileUrl||'').replace(/'/g,"\\'")}')" style="font-size:11px;font-weight:600;color:#8b5cf6;background:none;border:1px solid #8b5cf6;border-radius:6px;padding:4px 10px;cursor:pointer;">檢視</button>
-        <button type="button" onclick="this.closest('.maritime-mat-item').remove()" style="font-size:11px;font-weight:600;color:#ef4444;background:none;border:1px solid #ef4444;border-radius:6px;padding:4px 8px;cursor:pointer;">移除</button>
+        <button type="button" onclick="openMaritimeCourseMaterial('${(mat.fileName||'').replace(/'/g,"\\'")}','${(mat.fileUrl||'').replace(/'/g,"\\'")}')" class="btn btn-secondary btn-sm">檢視</button>
+        <button type="button" onclick="this.closest('.maritime-mat-item').remove()" class="btn btn-danger btn-sm">移除</button>
       </div>`;
     }
 
@@ -3388,20 +3399,7 @@
       // 熱門關鍵字 - 從真實資料計算
       if (keywords.length > 0) {
         document.getElementById('maritimeKeywordsCloud').innerHTML = keywords.map(kw => `
-          <div style="
-            background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-            color: white;
-            padding: 10px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0, 122, 255, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 122, 255, 0.3)'">
+          <div class="keyword-chip">
             <span>${kw.text}</span>
             <span style="
               background: rgba(255, 255, 255, 0.25);
@@ -3467,7 +3465,7 @@
               ${result.activeSessions.map(s => `
                 <div class="conflict-user-item">
                   <div style="font-size: 13px; font-weight: 600;">${s.userName || '訪客'}</div>
-                  <button onclick="kickUser('${s.sessionId}', '${s.userName}')" style="border: none; background: #ff3b30; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; cursor: pointer;">踢出</button>
+                  <button onclick="kickUser('${s.sessionId}', '${s.userName}')" class="btn btn-danger btn-sm">踢出</button>
                 </div>
               `).join('')}
             </div>` : ''}
@@ -3727,7 +3725,7 @@
         <div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #e2e8f0;">
           <span style="flex:1; color:#334155;">• ${m.fact}</span>
           <button onclick="aiChat.removeMemory(${i}); renderAIMemoryPanel();"
-            style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; padding:2px 6px; border-radius:4px;" title="刪除此記憶">
+            class="btn btn-icon btn-plain btn-sm" style="color:#ef4444;" title="刪除此記憶">
             <i class="ph ph-x"></i>
           </button>
         </div>
@@ -3851,7 +3849,7 @@
           actionBtnDiv.innerHTML = `
             <div style="font-size:13px; color:#007aff; font-weight:600; margin-bottom:8px;"><i class="ph ph-lightning"></i> AI 偵測到操作指令</div>
             ${actions.map((a, i) => `
-              <button onclick="showAIActionConfirmation(${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; background:#007aff; color:white; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; margin-right:6px; margin-bottom:4px;">
+              <button onclick="showAIActionConfirmation(${i})" class="btn btn-primary btn-sm" style="margin-right:6px; margin-bottom:4px;">
                 <i class="ph ph-${a.type === 'CREATE_COURSE' ? 'plus-circle' : 'pencil-simple'}"></i>
                 ${a.type === 'CREATE_COURSE' ? '新增課程：' + (a.data.name || '未命名') : '修改課程：' + (a.data.name || '未知')}
               </button>
@@ -4349,7 +4347,7 @@
       <p style="font-size:13px;color:#ff3b30;margin-bottom:28px;font-weight:500;">此操作無法復原</p>
       <div style="display:flex;gap:12px;">
         <button onclick="closeDeleteConfirmModal()" class="secondary-btn" style="flex:1;">取消</button>
-        <button onclick="executeDeleteConfirm()" style="flex:1;background:#ff3b30;color:white;border:none;border-radius:12px;padding:12px 24px;font-weight:600;cursor:pointer;font-size:15px;">確認刪除</button>
+        <button onclick="executeDeleteConfirm()" class="btn btn-danger" style="flex:1;">確認刪除</button>
       </div>
     </div>
   </div>
@@ -4368,8 +4366,8 @@
       </div>
       <div id="aiActionModalBody" style="background:#f5f5f7;border-radius:12px;padding:16px;margin-bottom:20px;font-size:14px;line-height:1.6;max-height:320px;overflow-y:auto;"></div>
       <div style="display:flex;gap:10px;">
-        <button onclick="closeAIActionModal()" style="flex:1;padding:12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;color:#6b7280;">取消</button>
-        <button id="aiActionConfirmBtn" onclick="confirmAIAction()" style="flex:2;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,#007aff,#0051d5);color:white;font-size:14px;font-weight:700;cursor:pointer;">
+        <button onclick="closeAIActionModal()" class="btn btn-ghost" style="flex:1;">取消</button>
+        <button id="aiActionConfirmBtn" onclick="confirmAIAction()" class="btn btn-primary" style="flex:2;">
           <i class="ph ph-check-circle"></i> 確認執行
         </button>
       </div>

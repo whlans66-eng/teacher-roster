@@ -4,10 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>船員入口 - WHL MARITRAIN</title>
+  <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
+  <link rel="stylesheet" href="shared/ui.css">
   <style>
     :root {
-      --brand: #0a4a7a;
+      --brand: #0a4a7a;         /* 只用於標題與頭像 */
       --brand-hover: #0d5fa0;
+      --btn-primary: #007aff;   /* 主按鈕統一色 */
+      --btn-primary-hover: #0051d5;
       --text-primary: #1d1d1f;
       --text-secondary: #86868b;
       --glass-bg: rgba(255, 255, 255, 0.65);
@@ -131,23 +135,21 @@
       width: 100%;
       height: 56px;
       padding: 12px 24px;
-      background: var(--brand);
+      background: var(--btn-primary);
       color: white;
       border: none;
-      border-radius: 14px;
+      border-radius: 12px;
       font-size: 17px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(10, 74, 122, 0.35);
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
       margin-bottom: 16px;
       text-decoration: none;
     }
 
     .sso-btn:hover {
-      background: var(--brand-hover);
-      transform: scale(1.02);
-      box-shadow: 0 6px 16px rgba(10, 74, 122, 0.45);
+      background: var(--btn-primary-hover);
     }
 
     .sso-btn:active { transform: scale(0.98); }
@@ -209,7 +211,7 @@
       width: 100%;
       height: 52px;
       margin-top: 8px;
-      background: var(--brand);
+      background: var(--btn-primary);
       color: white;
       border: none;
       border-radius: 12px;
@@ -217,13 +219,11 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(10, 74, 122, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
     }
 
     .login-btn:hover {
-      background: var(--brand-hover);
-      transform: scale(1.02);
-      box-shadow: 0 6px 16px rgba(10, 74, 122, 0.4);
+      background: var(--btn-primary-hover);
     }
 
     .login-btn:active { transform: scale(0.98); }

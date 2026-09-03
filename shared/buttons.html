@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>按鈕規範 · WHL MARITRAIN</title>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="ui.css">
+<style>
+  body {
+    margin: 0; padding: 40px 24px 80px;
+    background: #f5f5f7; color: #1d1d1f;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .lede { font-size: 14px; color: #6e6e73; margin: 0 0 32px; }
+  section {
+    background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 20px;
+    padding: 28px; margin-bottom: 20px;
+  }
+  h2 { font-size: 18px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .hint { font-size: 13px; color: #6e6e73; margin: 0 0 20px; }
+  .row { display: grid; grid-template-columns: 92px 1fr; gap: 18px 20px; align-items: center; }
+  .label { font-size: 12px; font-weight: 600; color: #86868b; }
+  .demo { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  code { font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+         background: #f2f2f7; padding: 2px 6px; border-radius: 6px; }
+  .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr));
+           gap: 14px; margin-top: 24px; padding-top: 22px; border-top: 1px solid rgba(0,0,0,0.06); }
+  .rules div { font-size: 13px; color: #6e6e73; line-height: 1.6; }
+  .rules strong { color: #1d1d1f; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sw { width: 96px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,0,0,0.06); }
+  .sw i { display: block; height: 44px; }
+  .sw span { display: block; font: 11px/1 ui-monospace, monospace; padding: 8px 6px; text-align: center; color: #6e6e73; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>按鈕規範</h1>
+  <p class="lede">全站唯一的按鈕來源是 <code>shared/ui.css</code>。八個頁面都引它，頁面內不要再自訂一套。</p>
+
+  <section>
+    <h2>五種樣式 × 三種尺寸</h2>
+    <p class="hint">一個畫面只出現一顆 primary。</p>
+    <div class="row">
+      <div class="label">md · 預設</div>
+      <div class="demo">
+        <button class="btn btn-primary"><i class="ph ph-plus-circle"></i>新增課程</button>
+        <button class="btn btn-secondary"><i class="ph ph-file-xls"></i>匯出 Excel</button>
+        <button class="btn btn-ghost"><i class="ph ph-x"></i>取消</button>
+        <button class="btn btn-danger"><i class="ph ph-trash"></i>刪除</button>
+        <button class="btn btn-plain btn-icon-right">更多<i class="ph ph-caret-down"></i></button>
+        <button class="btn btn-icon"><i class="ph ph-dots-three"></i></button>
+      </div>
+
+      <div class="label">sm · 密集區</div>
+      <div class="demo">
+        <button class="btn btn-primary btn-sm"><i class="ph ph-eye"></i>檢視</button>
+        <button class="btn btn-soft btn-sm"><i class="ph ph-download-simple"></i>開啟</button>
+        <button class="btn btn-secondary btn-sm">上傳教材</button>
+        <button class="btn btn-icon btn-danger btn-sm"><i class="ph ph-trash"></i></button>
+      </div>
+
+      <div class="label">lg · 登入頁</div>
+      <div class="demo">
+        <button class="btn btn-primary btn-lg btn-icon-right" style="min-width:260px;">登入<i class="ph ph-arrow-right"></i></button>
+      </div>
+
+      <div class="label">狀態</div>
+      <div class="demo">
+        <button class="btn btn-primary">default</button>
+        <button class="btn btn-primary" style="background:#0051d5;">hover</button>
+        <button class="btn btn-primary" style="background:#0051d5;transform:scale(0.98);">active</button>
+        <button class="btn btn-primary" disabled>disabled</button>
+      </div>
+
+      <div class="label">彩色底上</div>
+      <div class="demo" style="background:linear-gradient(135deg,#667eea,#764ba2);padding:14px;border-radius:12px;">
+        <button class="btn btn-on-color"><i class="ph ph-x"></i>清除</button>
+      </div>
+    </div>
+
+    <div class="rules">
+      <div><strong>尺寸</strong><br>sm 8×14 / 13px / 圖示 16px<br>md 10×20 / 15px / 圖示 18px<br>lg 14×24 / 17px / 圖示 20px</div>
+      <div><strong>hover</strong><br>只加深底色，不位移、不縮放。<code>translateY</code> 與 <code>scale(1.02)</code> 已全數移除，只有 active 保留 <code>scale(0.98)</code>。</div>
+      <div><strong>圖示位置</strong><br>一律在文字左邊，gap 8px。只有「下一步／展開」類箭頭加 <code>.btn-icon-right</code> 放右邊。</div>
+      <div><strong>禁止</strong><br>漸層底色、Tailwind <code>rounded-*</code> 疊在 <code>.btn</code> 上、inline <code>onmouseover</code> 改樣式。</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>色票</h2>
+    <p class="hint">主色 <code>#007aff</code> 純色，hover <code>#0051d5</code>。已淘汰 <code>#0071e3</code>；<code>#0a4a7a</code> 只留給船員側的標題與頭像。</p>
+    <div class="swatches">
+      <div class="sw"><i style="background:#007aff"></i><span>#007aff</span></div>
+      <div class="sw"><i style="background:#0051d5"></i><span>#0051d5</span></div>
+      <div class="sw"><i style="background:#eaf3ff"></i><span>#eaf3ff</span></div>
+      <div class="sw"><i style="background:#f2f2f7"></i><span>#f2f2f7</span></div>
+      <div class="sw"><i style="background:#ff3b30"></i><span>#ff3b30</span></div>
+      <div class="sw"><i style="background:#34c759"></i><span>#34c759</span></div>
+      <div class="sw"><i style="background:#1d1d1f"></i><span>#1d1d1f</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>怎麼用</h2>
+    <p class="hint">在 <code>&lt;head&gt;</code> 加一行，然後只組合 class，不要再寫 inline style。</p>
+    <pre style="margin:0;overflow-x:auto;"><code>&lt;link rel="stylesheet" href="shared/ui.css"&gt;
+
+&lt;button class="btn btn-primary"&gt;&lt;i class="ph ph-plus-circle"&gt;&lt;/i&gt;新增課程&lt;/button&gt;
+&lt;button class="btn btn-ghost btn-sm"&gt;取消&lt;/button&gt;
+&lt;button class="btn btn-icon btn-danger btn-sm"&gt;&lt;i class="ph ph-trash"&gt;&lt;/i&gt;&lt;/button&gt;</code></pre>
+  </section>
+</div>
+</body>
+</html>

@@ -5,9 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>船員入口 - WHL MARITRAIN</title>
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
+  <link rel="stylesheet" href="shared/ui.css">
   <style>
     :root {
-      --brand: #0a4a7a;
+      --brand: #0a4a7a;          /* 只用於標題與頭像 */
+      --btn-primary: #007aff;   /* 主按鈕統一色 */
+      --btn-primary-hover: #0051d5;
       --brand-light: #e8f0f8;
       --brand-mid: #1e6fa8;
       --text-primary: #1d1d1f;
@@ -110,8 +114,8 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 14px;
-      border-radius: 20px;
+      padding: 8px 14px;
+      border-radius: 12px;
       border: none;
       background: transparent;
       color: var(--text-secondary);
@@ -213,7 +217,7 @@
       gap: 8px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 9px 14px;
       font-size: 14px;
       color: var(--text-secondary);
@@ -260,7 +264,7 @@
     .course-icon {
       width: 40px;
       height: 40px;
-      border-radius: 10px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -302,7 +306,7 @@
       font-size: 11px;
       font-weight: 500;
       padding: 3px 8px;
-      border-radius: 6px;
+      border-radius: 12px;
     }
 
     .tag-blue  { background: #dbeafe; color: #1e40af; }
@@ -333,16 +337,16 @@
       gap: 4px;
       font-size: 12px;
       font-weight: 600;
-      color: var(--brand);
-      background: var(--brand-light);
+      color: var(--btn-primary);
+      background: #eaf3ff;
       border: none;
-      border-radius: 8px;
-      padding: 5px 10px;
+      border-radius: 12px;
+      padding: 8px 14px;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: background-color 0.15s ease;
     }
 
-    .btn-open:hover { background: #d0e4f5; }
+    .btn-open:hover { background: #d8e9ff; }
 
     /* ── 空狀態 ── */
     .empty-state {
@@ -471,7 +475,7 @@
     .material-icon {
       width: 36px;
       height: 36px;
-      border-radius: 8px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -497,18 +501,18 @@
       gap: 4px;
       font-size: 12px;
       font-weight: 600;
-      color: var(--brand);
-      background: var(--brand-light);
+      color: var(--btn-primary);
+      background: #eaf3ff;
       border: none;
-      border-radius: 6px;
-      padding: 5px 10px;
+      border-radius: 12px;
+      padding: 8px 14px;
       cursor: pointer;
       white-space: nowrap;
       text-decoration: none;
       transition: background 0.15s;
     }
 
-    .material-open:hover { background: #d0e4f5; }
+    .material-open:hover { background: #d8e9ff; }
 
     /* ── 留言 ── */
     .comment-item {
@@ -559,7 +563,7 @@
     .comment-input {
       flex: 1;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 10px 14px;
       font-size: 14px;
       resize: none;
@@ -579,10 +583,10 @@
     .comment-submit {
       align-self: flex-end;
       padding: 10px 16px;
-      background: var(--brand);
+      background: var(--btn-primary);
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -590,7 +594,7 @@
       white-space: nowrap;
     }
 
-    .comment-submit:hover { background: var(--brand-mid); }
+    .comment-submit:hover { background: var(--btn-primary-hover); }
     .comment-submit:active { transform: scale(0.97); }
 
     /* ── 問卷列表 ── */
@@ -630,7 +634,7 @@
     .survey-action {
       margin-left: auto;
       padding: 8px 16px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: none;
       font-size: 13px;
       font-weight: 600;
@@ -639,11 +643,11 @@
     }
 
     .survey-action-primary {
-      background: var(--brand);
+      background: var(--btn-primary);
       color: white;
     }
 
-    .survey-action-primary:hover { background: var(--brand-mid); }
+    .survey-action-primary:hover { background: var(--btn-primary-hover); }
 
     .survey-action-secondary {
       background: var(--surface-2);
@@ -709,7 +713,7 @@
     .question-input {
       width: 100%;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 10px 14px;
       font-size: 14px;
       font-family: inherit;
@@ -738,7 +742,7 @@
       gap: 10px;
       padding: 10px 14px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
       transition: all 0.15s;
     }
@@ -759,7 +763,7 @@
       flex: 1;
       padding: 10px 4px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       background: var(--surface);
       font-size: 14px;
       font-weight: 600;
@@ -769,9 +773,9 @@
     }
 
     .rating-btn:hover, .rating-btn.selected {
-      background: var(--brand);
+      background: var(--btn-primary);
       color: white;
-      border-color: var(--brand);
+      border-color: var(--btn-primary);
     }
 
     .survey-form-footer {
@@ -784,7 +788,7 @@
 
     .btn-cancel {
       padding: 10px 20px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--surface);
       font-size: 14px;
@@ -795,17 +799,17 @@
 
     .btn-submit {
       padding: 10px 24px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: none;
-      background: var(--brand);
+      background: var(--btn-primary);
       color: white;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: background-color 0.15s ease;
     }
 
-    .btn-submit:hover { background: var(--brand-mid); }
+    .btn-submit:hover { background: var(--btn-primary-hover); }
 
     /* ── 通知 toast ── */
     .toast {
