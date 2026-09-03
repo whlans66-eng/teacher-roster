@@ -1,0 +1,237 @@
+/* ==========================================================================
+   WHL MARITRAIN — 共用按鈕規範 (shared/ui.css)
+
+   全站唯一的按鈕來源。八個頁面都引入這一份，頁面內不要再自己定義一套。
+
+   規則摘要
+     主色      #007aff（純色，不用漸層）；hover #0051d5
+     圓角      12px，三種尺寸共用
+     文字      15px / 600（md）
+     圖示      一律在文字左邊，gap 8px；只有「下一步／展開」類箭頭放右邊
+     hover     只加深底色，不位移、不縮放
+     active    scale(0.98)
+     disabled  #d2d2d7 底、白字、not-allowed
+
+   禁止
+     漸層底色、Tailwind rounded-* 疊加在已有圓角的 class 上、
+     inline onmouseover 改樣式。
+   ========================================================================== */
+
+:root {
+  /* 色票 */
+  --ui-primary:        #007aff;
+  --ui-primary-hover:  #0051d5;
+  --ui-primary-light:  #eaf3ff;
+  --ui-primary-light-hover: #d8e9ff;
+
+  --ui-danger:         #ff3b30;
+  --ui-danger-bg:      rgba(255, 59, 48, 0.1);
+  --ui-danger-bg-hover:rgba(255, 59, 48, 0.18);
+
+  --ui-success:        #34c759;
+  --ui-success-hover:  #2aa94c;
+  --ui-warning:        #ff9500;
+
+  --ui-text:           #1d1d1f;
+  --ui-text-secondary: #6e6e73;
+
+  --ui-fill:           #f2f2f7;
+  --ui-fill-hover:     #e5e5ea;
+  --ui-surface:        #ffffff;
+  --ui-surface-hover:  #f5f5f7;
+  --ui-border:         rgba(0, 0, 0, 0.12);
+  --ui-disabled:       #d2d2d7;
+
+  /* 圓角 */
+  --ui-radius-btn:     12px;
+}
+
+/* ── 基底：等同 md 尺寸 ────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-btn);
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn i,
+.btn .ph {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+}
+
+/* hover 只換底色；位移與縮放只留給 active */
+.btn:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.btn:disabled,
+.btn[disabled] {
+  background: var(--ui-disabled);
+  border-color: transparent;
+  color: #ffffff;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── 尺寸：sm / md（預設）/ lg ─────────────────────────────────────────── */
+.btn-sm {
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+.btn-sm i,
+.btn-sm .ph { font-size: 16px; }
+
+.btn-lg {
+  padding: 14px 24px;
+  font-size: 17px;
+}
+.btn-lg i,
+.btn-lg .ph { font-size: 20px; }
+
+/* ── 樣式：一個畫面只出現一顆 primary ─────────────────────────────────── */
+
+/* 1. primary — 主動作 */
+.btn-primary {
+  background: var(--ui-primary);
+  color: #ffffff;
+}
+.btn-primary:not(:disabled):hover {
+  background: var(--ui-primary-hover);
+}
+
+/* 2. secondary — 次要動作 */
+.btn-secondary {
+  background: var(--ui-fill);
+  color: var(--ui-primary);
+}
+.btn-secondary:not(:disabled):hover {
+  background: var(--ui-fill-hover);
+}
+
+/* 3. ghost — 取消、關閉這類中性動作 */
+.btn-ghost {
+  background: var(--ui-surface);
+  border-color: var(--ui-border);
+  color: var(--ui-text);
+}
+.btn-ghost:not(:disabled):hover {
+  background: var(--ui-surface-hover);
+}
+
+/* 4. danger — 刪除 */
+.btn-danger {
+  background: var(--ui-danger-bg);
+  color: var(--ui-danger);
+}
+.btn-danger:not(:disabled):hover {
+  background: var(--ui-danger-bg-hover);
+}
+
+/* 5. plain — 純文字動作（更多、展開） */
+.btn-plain {
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--ui-primary);
+}
+.btn-plain:not(:disabled):hover {
+  background: var(--ui-primary-light);
+}
+.btn-plain.btn-sm { padding: 8px 10px; }
+.btn-plain.btn-lg { padding: 14px 16px; }
+
+/* 淺藍底變體：密集區的次要動作用它，避免整片灰 */
+.btn-soft {
+  background: var(--ui-primary-light);
+  color: var(--ui-primary);
+}
+.btn-soft:not(:disabled):hover {
+  background: var(--ui-primary-light-hover);
+}
+
+/* 綠色：僅限「匯出／完成」這類正向確認動作 */
+.btn-success {
+  background: var(--ui-success);
+  color: #ffffff;
+}
+.btn-success:not(:disabled):hover {
+  background: var(--ui-success-hover);
+}
+
+/* on-color — 疊在彩色／深色底（banner、浮動列）上的按鈕 */
+.btn-on-color {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+.btn-on-color:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ── icon-only：正方形，維持 12px 圓角 ────────────────────────────────── */
+.btn-icon {
+  gap: 0;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  background: var(--ui-surface);
+  border-color: var(--ui-border);
+  color: var(--ui-text-secondary);
+}
+.btn-icon:not(:disabled):hover {
+  background: var(--ui-surface-hover);
+  color: var(--ui-text);
+}
+.btn-icon.btn-sm { width: 32px; height: 32px; padding: 0; }
+.btn-icon.btn-lg { width: 44px; height: 44px; padding: 0; }
+
+/* icon-only 的刪除鈕 */
+.btn-icon.btn-danger {
+  background: rgba(255, 59, 48, 0.06);
+  border-color: rgba(255, 59, 48, 0.15);
+  color: var(--ui-danger);
+}
+.btn-icon.btn-danger:not(:disabled):hover {
+  background: rgba(255, 59, 48, 0.14);
+  color: var(--ui-danger);
+}
+
+/* 樣式變體疊在 .btn-icon 上時，讓變體的底色贏過 icon 預設白底 */
+.btn-icon.btn-primary   { background: var(--ui-primary);       border-color: transparent; color: #fff; }
+.btn-icon.btn-secondary { background: var(--ui-fill);          border-color: transparent; color: var(--ui-primary); }
+.btn-icon.btn-plain     { background: transparent;             border-color: transparent; color: var(--ui-text-secondary); }
+.btn-icon.btn-plain:not(:disabled):hover { background: var(--ui-surface-hover); color: var(--ui-text); }
+
+/* ── 排列輔助 ─────────────────────────────────────────────────────────── */
+.btn-block { width: 100%; }
+
+/* 箭頭類圖示放右邊時用它，語意清楚也方便日後檢查 */
+.btn-icon-right { flex-direction: row-reverse; }
+
+.btn-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}

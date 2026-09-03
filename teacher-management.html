@@ -19,6 +19,8 @@
   <!-- Tailwind CDN - 使用 defer 避免阻塞渲染 -->
   <script defer src="https://cdn.tailwindcss.com"></script>
 
+  <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
+  <link rel="stylesheet" href="shared/ui.css">
   <style>
     body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;background-color:#f5f5f7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 
@@ -248,8 +250,8 @@
 
     /* ── 師資多選模式 ── */
     #teacherSelectBtn {
-      padding: 8px 18px; border-radius: 20px; border: none; cursor: pointer;
-      font-size: 14px; font-weight: 600;
+      padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer;
+      font-size: 15px; font-weight: 600;
       background: rgba(0,122,255,0.1); color: #007aff;
       transition: all 0.2s; white-space: nowrap;
     }
@@ -279,7 +281,7 @@
       display: none; position: fixed; bottom: 28px;
       left: 50%; transform: translateX(-50%);
       background: rgba(30,30,32,0.92); backdrop-filter: blur(12px);
-      border-radius: 20px; padding: 12px 20px;
+      border-radius: 16px; padding: 12px 20px;   /* 浮動列是規範中唯一的 16px 例外 */
       box-shadow: 0 8px 32px rgba(0,0,0,0.28);
       z-index: 8000; align-items: center; gap: 14px; white-space: nowrap;
       animation: tBarSlideUp 0.22s cubic-bezier(0.4,0,0.2,1);
@@ -290,7 +292,7 @@
     }
     #teacherSelectBar.show { display: flex; }
     #teacherSelectBar .bar-count { color:#fff; font-size:14px; font-weight:600; min-width:80px; text-align:center; }
-    #teacherSelectBar button { padding:8px 18px; border-radius:12px; border:none; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.15s; }
+    #teacherSelectBar button { padding:8px 14px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:600; transition:background-color 0.15s ease; }
     #teacherSelectBar .bar-cancel { background:rgba(255,255,255,0.15); color:#fff; }
     #teacherSelectBar .bar-cancel:hover { background:rgba(255,255,255,0.25); }
     #teacherSelectBar .bar-all { background:rgba(255,255,255,0.15); color:#fff; }
@@ -391,9 +393,7 @@
           </div>
 
           <!-- 新增師資按鈕 (編輯模式顯示) -->
-          <button onclick="addNewTeacher()" id="addTeacherBtn"
-            class="w-full md:w-auto whitespace-nowrap text-white px-6 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-            style="background-color:#007aff">
+          <button onclick="addNewTeacher()" id="addTeacherBtn" class="btn btn-primary w-full md:w-auto">
             <i class="ph ph-plus-circle"></i>
             <span>新增師資</span>
           </button>
@@ -404,13 +404,11 @@
           </button>
 
           <!-- 編輯模式按鈕 -->
-          <button onclick="switchMode('display')" id="editModeBtn"
-            class="w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700">
+          <button onclick="switchMode('display')" id="editModeBtn" class="btn btn-primary w-full md:w-auto">
             <i class="ph ph-pencil-simple"></i>
             <span>編輯中</span>
           </button>
-          <button onclick="switchMode('edit')" id="displayModeBtn"
-            class="w-full md:w-auto whitespace-nowrap px-8 py-3 rounded-xl font-medium transition-all shadow-md flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hidden">
+          <button onclick="switchMode('edit')" id="displayModeBtn" class="btn btn-ghost w-full md:w-auto hidden">
             <i class="ph ph-pencil-simple"></i>
             <span>進入編輯</span>
           </button>
@@ -445,7 +443,7 @@
     <!-- 統計頁 -->
     <div id="executiveView" class="hidden fade-in">
       <div class="rounded-xl shadow-sm border border-purple-200 p-8 max-w-7xl mx-auto" style="background: linear-gradient(135deg, #f3e7f9 0%, #e9d5f5 100%);">
-        <button onclick="backToListFromExecutive()" class="mb-6 font-medium flex items-center transition-colors" style="color:#007aff">← 返回師資管理</button>
+        <button onclick="backToListFromExecutive()" class="btn btn-plain mb-6">← 返回師資管理</button>
         <div class="text-center mb-8">
           <h1 class="text-4xl font-bold text-gray-900 mb-2" style="letter-spacing:-0.02em">師資統計分析</h1>
           <p class="text-gray-600">深度分析師資陣容結構與分布</p>
@@ -601,7 +599,7 @@
               <input type="text" id="leaveReason" placeholder="例：事假、病假、公假…" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
             </div>
           </div>
-          <button onclick="addLeaveRecord()" class="px-5 py-2.5 rounded-xl text-white text-sm font-medium transition-all" style="background-color:#41ead4;">
+          <button onclick="addLeaveRecord()" class="btn btn-primary btn-sm">
             <i class="ph ph-plus mr-1"></i> 新增請假
           </button>
         </div>
@@ -625,7 +623,7 @@
     <div class="container mx-auto p-8 max-w-7xl">
       <!-- 返回按鈕 -->
       <div class="mb-6">
-        <button onclick="backToListFromCalendar()" class="inline-flex items-center px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+        <button onclick="backToListFromCalendar()" class="btn btn-ghost">
           <span class="mr-2">←</span> 返回師資管理
         </button>
       </div>
@@ -636,7 +634,7 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h2 style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;" class="text-gray-900"><i class="ph ph-calendar"></i> 行事曆</h2>
           <div class="flex items-center gap-3">
-            <button onclick="openAddEventModal()" class="modern-btn px-6 py-2 rounded-xl font-medium" style="font-size: 15px;">
+            <button onclick="openAddEventModal()" class="btn btn-primary">
               <i class="ph ph-plus-circle"></i> 新增事件
             </button>
             <div class="flex rounded-xl p-1" style="background: rgba(118, 118, 128, 0.12);">
@@ -653,15 +651,15 @@
         <!-- 導航控制 -->
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center space-x-4">
-            <button onclick="previousPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
+            <button onclick="previousPeriod()" class="btn btn-ghost">
               ← <span id="prevLabel">上個月</span>
             </button>
             <h3 id="currentMonth" class="font-semibold text-gray-800 min-w-[200px] text-center" style="font-size: 19px; font-weight: 600;"></h3>
-            <button onclick="nextPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
+            <button onclick="nextPeriod()" class="btn btn-ghost">
               <span id="nextLabel">下個月</span> →
             </button>
           </div>
-          <button onclick="goToToday()" class="modern-btn px-4 py-2 rounded-xl font-medium" style="font-size: 15px;">
+          <button onclick="goToToday()" class="btn btn-secondary">
             <i class="ph ph-target"></i> 今天
           </button>
         </div>
@@ -733,10 +731,10 @@
           </div>
         </div>
         <div class="flex space-x-4">
-          <button type="button" onclick="closeAddEventModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-semibold transition-all shadow-md">
+          <button type="button" onclick="closeAddEventModal()" class="btn btn-ghost flex-1">
             ✗ 取消
           </button>
-          <button type="submit" class="flex-1 btn-primary text-white py-3 rounded-xl font-semibold shadow-lg">
+          <button type="submit" class="btn btn-primary flex-1">
             ✓ 儲存
           </button>
         </div>
@@ -790,22 +788,22 @@
 
       <!-- 按鈕區 -->
       <div id="eventViewModeButtons" class="flex justify-end space-x-4 pt-6">
-        <button onclick="closeViewEventModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <button onclick="closeViewEventModal()" class="btn btn-ghost">
           關閉
         </button>
-        <button onclick="enterEventEditMode()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <button onclick="enterEventEditMode()" class="btn btn-primary">
           編輯
         </button>
-        <button id="deleteEventBtn" class="px-6 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <button id="deleteEventBtn" class="btn btn-danger">
           刪除
         </button>
       </div>
 
       <div id="eventEditModeButtons" class="flex justify-end space-x-4 pt-6" style="display: none;">
-        <button onclick="cancelEventEditMode()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <button onclick="cancelEventEditMode()" class="btn btn-ghost">
           取消
         </button>
-        <button onclick="saveEditedEvent()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <button onclick="saveEditedEvent()" class="btn btn-primary">
           儲存變更
         </button>
       </div>
@@ -822,7 +820,7 @@
             <h1 class="text-4xl font-bold text-gray-800 mb-2"><i class="ph ph-clipboard-text"></i> 派課管理系統</h1>
             <p class="text-gray-600">管理師資課程分配與時數統計</p>
           </div>
-          <button onclick="backToListFromCourseManagement()" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl border border-gray-200">
+          <button onclick="backToListFromCourseManagement()" class="btn btn-ghost">
             ← 返回師資列表
           </button>
         </div>
@@ -846,11 +844,11 @@
             </div>
           </div>
           <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
-            <button onclick="setCourseDateRange('thisMonth')" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">本月</button>
-            <button onclick="setCourseDateRange('lastMonth')" class="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium">上月</button>
-            <button onclick="setCourseDateRange('last3Months')" class="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium">近3月</button>
-            <button onclick="setCourseDateRange('last6Months')" class="px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">近半年</button>
-            <button onclick="setCourseDateRange('thisYear')" class="px-4 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium">今年</button>
+            <button onclick="setCourseDateRange('thisMonth')" class="btn btn-secondary btn-sm">本月</button>
+            <button onclick="setCourseDateRange('lastMonth')" class="btn btn-secondary btn-sm">上月</button>
+            <button onclick="setCourseDateRange('last3Months')" class="btn btn-secondary btn-sm">近3月</button>
+            <button onclick="setCourseDateRange('last6Months')" class="btn btn-secondary btn-sm">近半年</button>
+            <button onclick="setCourseDateRange('thisYear')" class="btn btn-secondary btn-sm">今年</button>
           </div>
         </div>
 
@@ -931,7 +929,7 @@
         <!-- 新增課程按鈕與時間軸 -->
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-semibold text-gray-800">課程時間軸</h3>
-          <button onclick="openAddCourseModal()" class="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl flex items-center space-x-2">
+          <button onclick="openAddCourseModal()" class="btn btn-primary">
             <span>新增課程</span>
           </button>
         </div>
@@ -983,8 +981,8 @@
             </div>
           </div>
           <div class="flex justify-end gap-3 pt-4">
-            <button type="button" onclick="closeAddCourseModal()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-medium transition-colors">取消</button>
-            <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-medium transition-all shadow-lg">確認新增</button>
+            <button type="button" onclick="closeAddCourseModal()" class="btn btn-ghost">取消</button>
+            <button type="submit" class="btn btn-primary">確認新增</button>
           </div>
         </form>
       </div>
@@ -993,7 +991,7 @@
     <!-- 師資詳細（呈現模式） -->
     <div id="teacherDetailView" class="hidden slide-in">
       <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
-        <button onclick="backToList()" class="mb-6 text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors">← 返回師資列表</button>
+        <button onclick="backToList()" class="btn btn-ghost">← 返回師資列表</button>
         <div id="teacherDetailContent"></div>
       </div>
     </div>
@@ -1001,7 +999,7 @@
     <!-- 師資詳細（編輯） -->
     <div id="teacherDetail" class="hidden slide-in">
       <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
-        <button onclick="backToList()" class="mb-6 text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors">← 返回師資列表</button>
+        <button onclick="backToList()" class="btn btn-plain mb-6">← 返回師資列表</button>
         <form id="teacherForm" class="space-y-6">
           <!-- 基本資訊 -->
           <div class="bg-gray-50 p-6 rounded-lg">
@@ -1066,7 +1064,7 @@
                 <div class="flex items-center space-x-4">
                   <div id="photoPreview" class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-2xl"><i class="ph ph-user"></i></div>
                   <input type="file" id="teacherPhoto" accept="image/*" class="hidden" onchange="previewPhoto(this)">
-                  <button type="button" onclick="document.getElementById('teacherPhoto').click()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">選擇照片</button>
+                  <button type="button" onclick="document.getElementById('teacherPhoto').click()" class="btn btn-secondary btn-sm">選擇照片</button>
                 </div>
               </div>
             </div>
@@ -1076,7 +1074,7 @@
           <div class="bg-gray-50 p-6 rounded-lg">
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-xl font-semibold text-gray-800">工作經歷</h3>
-              <button type="button" onclick="addExperience()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增經歷</button>
+              <button type="button" onclick="addExperience()" class="btn btn-secondary btn-sm">新增經歷</button>
             </div>
             <div id="experienceList" class="space-y-3"></div>
           </div>
@@ -1085,7 +1083,7 @@
           <div class="bg-gray-50 p-6 rounded-lg">
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-xl font-semibold text-gray-800">證書與資格</h3>
-              <button type="button" onclick="addCertificate()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增證書</button>
+              <button type="button" onclick="addCertificate()" class="btn btn-secondary btn-sm">新增證書</button>
             </div>
             <div id="certificateList" class="space-y-3"></div>
           </div>
@@ -1097,7 +1095,7 @@
                 <span class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center"><i class="ph ph-books"></i></span>
                 講授課程
               </h3>
-              <button type="button" onclick="addSubject('', [], 'teach')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增課程</button>
+              <button type="button" onclick="addSubject('', [], 'teach')" class="btn btn-secondary btn-sm">新增課程</button>
             </div>
             <div id="subjectList" class="subject-list space-y-3" data-empty="尚未新增講授課程，點右上角「新增課程」"></div>
           </div>
@@ -1108,7 +1106,7 @@
                 <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center"><i class="ph ph-users-three"></i></span>
                 助教經驗
               </h3>
-              <button type="button" onclick="addSubject('', [], 'ta')" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增助教經驗</button>
+              <button type="button" onclick="addSubject('', [], 'ta')" class="btn btn-secondary btn-sm">新增助教經驗</button>
             </div>
             <div id="taSubjectList" class="subject-list space-y-3" data-empty="尚未新增助教經驗，排課時擔任助教會自動帶入"></div>
           </div>
@@ -1119,7 +1117,7 @@
                 <span class="w-8 h-8 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center"><i class="ph ph-video-camera"></i></span>
                 影片協作
               </h3>
-              <button type="button" onclick="addSubject('', [], 'video')" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">新增影片協作</button>
+              <button type="button" onclick="addSubject('', [], 'video')" class="btn btn-secondary btn-sm">新增影片協作</button>
             </div>
             <div id="videoSubjectList" class="subject-list space-y-3" data-empty="尚未新增影片協作項目"></div>
           </div>
@@ -1128,7 +1126,7 @@
           <div class="bg-gray-50 p-6 rounded-lg">
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-xl font-semibold text-gray-800">標籤 Tags</h3>
-              <button type="button" onclick="addTag()" class="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 shadow-sm border border-gray-200 hover:shadow-md">
+              <button type="button" onclick="addTag()" class="btn btn-ghost btn-sm">
                 ＋ 新增標籤
               </button>
             </div>
@@ -1137,10 +1135,10 @@
           </div>
 
           <div class="flex justify-between pt-6">
-            <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors hidden">刪除師資</button>
+            <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="btn btn-danger hidden">刪除師資</button>
             <div class="flex space-x-4 ml-auto">
-              <button type="button" onclick="backToList()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">取消</button>
-              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">儲存</button>
+              <button type="button" onclick="backToList()" class="btn btn-ghost">取消</button>
+              <button type="submit" class="btn btn-primary">儲存</button>
             </div>
           </div>
         </form>
@@ -1157,7 +1155,7 @@
           <h1 class="text-4xl font-bold text-purple-900 mb-2">海事專業訓練課程系統</h1>
           <p class="text-purple-600">Maritime Professional Training Course System</p>
         </header>
-        <button onclick="backToListFromMaritimeCourse()" class="bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl border border-gray-200">
+        <button onclick="backToListFromMaritimeCourse()" class="btn btn-ghost">
           ← 返回師資列表
         </button>
       </div>
@@ -1243,10 +1241,10 @@
                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="flex gap-4">
-              <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              <button type="submit" class="btn btn-primary">
                 儲存課程
               </button>
-              <button type="button" id="maritimeCancelEdit" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+              <button type="button" id="maritimeCancelEdit" class="btn btn-ghost">
                 取消
               </button>
             </div>
@@ -1366,26 +1364,17 @@
           </div>
           <!-- 刪除按鈕（僅編輯時顯示）-->
           <div id="maritimeDeleteButtonContainer" style="display: none; margin-bottom: 16px;">
-            <button type="button" onclick="deleteMaritimeCourseFromModal()"
-                    style="width: 100%; background: #ff3b30; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
-                    onmouseover="this.style.background='#ff2d1f'"
-                    onmouseout="this.style.background='#ff3b30'">
+            <button type="button" onclick="deleteMaritimeCourseFromModal()" class="btn btn-danger btn-block">
               刪除課程
             </button>
           </div>
 
           <!-- 取消和儲存按鈕 -->
           <div class="flex space-x-4">
-            <button type="button" onclick="closeMaritimeCourseModal()"
-                    style="flex: 1; background: #f5f5f7; color: #1d1d1f; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
-                    onmouseover="this.style.background='#e5e5ea'"
-                    onmouseout="this.style.background='#f5f5f7'">
+            <button type="button" onclick="closeMaritimeCourseModal()" class="btn btn-ghost" style="flex: 1;">
               取消
             </button>
-            <button type="submit"
-                    style="flex: 1; background: #007aff; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
-                    onmouseover="this.style.background='#0051d5'"
-                    onmouseout="this.style.background='#007aff'">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
               儲存
             </button>
           </div>
@@ -1903,7 +1892,7 @@
               ${isRetired(teacher) ? '<div class="mt-1 text-xs text-gray-400">呈現模式不顯示</div>' : ''}
               <div class="mt-2 text-xs text-gray-500 cursor-move"><i class="ph ph-dots-six-vertical"></i> 拖拽排序</div>
               <button onclick="event.stopPropagation(); copyTeacher(${teacher.id})"
-                class="absolute top-2 right-2 bg-green-500 hover:bg-green-600 text-white p-2 rounded-full text-xs transition-colors shadow-lg opacity-0 group-hover:opacity-100" title="複製師資"><i class="ph ph-clipboard-text"></i></button>
+                class="btn btn-icon btn-sm absolute top-2 right-2 opacity-0 group-hover:opacity-100" title="複製師資"><i class="ph ph-clipboard-text"></i></button>
             </div>`;
         } else {
           const isInternal = teacher.teacherType === 'internal';
@@ -2209,7 +2198,7 @@
                   return `<div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-green-500">
                     <div class="flex items-center justify-between">
                       <p class="text-gray-700 flex-1">${certName}</p>
-                      ${fileUrl?`<button onclick="viewCertificateFromDetail('${certName}','${fileUrl}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors ml-3">檢視</button>`:''}
+                      ${fileUrl?`<button onclick="viewCertificateFromDetail('${certName}','${fileUrl}')" class="btn btn-secondary btn-sm ml-3">檢視</button>`:''}
                     </div></div>`;
                 }).join('')}
               </div>`:`
@@ -2230,7 +2219,7 @@
 
         ${currentMode==='edit'?`
         <div class="mt-8 text-center">
-          <button onclick="editTeacher(${teacher.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl">編輯師資資料</button>
+          <button onclick="editTeacher(${teacher.id})" class="btn btn-primary">編輯師資資料</button>
         </div>`:''}
       `;
     }
@@ -2254,11 +2243,11 @@
       div.className = 'flex items-center space-x-2 bg-white p-3 rounded-lg border border-gray-200 move-transition';
       div.innerHTML = `
         <div class="flex flex-col space-y-1">
-          <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-          <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+          <button type="button" onclick="moveUp(this)" class="btn btn-secondary btn-sm">↑</button>
+          <button type="button" onclick="moveDown(this)" class="btn btn-secondary btn-sm">↓</button>
         </div>
         <input type="text" value="${value}" placeholder="請輸入工作經歷..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>`;
       c.appendChild(div);
     }
 
@@ -2270,19 +2259,19 @@
       div.innerHTML = `
         <div class="flex items-start space-x-3">
           <div class="flex flex-col space-y-1">
-            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+            <button type="button" onclick="moveUp(this)" class="btn btn-secondary btn-sm">↑</button>
+            <button type="button" onclick="moveDown(this)" class="btn btn-secondary btn-sm">↓</button>
           </div>
           <div class="flex-1 space-y-3">
             <input type="text" value="${value}" placeholder="請輸入證書或資格名稱..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <div class="flex items-center space-x-2">
               <input type="file" id="certFile_${uid}" accept=".jpg,.jpeg,.png,.pdf,.txt,.doc,.docx" class="hidden" onchange="handleCertificateFile(this)">
-              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">上傳檔案</button>
+              <button type="button" onclick="document.getElementById('certFile_${uid}').click()" class="btn btn-secondary btn-sm">上傳檔案</button>
               <div class="file-info text-sm text-gray-600" data-filename="${fileName}" data-fileurl="${fileUrl}">${fileName?`已上傳: ${fileName}`:'未上傳檔案'}</div>
-              ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">檢視</button>`:''}
+              ${fileUrl?`<button type="button" onclick="viewCertificateFile(this)" class="btn btn-secondary btn-sm">檢視</button>`:''}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.bg-white').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
+          <button type="button" onclick="this.closest('.bg-white').remove()" class="btn btn-danger btn-sm">✕</button>
         </div>`;
       c.appendChild(div);
     }
@@ -2347,14 +2336,14 @@
       div.innerHTML = `
         <div class="flex items-start space-x-3">
           <div class="flex flex-col space-y-1">
-            <button type="button" onclick="moveUp(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↑</button>
-            <button type="button" onclick="moveDown(this)" class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs">↓</button>
+            <button type="button" onclick="moveUp(this)" class="btn btn-secondary btn-sm">↑</button>
+            <button type="button" onclick="moveDown(this)" class="btn btn-secondary btn-sm">↓</button>
           </div>
           <div class="flex-1 space-y-3">
             <input type="text" value="${name}" placeholder="${cat.placeholder}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent subject-name-input">
             <div class="flex items-center space-x-2">
               <input type="file" id="matFile_${uid}" accept=".jpg,.jpeg,.png,.pdf,.mp4,.webm,.mov,.ppt,.pptx,.doc,.docx" class="hidden" onchange="handleSubjectMaterialFile(this, '${uid}')" multiple>
-              <button type="button" onclick="document.getElementById('matFile_${uid}').click()" class="${cat.btn} text-white px-3 py-2 rounded-lg text-sm flex items-center space-x-1">
+              <button type="button" onclick="document.getElementById('matFile_${uid}').click()" class="btn btn-secondary btn-sm">
                 <i class="ph ph-upload-simple"></i><span>上傳教材/影片</span>
               </button>
               <span class="text-xs text-gray-400">支援：圖片、PDF、影片、PPT、DOC</span>
@@ -2363,7 +2352,7 @@
               ${mats.map((m, idx) => renderMaterialItem(uid, m, idx)).join('')}
             </div>
           </div>
-          <button type="button" onclick="this.closest('.subject-item').remove()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm">✕</button>
+          <button type="button" onclick="this.closest('.subject-item').remove()" class="btn btn-danger btn-sm">✕</button>
         </div>`;
       c.appendChild(div);
     }
@@ -2373,8 +2362,8 @@
       return `<div class="flex items-center space-x-2 bg-gray-50 p-2 rounded border" data-filename="${mat.fileName||''}" data-fileurl="${mat.fileUrl||''}" data-filetype="${mat.fileType||''}">
         <span class="text-lg">${icon}</span>
         <span class="text-sm text-gray-700 flex-1 truncate" title="${mat.fileName||''}">${mat.fileName||'檔案'}</span>
-        <button type="button" onclick="viewSubjectMaterial(this)" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">檢視</button>
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-400 hover:bg-red-500 text-white px-2 py-1 rounded text-xs">移除</button>
+        <button type="button" onclick="viewSubjectMaterial(this)" class="btn btn-secondary btn-sm">檢視</button>
+        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">移除</button>
       </div>`;
     }
 
@@ -3429,8 +3418,6 @@
       .event-item:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 20px rgba(0,0,0,.15);}
       .glass-effect{background: rgba(255,255,255,0.95);backdrop-filter: blur(20px);border:1px solid rgba(255,255,255,0.2);}
       .gradient-bg{background: #f5f5f7;}
-      .btn-primary{background: #007aff; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);}
-      .btn-primary:hover{background: #0051d5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);}
       .today-highlight{
         background: rgba(0, 122, 255, 0.06) !important;
         border: 2px solid #007aff !important;
@@ -3876,7 +3863,7 @@
               <span><i class="ph ph-timer"></i> ${hours.toFixed(1)}小時</span>
             </div>
           </div>
-          <button onclick="deleteCourseAssignment(${course.id})" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
+          <button onclick="deleteCourseAssignment(${course.id})" class="btn btn-icon btn-danger btn-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
             </svg>
@@ -4676,10 +4663,10 @@
           <p class="text-xs text-gray-500 mt-1">關鍵字: ${course.keywords.join(', ')}</p>
         </div>
         <div class="flex gap-2">
-          <button onclick="editMaritimeCourse(${course.id})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600 transition-colors">
+          <button onclick="editMaritimeCourse(${course.id})" class="btn btn-secondary btn-sm">
             編輯
           </button>
-          <button onclick="deleteMaritimeCourse(${course.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors">
+          <button onclick="deleteMaritimeCourse(${course.id})" class="btn btn-danger btn-sm">
             刪除
           </button>
         </div>

@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign in - WHL MARITRAIN</title>
+  <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
+  <link rel="stylesheet" href="shared/ui.css">
   <style>
     :root {
-      --apple-blue: #0071e3;
-      --apple-blue-hover: #0077ed;
+      --apple-blue: #007aff;
+      --apple-blue-hover: #0051d5;
       --text-primary: #1d1d1f;
       --text-secondary: #86868b;
       --glass-bg: rgba(255, 255, 255, 0.65);
@@ -183,7 +185,7 @@
       background-color: var(--apple-blue);
       color: white;
       border: none;
-      border-radius: 14px;
+      border-radius: 12px;
       font-size: 17px;
       font-weight: 600;
       padding: 12px 24px;
@@ -195,13 +197,11 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
     }
 
     .login-btn:hover {
-      background-color: #0077ed;
-      transform: scale(1.02);
-      box-shadow: 0 6px 16px rgba(0, 113, 227, 0.4);
+      background-color: var(--apple-blue-hover);
     }
 
     .login-btn:active {

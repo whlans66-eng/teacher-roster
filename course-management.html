@@ -38,6 +38,8 @@
     };
   </script>
 
+  <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
+  <link rel="stylesheet" href="shared/ui.css">
   <style>
 
     * {
@@ -109,22 +111,7 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
-    .modern-btn {
-      background: #007aff;
-      color: white;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.12),
-        0 1px 2px rgba(0, 0, 0, 0.24);
-    }
-
-    .modern-btn:hover {
-      background: #0051d5;
-      transform: translateY(-1px);
-      box-shadow:
-        0 4px 12px rgba(0, 122, 255, 0.25),
-        0 2px 4px rgba(0, 0, 0, 0.15);
-    }
+    /* 按鈕一律使用 shared/ui.css 的 .btn，本檔不再自訂 */
 
     /* ========== TimeTree 排版 + Apple 風格樣式 ========== */
 
@@ -148,31 +135,6 @@
       --apple-gray-dark: #48484A;
     }
 
-    /* TimeTree 風格的操作按鈕 */
-    .action-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      background: var(--apple-gray-light);
-      color: var(--apple-blue);
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .action-btn:hover {
-      background: #E5E5EA;
-      transform: translateY(-1px);
-    }
-
-    .action-btn:active {
-      transform: scale(0.98);
-    }
-
     /* Apple 風格的資訊卡片 */
     .info-card {
       background: #FFFFFF;
@@ -194,62 +156,6 @@
     .feature-block-blue {
       background: linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(0, 122, 255, 0.04) 100%);
       border: 1px solid rgba(0, 122, 255, 0.15);
-    }
-
-    /* Apple 風格的按鈕 */
-    .apple-btn {
-      padding: 10px 20px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      letter-spacing: -0.02em;
-    }
-
-    .apple-btn-primary {
-      background: var(--apple-blue);
-      color: white;
-      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
-    }
-
-    .apple-btn-primary:hover {
-      background: #0051D5;
-      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
-      transform: translateY(-1px);
-    }
-
-    .apple-btn-secondary {
-      background: var(--apple-gray-light);
-      color: var(--apple-blue);
-    }
-
-    .apple-btn-secondary:hover {
-      background: #E5E5EA;
-      transform: translateY(-1px);
-    }
-
-    .apple-btn-success {
-      background: var(--apple-green);
-      color: white;
-      box-shadow: 0 2px 8px rgba(52, 199, 89, 0.25);
-    }
-
-    .apple-btn-success:hover {
-      background: #2AB04A;
-      transform: translateY(-1px);
-    }
-
-    .apple-btn-danger {
-      background: var(--apple-red);
-      color: white;
-      box-shadow: 0 2px 8px rgba(255, 59, 48, 0.25);
-    }
-
-    .apple-btn-danger:hover {
-      background: #E6342A;
-      transform: translateY(-1px);
     }
 
     /* TimeTree 風格的留言卡片 */
@@ -518,17 +424,6 @@
       margin: 16px 0;
     }
 
-    /* iOS 標準按鈕增強 */
-    .apple-btn {
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    .apple-btn:active {
-      opacity: 0.6;
-      transform: scale(0.98);
-    }
-
     /* 淡入動畫 */
     @keyframes fadeInUp {
       from {
@@ -721,11 +616,9 @@
         width: 100%;
       }
 
-      /* 按鈕 */
-      .modern-btn {
+      /* 按鈕：主要動作在手機上撐滿 */
+      .btn-primary:not(.btn-icon) {
         width: 100%;
-        padding: 12px 20px !important;
-        font-size: 14px !important;
       }
 
       /* 統計卡片 */
@@ -794,6 +687,44 @@
       pointer-events: none;
       z-index: -1;
     }
+
+    /* 分享選項（圖示 + 兩行說明），border 1px，hover 交給 CSS */
+    .share-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid #e5e5ea;
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      color: #1d1d1f;
+      text-align: left;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .share-option:hover { background: #f5f5f7; }
+    .share-option-outlook:hover { border-color: #0078d4; }
+    .share-option-teams:hover   { border-color: #6264a7; }
+
+    /* Modal 關閉鈕：圓形是規範允許的例外 */
+    .modal-close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: none;
+      color: #86868b;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .modal-close-btn:hover { background: #f0f0f0; color: #1d1d1f; }
   </style>
 
   <!-- SheetJS - Excel 匯出 -->
@@ -864,10 +795,10 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h2 style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;" class="text-gray-900"><i class="ph ph-calendar"></i> 課程行事曆</h2>
           <div class="flex items-center gap-3">
-            <button onclick="openAddCourseModal()" class="modern-btn px-6 py-2 rounded-xl font-medium" style="font-size: 15px;">
+            <button onclick="openAddCourseModal()" class="btn btn-primary">
               <i class="ph ph-plus-circle"></i> 新增課程
             </button>
-            <button onclick="exportToExcel()" class="px-5 py-2 rounded-xl font-medium text-white" style="font-size: 15px; background: #34C759; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+            <button onclick="exportToExcel()" class="btn btn-success">
               <i class="ph ph-file-xls"></i> 匯出 Excel
             </button>
             <div class="flex rounded-xl p-1" style="background: rgba(118, 118, 128, 0.12);">
@@ -883,15 +814,15 @@
 
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center space-x-4">
-            <button onclick="previousPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
+            <button onclick="previousPeriod()" class="btn btn-ghost">
               ← <span id="prevLabel">上個月</span>
             </button>
             <h3 id="currentMonth" class="font-semibold text-gray-800 min-w-[200px] text-center" style="font-size: 19px; font-weight: 600;"></h3>
-            <button onclick="nextPeriod()" class="bg-white hover:bg-gray-50 px-4 py-2 rounded-xl font-medium border border-gray-200" style="transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 15px;">
+            <button onclick="nextPeriod()" class="btn btn-ghost">
               <span id="nextLabel">下個月</span> →
             </button>
           </div>
-          <button onclick="goToToday()" class="modern-btn px-4 py-2 rounded-xl font-medium" style="font-size: 15px;">
+          <button onclick="goToToday()" class="btn btn-secondary">
             🎯 今天
           </button>
         </div>
@@ -934,9 +865,7 @@
                        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                        style="font-size: 14px;">
               </div>
-              <button onclick="resetDateRange()"
-                      class="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-lg font-medium border border-gray-300 transition-colors"
-                      style="font-size: 13px;">
+              <button onclick="resetDateRange()" class="btn btn-ghost btn-sm">
                 <i class="ph ph-arrow-counter-clockwise"></i> 重置為本月
               </button>
             </div>
@@ -959,7 +888,7 @@
               <p id="selectedTeacherName" class="text-xl font-bold"></p>
             </div>
           </div>
-          <button onclick="clearTeacherSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
+          <button onclick="clearTeacherSelection()" class="btn btn-on-color">
             <i class="ph ph-x"></i> 清除
           </button>
         </div>
@@ -974,7 +903,7 @@
               <p id="selectedDateText" class="text-xl font-bold"></p>
             </div>
           </div>
-          <button onclick="clearDateSelection()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-medium transition-colors">
+          <button onclick="clearDateSelection()" class="btn btn-on-color">
             ✕ 清除
           </button>
         </div>
@@ -1019,7 +948,7 @@
       <div id="teacherHoursAnalysisCard" class="card p-6 fade-in" style="animation-delay: 0.3s">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-gray-900" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-chalkboard-teacher"></i> 師資時數分析</h2>
-          <button onclick="toggleTeacherHoursAnalysis()" class="px-4 py-2 font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" style="font-size: 14px;">
+          <button onclick="toggleTeacherHoursAnalysis()" class="btn btn-secondary btn-sm">
             <span id="toggleAnalysisIcon">👁️</span> <span id="toggleAnalysisText">隱藏</span>
           </button>
         </div>
@@ -1053,7 +982,7 @@
           </div>
           <!-- 顯示更多按鈕 -->
           <div id="showMoreContainer" class="mt-4 text-center" style="display: none;">
-            <button onclick="toggleShowAllTeachers()" class="px-6 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
+            <button onclick="toggleShowAllTeachers()" class="btn btn-plain btn-sm">
               <span id="showMoreText">顯示更多</span> <span id="showMoreIcon">▼</span>
             </button>
           </div>
@@ -1152,10 +1081,10 @@
       <!-- Modal 底部按鈕區（固定） -->
       <div class="modal-footer">
         <div class="flex justify-end space-x-4">
-          <button type="button" onclick="closeAddCourseModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          <button type="button" onclick="closeAddCourseModal()" class="btn btn-ghost">
             取消
           </button>
-          <button type="button" onclick="document.getElementById('courseForm').requestSubmit()" class="modern-btn px-6 py-3 rounded-xl font-medium" style="font-size: 15px;">
+          <button type="button" onclick="document.getElementById('courseForm').requestSubmit()" class="btn btn-primary">
             確認新增
           </button>
         </div>
@@ -1244,10 +1173,10 @@
       <!-- Modal 底部按鈕區（固定） -->
       <div class="modal-footer">
         <div class="flex justify-end space-x-4">
-          <button onclick="closeDuplicateDateModal()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px;">
+          <button onclick="closeDuplicateDateModal()" class="btn btn-ghost">
             取消
           </button>
-          <button onclick="confirmDuplicateCourse()" class="px-6 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600" style="font-size: 15px;">
+          <button onclick="confirmDuplicateCourse()" class="btn btn-primary">
             確認複製
           </button>
         </div>
@@ -1332,7 +1261,7 @@
                 <svg class="modal-icon modal-icon-sm"><use href="#icon-tag"></use></svg>
                 自動標籤
               </label>
-              <button type="button" onclick="autoGenerateTags()" class="text-xs" style="color: var(--apple-blue);">重新生成</button>
+              <button type="button" onclick="autoGenerateTags()" class="btn btn-plain btn-sm">重新生成</button>
             </div>
             <div id="autoTagsContainer" class="flex flex-wrap gap-2"></div>
           </div>
@@ -1345,15 +1274,15 @@
         <!-- 查看模式按鈕 -->
         <div id="viewModeButtons">
           <div class="flex flex-wrap gap-3 items-center">
-            <button onclick="toggleContextMenu()" class="apple-btn apple-btn-secondary" style="margin-right: auto;">
+            <button onclick="toggleContextMenu()" class="btn btn-secondary" style="margin-right: auto;">
               <svg class="modal-icon"><use href="#icon-more"></use></svg>
               更多
             </button>
 
-            <button onclick="closeViewEventModal()" class="apple-btn apple-btn-secondary">
+            <button onclick="closeViewEventModal()" class="btn btn-ghost">
               關閉
             </button>
-            <button onclick="enterEditMode()" class="apple-btn apple-btn-primary">
+            <button onclick="enterEditMode()" class="btn btn-primary">
               <svg class="modal-icon"><use href="#icon-edit"></use></svg>
               編輯
             </button>
@@ -1362,10 +1291,10 @@
 
         <!-- 編輯模式按鈕 -->
         <div id="editModeButtons" class="flex justify-end space-x-4" style="display: none;">
-          <button onclick="cancelEditMode()" class="px-6 py-3 bg-gray-500 text-white rounded-xl font-medium hover:bg-gray-600" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          <button onclick="cancelEditMode()" class="btn btn-ghost">
             取消
           </button>
-          <button onclick="saveEditedCourse()" class="modern-btn px-6 py-3 rounded-xl font-medium" style="font-size: 15px;">
+          <button onclick="saveEditedCourse()" class="btn btn-primary">
             <svg class="modal-icon"><use href="#icon-save"></use></svg>
             儲存變更
           </button>
@@ -1522,7 +1451,7 @@
               </div>
               <button
                 onclick="kickUser('${session.sessionId}', '${session.userName}')"
-                style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                class="btn btn-danger btn-sm">
                 踢出
               </button>
             </li>
@@ -1550,17 +1479,17 @@
             <div style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end;">
               <button
                 onclick="closeConflictDialog()"
-                style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                class="btn btn-ghost">
                 取消
               </button>
               <button
                 onclick="forceOverwriteData()"
-                style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                class="btn btn-danger">
                 強制覆蓋
               </button>
               <button
                 onclick="reloadFromBackend()"
-                style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                class="btn btn-primary">
                 重新載入資料
               </button>
             </div>
@@ -2071,9 +2000,7 @@
               ${isSelected ? '<p class="text-xs text-blue-600 font-semibold mt-2 text-center">~ 已選擇</p>' : ''}
             </div>
             <div style="margin-top:8px;">
-              <button onclick="event.stopPropagation(); toggleCourseList('${courseListId}')"
-                style="width:100%;background:none;border:none;cursor:pointer;padding:6px 0;font-size:12px;color:#6b7280;display:flex;align-items:center;justify-content:center;gap:4px;transition:color 0.2s;"
-                onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#6b7280'">
+              <button onclick="event.stopPropagation(); toggleCourseList('${courseListId}')" class="btn btn-plain btn-sm btn-block">
                 <i class="ph ph-clock-counter-clockwise" style="font-size:14px;"></i>
                 <span>協助課程記錄</span>
                 <i class="ph ph-caret-down" id="${courseListId}_icon" style="font-size:12px;transition:transform 0.2s;"></i>
@@ -2906,7 +2833,7 @@
                   return `<div style="display:flex;align-items:center;gap:8px;background:#f5f5f7;padding:8px 12px;border-radius:8px;">
                     <span>${icon}</span>
                     <span style="flex:1;font-size:13px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.fileName}">${m.fileName}</span>
-                    <button onclick="openCourseMaterialViewer('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" class="action-btn" style="flex-shrink:0;font-size:12px;padding:4px 10px;">檢視</button>
+                    <button onclick="openCourseMaterialViewer('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" class="btn btn-secondary btn-sm" style="flex-shrink:0;">檢視</button>
                   </div>`;
                 }).join('')}
               </div>
@@ -2925,7 +2852,7 @@
                 <div class="text-xs" style="color: var(--apple-gray);">${course.reminderTime || '未設定提醒'}</div>
               </div>
             </div>
-            <button onclick="setReminder()" class="action-btn" style="flex-shrink: 0;">
+            <button onclick="setReminder()" class="btn btn-secondary" style="flex-shrink: 0;">
               ${course.reminderTime ? '修改' : '設定'}
             </button>
           </div>
@@ -2966,7 +2893,7 @@
           <!-- 新增留言 -->
           <div class="flex gap-2">
             <textarea id="newCommentInput" rows="2" class="apple-input flex-1" placeholder="輸入留言..." style="resize: none;"></textarea>
-            <button onclick="addComment()" class="apple-btn apple-btn-primary self-end" style="padding: 10px 16px; white-space: nowrap;">
+            <button onclick="addComment()" class="btn btn-primary self-end">
               發送
             </button>
           </div>
@@ -3066,18 +2993,7 @@
             color: #86868b;
             margin-bottom: 32px;
           ">此功能目前尚在開發中，敬請期待！</p>
-          <button onclick="this.closest('[style*=fixed]').remove()" style="
-            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-            color: white;
-            border: none;
-            padding: 14px 48px;
-            border-radius: 12px;
-            font-size: 17px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
-          " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 24px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(245, 158, 11, 0.3)'">
+          <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-primary btn-lg">
             我知道了
           </button>
         </div>
@@ -4265,21 +4181,21 @@
     <div style="background:#fff; border-radius:20px; padding:32px 28px; width:90%; max-width:360px; box-shadow:0 24px 60px rgba(0,0,0,0.2); animation:slideUp 0.25s cubic-bezier(0.4,0,0.2,1);">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
         <span style="font-size:17px; font-weight:600; color:#1d1d1f;">分享課程</span>
-        <button onclick="closeShareModal()" style="background:none; border:none; cursor:pointer; color:#86868b; padding:4px; border-radius:50%; transition:background 0.15s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">
+        <button onclick="closeShareModal()" class="modal-close-btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <p id="shareModalCourseName" style="font-size:14px; color:#6e6e73; margin-bottom:24px; line-height:1.5;"></p>
       <div style="display:flex; flex-direction:column; gap:12px;">
-        <button onclick="shareViaOutlook()" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid #e5e5ea; border-radius:12px; background:#fff; cursor:pointer; font-size:15px; font-weight:500; color:#1d1d1f; transition:all 0.2s;" onmouseover="this.style.background='#f5f5f7'; this.style.borderColor='#0078d4'" onmouseout="this.style.background='#fff'; this.style.borderColor='#e5e5ea'">
+        <button onclick="shareViaOutlook()" class="share-option share-option-outlook">
           <svg width="28" height="28" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="8" fill="#0078d4"/><path d="M8 16h18v16H8z" fill="#fff" opacity=".15"/><path d="M26 10h14v28H26V10z" fill="#fff" opacity=".2"/><text x="15" y="30" font-family="Arial" font-size="14" font-weight="bold" fill="white">O</text></svg>
           <div style="text-align:left;"><div style="font-size:15px; font-weight:600;">Outlook</div><div style="font-size:12px; color:#86868b;">以電子郵件分享</div></div>
         </button>
-        <button onclick="shareViaTeams()" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid #e5e5ea; border-radius:12px; background:#fff; cursor:pointer; font-size:15px; font-weight:500; color:#1d1d1f; transition:all 0.2s;" onmouseover="this.style.background='#f5f5f7'; this.style.borderColor='#6264a7'" onmouseout="this.style.background='#fff'; this.style.borderColor='#e5e5ea'">
+        <button onclick="shareViaTeams()" class="share-option share-option-teams">
           <svg width="28" height="28" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="8" fill="#6264a7"/><circle cx="30" cy="16" r="6" fill="white"/><path d="M18 22a7 7 0 1 1 0 14 7 7 0 0 1 0-14z" fill="white"/><path d="M27 24h10v12H27z" fill="white" opacity=".7"/></svg>
           <div style="text-align:left;"><div style="font-size:15px; font-weight:600;">Teams</div><div style="font-size:12px; color:#86868b;">分享至 Microsoft Teams</div></div>
         </button>
-        <button onclick="copyShareLink()" style="display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid #e5e5ea; border-radius:12px; background:#fff; cursor:pointer; font-size:15px; font-weight:500; color:#1d1d1f; transition:all 0.2s;" onmouseover="this.style.background='#f5f5f7'" onmouseout="this.style.background='#fff'">
+        <button onclick="copyShareLink()" class="share-option">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#f0f0f0"/><path d="M17 11h2a3 3 0 0 1 0 6h-2M11 17H9a3 3 0 0 1 0-6h2M10 14h8" stroke="#1d1d1f" stroke-width="1.8" stroke-linecap="round"/></svg>
           <div style="text-align:left;"><div style="font-size:15px; font-weight:600;">複製連結</div><div style="font-size:12px; color:#86868b;">複製後可貼至任何地方</div></div>
         </button>
