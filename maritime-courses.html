@@ -158,7 +158,7 @@
   /* 統計卡片 */
   .stat-card {
     background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-    border-radius: 18px; padding: 28px; color: white; text-align: center;
+    border-radius: 20px; padding: 28px; color: white; text-align: center;
     position: relative; overflow: hidden; transition: all 0.4s ease;
   }
   .stat-card.purple { background: linear-gradient(135deg, #5856d6 0%, #3634a3 100%); }
@@ -181,7 +181,7 @@
 
   /* 關鍵字標籤 */
   .keyword-tag-input {
-    display: flex; align-items: center; gap: 6px; background: #f5f5f7; border-radius: 16px;
+    display: flex; align-items: center; gap: 6px; background: #f5f5f7; border-radius: 12px;
     padding: 6px 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.08);
   }
@@ -269,7 +269,7 @@
   }
   .ai-session-item-icon {
     width: 32px; height: 32px;
-    border-radius: 8px;
+    border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
     font-size: 15px;
     flex-shrink: 0;
@@ -634,7 +634,7 @@
     top: 50%;
     transform: translateY(-50%);
     width: 40px; height: 40px;
-    border-radius: 14px;
+    border-radius: 12px;
     border: none;
     background: #f1f5f9;
     color: #cbd5e1;
@@ -685,7 +685,7 @@
     padding: 16px 20px;
     background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
     border: 1px solid #ddd6fe;
-    border-radius: 14px;
+    border-radius: 12px;
     margin-top: 16px;
   }
   .smart-match-bar label {
@@ -696,7 +696,7 @@
   }
   .smart-match-bar select {
     padding: 8px 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid #c4b5fd;
     background: white;
     font-size: 13px;
@@ -743,12 +743,15 @@
     .course-detail-layout { grid-template-columns: 1fr; }
   }
   .course-detail-main { display: flex; flex-direction: column; gap: 24px; }
-  .course-detail-sidebar { display: flex; flex-direction: column; gap: 20px; }
+  .course-detail-sidebar {
+    display: flex; flex-direction: column; gap: 20px;
+    align-self: start;   /* 不被左欄撐長，內容多寡各自為政 */
+  }
 
   /* 詳情卡片 */
   .detail-card {
     background: #ffffff;
-    border-radius: 24px;
+    border-radius: 20px;
     border: 1px solid #f1f5f9;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     overflow: hidden;
@@ -841,6 +844,7 @@
   }
   .detail-card-icon-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
   .detail-card-icon-orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+  .detail-card-icon-purple { background: #8b5cf6; }
   .detail-card-title { font-size: 18px; font-weight: 700; color: #0f172a; }
   .detail-card-body { padding: 24px; }
 
@@ -851,7 +855,7 @@
     color: #334155;
     background: #f8fafc;
     padding: 20px 24px;
-    border-radius: 16px;
+    border-radius: 12px;
     border-left: 4px solid #3b82f6;
   }
 
@@ -944,7 +948,7 @@
     height: 36px;
     flex-shrink: 0;
     background: #ffffff;
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -976,7 +980,7 @@
   /* 語言徽章（管理清單用）*/
   .lang-badge {
     display: inline-flex; align-items: center;
-    padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 6px;
+    padding: 1px 6px; border-radius: 999px; font-size: 10px; font-weight: 700; margin-right: 6px;
   }
   .lang-badge-zh { background: #eff6ff; color: #2563eb; }
   .lang-badge-en { background: #f0fdf4; color: #16a34a; }
@@ -1002,7 +1006,7 @@
   .instructor-text { display: flex; flex-direction: column; min-width: 0; }
   .instructor-name { font-size: 13px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .instructor-roles { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-  .instructor-role { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 5px; }
+  .instructor-role { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
   .instructor-role-teach { background: #ede9fe; color: #6d28d9; }
   .instructor-role-ta { background: #fef3c7; color: #b45309; }
   .instructor-role-video { background: #ccfbf1; color: #0f766e; }
@@ -1046,23 +1050,23 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 48px 24px;
-    border: 2px dashed #e2e8f0;
-    border-radius: 16px;
+    padding: 28px 24px;
+    border: 1px dashed #e2e8f0;
+    border-radius: 12px;
     background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
   }
   .empty-state-sidebar-icon {
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     background: #ffffff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
-  .empty-state-sidebar-icon i { font-size: 32px; color: #cbd5e1; }
+  .empty-state-sidebar-icon i { font-size: 24px; color: #cbd5e1; }
   .empty-state-sidebar p { font-size: 14px; color: #94a3b8; font-weight: 500; margin-bottom: 16px; }
   .empty-state-btn {
     padding: 8px 16px;
@@ -1084,8 +1088,6 @@
     flex-direction: row;
     align-items: center;
     gap: 12px;
-    position: sticky;
-    bottom: 24px;
   }
   /* 熱門關鍵字：可點方塊，比照按鈕規範（純色、hover 只換底色） */
   .keyword-chip {
@@ -1204,7 +1206,7 @@
 
   .method-card {
     background: #ffffff;
-    border-radius: 16px; padding: 28px 20px; text-align: center;
+    border-radius: 20px; padding: 28px 20px; text-align: center;
     transition: all 0.4s ease; border: 1px solid rgba(0, 0, 0, 0.04);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
   }
@@ -2730,6 +2732,105 @@
               </div>
             </div>
 
+            <!-- 教材與影片附件 -->
+            ${(course.materials && course.materials.length > 0) || !_isReadOnly ? `
+            <div class="detail-card">
+              <div class="detail-card-header">
+                <div class="detail-card-icon detail-card-icon-purple">
+                  <i class="ph ph-folder-open"></i>
+                </div>
+                <h2 class="detail-card-title">教材與影片附件</h2>
+              </div>
+              <div class="detail-card-body">
+              ${(course.materials && course.materials.length > 0) ? `
+              <div class="sidebar-section">
+                <h3 class="sidebar-section-title" style="margin-bottom:12px;">
+                  <span style="margin-left: auto; font-size: 11px; font-weight: 500; color: var(--apple-gray); background: #f5f5f7; padding: 2px 8px; border-radius: 10px;">${course.materials.length} 個檔案</span>
+                  <a href="teaching-materials.html?courseId=${course.id}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#0a4a7a;background:#e8f0f8;border-radius:6px;padding:3px 8px;text-decoration:none;margin-left:6px;">前往教材管理</a>
+                </h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${course.materials.map(m => {
+                    const ext = (m.fileName||'').split('.').pop().toLowerCase();
+                    const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
+                    const isPdf = ext === 'pdf';
+                    const isPpt = ['ppt','pptx'].includes(ext);
+                    const isDoc = ['doc','docx'].includes(ext);
+                    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext);
+                    const iconClass = isVideo ? 'ph-video-camera' : (isPdf ? 'ph-file-pdf' : (isPpt ? 'ph-presentation' : (isDoc ? 'ph-file-doc' : (isImg ? 'ph-image' : 'ph-file'))));
+                    const iconColor = isVideo ? '#ef4444' : (isPdf ? '#dc2626' : (isPpt ? '#f97316' : (isDoc ? '#3b82f6' : (isImg ? '#10b981' : '#6b7280'))));
+                    return `<div style="display:flex;align-items:center;gap:10px;background:white;padding:10px 14px;border-radius:10px;border:1px solid #e5e5ea;">
+                      <i class="ph ${iconClass}" style="font-size:20px;color:${iconColor};flex-shrink:0;"></i>
+                      <span style="flex:1;font-size:13px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.fileName}">${m.fileName}</span>
+                      <button onclick="openMaritimeCourseMaterial('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" class="btn btn-secondary btn-sm" style="flex-shrink:0;">檢視</button>
+                    </div>`;
+                  }).join('')}
+                </div>
+              </div>
+              ` : `
+              ${_isReadOnly ? '' : `
+              <div class="sidebar-section">
+                <div class="empty-state-sidebar">
+                  <div class="empty-state-sidebar-icon">
+                    <i class="ph ph-folder-open"></i>
+                  </div>
+                  <p>尚未上傳教材檔案</p>
+                  <button onclick="editMaritimeCourse(${course.id})" class="empty-state-btn">前往上傳</button>
+                </div>
+              </div>
+              `}
+              `}
+              </div>
+            </div>
+            ` : ''}
+
+            <!-- 適用對象卡片 -->
+            <div class="detail-card">
+              <div class="detail-card-header">
+                <div class="detail-card-icon detail-card-icon-purple">
+                  <i class="ph ph-users-three"></i>
+                </div>
+                <h2 class="detail-card-title">適用對象</h2>
+              </div>
+              <div class="detail-card-body">
+
+              ${((course.targetCategories && course.targetCategories.length > 0) || (course.targetRanks && course.targetRanks.length > 0)) ? `
+                <div class="target-audience-content">
+                  ${(course.targetCategories && course.targetCategories.length > 0) ? `
+                    <div class="target-section">
+                      <div class="target-section-label">人員類別</div>
+                      <div class="target-badges">
+                        ${course.targetCategories.map(cat => `
+                          <span class="target-badge ${cat === 'existing' ? 'target-badge-blue' : 'target-badge-green'}">
+                            <i class="ph ${cat === 'existing' ? 'ph-check-circle' : 'ph-user-plus'}"></i>
+                            ${cat === 'existing' ? '現有船員' : '新進船員'}
+                          </span>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                  ${(course.targetRanks && course.targetRanks.length > 0) ? `
+                    <div class="target-section">
+                      <div class="target-section-label">適用職等</div>
+                      <div class="target-badges">
+                        ${course.targetRanks.map(rank => `
+                          <span class="target-badge target-badge-purple">${getRankDisplayName(rank)}</span>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              ` : `
+                <div class="empty-state-sidebar">
+                  <div class="empty-state-sidebar-icon">
+                    <i class="ph ph-users"></i>
+                  </div>
+                  <p>尚未設定特定對象</p>
+                  ${_isReadOnly ? '' : `<button onclick="editMaritimeCourse(${course.id})" class="empty-state-btn">前往設定</button>`}
+                </div>
+              `}
+              </div>
+            </div>
+
             <!-- 刪除課程（放置於左側底部，避免誤觸） -->
             <button onclick="deleteCourseFromDetail(${course.id})" class="action-btn action-btn-danger" style="align-self:flex-start;">
               <i class="ph ph-trash"></i>
@@ -2849,96 +2950,6 @@
                   </div>
                 </div>
               </div>
-            </div>
-
-              <!-- 教材與影片附件 -->
-              ${(course.materials && course.materials.length > 0) ? `
-              <div class="sidebar-section" style="margin-top: 16px;">
-                <h3 class="sidebar-section-title">
-                  <span class="sidebar-dot" style="background: #8b5cf6;"></span>
-                  教材與影片附件
-                  <span style="margin-left: auto; font-size: 11px; font-weight: 500; color: var(--apple-gray); background: #f5f5f7; padding: 2px 8px; border-radius: 10px;">${course.materials.length} 個檔案</span>
-                  <a href="teaching-materials.html?courseId=${course.id}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#0a4a7a;background:#e8f0f8;border-radius:6px;padding:3px 8px;text-decoration:none;margin-left:6px;">前往教材管理</a>
-                </h3>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                  ${course.materials.map(m => {
-                    const ext = (m.fileName||'').split('.').pop().toLowerCase();
-                    const isVideo = ['mp4','webm','mov','ogg'].includes(ext);
-                    const isPdf = ext === 'pdf';
-                    const isPpt = ['ppt','pptx'].includes(ext);
-                    const isDoc = ['doc','docx'].includes(ext);
-                    const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext);
-                    const iconClass = isVideo ? 'ph-video-camera' : (isPdf ? 'ph-file-pdf' : (isPpt ? 'ph-presentation' : (isDoc ? 'ph-file-doc' : (isImg ? 'ph-image' : 'ph-file'))));
-                    const iconColor = isVideo ? '#ef4444' : (isPdf ? '#dc2626' : (isPpt ? '#f97316' : (isDoc ? '#3b82f6' : (isImg ? '#10b981' : '#6b7280'))));
-                    return `<div style="display:flex;align-items:center;gap:10px;background:white;padding:10px 14px;border-radius:10px;border:1px solid #e5e5ea;">
-                      <i class="ph ${iconClass}" style="font-size:20px;color:${iconColor};flex-shrink:0;"></i>
-                      <span style="flex:1;font-size:13px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.fileName}">${m.fileName}</span>
-                      <button onclick="openMaritimeCourseMaterial('${(m.fileName||'').replace(/'/g,"\\'")}','${(m.fileUrl||'').replace(/'/g,"\\'")}')" class="btn btn-secondary btn-sm" style="flex-shrink:0;">檢視</button>
-                    </div>`;
-                  }).join('')}
-                </div>
-              </div>
-              ` : `
-              ${_isReadOnly ? '' : `
-              <div class="sidebar-section" style="margin-top: 16px;">
-                <h3 class="sidebar-section-title">
-                  <span class="sidebar-dot" style="background: #8b5cf6;"></span>
-                  教材與影片附件
-                </h3>
-                <div class="empty-state-sidebar">
-                  <div class="empty-state-sidebar-icon">
-                    <i class="ph ph-folder-open"></i>
-                  </div>
-                  <p>尚未上傳教材檔案</p>
-                  <button onclick="editMaritimeCourse(${course.id})" class="empty-state-btn">前往上傳</button>
-                </div>
-              </div>
-              `}
-              `}
-            </div>
-
-            <!-- 適用對象卡片 -->
-            <div class="detail-card sidebar-card">
-              <h3 class="sidebar-section-title">
-                <span class="sidebar-dot sidebar-dot-purple"></span>
-                適用對象
-              </h3>
-
-              ${((course.targetCategories && course.targetCategories.length > 0) || (course.targetRanks && course.targetRanks.length > 0)) ? `
-                <div class="target-audience-content">
-                  ${(course.targetCategories && course.targetCategories.length > 0) ? `
-                    <div class="target-section">
-                      <div class="target-section-label">人員類別</div>
-                      <div class="target-badges">
-                        ${course.targetCategories.map(cat => `
-                          <span class="target-badge ${cat === 'existing' ? 'target-badge-blue' : 'target-badge-green'}">
-                            <i class="ph ${cat === 'existing' ? 'ph-check-circle' : 'ph-user-plus'}"></i>
-                            ${cat === 'existing' ? '現有船員' : '新進船員'}
-                          </span>
-                        `).join('')}
-                      </div>
-                    </div>
-                  ` : ''}
-                  ${(course.targetRanks && course.targetRanks.length > 0) ? `
-                    <div class="target-section">
-                      <div class="target-section-label">適用職等</div>
-                      <div class="target-badges">
-                        ${course.targetRanks.map(rank => `
-                          <span class="target-badge target-badge-purple">${getRankDisplayName(rank)}</span>
-                        `).join('')}
-                      </div>
-                    </div>
-                  ` : ''}
-                </div>
-              ` : `
-                <div class="empty-state-sidebar">
-                  <div class="empty-state-sidebar-icon">
-                    <i class="ph ph-users"></i>
-                  </div>
-                  <p>尚未設定特定對象</p>
-                  ${_isReadOnly ? '' : `<button onclick="editMaritimeCourse(${course.id})" class="empty-state-btn">前往設定</button>`}
-                </div>
-              `}
             </div>
 
             <!-- 操作按鈕組 -->
