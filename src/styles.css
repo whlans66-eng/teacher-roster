@@ -1,0 +1,21 @@
+/*
+ * React 入口樣式。
+ *
+ * 載入順序非常重要，而且必須用 @import（不是 @tailwind 指令）搭配
+ * postcss-import，否則 CSS 規範會把 @import 提升到檔首，app.css 會被
+ * Tailwind 的 preflight 重置掉：
+ *
+ *   1. tailwind base      — preflight 重置
+ *   2. app.css            — 我們的設計系統（要贏過 preflight）
+ *   3. tailwind components
+ *   4. tailwind utilities — utility 永遠最後，才蓋得過元件樣式
+ */
+@import 'tailwindcss/base';
+@import './assets/css/app.css';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Phosphor 圖示字體：從 npm 載入，不用 CDN（內網可能擋外部資源） */
+@import '@phosphor-icons/web/src/regular/style.css';
+@import '@phosphor-icons/web/src/bold/style.css';
+@import '@phosphor-icons/web/src/fill/style.css';
