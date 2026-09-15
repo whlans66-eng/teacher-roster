@@ -15,7 +15,15 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Phosphor 圖示字體：從 npm 載入，不用 CDN（內網可能擋外部資源） */
-@import '@phosphor-icons/web/src/regular/style.css';
-@import '@phosphor-icons/web/src/bold/style.css';
-@import '@phosphor-icons/web/src/fill/style.css';
+/*
+ * Phosphor 圖示字體：從 npm 載入，不用 CDN（內網可能擋外部資源）。
+ *
+ * 只載入 regular 一種字重。每個字重會帶進四種格式（svg/ttf/woff/woff2）
+ * 約 4MB，而目前全站沒有任何一處用到 bold 或 fill——載進來就是純粹的
+ * 部署體積浪費。
+ *
+ * 日後真的需要時，在這裡加回對應的 @import，Icon.jsx 的 weight 屬性
+ * 就會生效（沒載入卻指定該字重的話，Icon 會退回 regular 並在開發模式
+ * 發出警告，不會靜靜地變成空白方塊）。
+ */
+@import '@phosphor-icons/web/regular';

@@ -168,7 +168,13 @@ export async function initializeAuth() {
   }
 
   // ── entra 模式 ──────────────────────────────────────────────────
-  // 外部系統可用 ?token=<加密 token> 導進來，換成本站的 SSO JWT
+  // 外部系統可用 ?token=<加密 token> 導進來，換成本站的 SSO JWT。
+  //
+  // ⚠️ 待後端確認：POST /auth/sso 這個端點目前在 backend/ 裡還沒有實作
+  //    （backend/ 只有 /ping 與 /permissions/*）。這段沿用參考實作的
+  //    流程，而參考專案的後端有這支端點。本段只在 backend:'rest' 時才會
+  //    執行，所以現在完全不會被觸發；內網切換前請與後端確認要實作這支
+  //    端點，還是不走 SSO 轉導而直接刪掉這段。
   const params = new URLSearchParams(window.location.search);
   const incoming = params.get('token');
   if (incoming) {

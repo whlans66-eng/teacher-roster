@@ -106,6 +106,8 @@ config.js  backend: 'gas'  ←─ 現在
 - [ ] 填 `msal` 四個值：`clientId`、`authority`、`redirectUri`、`scopes`
       （`redirectUri` 必須與 Azure App Registration 登記的**完全一致**，含結尾斜線與子目錄，否則登入會被拒）
 - [ ] 後端補上教師／課程／排程的端點（目前 `backend/` 只有 `ping` 與 `permissions/*`）
+- [ ] 與後端確認 `POST /auth/sso`：前端 `authService.js` 有呼叫，但 `backend/` 尚未實作。
+      要嘛後端補上，要嘛前端拿掉那段 SSO 轉導（目前只在 `rest` 模式才會執行，故現在不受影響）
 - [ ] 資料從 Google Sheets 遷移到 SQL Server
 - [ ] 刪掉 `src/services/gasAdapter.js` 與 `config.js` 的 `gas` 區塊
 - [ ] `app.html` 改名為 `index.html`，舊版 HTML 頁面下架

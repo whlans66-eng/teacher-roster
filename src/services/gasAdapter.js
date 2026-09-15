@@ -123,7 +123,7 @@ function unwrap(result) {
     throw new ApiError(result.error || '請求失敗');
   }
   // 拆掉信封，只留資料。保留 conflict / rateLimited 等業務旗標給領域模組判斷。
-  const { ok, ...rest } = result;
+  const { ok: _ok, ...rest } = result;
   return rest;
 }
 
@@ -157,6 +157,7 @@ export async function gasRequest(path, options = {}, tokenProvider = async () =>
   const timeout = spec.timeout || options.timeout || CONFIG.timeout;
   const [signal, cleanup] = withTimeout(timeout);
 
+  // eslint-disable-next-line no-console -- 由 CONFIG.debug 控制的除錯輸出，正式環境預設關閉
   if (CONFIG.debug) console.log('[gas]', method, path, '→ action=' + spec.action);
 
   try {

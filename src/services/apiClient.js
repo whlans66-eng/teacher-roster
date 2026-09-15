@@ -31,6 +31,7 @@ export function getTokenProvider() {
 }
 
 function debugLog(...args) {
+  // eslint-disable-next-line no-console -- 由 CONFIG.debug 控制的除錯輸出，正式環境預設關閉
   if (CONFIG.debug) console.log('[api]', ...args);
 }
 
