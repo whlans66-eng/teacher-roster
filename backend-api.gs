@@ -26,12 +26,58 @@ const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
 // 系統角色（單一來源；前端 js/auth.js 的 ROLES 必須與此一致）
 const USER_ROLES = ['admin', 'teacher', 'crew', 'guest'];
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]{3,32}$/;
-const MIN_PASSWORD_LENGTH = 8;
+
+// 密碼政策：參考 NIST SP 800-63B，重長度與弱密碼篩除，不強制複雜度規則
+const MIN_PASSWORD_LENGTH = 10;
+const PASSWORD_ALGO = 'hmac-sha256-v2';
+const PASSWORD_ITERATIONS = 1000;
+const PEPPER_PROPERTY = 'PASSWORD_PEPPER';
+
+// 常見弱密碼，直接擋掉（比要求大小寫符號更有效）
+const WEAK_PASSWORDS = [
+  'password', 'passw0rd', '12345678', '123456789', '1234567890',
+  'qwerty123', 'iloveyou', 'admin123', 'administrator', 'letmein',
+  'welcome123', 'abc12345', '11111111', '00000000', 'maritrain',
+  'wanhai123', 'teacher123', 'guest123'
+];
+
+// 每個資料表允許讀取的角色。
+// 前端隱藏按鈕不算權限控管 —— 後端不擋，任何登入者都能直接打 API 撈走整份資料。
+const TABLE_READ_ROLES = {
+  teachers:          ['admin', 'teacher'],
+  courseAssignments: ['admin', 'teacher', 'crew'],
+  maritimeCourses:   ['admin', 'teacher', 'crew', 'guest'],
+  teacherLeaves:     ['admin', 'teacher'],
+  activeSessions:    ['admin'],
+  users:             [],   // 一律不得經由一般資料 API 讀取
+  userAuditLog:      []
+};
+
+function _canReadTable(session, tableName) {
+  const allowed = TABLE_READ_ROLES[tableName];
+  if (!allowed) return false;
+  return allowed.indexOf(session && session.role) >= 0;
+}
 
 const SHEETS_CONFIG = {
   users: {
     name: 'users',
-    header: ['id', 'username', 'password', 'full_name', 'role', 'salt']
+    header: [
+      'id', 'username', 'password', 'full_name', 'role', 'salt',
+      // 以下為權限強化新增；_getOrCreateSheet 會自動補上缺少的欄位
+      'status',             // active / disabled，停用優先於刪除以保留稽核軌跡
+      'mustChangePassword', // 管理者建立或重設密碼後，使用者下次登入必須自行更換
+      'passwordAlgo',       // 密碼雜湊版本，用於透明升級
+      'passwordUpdatedAt',
+      'lastLoginAt',
+      'createdAt',
+      'updatedBy',
+      'updatedAt'
+    ]
+  },
+  userAuditLog: {
+    name: 'userAuditLog',
+    header: ['timestamp', 'actor', 'action', 'target', 'detail']
   },
   teachers: {
     name: 'teachers',
@@ -61,20 +107,142 @@ function _generateSalt() {
   return Utilities.getUuid();
 }
 
-function _hashPassword(password, salt) {
+function _bytesToHex(bytes) {
+  return bytes.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+}
+
+/**
+ * 取得 pepper（存在 Script Properties，不在試算表裡）
+ *
+ * 這是這個平台上最關鍵的一道防線：Apps Script 沒有 bcrypt/scrypt，
+ * 迭代次數又受限於執行時間，光靠雜湊擋不住離線破解。
+ * 把 pepper 放在試算表外，代表就算整份 Sheet 外流，也無法直接暴力比對。
+ *
+ * ⚠️ pepper 遺失等同所有密碼失效，請納入備份程序。
+ */
+function _getPepper() {
+  const props = PropertiesService.getScriptProperties();
+  let pepper = props.getProperty(PEPPER_PROPERTY);
+  if (!pepper) {
+    pepper = Utilities.getUuid() + Utilities.getUuid();
+    props.setProperty(PEPPER_PROPERTY, pepper);
+    Logger.log('[SECURITY] 已產生新的 PASSWORD_PEPPER，請立即備份 Script Properties。');
+  }
+  return pepper;
+}
+
+/**
+ * 舊版雜湊：單輪 SHA-256。保留僅供驗證既有密碼，不再用於寫入。
+ */
+function _hashPasswordLegacy(password, salt) {
   const digest = Utilities.computeDigest(
     Utilities.DigestAlgorithm.SHA_256,
     salt + ':' + password
   );
-  return digest.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+  return _bytesToHex(digest);
 }
 
-function _verifyPassword(inputPassword, storedHash, salt) {
-  if (!salt) {
-    // 尚未遷移的明文密碼：直接比對（向下相容）
-    return String(inputPassword) === String(storedHash);
+/**
+ * 現行雜湊：加 pepper 的迭代 HMAC-SHA256
+ */
+function _hashPasswordV2(password, salt, iterations) {
+  const rounds = iterations || PASSWORD_ITERATIONS;
+  const pepperBytes = Utilities.newBlob(_getPepper()).getBytes();
+  let bytes = Utilities.computeHmacSha256Signature(
+    Utilities.newBlob(String(salt) + ':' + String(password)).getBytes(),
+    pepperBytes
+  );
+  for (let i = 1; i < rounds; i++) {
+    bytes = Utilities.computeHmacSha256Signature(bytes, pepperBytes);
   }
-  return _hashPassword(inputPassword, salt) === storedHash;
+  return _bytesToHex(bytes);
+}
+
+function _hashPassword(password, salt) {
+  return _hashPasswordV2(password, salt, PASSWORD_ITERATIONS);
+}
+
+/**
+ * 定時比對，避免以回應時間逐位元猜出雜湊值
+ */
+function _constantTimeEquals(a, b) {
+  const x = String(a || '');
+  const y = String(b || '');
+  if (x.length !== y.length) return false;
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) {
+    diff |= x.charCodeAt(i) ^ y.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+/**
+ * 驗證密碼
+ *
+ * 舊版會在 salt 為空時「直接比對明文」，等於只要有一列沒 salt
+ * 就退化成明文密碼。這裡移除該退路：沒有 salt 一律視為驗證失敗。
+ *
+ * @returns {{ok: boolean, needsUpgrade: boolean}}
+ */
+function _verifyPassword(inputPassword, storedHash, salt, algo) {
+  if (!salt || !storedHash) return { ok: false, needsUpgrade: false };
+
+  if (String(algo || '') === PASSWORD_ALGO) {
+    return {
+      ok: _constantTimeEquals(_hashPasswordV2(inputPassword, salt, PASSWORD_ITERATIONS), storedHash),
+      needsUpgrade: false
+    };
+  }
+
+  // 未標記演算法者視為舊版單輪 SHA-256；驗證成功後於登入時透明升級
+  const ok = _constantTimeEquals(_hashPasswordLegacy(inputPassword, salt), storedHash);
+  return { ok: ok, needsUpgrade: ok };
+}
+
+/**
+ * 密碼強度檢查
+ */
+function _assertPasswordPolicy(password, username) {
+  const pwd = String(password || '');
+  if (pwd.length < MIN_PASSWORD_LENGTH) {
+    throw new Error('密碼至少需 ' + MIN_PASSWORD_LENGTH + ' 個字元');
+  }
+  if (pwd.length > 128) {
+    throw new Error('密碼長度不可超過 128 個字元');
+  }
+  const lower = pwd.toLowerCase();
+  if (WEAK_PASSWORDS.indexOf(lower) >= 0) {
+    throw new Error('這組密碼過於常見，請換一組');
+  }
+  if (username && lower.indexOf(String(username).toLowerCase()) >= 0) {
+    throw new Error('密碼不可包含帳號名稱');
+  }
+  if (/^(.)\1+$/.test(pwd)) {
+    throw new Error('密碼不可為單一字元重複');
+  }
+  return pwd;
+}
+
+/**
+ * 帳號操作稽核紀錄
+ * 誰、在什麼時間、對哪個帳號做了什麼 —— 權限系統沒有這個就無從追查
+ */
+function _auditLog(actor, action, target, detail) {
+  try {
+    const config = SHEETS_CONFIG.userAuditLog;
+    const sheet = _getOrCreateSheet('userAuditLog', config.header);
+    const idx = _headerIndex(sheet, config.header);
+    const row = new Array(idx._len).fill('');
+    row[idx['timestamp']] = new Date().toISOString();
+    row[idx['actor']]     = _sanitizeSheetValue(String(actor || 'system'));
+    row[idx['action']]    = _sanitizeSheetValue(String(action || ''));
+    row[idx['target']]    = _sanitizeSheetValue(String(target || ''));
+    row[idx['detail']]    = _sanitizeSheetValue(String(detail || ''));
+    sheet.appendRow(row);
+  } catch (err) {
+    // 稽核寫入失敗不應阻斷主要操作，但要留下痕跡
+    Logger.log('[AUDIT] 寫入稽核紀錄失敗: ' + err);
+  }
 }
 
 // ==================== Session 管理（使用 CacheService）====================
@@ -166,6 +334,19 @@ function _readUsersRaw(ctx) {
 }
 
 /**
+ * 依欄位名稱寫回某一列（自動對應實際欄位位置）
+ */
+function _writeUserFields(ctx, row, fields) {
+  Object.keys(fields).forEach(key => {
+    if (ctx.idx[key] === undefined) return;
+    const raw = fields[key];
+    // password/salt 是系統產生的雜湊值，不做試算表字元轉義
+    const value = (key === 'password' || key === 'salt') ? raw : _sanitizeSheetValue(String(raw));
+    ctx.sheet.getRange(row, ctx.idx[key] + 1).setValue(value);
+  });
+}
+
+/**
  * 對外輸出的帳號欄位（永遠不含 password / salt）
  */
 function _publicUser(u) {
@@ -173,8 +354,28 @@ function _publicUser(u) {
     id: String(u.id || ''),
     username: String(u.username || '').trim(),
     full_name: String(u.full_name || '').trim(),
-    role: String(u.role || '').trim()
+    role: String(u.role || '').trim(),
+    status: String(u.status || 'active').trim().toLowerCase() === 'disabled' ? 'disabled' : 'active',
+    mustChangePassword: String(u.mustChangePassword || '').toUpperCase() === 'TRUE',
+    lastLoginAt: String(u.lastLoginAt || ''),
+    passwordUpdatedAt: String(u.passwordUpdatedAt || '')
   };
+}
+
+function _isDisabled(u) {
+  return String(u.status || 'active').trim().toLowerCase() === 'disabled';
+}
+
+/**
+ * 排除指定 id 後，還剩幾位「啟用中」的管理者
+ * 停用的管理者不能算數，否則會把自己鎖在系統外
+ */
+function _countOtherActiveAdmins(users, excludeId) {
+  return users.filter(u =>
+    String(u.role || '').trim() === 'admin' &&
+    !_isDisabled(u) &&
+    String(u.id) !== String(excludeId)
+  ).length;
 }
 
 function _normalizeUserRole(role) {
@@ -193,24 +394,6 @@ function _assertValidUsername(username, users, excludeId) {
   );
   if (duplicated) throw new Error('帳號已存在：' + name);
   return name;
-}
-
-function _assertValidPassword(password) {
-  const pwd = String(password || '');
-  if (pwd.length < MIN_PASSWORD_LENGTH) {
-    throw new Error('密碼至少需 ' + MIN_PASSWORD_LENGTH + ' 個字元');
-  }
-  return pwd;
-}
-
-/**
- * 排除指定 id 後，還剩幾位管理者
- */
-function _countOtherAdmins(users, excludeId) {
-  return users.filter(u =>
-    String(u.role || '').trim() === 'admin' &&
-    String(u.id) !== String(excludeId)
-  ).length;
 }
 
 function _nextUserId(users) {
@@ -239,25 +422,35 @@ function _handleUsersAction(action, p, bodyObj, session) {
 
   if (action === 'users_create') {
     const username = _assertValidUsername(pick('username'), users, null);
-    const password = _assertValidPassword(pick('password'));
+    const password = _assertPasswordPolicy(pick('password'), username);
     const role = _normalizeUserRole(pick('role'));
     if (!role) throw new Error('無效的角色');
 
     const salt = _generateSalt();
     const id = _nextUserId(users);
     const fullName = String(pick('full_name') || username).trim();
+    const now = new Date().toISOString();
 
     const row = new Array(ctx.idx._len).fill('');
-    row[ctx.idx['id']]        = id;
-    row[ctx.idx['username']]  = _sanitizeSheetValue(username);
-    row[ctx.idx['password']]  = _hashPassword(password, salt);
-    row[ctx.idx['full_name']] = _sanitizeSheetValue(fullName);
-    row[ctx.idx['role']]      = role;
-    row[ctx.idx['salt']]      = salt;
+    const set = (key, value) => { if (ctx.idx[key] !== undefined) row[ctx.idx[key]] = value; };
+    set('id', id);
+    set('username', _sanitizeSheetValue(username));
+    set('password', _hashPasswordV2(password, salt, PASSWORD_ITERATIONS));
+    set('full_name', _sanitizeSheetValue(fullName));
+    set('role', role);
+    set('salt', salt);
+    set('status', 'active');
+    // 管理者代設的密碼，本人首次登入必須更換
+    set('mustChangePassword', 'TRUE');
+    set('passwordAlgo', PASSWORD_ALGO);
+    set('passwordUpdatedAt', now);
+    set('createdAt', now);
+    set('updatedBy', _sanitizeSheetValue(String(session.username || '')));
+    set('updatedAt', now);
     ctx.sheet.appendRow(row);
 
-    Logger.log(session.username + ' 新增帳號: ' + username + ' (' + role + ')');
-    return _json({ ok: true, data: { id: id, username: username, full_name: fullName, role: role } });
+    _auditLog(session.username, 'user_create', username, '角色=' + role);
+    return _json({ ok: true, data: { id: id, username: username, full_name: fullName, role: role, status: 'active', mustChangePassword: true } });
   }
 
   if (action === 'users_update') {
@@ -266,55 +459,77 @@ function _handleUsersAction(action, p, bodyObj, session) {
     if (!target) throw new Error('找不到該帳號');
 
     const updates = {};
+    const changed = [];
 
     const rawUsername = String(pick('username') || '').trim();
     if (rawUsername && rawUsername !== String(target.username).trim()) {
       updates.username = _assertValidUsername(rawUsername, users, id);
+      changed.push('帳號');
     }
 
     const rawFullName = String(pick('full_name') || '').trim();
     if (rawFullName && rawFullName !== String(target.full_name).trim()) {
       updates.full_name = rawFullName;
+      changed.push('顯示名稱');
     }
 
     const rawRole = String(pick('role') || '').trim();
     if (rawRole && rawRole !== String(target.role).trim()) {
       const role = _normalizeUserRole(rawRole);
       if (!role) throw new Error('無效的角色');
-      if (String(target.role).trim() === 'admin' && _countOtherAdmins(users, id) === 0) {
-        throw new Error('至少需保留一位管理者，無法變更此帳號的角色');
+      if (String(target.role).trim() === 'admin' && _countOtherActiveAdmins(users, id) === 0) {
+        throw new Error('至少需保留一位啟用中的管理者，無法變更此帳號的角色');
       }
       updates.role = role;
+      changed.push('角色→' + role);
+    }
+
+    const rawStatus = String(pick('status') || '').trim().toLowerCase();
+    if (rawStatus && (rawStatus === 'active' || rawStatus === 'disabled')) {
+      const currentStatus = _isDisabled(target) ? 'disabled' : 'active';
+      if (rawStatus !== currentStatus) {
+        if (rawStatus === 'disabled') {
+          if (String(target.username).trim().toLowerCase() === String(session.username).trim().toLowerCase()) {
+            throw new Error('不能停用自己的帳號');
+          }
+          if (String(target.role).trim() === 'admin' && _countOtherActiveAdmins(users, id) === 0) {
+            throw new Error('至少需保留一位啟用中的管理者，無法停用此帳號');
+          }
+        }
+        updates.status = rawStatus;
+        changed.push(rawStatus === 'disabled' ? '停用' : '啟用');
+      }
     }
 
     const rawPassword = String(pick('password') || '');
     if (rawPassword) {
-      const password = _assertValidPassword(rawPassword);
+      _assertPasswordPolicy(rawPassword, updates.username || target.username);
       const salt = _generateSalt();
       updates.salt = salt;
-      updates.password = _hashPassword(password, salt);
+      updates.password = _hashPasswordV2(rawPassword, salt, PASSWORD_ITERATIONS);
+      updates.passwordAlgo = PASSWORD_ALGO;
+      updates.passwordUpdatedAt = new Date().toISOString();
+      // 管理者重設的密碼，本人下次登入必須自行更換
+      updates.mustChangePassword = 'TRUE';
+      changed.push('重設密碼');
     }
 
-    const keys = Object.keys(updates);
-    if (keys.length === 0) throw new Error('沒有需要更新的欄位');
+    if (Object.keys(updates).length === 0) throw new Error('沒有需要更新的欄位');
 
-    keys.forEach(key => {
-      const raw = updates[key];
-      // password/salt 是系統產生的雜湊值，不做 sheet 字元轉義
-      const value = (key === 'password' || key === 'salt') ? raw : _sanitizeSheetValue(String(raw));
-      ctx.sheet.getRange(target._row, ctx.idx[key] + 1).setValue(value);
-    });
+    updates.updatedBy = String(session.username || '');
+    updates.updatedAt = new Date().toISOString();
+    _writeUserFields(ctx, target._row, updates);
 
-    // 角色、帳號或密碼異動 → 該帳號既有 Session 立即失效，避免沿用舊權限
-    if (updates.role || updates.username || updates.password) {
+    // 角色、帳號、密碼或停用狀態異動 → 既有 Session 立即失效
+    if (updates.role || updates.username || updates.password || updates.status) {
       _revokeUserSessions(target.username);
       if (updates.username) _revokeUserSessions(updates.username);
     }
 
-    Logger.log(session.username + ' 更新帳號 ' + target.username + ': ' + keys.join(', '));
+    _auditLog(session.username, 'user_update', target.username, changed.join('、'));
     const merged = {};
     Object.keys(target).forEach(k => { merged[k] = target[k]; });
-    keys.forEach(k => { merged[k] = updates[k]; });
+    Object.keys(updates).forEach(k => { merged[k] = updates[k]; });
     return _json({ ok: true, data: _publicUser(merged) });
   }
 
@@ -326,18 +541,75 @@ function _handleUsersAction(action, p, bodyObj, session) {
     if (String(target.username).trim().toLowerCase() === String(session.username).trim().toLowerCase()) {
       throw new Error('不能刪除自己的帳號');
     }
-    if (String(target.role).trim() === 'admin' && _countOtherAdmins(users, id) === 0) {
-      throw new Error('至少需保留一位管理者，無法刪除此帳號');
+    if (String(target.role).trim() === 'admin' && _countOtherActiveAdmins(users, id) === 0) {
+      throw new Error('至少需保留一位啟用中的管理者，無法刪除此帳號');
     }
 
     ctx.sheet.deleteRow(target._row);
     _revokeUserSessions(target.username);
 
-    Logger.log(session.username + ' 刪除帳號: ' + target.username);
+    _auditLog(session.username, 'user_delete', target.username, '角色=' + String(target.role || ''));
     return _json({ ok: true });
   }
 
+  if (action === 'users_audit') {
+    const log = _readTable('userAuditLog') || [];
+    const limit = Math.min(parseInt(String(pick('limit') || '100'), 10) || 100, 500);
+    // 新到舊
+    const rows = log.slice(-limit).reverse();
+    return _json({ ok: true, data: rows });
+  }
+
   return _json({ ok: false, error: 'Unknown action' });
+}
+
+/**
+ * 自助修改密碼（本人操作，需驗證目前密碼）
+ * 與 _handleUsersAction 分開：這個不需要管理者權限
+ */
+function _handleChangeOwnPassword(p, bodyObj, session) {
+  const pick = key => {
+    if (p[key] !== undefined && p[key] !== '') return p[key];
+    return (bodyObj && bodyObj[key] !== undefined) ? bodyObj[key] : '';
+  };
+
+  const currentPassword = String(pick('currentPassword') || '');
+  const newPassword = String(pick('newPassword') || '');
+  if (!currentPassword || !newPassword) throw new Error('請輸入目前密碼與新密碼');
+
+  const ctx = _usersContext();
+  const users = _readUsersRaw(ctx);
+  const me = users.filter(u =>
+    String(u.username).trim().toLowerCase() === String(session.username).trim().toLowerCase()
+  )[0];
+  if (!me) throw new Error('找不到您的帳號');
+
+  const verified = _verifyPassword(currentPassword, String(me.password), me.salt || '', me.passwordAlgo);
+  if (!verified.ok) throw new Error('目前密碼不正確');
+
+  _assertPasswordPolicy(newPassword, me.username);
+  if (_constantTimeEquals(currentPassword, newPassword)) {
+    throw new Error('新密碼不可與目前密碼相同');
+  }
+
+  const salt = _generateSalt();
+  const now = new Date().toISOString();
+  _writeUserFields(ctx, me._row, {
+    password: _hashPasswordV2(newPassword, salt, PASSWORD_ITERATIONS),
+    salt: salt,
+    passwordAlgo: PASSWORD_ALGO,
+    passwordUpdatedAt: now,
+    mustChangePassword: 'FALSE',
+    updatedBy: me.username,
+    updatedAt: now
+  });
+
+  _auditLog(me.username, 'password_change_self', me.username, '');
+  // 改密碼後只保留目前這個 Session，其他裝置一律要重新登入
+  _revokeUserSessions(me.username);
+  const freshToken = _createSession({ username: me.username, role: me.role, full_name: me.full_name });
+
+  return _json({ ok: true, data: { token: freshToken } });
 }
 
 // ==================== 速率限制 ====================
@@ -365,6 +637,77 @@ function _clearLoginFailures(username) {
 
 // ==================== 路由處理 ====================
 
+const READ_ACTIONS = ['list', 'listall', 'getversions', 'session_register',
+                     'session_heartbeat', 'session_list', 'session_kick', 'session_check_kicked'];
+
+/**
+ * 讀取類動作的共用處理（doGet 與 doPost 都走這裡）
+ */
+function _handleReadAction(action, p, session) {
+  const table = String(p.table || '');
+
+  if (action === 'list' && table && SHEETS_CONFIG[table]) {
+    // 依角色控管：前端隱藏功能不等於擋得住直接呼叫 API
+    if (!_canReadTable(session, table)) {
+      return _json({ ok: false, error: 'Access denied' });
+    }
+    return _json({ ok: true, table: table, data: _readTable(table) });
+  }
+
+  if (action === 'listall') {
+    const allData = {};
+    const versions = {};
+    Object.keys(SHEETS_CONFIG).forEach(tableName => {
+      if (tableName === 'users' || tableName === 'activeSessions' || tableName === 'userAuditLog') return;
+      // 讀不到的表直接略過，讓前端優雅降級而不是整個請求失敗
+      if (!_canReadTable(session, tableName)) return;
+      const data = _readTable(tableName);
+      allData[tableName] = data;
+      if (VERSION_TABLES.includes(tableName)) {
+        versions[tableName] = _computeFingerprint(data);
+      }
+    });
+    _writeCachedFingerprints(versions);
+    return _json({ ok: true, data: allData, versions: versions });
+  }
+
+  if (action === 'getversions') {
+    const versions = _readCachedFingerprints(VERSION_TABLES);
+    const missing = VERSION_TABLES.filter(t => !versions[t]);
+    const newCache = {};
+    missing.forEach(tableName => {
+      const fp = _computeFingerprint(_readTable(tableName));
+      versions[tableName] = fp;
+      newCache[tableName] = fp;
+    });
+    if (Object.keys(newCache).length > 0) _writeCachedFingerprints(newCache);
+    return _json({ ok: true, versions: versions });
+  }
+
+  if (action === 'session_register') {
+    _cleanupStaleSessions();
+    return _json({ ok: true, ..._registerSession(p) });
+  }
+  if (action === 'session_heartbeat') {
+    _cleanupStaleSessions();
+    return _json({ ok: true, ..._updateHeartbeat(p) });
+  }
+  if (action === 'session_list') {
+    _requireRole(session, ['admin']);
+    _cleanupStaleSessions();
+    return _json({ ok: true, sessions: _getActiveSessions() });
+  }
+  if (action === 'session_kick') {
+    _requireRole(session, ['admin']);
+    return _json({ ok: true, ..._kickSession(p) });
+  }
+  if (action === 'session_check_kicked') {
+    return _json({ ok: true, kicked: _checkIfKicked(p.sessionId) });
+  }
+
+  return _json({ ok: false, error: 'Unknown action' });
+}
+
 function doGet(e) {
   try {
     const p = e?.parameter || {};
@@ -377,72 +720,7 @@ function doGet(e) {
 
     // 其他 GET 請求需要 Session 認證
     const session = _requireSession(p.token);
-    const table = String(p.table || '');
-
-    if (action === 'list' && table && SHEETS_CONFIG[table]) {
-      // users 表不允許透過 API 讀取
-      if (table === 'users') return _json({ ok: false, error: 'Access denied' });
-      return _json({ ok: true, table: table, data: _readTable(table) });
-    }
-
-    if (action === 'listall') {
-      const allData = {};
-      const versions = {};
-      Object.keys(SHEETS_CONFIG).forEach(tableName => {
-        if (tableName === 'users' || tableName === 'activeSessions') return;
-        const data = _readTable(tableName);
-        allData[tableName] = data;
-        if (VERSION_TABLES.includes(tableName)) {
-          versions[tableName] = _computeFingerprint(data);
-        }
-      });
-      // 更新快取，讓後續 batchsave 的衝突檢測不需重讀 sheet
-      _writeCachedFingerprints(versions);
-      return _json({ ok: true, data: allData, versions });
-    }
-
-    if (action === 'getversions') {
-      const versions = _readCachedFingerprints(VERSION_TABLES);
-      // 快取 miss 的 table 才讀 sheet（通常重新部署後第一次）
-      const missing = VERSION_TABLES.filter(t => !versions[t]);
-      const newCache = {};
-      missing.forEach(tableName => {
-        const fp = _computeFingerprint(_readTable(tableName));
-        versions[tableName] = fp;
-        newCache[tableName] = fp;
-      });
-      if (Object.keys(newCache).length > 0) _writeCachedFingerprints(newCache);
-      return _json({ ok: true, versions: versions });
-    }
-
-    // Session 管理 API
-    if (action === 'session_register') {
-      _cleanupStaleSessions();
-      const result = _registerSession(p);
-      return _json({ ok: true, ...result });
-    }
-    if (action === 'session_heartbeat') {
-      _cleanupStaleSessions();
-      const result = _updateHeartbeat(p);
-      return _json({ ok: true, ...result });
-    }
-    if (action === 'session_list') {
-      _requireRole(session, ['admin']);
-      _cleanupStaleSessions();
-      const sessions = _getActiveSessions();
-      return _json({ ok: true, sessions });
-    }
-    if (action === 'session_kick') {
-      _requireRole(session, ['admin']);
-      const result = _kickSession(p);
-      return _json({ ok: true, ...result });
-    }
-    if (action === 'session_check_kicked') {
-      const kicked = _checkIfKicked(p.sessionId);
-      return _json({ ok: true, kicked });
-    }
-
-    return _json({ ok: false, error: 'Unknown action' });
+    return _handleReadAction(action, p, session);
   } catch (err) {
     const msg = String(err.message || err);
     if (msg === 'Unauthorized' || msg === 'Forbidden') {
@@ -479,14 +757,55 @@ function doPost(e) {
       _checkRateLimit(username);
 
       let user = null;
+      let needsUpgrade = false;
+      let disabled = false;
       try {
-        const users = _readTable('users');
-        user = users.find(u => {
-          if (u.username !== username) return false;
-          return _verifyPassword(password, String(u.password), u.salt || '');
-        });
+        const ctx = _usersContext();
+        const users = _readUsersRaw(ctx);
+        const matched = users.filter(u =>
+          String(u.username).trim().toLowerCase() === String(username).trim().toLowerCase()
+        )[0];
+
+        if (matched) {
+          const result = _verifyPassword(password, String(matched.password), matched.salt || '', matched.passwordAlgo);
+          if (result.ok) {
+            // 停用中的帳號即使密碼正確也不得登入
+            if (String(matched.status || 'active').trim().toLowerCase() === 'disabled') {
+              disabled = true;
+            } else {
+              user = matched;
+              needsUpgrade = result.needsUpgrade;
+            }
+          }
+        }
+
+        if (user) {
+          // 舊版單輪 SHA-256 的密碼，在這次登入透明升級為現行演算法，
+          // 使用者無感，也不需要全體重設密碼
+          if (needsUpgrade) {
+            try {
+              const newSalt = _generateSalt();
+              _writeUserFields(ctx, user._row, {
+                password: _hashPasswordV2(password, newSalt, PASSWORD_ITERATIONS),
+                salt: newSalt,
+                passwordAlgo: PASSWORD_ALGO,
+                passwordUpdatedAt: new Date().toISOString()
+              });
+              _auditLog('system', 'password_rehash', user.username, '登入時自動升級密碼雜湊');
+            } catch (upgradeErr) {
+              Logger.log('密碼雜湊升級失敗: ' + upgradeErr);
+            }
+          }
+          _writeUserFields(ctx, user._row, { lastLoginAt: new Date().toISOString() });
+        }
       } catch (err) {
         Logger.log('Login read users error: ' + err);
+      }
+
+      if (disabled) {
+        _recordLoginFailure(username);
+        _auditLog(username, 'login_denied', username, '帳號已停用');
+        return _json({ ok: false, error: '此帳號已停用，請聯絡系統管理者' });
       }
 
       if (user) {
@@ -495,8 +814,11 @@ function doPost(e) {
         const userData = {
           username: user.username,
           role: user.role,
-          full_name: user.full_name
+          full_name: user.full_name,
+          // 管理者建立或重設密碼後，前端會強制要求先更換
+          mustChangePassword: String(user.mustChangePassword || '').toUpperCase() === 'TRUE'
         };
+        _auditLog(user.username, 'login', user.username, '');
         return _json({ ok: true, data: { user: userData, token: sessionToken } });
       } else {
         _recordLoginFailure(username);
@@ -506,6 +828,25 @@ function doPost(e) {
 
     // ===== 其他 POST 請求需要 Session =====
     const session = _requireSession(p.token);
+
+    // ===== 讀取類動作改走 POST =====
+    // Apps Script 讀不到自訂 HTTP 標頭，token 只能放在網址或請求主體。
+    // 放網址會留在瀏覽器歷史與 Apps Script 執行紀錄裡，所以改用 POST body。
+    if (READ_ACTIONS.indexOf(action) >= 0) {
+      return _handleReadAction(action, p, session);
+    }
+
+    // ===== 自助修改密碼（本人，不需管理者權限）=====
+    if (action === 'account_change_password') {
+      try {
+        return _handleChangeOwnPassword(p, bodyObj, session);
+      } catch (pwErr) {
+        const pwMsg = String(pwErr.message || pwErr);
+        if (pwMsg === 'Unauthorized' || pwMsg === 'Forbidden') throw pwErr;
+        Logger.log('change password error: ' + pwMsg);
+        return _json({ ok: false, error: pwMsg });
+      }
+    }
 
     // ===== 帳號管理（僅管理者）=====
     if (action.indexOf('users_') === 0) {
@@ -1465,27 +1806,61 @@ function _callGemini(userMessage, systemContext, conversationHistory) {
 function setupDatabase() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName('users');
-  if (sheet) return;
+  if (sheet) {
+    Logger.log('users 表已存在，未做任何變更。');
+    return;
+  }
 
+  const header = SHEETS_CONFIG.users.header;
   sheet = ss.insertSheet('users');
-  const headers = ['id', 'username', 'password', 'full_name', 'role', 'salt'];
-  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-  sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#4285f4').setFontColor('#ffffff');
+  sheet.getRange(1, 1, 1, header.length).setValues([header]);
+  sheet.getRange(1, 1, 1, header.length).setFontWeight('bold').setBackground('#4285f4').setFontColor('#ffffff');
 
-  // 產生雜湊密碼（請部署後立即更改這些預設密碼！）
-  const salt1 = _generateSalt();
-  const salt2 = _generateSalt();
-  const salt3 = _generateSalt();
+  // 不在程式碼裡寫死任何密碼。
+  // 唯一的初始管理者密碼隨機產生、只在執行紀錄顯示一次，且首次登入強制更換。
+  const password = _generateInitialPassword();
+  const salt = _generateSalt();
+  const now = new Date().toISOString();
+  const idx = _headerIndex(sheet, header);
+  const row = new Array(idx._len).fill('');
+  const set = (k, v) => { if (idx[k] !== undefined) row[idx[k]] = v; };
+  set('id', '1');
+  set('username', 'admin');
+  set('password', _hashPasswordV2(password, salt, PASSWORD_ITERATIONS));
+  set('full_name', '系統管理者');
+  set('role', 'admin');
+  set('salt', salt);
+  set('status', 'active');
+  set('mustChangePassword', 'TRUE');
+  set('passwordAlgo', PASSWORD_ALGO);
+  set('passwordUpdatedAt', now);
+  set('createdAt', now);
+  set('updatedBy', 'setup');
+  set('updatedAt', now);
+  sheet.appendRow(row);
 
-  const defaultUsers = [
-    ['1', 'admin',   _hashPassword('admin123', salt1),   '管理員', 'admin',   salt1],
-    ['2', 'teacher', _hashPassword('teacher123', salt2), '教師',   'teacher', salt2],
-    ['3', 'guest',   _hashPassword('guest123', salt3),   '訪客',   'guest',   salt3]
-  ];
-  sheet.getRange(2, 1, defaultUsers.length, defaultUsers[0].length).setValues(defaultUsers);
-
-  Logger.log('Database initialized with hashed passwords. Please change default passwords immediately!');
+  _getPepper(); // 確保 pepper 已建立
+  Logger.log('========================================');
+  Logger.log('初始管理者帳號：admin');
+  Logger.log('初始密碼：' + password);
+  Logger.log('此密碼只顯示這一次，登入後系統會要求立即更換。');
+  Logger.log('請同時備份 Script Properties 裡的 PASSWORD_PEPPER。');
+  Logger.log('========================================');
 }
+
+/**
+ * 產生一組隨機初始密碼（供 setupDatabase 使用）
+ */
+function _generateInitialPassword() {
+  const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  const raw = Utilities.getUuid() + Utilities.getUuid();
+  for (let i = 0; i < 16; i++) {
+    out += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return out;
+}
+
 
 /**
  * 遷移：將現有明文密碼轉換為 SHA-256 雜湊
@@ -1687,18 +2062,52 @@ function fixCourseAssignmentsHeaders() {
  * 新增 Admin 帳號：Kim
  * 在 Apps Script 編輯器中手動執行此函數一次即可
  */
-function addAdminKim() {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName('users');
-  if (!sheet) {
-    Logger.log('users table not found, please run setupDatabase() first');
-    return;
+/**
+ * 建立管理者帳號（取代原本寫死密碼的 addAdminKim）
+ *
+ * 原版把管理者密碼直接寫在原始碼裡，等於把正式環境的憑證
+ * 提交進版本控制。這個版本改為隨機產生、只在執行紀錄顯示一次，
+ * 並要求本人首次登入立即更換。
+ *
+ * 用法：在 Apps Script 編輯器把 username / fullName 改成要建立的帳號後執行。
+ */
+function createAdminAccount(username, fullName) {
+  const name = String(username || '').trim();
+  if (!USERNAME_PATTERN.test(name)) {
+    throw new Error('請提供合法的帳號名稱（3-32 字元，英數字與 . _ -）');
   }
-  const lastRow = sheet.getLastRow();
-  const newId = String(lastRow);
+
+  const ctx = _usersContext();
+  const users = _readUsersRaw(ctx);
+  if (users.some(u => String(u.username).trim().toLowerCase() === name.toLowerCase())) {
+    throw new Error('帳號已存在：' + name);
+  }
+
+  const password = _generateInitialPassword();
   const salt = _generateSalt();
-  const hashedPassword = _hashPassword('Kim123123', salt);
-  // 依照實際 Sheet 欄位順序：id, username, password, role, (空), salt, full_name
-  sheet.appendRow([newId, 'Kim', hashedPassword, 'admin', '', salt, 'Kim']);
-  Logger.log('Admin user "Kim" created successfully!');
+  const now = new Date().toISOString();
+  const row = new Array(ctx.idx._len).fill('');
+  const set = (k, v) => { if (ctx.idx[k] !== undefined) row[ctx.idx[k]] = v; };
+  set('id', _nextUserId(users));
+  set('username', name);
+  set('password', _hashPasswordV2(password, salt, PASSWORD_ITERATIONS));
+  set('full_name', String(fullName || name));
+  set('role', 'admin');
+  set('salt', salt);
+  set('status', 'active');
+  set('mustChangePassword', 'TRUE');
+  set('passwordAlgo', PASSWORD_ALGO);
+  set('passwordUpdatedAt', now);
+  set('createdAt', now);
+  set('updatedBy', 'script');
+  set('updatedAt', now);
+  ctx.sheet.appendRow(row);
+
+  _auditLog('script', 'user_create', name, '以 createAdminAccount 建立管理者');
+  Logger.log('========================================');
+  Logger.log('已建立管理者帳號：' + name);
+  Logger.log('初始密碼：' + password);
+  Logger.log('此密碼只顯示這一次，登入後系統會要求立即更換。');
+  Logger.log('========================================');
 }
+

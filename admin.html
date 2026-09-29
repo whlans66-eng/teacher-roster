@@ -101,6 +101,38 @@
       display: inline-block; padding: 3px 11px; border-radius: var(--ui-radius-pill);
       font-size: 12px; font-weight: 700; white-space: nowrap;
     }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12.5px; font-weight: 600; color: var(--ui-text-secondary);
+    }
+    .status-pill::before {
+      content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--ui-success);
+    }
+    .status-pill.disabled { color: var(--ui-danger); }
+    .status-pill.disabled::before { background: var(--ui-danger); }
+    tr.row-disabled .user-name, tr.row-disabled .user-account { opacity: 0.5; }
+    .meta-line { font-size: 12px; color: var(--ui-text-secondary); margin-top: 3px; }
+
+    /* 稽核紀錄 */
+    .audit-card { margin-top: 20px; }
+    .audit-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .audit-head h3 { font-size: 15px; font-weight: 600; }
+    .audit-head p { font-size: 12.5px; color: var(--ui-text-secondary); margin-top: 2px; }
+    .audit-list { max-height: 340px; overflow-y: auto; }
+    .audit-row {
+      display: flex; gap: 12px; padding: 11px 20px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04); font-size: 13.5px;
+    }
+    .audit-row:last-child { border-bottom: none; }
+    .audit-time { color: var(--ui-text-secondary); white-space: nowrap; font-size: 12.5px; min-width: 132px; }
+    .audit-action {
+      font-weight: 600; white-space: nowrap; min-width: 82px;
+    }
+    .audit-detail { color: var(--ui-text-secondary); }
+
     .self-tag {
       margin-left: 6px; padding: 2px 8px; border-radius: var(--ui-radius-pill);
       background: var(--ui-fill); color: var(--ui-text-secondary);
@@ -246,6 +278,21 @@
         <p style="margin-top:14px">讀取帳號資料中…</p>
       </div>
     </div>
+
+    <div class="card audit-card">
+      <div class="audit-head">
+        <div>
+          <h3>帳號操作紀錄</h3>
+          <p>誰在什麼時候對哪個帳號做了什麼</p>
+        </div>
+        <button type="button" class="btn btn-plain btn-sm" id="reloadAuditBtn">
+          <i class="ph ph-arrow-clockwise"></i> 重新整理
+        </button>
+      </div>
+      <div class="audit-list" id="auditList">
+        <div class="state" style="padding:32px 24px"><span class="spinner-dark"></span></div>
+      </div>
+    </div>
   </div>
 
   <!-- 新增／編輯帳號 -->
@@ -286,8 +333,8 @@
 
           <div class="field" id="field-password">
             <label for="passwordInput">密碼</label>
-            <input type="password" id="passwordInput" autocomplete="new-password" placeholder="至少 8 個字元">
-            <div class="hint" id="passwordHint">至少 8 個字元</div>
+            <input type="password" id="passwordInput" autocomplete="new-password" placeholder="至少 10 個字元">
+            <div class="hint" id="passwordHint">至少 10 個字元，不可包含帳號名稱或過於常見</div>
             <div class="field-error"></div>
           </div>
         </div>
@@ -443,16 +490,21 @@
 
       const body = rows.map(u => {
         const isSelf = u.username.toLowerCase() === String(authData.username).toLowerCase();
-        const color = Auth.getRoleColor(u.role);
+        const disabled = u.status === 'disabled';
+        const color = disabled ? '#86868b' : Auth.getRoleColor(u.role);
         const name = u.full_name || u.username;
+        const lastLogin = u.lastLoginAt
+          ? new Date(u.lastLoginAt).toLocaleString('zh-TW', { hour12: false })
+          : '從未登入';
         return `
-          <tr>
+          <tr class="${disabled ? 'row-disabled' : ''}">
             <td>
               <div class="user-cell">
                 <span class="user-avatar" style="background:${color}">${h(name.charAt(0).toUpperCase())}</span>
                 <div>
-                  <div class="user-name">${h(name)}${isSelf ? '<span class="self-tag">你自己</span>' : ''}</div>
+                  <div class="user-name">${h(name)}${isSelf ? '<span class="self-tag">你自己</span>' : ''}${u.mustChangePassword ? '<span class="self-tag">待改密碼</span>' : ''}</div>
                   <div class="user-account">${h(u.username)}</div>
+                  <div class="meta-line">最後登入：${h(lastLogin)}</div>
                 </div>
               </div>
             </td>
@@ -461,8 +513,16 @@
                 ${h(Auth.getRoleLabel(u.role))}
               </span>
             </td>
+            <td class="hide-sm">
+              <span class="status-pill ${disabled ? 'disabled' : ''}">${disabled ? '已停用' : '啟用中'}</span>
+            </td>
             <td class="actions-col">
               <div class="row-actions">
+                <button type="button" class="btn btn-plain btn-sm" data-toggle="${h(u.id)}"
+                        title="${isSelf ? '不能停用自己的帳號' : (disabled ? '啟用' : '停用')}"
+                        ${isSelf ? 'disabled' : ''}>
+                  <i class="ph ${disabled ? 'ph-play-circle' : 'ph-pause-circle'}"></i>
+                </button>
                 <button type="button" class="btn btn-plain btn-sm" data-edit="${h(u.id)}" title="編輯">
                   <i class="ph ph-pencil-simple"></i>
                 </button>
@@ -482,6 +542,7 @@
             <tr>
               <th>使用者</th>
               <th class="hide-sm">角色</th>
+              <th class="hide-sm">狀態</th>
               <th style="text-align:right">操作</th>
             </tr>
           </thead>
@@ -493,6 +554,9 @@
       });
       $('listCard').querySelectorAll('[data-delete]').forEach(btn => {
         btn.addEventListener('click', () => openDeleteModal(findUser(btn.dataset.delete)));
+      });
+      $('listCard').querySelectorAll('[data-toggle]').forEach(btn => {
+        btn.addEventListener('click', () => toggleStatus(findUser(btn.dataset.toggle), btn));
       });
     }
 
@@ -531,10 +595,10 @@
       $('fullNameInput').value = creating ? '' : (user.full_name || '');
       $('roleInput').value = creating ? 'teacher' : user.role;
       $('passwordInput').value = '';
-      $('passwordInput').placeholder = creating ? '至少 8 個字元' : '留空表示不修改';
+      $('passwordInput').placeholder = creating ? '至少 10 個字元' : '留空表示不修改';
       $('passwordHint').textContent = creating
-        ? '至少 8 個字元'
-        : '留空表示不修改密碼。變更密碼會讓該帳號重新登入。';
+        ? '至少 10 個字元；建立後對方首次登入需自行更換'
+        : '留空表示不修改密碼。重設後對方下次登入需自行更換，且目前連線會失效。';
       updateRoleHint();
 
       $('userModal').classList.add('show');
@@ -575,11 +639,11 @@
 
       const password = $('passwordInput').value;
       const passwordRequired = !editingUser;
-      if (passwordRequired && password.length < 8) {
-        setFieldError('field-password', '密碼至少需 8 個字元');
+      if (passwordRequired && password.length < 10) {
+        setFieldError('field-password', '密碼至少需 10 個字元');
         ok = false;
-      } else if (!passwordRequired && password && password.length < 8) {
-        setFieldError('field-password', '密碼至少需 8 個字元；不修改請留空');
+      } else if (!passwordRequired && password && password.length < 10) {
+        setFieldError('field-password', '密碼至少需 10 個字元；不修改請留空');
         ok = false;
       }
 
@@ -610,12 +674,77 @@
         $('userModal').classList.remove('show');
         editingUser = null;
         await loadUsers();
+        loadAudit();
       } catch (error) {
         setSubmitting(false);
         const msg = error.message || '儲存失敗，請稍後再試';
         $('formError').textContent = msg;
         $('formError').classList.add('show');
         showToast(msg, 'error');
+      }
+    }
+
+    // ── 啟用／停用 ──
+    // 停用優先於刪除：帳號留著，稽核軌跡與歷史資料的關聯才不會斷
+    async function toggleStatus(user, btn) {
+      if (!user) return;
+      const next = user.status === 'disabled' ? 'active' : 'disabled';
+      const label = next === 'disabled' ? '停用' : '啟用';
+      if (next === 'disabled' &&
+          !confirm(`確定要停用「${user.full_name || user.username}」嗎？\n該帳號將無法登入，目前的連線會立即失效。`)) {
+        return;
+      }
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:#007aff"></span>';
+      try {
+        await api.setUserStatus(user.id, next);
+        showToast(`已${label}「${user.full_name || user.username}」`);
+        await loadUsers();
+        loadAudit();
+      } catch (error) {
+        btn.disabled = false;
+        btn.innerHTML = original;
+        showToast(error.message || `${label}失敗`, 'error');
+      }
+    }
+
+    // ── 稽核紀錄 ──
+    const AUDIT_LABELS = {
+      login: '登入',
+      login_denied: '登入被拒',
+      user_create: '建立帳號',
+      user_update: '修改帳號',
+      user_delete: '刪除帳號',
+      password_change_self: '本人改密碼',
+      password_rehash: '密碼升級'
+    };
+
+    async function loadAudit() {
+      const box = $('auditList');
+      box.innerHTML = '<div class="state" style="padding:32px 24px"><span class="spinner-dark"></span></div>';
+      try {
+        const rows = await api.listUserAudit(100);
+        if (!rows.length) {
+          box.innerHTML = '<div class="state" style="padding:32px 24px"><p>目前沒有紀錄</p></div>';
+          return;
+        }
+        box.innerHTML = rows.map(r => {
+          const when = r.timestamp
+            ? new Date(r.timestamp).toLocaleString('zh-TW', { hour12: false })
+            : '';
+          const act = AUDIT_LABELS[r.action] || r.action || '';
+          const who = r.actor || 'system';
+          const target = r.target && r.target !== r.actor ? ` → ${h(r.target)}` : '';
+          return `
+            <div class="audit-row">
+              <span class="audit-time">${h(when)}</span>
+              <span class="audit-action">${h(act)}</span>
+              <span class="audit-detail">${h(who)}${target}${r.detail ? '（' + h(r.detail) + '）' : ''}</span>
+            </div>`;
+        }).join('');
+      } catch (error) {
+        box.innerHTML = `<div class="state" style="padding:32px 24px"><p>${h(error.message || '讀取失敗')}</p></div>`;
       }
     }
 
@@ -649,6 +778,7 @@
         closeDeleteModal();
         showToast(`已刪除「${name}」`);
         await loadUsers();
+        loadAudit();
       } catch (error) {
         const msg = error.message || '刪除失敗，請稍後再試';
         $('deleteError').textContent = msg;
@@ -667,8 +797,10 @@
       buildRoleOptions();
       updateRoleHint();
       loadUsers();
+      loadAudit();
 
       $('addUserBtn').addEventListener('click', () => openUserModal(null));
+      $('reloadAuditBtn').addEventListener('click', loadAudit);
       $('searchInput').addEventListener('input', renderList);
       $('roleFilter').addEventListener('change', renderList);
 

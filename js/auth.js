@@ -254,7 +254,150 @@
 
   function ensureAuthenticated() {
     if (isLoginPage()) return;
-    protectPage();
+    const authData = protectPage();
+    if (authData) requirePasswordChange();
+  }
+
+  // ==================== 強制更換密碼 ====================
+
+  let passwordScreenShown = false;
+
+  /**
+   * 管理者建立或重設密碼後，本人首次登入必須先換掉才能使用系統
+   * 這一層放在共用 auth 裡，所有頁面都適用，不需各頁自己處理
+   */
+  function requirePasswordChange() {
+    const authData = getAuthData();
+    if (!authData || !authData.mustChangePassword) return false;
+    if (passwordScreenShown || isLoginPage()) return false;
+    passwordScreenShown = true;
+
+    const style = document.createElement('style');
+    style.textContent = `
+      .auth-pwd {
+        position: fixed; inset: 0; z-index: 99998;
+        display: flex; align-items: center; justify-content: center; padding: 24px;
+        background: rgba(245, 245, 247, 0.94);
+        -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      }
+      .auth-pwd-card {
+        background: #fff; border-radius: 20px; padding: 36px 32px;
+        max-width: 420px; width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14);
+      }
+      .auth-pwd-card h2 {
+        margin: 0 0 8px; font-size: 21px; font-weight: 700; color: #1d1d1f;
+        letter-spacing: -0.02em;
+      }
+      .auth-pwd-card > p {
+        margin: 0 0 22px; font-size: 14px; line-height: 1.6; color: #6e6e73;
+      }
+      .auth-pwd-field { margin-bottom: 14px; }
+      .auth-pwd-field label {
+        display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #1d1d1f;
+      }
+      .auth-pwd-field input {
+        width: 100%; padding: 11px 14px; box-sizing: border-box;
+        border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 12px;
+        font-family: inherit; font-size: 15px; color: #1d1d1f; outline: none;
+      }
+      .auth-pwd-field input:focus { border-color: #007aff; }
+      .auth-pwd-hint { margin-top: 6px; font-size: 12px; color: #86868b; }
+      .auth-pwd-error {
+        display: none; margin-bottom: 14px; padding: 11px 14px; border-radius: 12px;
+        background: rgba(255, 59, 48, 0.1); color: #c81e14; font-size: 13.5px; line-height: 1.5;
+      }
+      .auth-pwd-error.show { display: block; }
+      .auth-pwd-actions { display: flex; gap: 10px; margin-top: 20px; }
+      .auth-pwd-btn {
+        flex: 1; padding: 11px 18px; border: none; border-radius: 12px;
+        font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+        background: #007aff; color: #fff;
+      }
+      .auth-pwd-btn:disabled { background: #d2d2d7; cursor: not-allowed; }
+      .auth-pwd-btn.ghost { flex: 0 0 auto; background: #f2f2f7; color: #1d1d1f; }
+    `;
+    document.head.appendChild(style);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'auth-pwd';
+    overlay.innerHTML = `
+      <div class="auth-pwd-card" role="dialog" aria-modal="true">
+        <h2>請先更換密碼</h2>
+        <p>目前的密碼是由管理者代為設定的。為了帳號安全，請設定一組只有您知道的新密碼。</p>
+        <div class="auth-pwd-error" data-pwd-error></div>
+        <div class="auth-pwd-field">
+          <label for="authPwdCurrent">目前密碼</label>
+          <input type="password" id="authPwdCurrent" autocomplete="current-password">
+        </div>
+        <div class="auth-pwd-field">
+          <label for="authPwdNew">新密碼</label>
+          <input type="password" id="authPwdNew" autocomplete="new-password">
+          <div class="auth-pwd-hint">至少 10 個字元，不可包含帳號名稱</div>
+        </div>
+        <div class="auth-pwd-field">
+          <label for="authPwdConfirm">再次輸入新密碼</label>
+          <input type="password" id="authPwdConfirm" autocomplete="new-password">
+        </div>
+        <div class="auth-pwd-actions">
+          <button type="button" class="auth-pwd-btn" data-pwd-submit>設定新密碼</button>
+          <button type="button" class="auth-pwd-btn ghost" data-pwd-logout>登出</button>
+        </div>
+      </div>
+    `;
+
+    const mount = () => {
+      document.body.appendChild(overlay);
+      const errorBox = overlay.querySelector('[data-pwd-error]');
+      const submitBtn = overlay.querySelector('[data-pwd-submit]');
+
+      const fail = msg => {
+        errorBox.textContent = msg;
+        errorBox.classList.add('show');
+      };
+
+      overlay.querySelector('[data-pwd-logout]').addEventListener('click', logout);
+      submitBtn.addEventListener('click', async () => {
+        errorBox.classList.remove('show');
+        const current = overlay.querySelector('#authPwdCurrent').value;
+        const next = overlay.querySelector('#authPwdNew').value;
+        const confirm = overlay.querySelector('#authPwdConfirm').value;
+
+        if (!current) return fail('請輸入目前密碼');
+        if (next.length < 10) return fail('新密碼至少需 10 個字元');
+        if (next !== confirm) return fail('兩次輸入的新密碼不一致');
+        if (next === current) return fail('新密碼不可與目前密碼相同');
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '設定中…';
+        try {
+          if (typeof api === 'undefined' || !api.changeOwnPassword) {
+            throw new Error('此頁面未載入 API 模組，請回首頁再試');
+          }
+          const result = await api.changeOwnPassword(current, next);
+
+          // 後端改完密碼會撤銷其他 Session 並發新 token，這裡一併更新
+          const data = getAuthData() || {};
+          data.mustChangePassword = false;
+          if (result && result.token) data.token = result.token;
+          data.timestamp = Date.now();
+          const store = localStorage.getItem(AUTH_KEY) ? localStorage : sessionStorage;
+          store.setItem(AUTH_KEY, JSON.stringify(data));
+
+          overlay.remove();
+          passwordScreenShown = false;
+        } catch (error) {
+          fail(error && error.message ? error.message : '設定失敗，請稍後再試');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '設定新密碼';
+        }
+      });
+    };
+
+    if (document.body) mount();
+    else document.addEventListener('DOMContentLoaded', mount, { once: true });
+    return true;
   }
 
   // ==================== 右上角帳號選單 ====================
@@ -408,6 +551,7 @@
     canAccess,
     accessiblePages,
     mountAccountMenu,
+    requirePasswordChange,
     escapeHtml
   };
 

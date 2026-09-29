@@ -414,6 +414,8 @@
           role: userData.role,
           displayName: userData.full_name,
           token: loginResult.token,
+          // 管理者建立或重設的密碼，進站後由 js/auth.js 強制要求更換
+          mustChangePassword: !!userData.mustChangePassword,
           timestamp: Date.now()
         };
 

@@ -701,6 +701,75 @@ token=xxx&action=users_create&username=kim.lin&password=Passw0rd123&role=teacher
 class 不同，只有 `data-teacher-id` 兩邊都在，所以用 `#teacherGrid [data-teacher-id]`
 而不是 `.teacher-card-wrapper`。
 
+### 5.4.2 帳號安全設計
+
+#### 密碼儲存
+
+Apps Script 沒有 bcrypt/scrypt，迭代次數又受執行時間限制，
+光靠雜湊擋不住離線破解。因此採取兩道防線：
+
+1. **pepper**：存在 Script Properties 的 `PASSWORD_PEPPER`，**不在試算表裡**。
+   就算整份 Sheet 外流，沒有 pepper 也無法比對。
+2. **迭代 HMAC-SHA256**：`PASSWORD_ITERATIONS`（預設 1000）輪。
+
+> ⚠️ **pepper 遺失等同所有密碼失效**，務必納入備份程序。
+> `setupDatabase()` 會自動產生一組並在執行紀錄提示。
+
+每筆密碼都記錄 `passwordAlgo`。舊資料是單輪 SHA-256，登入驗證成功時
+會**透明升級**為現行演算法，使用者無感，不需要全體重設密碼。
+
+移除了「salt 為空就比對明文」的退路 —— 那等於只要有一列沒 salt
+就退化成明文密碼。現在沒有 salt 一律驗證失敗。
+
+密碼比對使用 `_constantTimeEquals`，避免以回應時間逐位元猜出雜湊。
+
+#### 密碼政策
+
+參考 NIST SP 800-63B：重長度與弱密碼篩除，不強制大小寫符號組合。
+
+- 至少 `MIN_PASSWORD_LENGTH`（10）個字元，上限 128
+- 擋下 `WEAK_PASSWORDS` 清單中的常見密碼
+- 不可包含帳號名稱、不可為單一字元重複
+
+#### 帳號生命週期
+
+| 欄位 | 用途 |
+|---|---|
+| `status` | `active` / `disabled`。**停用優先於刪除**，保留稽核軌跡與歷史關聯 |
+| `mustChangePassword` | 管理者建立或重設密碼後為 TRUE，本人首次登入必須自行更換 |
+| `lastLoginAt` | 最後登入時間，用於盤點閒置帳號 |
+| `passwordUpdatedAt` | 密碼最後更新時間 |
+| `updatedBy` / `updatedAt` | 最後修改者與時間 |
+
+守則：不可刪除或停用自己；不可刪除、停用或降級**最後一位啟用中**的管理者
+（停用的管理者不計入人數，否則會把所有人鎖在系統外）。
+
+#### 稽核紀錄
+
+`userAuditLog` 分頁記錄 `timestamp / actor / action / target / detail`，
+涵蓋登入、登入被拒、建立、修改、刪除、本人改密碼、密碼升級。
+管理者可在 `admin.html` 下方檢視。此表與 `users` 一樣**不得經由一般資料 API 讀取**。
+
+#### 讀取權限
+
+`TABLE_READ_ROLES` 定義各資料表允許讀取的角色，於 `list` / `listall` 強制執行。
+
+前端隱藏按鈕不是權限控管 —— 後端不擋的話，任何登入者都能直接呼叫 API
+撈走整份師資資料。
+
+#### Token 傳遞
+
+Apps Script 讀不到自訂 HTTP 標頭，token 只能放在網址或請求主體。
+放網址會留在瀏覽器歷史與 Apps Script 執行紀錄裡，因此
+`api._get()` 實際改用 POST 送出（`ping` 例外，不需 token）。
+後端以 `READ_ACTIONS` + `_handleReadAction()` 讓 doGet 與 doPost 共用同一套邏輯。
+
+#### 初始帳號
+
+程式碼中**不得出現任何密碼字面值**。`setupDatabase()` 與
+`createAdminAccount()` 皆隨機產生密碼、只在執行紀錄顯示一次，
+並要求首次登入更換。
+
 ### 5.5 後端開發最佳實踐
 
 #### 1. Token 驗證
