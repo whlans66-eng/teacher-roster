@@ -89,64 +89,65 @@
       .uif-status.error .uif-status-dot { background: #ff3b30; }
 
       /* ── 上次編輯到哪 ── */
+      /* 刻意沿用頁面既有的白卡語言（白底、極淡邊框、柔和陰影），
+         不要另外做漸層或強色塊，否則會像貼上去的外來元件 */
       .uif-resume {
-        position: sticky; top: 0; z-index: 60;
-        /* 清單容器可能是 grid，讓提示列自己佔滿一整列 */
         grid-column: 1 / -1;
-        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-        margin: 0 0 16px; padding: 12px 16px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #eaf3ff 0%, #f3f0ff 100%);
-        border: 1px solid rgba(0, 122, 255, 0.22);
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        margin: 0 0 20px; padding: 13px 16px;
+        border-radius: 16px;
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
-        font-size: 14px; color: #1d1d1f;
-        animation: uif-slide-down 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 14px; color: #1d1d1f; line-height: 1.45;
+        animation: uif-fade-in 0.3s ease-out;
       }
-      @keyframes uif-slide-down {
-        from { opacity: 0; transform: translateY(-8px); }
+      @keyframes uif-fade-in {
+        from { opacity: 0; transform: translateY(-6px); }
         to   { opacity: 1; transform: translateY(0); }
       }
-      .uif-resume-icon {
-        width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-        background: #007aff; color: #fff; font-size: 14px;
+      .uif-resume-dot {
+        width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        background: #007aff;
+        box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.12);
+        margin: 0 3px;
       }
-      .uif-resume-text { flex: 1; min-width: 160px; }
-      .uif-resume-text strong { font-weight: 700; }
-      .uif-resume-text span { color: #6e6e73; font-size: 12.5px; display: block; margin-top: 1px; }
+      .uif-resume-text { flex: 1; min-width: 180px; }
+      .uif-resume-text strong { font-weight: 600; }
+      .uif-resume-meta { color: #86868b; font-size: 13px; }
       .uif-resume-btn {
-        padding: 7px 14px; border: none; border-radius: 10px;
-        background: #007aff; color: #fff; cursor: pointer;
+        padding: 6px 13px; border: none; border-radius: 9px;
+        background: transparent; color: #6e6e73; cursor: pointer;
         font-family: inherit; font-size: 13px; font-weight: 600;
+        white-space: nowrap;
       }
-      .uif-resume-btn:hover { background: #0051d5; }
-      .uif-resume-btn.ghost { background: transparent; color: #6e6e73; }
-      .uif-resume-btn.ghost:hover { background: rgba(0, 0, 0, 0.06); color: #1d1d1f; }
+      .uif-resume-btn:hover { background: rgba(0, 0, 0, 0.05); color: #1d1d1f; }
+      .uif-resume-btn.primary { background: #eaf3ff; color: #007aff; }
+      .uif-resume-btn.primary:hover { background: #d8e9ff; }
 
-      /* 剛剛編輯的那張卡 */
+      /* 剛剛編輯的那一張：用 box-shadow 做環，會自動貼合卡片既有的圓角；
+         outline 在圓角卡片上會顯得像除錯用的方框。
+         不放角落徽章 —— 卡片四角通常已經有標籤，硬塞會互相打架，
+         而且部分卡片是 overflow:hidden，貼邊的徽章會被切掉。 */
       .uif-last-edited {
-        position: relative;
-        outline: 2.5px solid #007aff;
-        outline-offset: 2px;
+        box-shadow: 0 0 0 2px #007aff, 0 10px 28px rgba(0, 122, 255, 0.15) !important;
+      }
+      .uif-last-edited::after {
+        content: '';
+        position: absolute; inset: 0;
         border-radius: inherit;
-        animation: uif-pulse 2s ease-out 1;
-      }
-      @keyframes uif-pulse {
-        0%   { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.45); }
-        70%  { box-shadow: 0 0 0 14px rgba(0, 122, 255, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); }
-      }
-      .uif-last-edited-badge {
-        position: absolute; top: 8px; right: 8px; z-index: 5;
-        padding: 3px 10px; border-radius: 999px;
-        background: #007aff; color: #fff;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
-        font-size: 11px; font-weight: 700; letter-spacing: 0.01em;
-        box-shadow: 0 2px 8px rgba(0, 122, 255, 0.4);
+        border: 2px solid rgba(0, 122, 255, 0.5);
+        animation: uif-ring 1.6s ease-out 1 forwards;
         pointer-events: none;
       }
+      @keyframes uif-ring {
+        0%   { transform: scale(1);     opacity: 0.85; }
+        100% { transform: scale(1.03);  opacity: 0; }
+      }
       @media (prefers-reduced-motion: reduce) {
-        .uif-last-edited, .uif-resume { animation: none; }
+        .uif-resume, .uif-last-edited::after { animation: none; }
+        .uif-last-edited::after { opacity: 0; }
       }
     `;
     document.head.appendChild(style);
@@ -401,7 +402,6 @@
 
     // 清掉上一輪的標記，避免重複渲染時疊加
     document.querySelectorAll('.uif-last-edited').forEach(el => el.classList.remove('uif-last-edited'));
-    document.querySelectorAll('.uif-last-edited-badge').forEach(el => el.remove());
     document.querySelectorAll('.uif-resume').forEach(el => el.remove());
 
     const cards = Array.from(document.querySelectorAll(o.selector || '[data-id]'));
@@ -415,14 +415,12 @@
       const bar = document.createElement('div');
       bar.className = 'uif-resume';
       const name = mark.label ? `「${escapeHtml(mark.label)}」` : `這筆${escapeHtml(o.noun || '資料')}`;
+      const missing = card ? '' : '，目前的篩選條件下看不到';
       bar.innerHTML = `
-        <span class="uif-resume-icon">✓</span>
-        <span class="uif-resume-text">
-          <strong>上次修改到${name}</strong>
-          <span>${escapeHtml(relativeTime(mark.at))}修改${card ? '' : '（目前的篩選條件下看不到這一筆）'}</span>
-        </span>
-        ${card ? '<button type="button" class="uif-resume-btn" data-uif-goto>看這一筆</button>' : ''}
-        <button type="button" class="uif-resume-btn ghost" data-uif-dismiss>知道了</button>
+        <span class="uif-resume-dot"></span>
+        <span class="uif-resume-text">上次修改到<strong>${name}</strong><span class="uif-resume-meta"> · ${escapeHtml(relativeTime(mark.at))}${escapeHtml(missing)}</span></span>
+        ${card ? '<button type="button" class="uif-resume-btn primary" data-uif-goto>看這一筆</button>' : ''}
+        <button type="button" class="uif-resume-btn" data-uif-dismiss>知道了</button>
       `;
       container.insertBefore(bar, container.firstChild);
 
@@ -431,11 +429,7 @@
       bar.querySelector('[data-uif-dismiss]').addEventListener('click', () => {
         clearLastEdited(scope);
         bar.remove();
-        if (card) {
-          card.classList.remove('uif-last-edited');
-          const badge = card.querySelector('.uif-last-edited-badge');
-          if (badge) badge.remove();
-        }
+        if (card) card.classList.remove('uif-last-edited');
       });
     }
 
@@ -443,12 +437,6 @@
 
     card.classList.add('uif-last-edited');
     if (getComputedStyle(card).position === 'static') card.style.position = 'relative';
-    if (!card.querySelector('.uif-last-edited-badge')) {
-      const badge = document.createElement('span');
-      badge.className = 'uif-last-edited-badge';
-      badge.textContent = '剛剛編輯';
-      card.appendChild(badge);
-    }
 
     if (o.scroll !== false) {
       // 等版面穩定再捲，否則位置會算錯

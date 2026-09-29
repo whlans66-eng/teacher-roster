@@ -684,13 +684,18 @@ token=xxx&action=users_create&username=kim.lin&password=Passw0rd123&role=teacher
 | `UIFeedback.toast(msg, type)` | `success` / `error` / `info` 提示 |
 | `UIFeedback.status.saving/saved/failed/hide` | 背景（防抖）儲存的狀態膠囊；`failed` 不會自動消失，可帶重試 callback |
 | `UIFeedback.markLastEdited(scope, id, label)` | 編輯完成時記下這一筆（存 sessionStorage，1 小時後過期） |
-| `UIFeedback.highlightLastEdited(scope, opts)` | 清單渲染後標出該筆：藍框＋「剛剛編輯」徽章＋捲到該筆，並在清單頂端插入提示列 |
+| `UIFeedback.highlightLastEdited(scope, opts)` | 清單渲染後標出該筆：貼合圓角的藍色外框＋捲到該筆，並在清單頂端插入提示列 |
 
 `submit` 的 `opts`：`button`、`pending`、`sub`、`success`（傳 `null` 表示自行決定訊息）、
 `error`（錯誤訊息前綴）、`block`（是否蓋遮罩，預設 true）。
 
 `highlightLastEdited` 的 `opts`：`selector`、`idAttr`（dataset key）、`container`（提示列容器）、
 `scroll`、`noun`。
+
+**標記樣式**：用 `box-shadow` 畫外框而不是 `outline`，才會貼合卡片既有的圓角。
+不放角落徽章 —— 卡片四角通常已有分類標籤會互相打架，且部分卡片是
+`overflow:hidden`，貼邊的徽章會被切掉。提示列沿用頁面既有的白卡樣式，
+不要用漸層或強色塊，否則看起來像外來元件。
 
 **注意**：選擇器要挑兩種渲染模式都有的屬性。例如師資卡在編輯模式與呈現模式的
 class 不同，只有 `data-teacher-id` 兩邊都在，所以用 `#teacherGrid [data-teacher-id]`
