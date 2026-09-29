@@ -4041,15 +4041,19 @@
   // 儲存派課數據到後端
   async function saveCourseToBackend() {
     if (!api || !syncManager) return;
+    UIFeedback.status.saving('同步派課資料…');
     try {
       const result = await syncManager.saveTable('courseAssignments');
       if (result && result.conflict) {
         console.warn('[Warning] 派課數據衝突:', result);
+        UIFeedback.status.hide();
         showConflictAlert('courseAssignments', result);
+        return;
       }
-      // 派課數據已同步到後端
+      UIFeedback.status.saved('派課資料已同步');
     } catch (error) {
       console.warn('[Warning] 派課數據後端同步失敗:', error);
+      UIFeedback.status.failed('派課資料同步失敗', () => saveCourseToBackend());
     }
   }
 
@@ -4509,15 +4513,19 @@
   // 儲存海事課程數據到後端
   async function saveMaritimeCoursesToBackend() {
     if (!api || !syncManager) return;
+    UIFeedback.status.saving('同步課程資料…');
     try {
       const result = await syncManager.saveTable('maritimeCourses');
       if (result && result.conflict) {
         console.warn('[Warning] 海事課程數據衝突:', result);
+        UIFeedback.status.hide();
         showConflictAlert('maritimeCourses', result);
+        return;
       }
-      // 海事課程數據已同步到後端
+      UIFeedback.status.saved('課程資料已同步');
     } catch (error) {
       console.warn('[Warning] 海事課程數據後端同步失敗:', error);
+      UIFeedback.status.failed('課程資料同步失敗', () => saveMaritimeCoursesToBackend());
     }
   }
 
