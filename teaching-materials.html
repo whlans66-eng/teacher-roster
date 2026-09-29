@@ -121,6 +121,7 @@
     .role-admin   { background: #fde8e8; color: #c0392b; }
     .role-teacher { background: var(--apple-blue-light); color: #1e40af; }
     .role-crew    { background: #dcfce7; color: #166534; }
+    .role-guest   { background: #f2f2f7; color: #6e6e73; }
 
     /* ── Layout ── */
     .app-body {
@@ -862,6 +863,7 @@
   </div>
 
   <script src="js/security.js"></script>
+  <script src="js/auth.js"></script>
   <script>
     // ── Globals ──
     let currentUser = null;
@@ -886,26 +888,29 @@
 
     // ── Init ──
     document.addEventListener('DOMContentLoaded', () => {
-      initAuth();
+      if (!initAuth()) return;
       loadData();
       const p = new URLSearchParams(location.search);
       if (p.get('courseId')) setTimeout(() => selectCourse(p.get('courseId')), 150);
     });
 
     function initAuth() {
-      const raw = sessionStorage.getItem('authData') || localStorage.getItem('authData');
-      if (!raw) { location.href = 'login.html'; return; }
-      try { currentUser = JSON.parse(raw); } catch { location.href = 'login.html'; return; }
-      const role = currentUser.role || '';
+      // 角色定義統一交給 js/auth.js，避免這頁自己判斷而把 guest 標成「教師」
+      currentUser = protectPage();
+      if (!currentUser) return false;
+
+      const role = Auth.getRole();
       isAdmin = role === 'admin';
-      isCrew  = role === 'crew' || !!currentUser.isCrew;
-      const name = currentUser.displayName || currentUser.username || '使用者';
+      isCrew  = role === 'crew';
+
+      const name = Auth.displayName(currentUser);
       document.getElementById('userName').textContent = name;
       document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
+
       const pill = document.getElementById('rolePill');
-      if (isAdmin)      { pill.textContent = 'Admin';  pill.className = 'role-pill role-admin'; }
-      else if (isCrew)  { pill.textContent = '船員';   pill.className = 'role-pill role-crew'; }
-      else              { pill.textContent = '教師';   pill.className = 'role-pill role-teacher'; }
+      pill.textContent = Auth.getRoleLabel(role);
+      pill.className = 'role-pill role-' + (role || 'guest');
+      return true;
     }
 
     function loadData() {

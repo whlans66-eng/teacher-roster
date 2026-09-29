@@ -12,8 +12,12 @@
   <!-- 字體樣式表 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
 
-  <!-- Phosphor Icons -->
+  <!-- Phosphor Icons：與其他頁面、shared/styleguide.html 一致用固定版本的 CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- 全站共用元件樣式 -->
+  <link rel="stylesheet" href="shared/ui.css">
 
   <style>
 
@@ -46,6 +50,15 @@
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 20px;
+    }
+
+    .top-bar {
+      max-width: 1200px;
+      margin: 0 auto 28px auto;
+      padding: 0 20px;
+      display: flex;
+      justify-content: flex-end;
+      min-height: 44px;
     }
 
     .grid-wrapper {
@@ -85,9 +98,10 @@
       padding: 40px 20px 60px 20px;
       align-items: stretch;
       justify-content: center;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      overflow-y: visible;
+      /* 卡片數量會隨角色變動（管理者多一張帳號管理），
+         固定 nowrap 會讓超出的卡片被裁掉且沒有捲動提示，改為換行 */
+      flex-wrap: wrap;
+      overflow: visible;
       scroll-behavior: smooth;
       margin: 0 auto;
       -webkit-overflow-scrolling: touch;
@@ -365,11 +379,37 @@
   <script src="js/security.js"></script>
   <script src="js/auth.js"></script>
   <script>
-    // Protect this page - all logged-in users can access
-    protectPage();
+    // 首頁開放給所有已登入的角色；各張卡片再依角色過濾
+    const authData = protectPage();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!authData) return;
+
+      // 右上角帳號入口（姓名、角色、帳號管理、登出）
+      Auth.mountAccountMenu('#accountMenuSlot');
+
+      // 只留下這個角色進得去的功能。
+      // 以前每張卡片都顯示，點下去才被擋、還會被強制登出。
+      document.querySelectorAll('.card[data-page]').forEach(card => {
+        if (!Auth.canAccess(card.dataset.page)) card.remove();
+      });
+
+      const grid = document.getElementById('cardGrid');
+      if (grid && !grid.querySelector('.card')) {
+        grid.innerHTML = `
+          <div style="padding:48px 24px;text-align:center;color:#6e6e73">
+            <p style="font-size:17px;font-weight:600;color:#1d1d1f;margin-bottom:6px">
+              目前沒有開放給您的功能
+            </p>
+            <p style="font-size:15px">請聯絡系統管理者開通權限</p>
+          </div>`;
+      }
+    });
   </script>
 
   <div class="container">
+    <div class="top-bar" id="accountMenuSlot"></div>
+
     <div class="content-wrapper">
       <div class="header">
         <h1>萬海智慧航安訓練管理系統</h1>
@@ -379,30 +419,36 @@
 
     <div class="grid-wrapper">
       <div class="grid" id="cardGrid">
-      <a href="teacher-management.html" class="card">
+      <a href="teacher-management.html" class="card" data-page="teacher-management.html">
         <span class="card-icon">🎓</span>
         <h2 class="card-title">師資管理</h2>
         <p class="card-description">管理教師資訊、統計分析</p>
       </a>
 
-      <a href="course-management.html" class="card">
+      <a href="course-management.html" class="card" data-page="course-management.html">
         <span class="card-icon">📋</span>
         <h2 class="card-title">訓練排程</h2>
         <p class="card-description">安排課程、行事曆</p>
       </a>
 
-      <a href="maritime-courses.html" class="card">
+      <a href="maritime-courses.html" class="card" data-page="maritime-courses.html">
         <span class="card-icon">⚓</span>
         <h2 class="card-title">智慧派課</h2>
         <p class="card-description">海事專業課程管理與分析</p>
       </a>
 
-      <a href="teaching-materials.html" class="card" id="teaching-materials-card">
+      <a href="teaching-materials.html" class="card" id="teaching-materials-card" data-page="teaching-materials.html">
         <span class="card-icon">
           <img src="teaching-materials-icon.png" alt="教材管理">
         </span>
         <h2 class="card-title">教材管理</h2>
         <p class="card-description">書籍、影片與數位資源</p>
+      </a>
+
+      <a href="admin.html" class="card" data-page="admin.html">
+        <span class="card-icon"><i class="ph ph-users-three"></i></span>
+        <h2 class="card-title">帳號管理</h2>
+        <p class="card-description">帳號、角色與權限設定</p>
       </a>
       </div>
     </div>

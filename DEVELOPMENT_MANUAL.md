@@ -632,6 +632,48 @@ FormData:
 }
 ```
 
+#### POST /exec (帳號管理)
+
+僅 `role === 'admin'` 的 Session 可呼叫；其餘一律回 `Forbidden`。
+所有回應都不含 `password` 與 `salt`。
+
+| action | 說明 | 必要參數 |
+|---|---|---|
+| `users_list` | 取得所有帳號 | `token` |
+| `users_create` | 新增帳號 | `token`, `username`, `password`, `role`, `full_name`(選填) |
+| `users_update` | 更新帳號 | `token`, `id` + 要異動的欄位 |
+| `users_delete` | 刪除帳號 | `token`, `id` |
+
+**角色**：`admin`、`teacher`、`crew`、`guest`（定義於 `USER_ROLES`，
+前端 `js/auth.js` 的 `ROLES` 必須一致）。
+
+**請求範例：**
+```javascript
+POST https://script.google.com/.../exec
+Content-Type: application/x-www-form-urlencoded
+
+token=xxx&action=users_create&username=kim.lin&password=Passw0rd123&role=teacher&full_name=林小明
+```
+
+**回應：**
+```json
+{
+  "ok": true,
+  "data": { "id": "6", "username": "kim.lin", "full_name": "林小明", "role": "teacher" }
+}
+```
+
+**內建防護：**
+
+- 帳號格式 `^[A-Za-z0-9._-]{3,32}$`，不分大小寫檢查重複
+- 密碼至少 8 碼，以 `salt + SHA-256` 儲存，絕不存明文
+- 不可刪除自己的帳號
+- 不可刪除或降級最後一位 `admin`
+- 變更角色／帳號／密碼會寫入 `revoke_<username>` 撤銷記錄，
+  該帳號在此之前建立的 Session 會在下一次請求時失效（見 `_getSession`）
+- 欄位位置一律透過 `_headerIndex` 取得，不假設 Sheet 欄位順序與
+  `SHEETS_CONFIG.users.header` 相同
+
 ### 5.5 後端開發最佳實踐
 
 #### 1. Token 驗證

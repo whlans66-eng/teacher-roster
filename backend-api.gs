@@ -23,6 +23,11 @@ const ALLOWED_UPLOAD_TYPES = [
 ];
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
 
+// 系統角色（單一來源；前端 js/auth.js 的 ROLES 必須與此一致）
+const USER_ROLES = ['admin', 'teacher', 'crew', 'guest'];
+const USERNAME_PATTERN = /^[A-Za-z0-9._-]{3,32}$/;
+const MIN_PASSWORD_LENGTH = 8;
+
 const SHEETS_CONFIG = {
   users: {
     name: 'users',
@@ -94,6 +99,14 @@ function _getSession(token) {
   if (!data) return null;
   try {
     const session = JSON.parse(data);
+
+    // 帳號被改角色/改密碼/刪除後，撤銷時間點之前建立的 Session 一律失效
+    const revokedAt = cache.get('revoke_' + String(session.username || '').toLowerCase());
+    if (revokedAt && session.createdAt && new Date(session.createdAt) < new Date(revokedAt)) {
+      cache.remove('sess_' + token);
+      return null;
+    }
+
     // 每次存取刷新 TTL
     cache.put('sess_' + token, data, SESSION_TTL);
     return session;
@@ -112,6 +125,219 @@ function _requireRole(session, allowedRoles) {
   if (!allowedRoles.includes(session.role)) {
     throw new Error('Forbidden');
   }
+}
+
+// ==================== 帳號管理 ====================
+
+/**
+ * 讓某個帳號既有的 Session 立即失效
+ * 只記錄撤銷時間點，由 _getSession 比對 session.createdAt
+ */
+function _revokeUserSessions(username) {
+  if (!username) return;
+  CacheService.getScriptCache()
+    .put('revoke_' + String(username).toLowerCase(), new Date().toISOString(), SESSION_TTL);
+}
+
+/**
+ * users sheet 的欄位對照
+ * 一律透過 _headerIndex 取實際欄位位置，不假設欄位順序與 SHEETS_CONFIG 相同
+ */
+function _usersContext() {
+  const header = SHEETS_CONFIG.users.header;
+  const sheet = _getOrCreateSheet('users', header);
+  return { sheet: sheet, idx: _headerIndex(sheet, header), header: header };
+}
+
+/**
+ * 讀取所有帳號（含 password/salt，僅供內部比對使用）
+ */
+function _readUsersRaw(ctx) {
+  const lastRow = ctx.sheet.getLastRow();
+  if (lastRow < 2) return [];
+  const values = ctx.sheet.getRange(2, 1, lastRow - 1, ctx.idx._len).getValues();
+  return values
+    .map((row, i) => {
+      const obj = { _row: i + 2 };
+      ctx.header.forEach(key => { obj[key] = row[ctx.idx[key]]; });
+      return obj;
+    })
+    .filter(u => String(u.username || '').trim() !== '');
+}
+
+/**
+ * 對外輸出的帳號欄位（永遠不含 password / salt）
+ */
+function _publicUser(u) {
+  return {
+    id: String(u.id || ''),
+    username: String(u.username || '').trim(),
+    full_name: String(u.full_name || '').trim(),
+    role: String(u.role || '').trim()
+  };
+}
+
+function _normalizeUserRole(role) {
+  const r = String(role || '').trim();
+  return USER_ROLES.indexOf(r) >= 0 ? r : null;
+}
+
+function _assertValidUsername(username, users, excludeId) {
+  const name = String(username || '').trim();
+  if (!USERNAME_PATTERN.test(name)) {
+    throw new Error('帳號需為 3-32 個字元，僅能使用英文、數字與 . _ -');
+  }
+  const duplicated = users.some(u =>
+    String(u.username || '').trim().toLowerCase() === name.toLowerCase() &&
+    String(u.id) !== String(excludeId)
+  );
+  if (duplicated) throw new Error('帳號已存在：' + name);
+  return name;
+}
+
+function _assertValidPassword(password) {
+  const pwd = String(password || '');
+  if (pwd.length < MIN_PASSWORD_LENGTH) {
+    throw new Error('密碼至少需 ' + MIN_PASSWORD_LENGTH + ' 個字元');
+  }
+  return pwd;
+}
+
+/**
+ * 排除指定 id 後，還剩幾位管理者
+ */
+function _countOtherAdmins(users, excludeId) {
+  return users.filter(u =>
+    String(u.role || '').trim() === 'admin' &&
+    String(u.id) !== String(excludeId)
+  ).length;
+}
+
+function _nextUserId(users) {
+  const max = users.reduce((acc, u) => {
+    const n = parseInt(String(u.id || '0'), 10);
+    return isNaN(n) ? acc : Math.max(acc, n);
+  }, 0);
+  return String(max + 1);
+}
+
+/**
+ * 帳號管理動作（呼叫端已確認 session.role === 'admin'）
+ */
+function _handleUsersAction(action, p, bodyObj, session) {
+  const pick = key => {
+    if (p[key] !== undefined && p[key] !== '') return p[key];
+    return (bodyObj && bodyObj[key] !== undefined) ? bodyObj[key] : '';
+  };
+
+  const ctx = _usersContext();
+  const users = _readUsersRaw(ctx);
+
+  if (action === 'users_list') {
+    return _json({ ok: true, data: users.map(_publicUser), roles: USER_ROLES });
+  }
+
+  if (action === 'users_create') {
+    const username = _assertValidUsername(pick('username'), users, null);
+    const password = _assertValidPassword(pick('password'));
+    const role = _normalizeUserRole(pick('role'));
+    if (!role) throw new Error('無效的角色');
+
+    const salt = _generateSalt();
+    const id = _nextUserId(users);
+    const fullName = String(pick('full_name') || username).trim();
+
+    const row = new Array(ctx.idx._len).fill('');
+    row[ctx.idx['id']]        = id;
+    row[ctx.idx['username']]  = _sanitizeSheetValue(username);
+    row[ctx.idx['password']]  = _hashPassword(password, salt);
+    row[ctx.idx['full_name']] = _sanitizeSheetValue(fullName);
+    row[ctx.idx['role']]      = role;
+    row[ctx.idx['salt']]      = salt;
+    ctx.sheet.appendRow(row);
+
+    Logger.log(session.username + ' 新增帳號: ' + username + ' (' + role + ')');
+    return _json({ ok: true, data: { id: id, username: username, full_name: fullName, role: role } });
+  }
+
+  if (action === 'users_update') {
+    const id = String(pick('id') || '');
+    const target = users.filter(u => String(u.id) === id)[0];
+    if (!target) throw new Error('找不到該帳號');
+
+    const updates = {};
+
+    const rawUsername = String(pick('username') || '').trim();
+    if (rawUsername && rawUsername !== String(target.username).trim()) {
+      updates.username = _assertValidUsername(rawUsername, users, id);
+    }
+
+    const rawFullName = String(pick('full_name') || '').trim();
+    if (rawFullName && rawFullName !== String(target.full_name).trim()) {
+      updates.full_name = rawFullName;
+    }
+
+    const rawRole = String(pick('role') || '').trim();
+    if (rawRole && rawRole !== String(target.role).trim()) {
+      const role = _normalizeUserRole(rawRole);
+      if (!role) throw new Error('無效的角色');
+      if (String(target.role).trim() === 'admin' && _countOtherAdmins(users, id) === 0) {
+        throw new Error('至少需保留一位管理者，無法變更此帳號的角色');
+      }
+      updates.role = role;
+    }
+
+    const rawPassword = String(pick('password') || '');
+    if (rawPassword) {
+      const password = _assertValidPassword(rawPassword);
+      const salt = _generateSalt();
+      updates.salt = salt;
+      updates.password = _hashPassword(password, salt);
+    }
+
+    const keys = Object.keys(updates);
+    if (keys.length === 0) throw new Error('沒有需要更新的欄位');
+
+    keys.forEach(key => {
+      const raw = updates[key];
+      // password/salt 是系統產生的雜湊值，不做 sheet 字元轉義
+      const value = (key === 'password' || key === 'salt') ? raw : _sanitizeSheetValue(String(raw));
+      ctx.sheet.getRange(target._row, ctx.idx[key] + 1).setValue(value);
+    });
+
+    // 角色、帳號或密碼異動 → 該帳號既有 Session 立即失效，避免沿用舊權限
+    if (updates.role || updates.username || updates.password) {
+      _revokeUserSessions(target.username);
+      if (updates.username) _revokeUserSessions(updates.username);
+    }
+
+    Logger.log(session.username + ' 更新帳號 ' + target.username + ': ' + keys.join(', '));
+    const merged = {};
+    Object.keys(target).forEach(k => { merged[k] = target[k]; });
+    keys.forEach(k => { merged[k] = updates[k]; });
+    return _json({ ok: true, data: _publicUser(merged) });
+  }
+
+  if (action === 'users_delete') {
+    const id = String(pick('id') || '');
+    const target = users.filter(u => String(u.id) === id)[0];
+    if (!target) throw new Error('找不到該帳號');
+
+    if (String(target.username).trim().toLowerCase() === String(session.username).trim().toLowerCase()) {
+      throw new Error('不能刪除自己的帳號');
+    }
+    if (String(target.role).trim() === 'admin' && _countOtherAdmins(users, id) === 0) {
+      throw new Error('至少需保留一位管理者，無法刪除此帳號');
+    }
+
+    ctx.sheet.deleteRow(target._row);
+    _revokeUserSessions(target.username);
+
+    Logger.log(session.username + ' 刪除帳號: ' + target.username);
+    return _json({ ok: true });
+  }
+
+  return _json({ ok: false, error: 'Unknown action' });
 }
 
 // ==================== 速率限制 ====================
@@ -280,6 +506,20 @@ function doPost(e) {
 
     // ===== 其他 POST 請求需要 Session =====
     const session = _requireSession(p.token);
+
+    // ===== 帳號管理（僅管理者）=====
+    if (action.indexOf('users_') === 0) {
+      _requireRole(session, ['admin']);
+      try {
+        return _handleUsersAction(action, p, bodyObj, session);
+      } catch (userErr) {
+        const userMsg = String(userErr.message || userErr);
+        if (userMsg === 'Unauthorized' || userMsg === 'Forbidden') throw userErr;
+        // 帳號管理的驗證訊息要回給管理者，不能被外層的通用錯誤訊息蓋掉
+        Logger.log('users action error: ' + userMsg);
+        return _json({ ok: false, error: userMsg });
+      }
+    }
 
     // Save (整表寫入)
     if (action === 'save') {

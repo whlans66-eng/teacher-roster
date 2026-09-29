@@ -225,6 +225,55 @@ class TeacherRosterAPI {
     }
   }
 
+  // ==================== 帳號管理（僅管理者）====================
+
+  /**
+   * 取得所有帳號（不含密碼）
+   * @returns {Array<{id, username, full_name, role}>}
+   */
+  async listUsers() {
+    const response = await this._post({ action: 'users_list' });
+    return response.data || [];
+  }
+
+  /**
+   * 新增帳號
+   * @param {{username: string, password: string, role: string, full_name?: string}} user
+   */
+  async createUser(user) {
+    const response = await this._post({
+      action: 'users_create',
+      username: user.username,
+      password: user.password,
+      role: user.role,
+      full_name: user.full_name || ''
+    });
+    return response.data;
+  }
+
+  /**
+   * 更新帳號；只傳有異動的欄位，password 留空表示不改密碼
+   * @param {string} id
+   * @param {{username?: string, full_name?: string, role?: string, password?: string}} changes
+   */
+  async updateUser(id, changes) {
+    const payload = { action: 'users_update', id: id };
+    ['username', 'full_name', 'role', 'password'].forEach(key => {
+      if (changes[key]) payload[key] = changes[key];
+    });
+    const response = await this._post(payload);
+    return response.data;
+  }
+
+  /**
+   * 刪除帳號
+   * @param {string} id
+   */
+  async deleteUser(id) {
+    await this._post({ action: 'users_delete', id: id });
+    return true;
+  }
+
   /**
    * GET 請求
    */
