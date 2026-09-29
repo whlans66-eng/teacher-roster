@@ -674,6 +674,28 @@ token=xxx&action=users_create&username=kim.lin&password=Passw0rd123&role=teacher
 - 欄位位置一律透過 `_headerIndex` 取得，不假設 Sheet 欄位順序與
   `SHEETS_CONFIG.users.header` 相同
 
+### 5.4.1 前端操作回饋（js/ui-feedback.js）
+
+送出資料與「上次改到哪」的共用層，避免每頁各寫一套。
+
+| API | 用途 |
+|---|---|
+| `UIFeedback.submit(task, opts)` | 包住一次送出：蓋上「處理中」遮罩、按鈕轉圈停用，**只有 task 真的成功才顯示成功訊息**，失敗時丟出原錯誤 |
+| `UIFeedback.toast(msg, type)` | `success` / `error` / `info` 提示 |
+| `UIFeedback.status.saving/saved/failed/hide` | 背景（防抖）儲存的狀態膠囊；`failed` 不會自動消失，可帶重試 callback |
+| `UIFeedback.markLastEdited(scope, id, label)` | 編輯完成時記下這一筆（存 sessionStorage，1 小時後過期） |
+| `UIFeedback.highlightLastEdited(scope, opts)` | 清單渲染後標出該筆：藍框＋「剛剛編輯」徽章＋捲到該筆，並在清單頂端插入提示列 |
+
+`submit` 的 `opts`：`button`、`pending`、`sub`、`success`（傳 `null` 表示自行決定訊息）、
+`error`（錯誤訊息前綴）、`block`（是否蓋遮罩，預設 true）。
+
+`highlightLastEdited` 的 `opts`：`selector`、`idAttr`（dataset key）、`container`（提示列容器）、
+`scroll`、`noun`。
+
+**注意**：選擇器要挑兩種渲染模式都有的屬性。例如師資卡在編輯模式與呈現模式的
+class 不同，只有 `data-teacher-id` 兩邊都在，所以用 `#teacherGrid [data-teacher-id]`
+而不是 `.teacher-card-wrapper`。
+
 ### 5.5 後端開發最佳實踐
 
 #### 1. Token 驗證

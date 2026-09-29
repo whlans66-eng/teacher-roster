@@ -312,6 +312,7 @@
 <body class="min-h-screen">
   <!-- Authentication -->
   <script src="js/auth.js"></script>
+  <script src="js/ui-feedback.js"></script>
   <script>
     // Allow admin (full access) and teacher (read-only preview)
     const _authData = protectPage(['admin', 'teacher']);
@@ -1138,7 +1139,7 @@
             <button type="button" onclick="deleteTeacher()" id="deleteBtn" class="btn btn-danger hidden">刪除師資</button>
             <div class="flex space-x-4 ml-auto">
               <button type="button" onclick="backToList()" class="btn btn-ghost">取消</button>
-              <button type="submit" class="btn btn-primary">儲存</button>
+              <button type="submit" id="saveTeacherBtn" class="btn btn-primary">儲存</button>
             </div>
           </div>
         </form>
@@ -1633,26 +1634,52 @@
       if(syncTimer) clearTimeout(syncTimer);
       syncTimer = setTimeout(doCloudSave, SYNC_DEBOUNCE_MS);
     }
-    async function doCloudSave(){
+    async function doCloudSave({ rethrow = false } = {}){
       if(syncing){ syncAgain=true; return; }
       syncing = true;
+      // 背景自動存檔也要看得到狀態，之前成功失敗都沒有任何提示
+      if(!rethrow) UIFeedback.status.saving('同步師資資料…');
       try{
         if (syncManager) {
           const result = await syncManager.saveTable('teachers');
           if (result && result.conflict) {
             console.warn('[Warning] 師資資料衝突:', result);
             showConflictAlert('teachers', result);
+            if(!rethrow) UIFeedback.status.hide();
+            return { conflict: true };
           }
         } else {
           await api.save('teachers', teachers);
         }
-        // 師資資料已同步到雲端
+        if(!rethrow) UIFeedback.status.saved('師資資料已同步');
+        return { conflict: false };
       }catch(e){
-        console.warn('雲端靜默上傳失敗：', e);
+        console.warn('雲端上傳失敗：', e);
+        // 靜默失敗是最危險的：使用者會以為已經存好了
+        if(!rethrow){
+          UIFeedback.status.failed('師資資料同步失敗', () => { doCloudSave(); });
+        }
+        if(rethrow) throw e;
       }finally{
         syncing=false;
         if(syncAgain){ syncAgain=false; scheduleCloudSave(); }
       }
+    }
+
+    /**
+     * 立刻把待同步的資料送出並等它完成（失敗會往外丟）
+     * 使用者按下「儲存」是明確動作，就該明確等到結果再離開表單
+     */
+    async function flushCloudSave(){
+      if(!api) return { conflict: false };
+      if(syncTimer){ clearTimeout(syncTimer); syncTimer = null; }
+      // 等進行中的那次結束，避免兩個請求互相覆蓋
+      let waited = 0;
+      while(syncing && waited < 30000){
+        await new Promise(r => setTimeout(r, 100));
+        waited += 100;
+      }
+      return doCloudSave({ rethrow: true });
     }
 
     async function cloudLoadSilent(){
@@ -1942,6 +1969,15 @@
             </div>`;
         }
         grid.appendChild(card);
+      });
+
+      // 逐筆修改時標出上次改到哪，避免在一長串卡片裡迷失進度
+      UIFeedback.highlightLastEdited('teachers', {
+        // 編輯模式與呈現模式的卡片 class 不同，只有 data-teacher-id 兩邊都有
+        selector: '#teacherGrid [data-teacher-id]',
+        idAttr: 'teacherId',
+        container: grid,
+        noun: '師資'
       });
     }
 
@@ -2536,18 +2572,48 @@
       }
       teachers = normalize(teachers);
       saveLocalSilently();
-      scheduleCloudSave();
-      backToList();
+
+      // 按下儲存是明確動作：等雲端真的存完再回清單，
+      // 中間蓋上「儲存中」遮罩，不讓人誤以為已經完成。
+      UIFeedback.submit(() => flushCloudSave(), {
+        button: document.getElementById('saveTeacherBtn'),
+        pending: '儲存師資資料中…',
+        sub: '正在同步到雲端，請稍候',
+        success: `已儲存「${name}」`,
+        error: '雲端儲存失敗（資料已暫存本機）'
+      }).then(() => {
+        UIFeedback.markLastEdited('teachers', teacherData.id, name);
+        backToList();
+      }).catch(err => {
+        // 失敗就留在表單上，讓使用者可以直接再存一次
+        console.error('儲存師資失敗:', err);
+      });
     });
 
     function deleteTeacher(){
       if(!currentTeacherId) return;
-      if(confirm('確定要刪除這位師資嗎？此操作無法復原。')){
-        teachers = teachers.filter(t=>t.id!==currentTeacherId);
-        saveLocalSilently();
-        scheduleCloudSave();
+      if(!confirm('確定要刪除這位師資嗎？此操作無法復原。')) return;
+
+      const backup = teachers.slice();
+      const removed = teachers.find(t => t.id === currentTeacherId);
+      teachers = teachers.filter(t=>t.id!==currentTeacherId);
+      saveLocalSilently();
+
+      UIFeedback.submit(() => flushCloudSave(), {
+        pending: '刪除師資中…',
+        sub: '正在同步到雲端，請稍候',
+        success: `已刪除「${removed ? removed.name : '該師資'}」`,
+        error: '刪除失敗'
+      }).then(() => {
+        UIFeedback.clearLastEdited('teachers');
         backToList();
-      }
+      }).catch(err => {
+        // 沒刪成功就把資料放回來，畫面不能顯示成已刪除
+        teachers = backup;
+        saveLocalSilently();
+        renderTeacherGrid();
+        console.error('刪除師資失敗:', err);
+      });
     }
 
     function copyTeacher(teacherId){
