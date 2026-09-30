@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>帳號管理 - WHL MARITRAIN</title>
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="shared/ui.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      background: #f5f5f7;
+      color: var(--ui-text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      background: rgba(255, 255, 255, 0.82);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .page-header-inner {
+      max-width: 1080px; margin: 0 auto; padding: 14px 24px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .back-link {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--ui-fill); color: var(--ui-text);
+      text-decoration: none; font-size: 18px; flex-shrink: 0;
+      transition: background 0.2s ease;
+    }
+    .back-link:hover { background: var(--ui-fill-hover); }
+    .page-title { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+    .page-title small {
+      display: block; font-size: 12px; font-weight: 500;
+      color: var(--ui-text-secondary); letter-spacing: 0;
+    }
+    .header-spacer { margin-left: auto; }
+
+    /* ── Layout ── */
+    .container { max-width: 1080px; margin: 0 auto; padding: 28px 24px 72px; }
+
+    .toolbar {
+      display: flex; align-items: center; gap: 10px;
+      flex-wrap: wrap; margin-bottom: 18px;
+    }
+    .search-box { position: relative; flex: 1; min-width: 200px; }
+    .search-box i {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--ui-text-secondary); font-size: 17px; pointer-events: none;
+    }
+    .search-box input {
+      width: 100%; padding: 10px 14px 10px 40px;
+      border: 1px solid var(--ui-border); border-radius: var(--ui-radius-btn);
+      background: var(--ui-surface); font-family: inherit; font-size: 15px;
+      color: var(--ui-text); outline: none; transition: border-color 0.2s ease;
+    }
+    .search-box input:focus { border-color: var(--ui-primary); }
+    .filter-select {
+      padding: 10px 14px; border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-btn); background: var(--ui-surface);
+      font-family: inherit; font-size: 15px; color: var(--ui-text);
+      outline: none; cursor: pointer;
+    }
+
+    /* ── Table card ── */
+    .card {
+      background: var(--ui-surface); border-radius: var(--ui-radius-card);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 13px 20px; text-align: left; font-size: 12px; font-weight: 600;
+      color: var(--ui-text-secondary); text-transform: uppercase; letter-spacing: 0.04em;
+      background: #fafafa; border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 14px 20px; font-size: 15px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05); vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #fbfbfd; }
+
+    .user-cell { display: flex; align-items: center; gap: 12px; }
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 14px; font-weight: 700;
+    }
+    .user-name { font-weight: 600; }
+    .user-account { font-size: 13px; color: var(--ui-text-secondary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    .role-pill {
+      display: inline-block; padding: 3px 11px; border-radius: var(--ui-radius-pill);
+      font-size: 12px; font-weight: 700; white-space: nowrap;
+    }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12.5px; font-weight: 600; color: var(--ui-text-secondary);
+    }
+    .status-pill::before {
+      content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--ui-success);
+    }
+    .status-pill.disabled { color: var(--ui-danger); }
+    .status-pill.disabled::before { background: var(--ui-danger); }
+    tr.row-disabled .user-name, tr.row-disabled .user-account { opacity: 0.5; }
+    .meta-line { font-size: 12px; color: var(--ui-text-secondary); margin-top: 3px; }
+
+    /* 稽核紀錄 */
+    .audit-card { margin-top: 20px; }
+    .audit-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .audit-head h3 { font-size: 15px; font-weight: 600; }
+    .audit-head p { font-size: 12.5px; color: var(--ui-text-secondary); margin-top: 2px; }
+    .audit-list { max-height: 340px; overflow-y: auto; }
+    .audit-row {
+      display: flex; gap: 12px; padding: 11px 20px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04); font-size: 13.5px;
+    }
+    .audit-row:last-child { border-bottom: none; }
+    .audit-time { color: var(--ui-text-secondary); white-space: nowrap; font-size: 12.5px; min-width: 132px; }
+    .audit-action {
+      font-weight: 600; white-space: nowrap; min-width: 82px;
+    }
+    .audit-detail { color: var(--ui-text-secondary); }
+
+    .self-tag {
+      margin-left: 6px; padding: 2px 8px; border-radius: var(--ui-radius-pill);
+      background: var(--ui-fill); color: var(--ui-text-secondary);
+      font-size: 11px; font-weight: 600;
+    }
+    .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+    td.actions-col { text-align: right; white-space: nowrap; }
+
+    /* ── States ── */
+    .state {
+      padding: 64px 24px; text-align: center; color: var(--ui-text-secondary);
+    }
+    .state i { font-size: 44px; opacity: 0.35; display: block; margin-bottom: 14px; }
+    .state h3 { font-size: 16px; font-weight: 600; color: var(--ui-text); margin-bottom: 6px; }
+    .state p { font-size: 14px; }
+    .state .btn { margin-top: 18px; }
+
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.7s linear infinite; display: inline-block;
+    }
+    .spinner-dark {
+      width: 26px; height: 26px; border: 3px solid rgba(0, 0, 0, 0.12);
+      border-top-color: var(--ui-primary); border-radius: 50%;
+      animation: spin 0.7s linear infinite; display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0, 0, 0, 0.42);
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+      opacity: 0; visibility: hidden; transition: opacity 0.22s ease, visibility 0.22s;
+    }
+    .modal-backdrop.show { opacity: 1; visibility: visible; }
+    .modal {
+      background: var(--ui-surface); border-radius: var(--ui-radius-card);
+      width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.26);
+      transform: translateY(14px); transition: transform 0.22s ease;
+    }
+    .modal-backdrop.show .modal { transform: translateY(0); }
+    .modal-head {
+      padding: 22px 24px 0; display: flex; align-items: flex-start; gap: 12px;
+    }
+    .modal-head h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+    .modal-head p { margin-top: 4px; font-size: 13px; color: var(--ui-text-secondary); }
+    .modal-close {
+      margin-left: auto; width: 30px; height: 30px; border: none; border-radius: 50%;
+      background: var(--ui-fill); color: var(--ui-text-secondary);
+      font-size: 16px; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { background: var(--ui-fill-hover); }
+    .modal-body { padding: 20px 24px 4px; }
+    .modal-foot {
+      padding: 16px 24px 22px; display: flex; gap: 10px; justify-content: flex-end;
+    }
+
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block; margin-bottom: 6px;
+      font-size: 13px; font-weight: 600; color: var(--ui-text);
+    }
+    .field input, .field select {
+      width: 100%; padding: 11px 14px;
+      border: 1px solid var(--ui-border); border-radius: var(--ui-radius-btn);
+      background: var(--ui-surface); font-family: inherit; font-size: 15px;
+      color: var(--ui-text); outline: none; transition: border-color 0.2s ease;
+    }
+    .field input:focus, .field select:focus { border-color: var(--ui-primary); }
+    .field .hint { margin-top: 6px; font-size: 12px; color: var(--ui-text-secondary); }
+    .field-error {
+      display: none; margin-top: 6px; font-size: 12.5px; color: var(--ui-danger);
+    }
+    .field.invalid input, .field.invalid select { border-color: var(--ui-danger); }
+    .field.invalid .field-error { display: block; }
+
+    .form-error {
+      display: none; margin-bottom: 14px; padding: 11px 14px;
+      border-radius: var(--ui-radius-btn);
+      background: var(--ui-danger-bg); color: #c81e14;
+      font-size: 13.5px; line-height: 1.5;
+    }
+    .form-error.show { display: block; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translate(-50%, 16px);
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 20px; border-radius: 14px;
+      background: rgba(28, 28, 30, 0.94);
+      -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+      color: #fff; font-size: 14.5px; font-weight: 500;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+      opacity: 0; visibility: hidden; z-index: 2000;
+      transition: opacity 0.24s ease, transform 0.24s ease, visibility 0.24s;
+    }
+    .toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+    .toast i { font-size: 19px; }
+    .toast.success i { color: #30d158; }
+    .toast.error i { color: #ff453a; }
+
+    @media (max-width: 720px) {
+      .hide-sm { display: none; }
+      .container { padding: 20px 16px 56px; }
+      tbody td, thead th { padding: 12px 14px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="page-header-inner">
+      <a href="index.html" class="back-link" title="回到首頁"><i class="ph ph-arrow-left"></i></a>
+      <div class="page-title">
+        帳號管理
+        <small>建立帳號、指派角色與重設密碼</small>
+      </div>
+      <div class="header-spacer" id="accountMenuSlot"></div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="toolbar">
+      <div class="search-box">
+        <i class="ph ph-magnifying-glass"></i>
+        <input type="search" id="searchInput" placeholder="搜尋姓名或帳號" autocomplete="off">
+      </div>
+      <select class="filter-select" id="roleFilter">
+        <option value="">所有角色</option>
+      </select>
+      <button type="button" class="btn btn-primary" id="addUserBtn">
+        <i class="ph ph-plus"></i> 新增帳號
+      </button>
+    </div>
+
+    <div class="card" id="listCard">
+      <div class="state" id="loadingState">
+        <span class="spinner-dark"></span>
+        <p style="margin-top:14px">讀取帳號資料中…</p>
+      </div>
+    </div>
+
+    <div class="card audit-card">
+      <div class="audit-head">
+        <div>
+          <h3>帳號操作紀錄</h3>
+          <p>誰在什麼時候對哪個帳號做了什麼</p>
+        </div>
+        <button type="button" class="btn btn-plain btn-sm" id="reloadAuditBtn">
+          <i class="ph ph-arrow-clockwise"></i> 重新整理
+        </button>
+      </div>
+      <div class="audit-list" id="auditList">
+        <div class="state" style="padding:32px 24px"><span class="spinner-dark"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增／編輯帳號 -->
+  <div class="modal-backdrop" id="userModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="modalTitle">新增帳號</h2>
+          <p id="modalSubtitle">建立一組新的登入帳號</p>
+        </div>
+        <button type="button" class="modal-close" id="modalCloseBtn" aria-label="關閉">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+      <form id="userForm" novalidate>
+        <div class="modal-body">
+          <div class="form-error" id="formError"></div>
+
+          <div class="field" id="field-username">
+            <label for="usernameInput">登入帳號</label>
+            <input type="text" id="usernameInput" autocomplete="off" spellcheck="false" placeholder="例如 kim.lin">
+            <div class="hint">3-32 個字元，僅能使用英文、數字與 . _ -</div>
+            <div class="field-error"></div>
+          </div>
+
+          <div class="field" id="field-fullname">
+            <label for="fullNameInput">顯示名稱</label>
+            <input type="text" id="fullNameInput" autocomplete="off" placeholder="例如 林小明">
+            <div class="field-error"></div>
+          </div>
+
+          <div class="field" id="field-role">
+            <label for="roleInput">角色</label>
+            <select id="roleInput"></select>
+            <div class="hint" id="roleHint"></div>
+            <div class="field-error"></div>
+          </div>
+
+          <div class="field" id="field-password">
+            <label for="passwordInput">密碼</label>
+            <input type="password" id="passwordInput" autocomplete="new-password" placeholder="至少 10 個字元">
+            <div class="hint" id="passwordHint">至少 10 個字元，不可包含帳號名稱或過於常見</div>
+            <div class="field-error"></div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-secondary" id="cancelBtn">取消</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">儲存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 刪除確認 -->
+  <div class="modal-backdrop" id="deleteModal">
+    <div class="modal" style="max-width:400px" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <div>
+          <h2>刪除帳號</h2>
+          <p id="deleteSubtitle">此動作無法復原</p>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="form-error" id="deleteError"></div>
+        <p style="font-size:15px;line-height:1.6;color:var(--ui-text-secondary)">
+          確定要刪除 <strong id="deleteTargetName" style="color:var(--ui-text)"></strong> 嗎？
+          該帳號目前登入中的連線會立即失效。
+        </p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-secondary" id="deleteCancelBtn">取消</button>
+        <button type="button" class="btn btn-danger" id="deleteConfirmBtn">刪除</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <i class="ph ph-check-circle" id="toastIcon"></i>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script src="js/security.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // 只有管理者能進這頁；js/auth.js 會依 PAGE_ACCESS['admin.html'] 擋下其他角色
+    const authData = protectPage(['admin']);
+
+    const ROLE_HINTS = {
+      admin:   '可使用所有功能，並管理帳號與權限',
+      teacher: '可使用師資管理、訓練排程、智慧派課與教材',
+      crew:    '僅能使用船員入口與教材瀏覽',
+      guest:   '僅能瀏覽教材，無編輯權限'
+    };
+
+    let allUsers = [];
+    let editingUser = null;   // null = 新增模式
+    let deletingUser = null;
+    let submitting = false;
+
+    const $ = id => document.getElementById(id);
+    const h = str => String(str == null ? '' : str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    // ── Toast ──
+    let toastTimer = null;
+    function showToast(msg, type = 'success') {
+      const el = $('toast');
+      $('toastMsg').textContent = msg;
+      $('toastIcon').className = type === 'error'
+        ? 'ph ph-warning-circle'
+        : 'ph ph-check-circle';
+      el.className = 'toast show ' + type;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.className = 'toast ' + type; }, 2800);
+    }
+
+    // ── 角色選單 ──
+    function roleEntries() {
+      return Object.keys(Auth.ROLES).map(key => ({ key, label: Auth.ROLES[key].label }));
+    }
+
+    function buildRoleOptions() {
+      const filter = $('roleFilter');
+      const input = $('roleInput');
+      roleEntries().forEach(({ key, label }) => {
+        filter.insertAdjacentHTML('beforeend', `<option value="${key}">${h(label)}</option>`);
+        input.insertAdjacentHTML('beforeend', `<option value="${key}">${h(label)}</option>`);
+      });
+      input.addEventListener('change', updateRoleHint);
+    }
+
+    function updateRoleHint() {
+      $('roleHint').textContent = ROLE_HINTS[$('roleInput').value] || '';
+    }
+
+    // ── 載入清單 ──
+    async function loadUsers() {
+      $('listCard').innerHTML = `
+        <div class="state">
+          <span class="spinner-dark"></span>
+          <p style="margin-top:14px">讀取帳號資料中…</p>
+        </div>`;
+      try {
+        allUsers = await api.listUsers();
+        renderList();
+      } catch (error) {
+        $('listCard').innerHTML = `
+          <div class="state">
+            <i class="ph ph-warning-circle"></i>
+            <h3>讀取失敗</h3>
+            <p>${h(error.message || '無法取得帳號資料')}</p>
+            <button type="button" class="btn btn-secondary" id="retryBtn">
+              <i class="ph ph-arrow-clockwise"></i> 重新載入
+            </button>
+          </div>`;
+        $('retryBtn').addEventListener('click', loadUsers);
+      }
+    }
+
+    function visibleUsers() {
+      const keyword = $('searchInput').value.trim().toLowerCase();
+      const role = $('roleFilter').value;
+      return allUsers.filter(u => {
+        if (role && u.role !== role) return false;
+        if (!keyword) return true;
+        return (u.username || '').toLowerCase().includes(keyword)
+            || (u.full_name || '').toLowerCase().includes(keyword);
+      });
+    }
+
+    function renderList() {
+      const rows = visibleUsers();
+
+      if (!allUsers.length) {
+        $('listCard').innerHTML = `
+          <div class="state">
+            <i class="ph ph-users-three"></i>
+            <h3>還沒有任何帳號</h3>
+            <p>建立第一組帳號，指派角色後即可登入系統</p>
+          </div>`;
+        return;
+      }
+
+      if (!rows.length) {
+        $('listCard').innerHTML = `
+          <div class="state">
+            <i class="ph ph-magnifying-glass"></i>
+            <h3>找不到符合的帳號</h3>
+            <p>換個關鍵字或角色條件再試一次</p>
+          </div>`;
+        return;
+      }
+
+      const body = rows.map(u => {
+        const isSelf = u.username.toLowerCase() === String(authData.username).toLowerCase();
+        const disabled = u.status === 'disabled';
+        const color = disabled ? '#86868b' : Auth.getRoleColor(u.role);
+        const name = u.full_name || u.username;
+        const lastLogin = u.lastLoginAt
+          ? new Date(u.lastLoginAt).toLocaleString('zh-TW', { hour12: false })
+          : '從未登入';
+        return `
+          <tr class="${disabled ? 'row-disabled' : ''}">
+            <td>
+              <div class="user-cell">
+                <span class="user-avatar" style="background:${color}">${h(name.charAt(0).toUpperCase())}</span>
+                <div>
+                  <div class="user-name">${h(name)}${isSelf ? '<span class="self-tag">你自己</span>' : ''}${u.mustChangePassword ? '<span class="self-tag">待改密碼</span>' : ''}</div>
+                  <div class="user-account">${h(u.username)}</div>
+                  <div class="meta-line">最後登入：${h(lastLogin)}</div>
+                </div>
+              </div>
+            </td>
+            <td class="hide-sm">
+              <span class="role-pill" style="background:${color}1a;color:${color}">
+                ${h(Auth.getRoleLabel(u.role))}
+              </span>
+            </td>
+            <td class="hide-sm">
+              <span class="status-pill ${disabled ? 'disabled' : ''}">${disabled ? '已停用' : '啟用中'}</span>
+            </td>
+            <td class="actions-col">
+              <div class="row-actions">
+                <button type="button" class="btn btn-plain btn-sm" data-toggle="${h(u.id)}"
+                        title="${isSelf ? '不能停用自己的帳號' : (disabled ? '啟用' : '停用')}"
+                        ${isSelf ? 'disabled' : ''}>
+                  <i class="ph ${disabled ? 'ph-play-circle' : 'ph-pause-circle'}"></i>
+                </button>
+                <button type="button" class="btn btn-plain btn-sm" data-edit="${h(u.id)}" title="編輯">
+                  <i class="ph ph-pencil-simple"></i>
+                </button>
+                <button type="button" class="btn btn-plain btn-sm" data-delete="${h(u.id)}"
+                        title="${isSelf ? '不能刪除自己的帳號' : '刪除'}"
+                        style="color:var(--ui-danger)" ${isSelf ? 'disabled' : ''}>
+                  <i class="ph ph-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+
+      $('listCard').innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>使用者</th>
+              <th class="hide-sm">角色</th>
+              <th class="hide-sm">狀態</th>
+              <th style="text-align:right">操作</th>
+            </tr>
+          </thead>
+          <tbody>${body}</tbody>
+        </table>`;
+
+      $('listCard').querySelectorAll('[data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => openUserModal(findUser(btn.dataset.edit)));
+      });
+      $('listCard').querySelectorAll('[data-delete]').forEach(btn => {
+        btn.addEventListener('click', () => openDeleteModal(findUser(btn.dataset.delete)));
+      });
+      $('listCard').querySelectorAll('[data-toggle]').forEach(btn => {
+        btn.addEventListener('click', () => toggleStatus(findUser(btn.dataset.toggle), btn));
+      });
+    }
+
+    function findUser(id) {
+      return allUsers.filter(u => String(u.id) === String(id))[0] || null;
+    }
+
+    // ── 表單 ──
+    function clearFieldErrors() {
+      ['field-username', 'field-fullname', 'field-role', 'field-password'].forEach(id => {
+        const field = $(id);
+        field.classList.remove('invalid');
+        field.querySelector('.field-error').textContent = '';
+      });
+      $('formError').classList.remove('show');
+      $('formError').textContent = '';
+    }
+
+    function setFieldError(fieldId, message) {
+      const field = $(fieldId);
+      field.classList.add('invalid');
+      field.querySelector('.field-error').textContent = message;
+    }
+
+    function openUserModal(user) {
+      editingUser = user;
+      clearFieldErrors();
+
+      const creating = !user;
+      $('modalTitle').textContent = creating ? '新增帳號' : '編輯帳號';
+      $('modalSubtitle').textContent = creating
+        ? '建立一組新的登入帳號'
+        : `修改 ${user.full_name || user.username} 的資料`;
+
+      $('usernameInput').value = creating ? '' : user.username;
+      $('fullNameInput').value = creating ? '' : (user.full_name || '');
+      $('roleInput').value = creating ? 'teacher' : user.role;
+      $('passwordInput').value = '';
+      $('passwordInput').placeholder = creating ? '至少 10 個字元' : '留空表示不修改';
+      $('passwordHint').textContent = creating
+        ? '至少 10 個字元；建立後對方首次登入需自行更換'
+        : '留空表示不修改密碼。重設後對方下次登入需自行更換，且目前連線會失效。';
+      updateRoleHint();
+
+      $('userModal').classList.add('show');
+      setTimeout(() => $(creating ? 'usernameInput' : 'fullNameInput').focus(), 220);
+    }
+
+    function closeUserModal() {
+      if (submitting) return;
+      $('userModal').classList.remove('show');
+      editingUser = null;
+    }
+
+    function setSubmitting(on) {
+      submitting = on;
+      const btn = $('submitBtn');
+      btn.disabled = on;
+      $('cancelBtn').disabled = on;
+      $('modalCloseBtn').disabled = on;
+      btn.innerHTML = on
+        ? '<span class="spinner"></span> 儲存中…'
+        : '儲存';
+    }
+
+    function validateForm() {
+      clearFieldErrors();
+      let ok = true;
+
+      const username = $('usernameInput').value.trim();
+      if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) {
+        setFieldError('field-username', '帳號需為 3-32 個字元，僅能使用英文、數字與 . _ -');
+        ok = false;
+      }
+
+      if (!$('roleInput').value) {
+        setFieldError('field-role', '請選擇角色');
+        ok = false;
+      }
+
+      const password = $('passwordInput').value;
+      const passwordRequired = !editingUser;
+      if (passwordRequired && password.length < 10) {
+        setFieldError('field-password', '密碼至少需 10 個字元');
+        ok = false;
+      } else if (!passwordRequired && password && password.length < 10) {
+        setFieldError('field-password', '密碼至少需 10 個字元；不修改請留空');
+        ok = false;
+      }
+
+      return ok;
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+      if (submitting || !validateForm()) return;
+
+      const payload = {
+        username: $('usernameInput').value.trim(),
+        full_name: $('fullNameInput').value.trim(),
+        role: $('roleInput').value,
+        password: $('passwordInput').value
+      };
+
+      setSubmitting(true);
+      try {
+        if (editingUser) {
+          await api.updateUser(editingUser.id, payload);
+          showToast(`已更新「${payload.full_name || payload.username}」`);
+        } else {
+          await api.createUser(payload);
+          showToast(`已建立帳號「${payload.username}」`);
+        }
+        setSubmitting(false);
+        $('userModal').classList.remove('show');
+        editingUser = null;
+        await loadUsers();
+        loadAudit();
+      } catch (error) {
+        setSubmitting(false);
+        const msg = error.message || '儲存失敗，請稍後再試';
+        $('formError').textContent = msg;
+        $('formError').classList.add('show');
+        showToast(msg, 'error');
+      }
+    }
+
+    // ── 啟用／停用 ──
+    // 停用優先於刪除：帳號留著，稽核軌跡與歷史資料的關聯才不會斷
+    async function toggleStatus(user, btn) {
+      if (!user) return;
+      const next = user.status === 'disabled' ? 'active' : 'disabled';
+      const label = next === 'disabled' ? '停用' : '啟用';
+      if (next === 'disabled' &&
+          !confirm(`確定要停用「${user.full_name || user.username}」嗎？\n該帳號將無法登入，目前的連線會立即失效。`)) {
+        return;
+      }
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:#007aff"></span>';
+      try {
+        await api.setUserStatus(user.id, next);
+        showToast(`已${label}「${user.full_name || user.username}」`);
+        await loadUsers();
+        loadAudit();
+      } catch (error) {
+        btn.disabled = false;
+        btn.innerHTML = original;
+        showToast(error.message || `${label}失敗`, 'error');
+      }
+    }
+
+    // ── 稽核紀錄 ──
+    const AUDIT_LABELS = {
+      login: '登入',
+      login_denied: '登入被拒',
+      user_create: '建立帳號',
+      user_update: '修改帳號',
+      user_delete: '刪除帳號',
+      password_change_self: '本人改密碼',
+      password_rehash: '密碼升級'
+    };
+
+    async function loadAudit() {
+      const box = $('auditList');
+      box.innerHTML = '<div class="state" style="padding:32px 24px"><span class="spinner-dark"></span></div>';
+      try {
+        const rows = await api.listUserAudit(100);
+        if (!rows.length) {
+          box.innerHTML = '<div class="state" style="padding:32px 24px"><p>目前沒有紀錄</p></div>';
+          return;
+        }
+        box.innerHTML = rows.map(r => {
+          const when = r.timestamp
+            ? new Date(r.timestamp).toLocaleString('zh-TW', { hour12: false })
+            : '';
+          const act = AUDIT_LABELS[r.action] || r.action || '';
+          const who = r.actor || 'system';
+          const target = r.target && r.target !== r.actor ? ` → ${h(r.target)}` : '';
+          return `
+            <div class="audit-row">
+              <span class="audit-time">${h(when)}</span>
+              <span class="audit-action">${h(act)}</span>
+              <span class="audit-detail">${h(who)}${target}${r.detail ? '（' + h(r.detail) + '）' : ''}</span>
+            </div>`;
+        }).join('');
+      } catch (error) {
+        box.innerHTML = `<div class="state" style="padding:32px 24px"><p>${h(error.message || '讀取失敗')}</p></div>`;
+      }
+    }
+
+    // ── 刪除 ──
+    function openDeleteModal(user) {
+      if (!user) return;
+      deletingUser = user;
+      $('deleteError').classList.remove('show');
+      $('deleteError').textContent = '';
+      $('deleteTargetName').textContent = `${user.full_name || user.username}（${user.username}）`;
+      $('deleteConfirmBtn').disabled = false;
+      $('deleteConfirmBtn').innerHTML = '刪除';
+      $('deleteModal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+      $('deleteModal').classList.remove('show');
+      deletingUser = null;
+    }
+
+    async function confirmDelete() {
+      if (!deletingUser) return;
+      const btn = $('deleteConfirmBtn');
+      btn.disabled = true;
+      $('deleteCancelBtn').disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> 刪除中…';
+
+      try {
+        const name = deletingUser.full_name || deletingUser.username;
+        await api.deleteUser(deletingUser.id);
+        closeDeleteModal();
+        showToast(`已刪除「${name}」`);
+        await loadUsers();
+        loadAudit();
+      } catch (error) {
+        const msg = error.message || '刪除失敗，請稍後再試';
+        $('deleteError').textContent = msg;
+        $('deleteError').classList.add('show');
+        btn.innerHTML = '刪除';
+        btn.disabled = false;
+        showToast(msg, 'error');
+      } finally {
+        $('deleteCancelBtn').disabled = false;
+      }
+    }
+
+    // ── 啟動 ──
+    if (authData) {
+      Auth.mountAccountMenu('#accountMenuSlot');
+      buildRoleOptions();
+      updateRoleHint();
+      loadUsers();
+      loadAudit();
+
+      $('addUserBtn').addEventListener('click', () => openUserModal(null));
+      $('reloadAuditBtn').addEventListener('click', loadAudit);
+      $('searchInput').addEventListener('input', renderList);
+      $('roleFilter').addEventListener('change', renderList);
+
+      $('userForm').addEventListener('submit', handleSubmit);
+      $('cancelBtn').addEventListener('click', closeUserModal);
+      $('modalCloseBtn').addEventListener('click', closeUserModal);
+      $('userModal').addEventListener('click', e => {
+        if (e.target === $('userModal')) closeUserModal();
+      });
+
+      $('deleteCancelBtn').addEventListener('click', closeDeleteModal);
+      $('deleteConfirmBtn').addEventListener('click', confirmDelete);
+      $('deleteModal').addEventListener('click', e => {
+        if (e.target === $('deleteModal')) closeDeleteModal();
+      });
+
+      document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if ($('userModal').classList.contains('show')) closeUserModal();
+        if ($('deleteModal').classList.contains('show')) closeDeleteModal();
+      });
+    }
+  </script>
+</body>
+</html>

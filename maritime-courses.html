@@ -1295,6 +1295,7 @@
 </head>
 <body>
   <script src="js/auth.js"></script>
+  <script src="js/ui-feedback.js"></script>
   <script>
     const _authData = protectPage(['admin', 'teacher']);
     const _isReadOnly = _authData && _authData.role === 'teacher';
@@ -1926,7 +1927,7 @@
 
         <div style="display: flex; gap: 12px;">
           <button type="button" onclick="closeMaritimeCourseModal()" class="secondary-btn">取消</button>
-          <button type="submit" class="primary-btn" style="flex:1;">儲存變更</button>
+          <button type="submit" id="maritimeCourseSaveBtn" class="primary-btn" style="flex:1;">儲存變更</button>
           <button type="button" onclick="deleteMaritimeCourseFromModal()" class="danger-btn" style="flex-shrink:0;"><i class="ph ph-trash"></i> 刪除課程</button>
         </div>
       </form>
@@ -2334,6 +2335,14 @@
           card.setAttribute('draggable', 'false');
         }
       });
+
+      // 標出剛剛編輯的那一筆，並捲到它的位置
+      UIFeedback.highlightLastEdited('maritimeCourses', {
+        selector: '.course-card',
+        idAttr: 'courseId',
+        container: container,
+        noun: '課程'
+      });
     }
 
     // 拖放變量
@@ -2589,7 +2598,7 @@
       }
 
       container.innerHTML = filtered.map(c => `
-        <div style="background:white; padding:16px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+        <div data-course-id="${c.id}" style="position:relative; background:white; padding:16px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
           <div>
             <div style="font-weight:600; font-size:15px; margin-bottom:2px;">${c.name}</div>
             <div style="font-size:12px; color:#86868b;">
@@ -2599,6 +2608,14 @@
           ${_isReadOnly ? '' : `<button onclick="editMaritimeCourse(${c.id})" class="secondary-btn" style="padding:6px 16px; font-size:13px;">編輯</button>`}
         </div>
       `).join('');
+
+      // 逐筆修改時最容易迷失的就是這份清單，標出上次改到哪
+      UIFeedback.highlightLastEdited('maritimeCourses', {
+        selector: '#maritimeManageCourseList [data-course-id]',
+        idAttr: 'courseId',
+        container: container,
+        noun: '課程'
+      });
     }
 
     // 新增關鍵字
@@ -3222,27 +3239,63 @@
       };
 
       const idx = maritimeCourses.findIndex(x => x.id === editingMaritimeCourseId);
-      if (idx >= 0) {
-        maritimeCourses[idx] = { ...maritimeCourses[idx], ...newData };
-        try {
-          await saveMaritimeCourses();
-        } catch (err) {
-          console.error('儲存到後端失敗（已存至本機）:', err);
-        }
-        showMaritimeMessage('✓ 課程更新成功', 'success');
-        closeMaritimeCourseModal();
-        displayMaritimeCourses();
-        displayManageMaritimeCourses();
+      if (idx < 0) return;
+
+      const editedId = editingMaritimeCourseId;
+      maritimeCourses[idx] = { ...maritimeCourses[idx], ...newData };
+
+      let result;
+      try {
+        // 同步到雲端要兩三秒，全程蓋上「儲存中」遮罩，
+        // 否則使用者會以為按下去就已經完成了。
+        result = await UIFeedback.submit(() => saveMaritimeCourses(), {
+          button: document.getElementById('maritimeCourseSaveBtn'),
+          pending: '儲存課程中…',
+          sub: '正在同步到雲端，請稍候',
+          success: null,
+          error: '雲端儲存失敗（資料已暫存本機）'
+        });
+      } catch (err) {
+        // 失敗時保留 Modal 與使用者填的內容，讓他可以直接再按一次儲存
+        console.error('儲存課程失敗:', err);
+        return;
       }
+
+      if (result && result.conflict) {
+        UIFeedback.toast('偵測到其他人也修改了這份資料，請先確認衝突內容', 'info');
+      } else {
+        UIFeedback.toast(`已更新「${newData.name}」`, 'success');
+      }
+
+      // 記下這一筆，回清單時標出「剛剛編輯」
+      UIFeedback.markLastEdited('maritimeCourses', editedId, newData.name);
+
+      closeMaritimeCourseModal();
+      displayMaritimeCourses();
+      displayManageMaritimeCourses();
     }
 
     async function deleteMaritimeCourseFromModal() {
       const course = maritimeCourses.find(x => x.id === editingMaritimeCourseId);
       const courseName = course ? course.name : '';
       showDeleteConfirmModal(courseName, async () => {
+        const backup = maritimeCourses.slice();
         maritimeCourses = maritimeCourses.filter(x => x.id !== editingMaritimeCourseId);
-        await saveMaritimeCourses();
-        showMaritimeMessage('✓ 課程已刪除', 'success');
+        try {
+          await UIFeedback.submit(() => saveMaritimeCourses(), {
+            pending: '刪除課程中…',
+            sub: '正在同步到雲端，請稍候',
+            success: `已刪除「${courseName}」`,
+            error: '刪除失敗'
+          });
+        } catch (err) {
+          // 刪除沒成功就把課程放回來，畫面不能顯示成已刪除
+          maritimeCourses = backup;
+          localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+          console.error('刪除課程失敗:', err);
+          return;
+        }
+        UIFeedback.clearLastEdited('maritimeCourses');
         closeMaritimeCourseModal();
         displayMaritimeCourses();
         displayManageMaritimeCourses();
@@ -3250,17 +3303,21 @@
     }
 
     // 儲存（含衝突檢查）
+    // 回傳 { conflict }，讓呼叫端知道這次到底算不算存成功；
+    // 後端錯誤直接往外丟，不在這裡吞掉。
     async function saveMaritimeCourses() {
       localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
 
       if (typeof syncManager !== 'undefined') {
         const result = await syncManager.saveTable('maritimeCourses');
-        if (result.conflict) {
+        if (result && result.conflict) {
           showConflictDialog(result);
+          return { conflict: true };
         }
       } else if (typeof api !== 'undefined') {
         await api.save('maritimeCourses', maritimeCourses);
       }
+      return { conflict: false };
     }
 
     // 統計分析 - 從真實資料計算

@@ -719,6 +719,7 @@
 <body>
   <!-- Authentication -->
   <script src="js/auth.js"></script>
+  <script src="js/ui-feedback.js"></script>
   <script>
     // Protect this page - admin and teacher can access
     protectPage(['admin', 'teacher']);
@@ -1496,12 +1497,14 @@
       }
       closeConflictDialog();
       try {
-        const result = await syncManager.saveToBackendSafe(true); // forceOverwrite = true
-        if (result.success) {
-          showMessage('資料已強制儲存到雲端', 'success');
-        }
+        await UIFeedback.submit(() => syncManager.saveToBackendSafe(true), {
+          pending: '強制覆蓋雲端資料中…',
+          sub: '正在寫入 Google Sheets，請稍候',
+          success: '資料已強制儲存到雲端',
+          error: '強制覆蓋失敗'
+        });
       } catch (error) {
-        showMessage('儲存失敗: ' + error.message, 'error');
+        console.error('強制覆蓋失敗:', error);
       }
     }
 
@@ -4085,15 +4088,20 @@
           syncManager.markAsChanged();
 
           // 使用安全儲存模式（檢查衝突）
+          // 這是背景儲存，用右下角狀態膠囊回報；
+          // 原本成功無聲、失敗只寫 console，使用者無從得知有沒有存成功。
+          UIFeedback.status.saving('同步排程資料…');
           syncManager.saveToBackendSafe().then(result => {
             if (result.conflict) {
+              UIFeedback.status.hide();
               showConflictDialog(result);
               console.warn('發現資料衝突，請重新整理頁面');
-            } else if (result.success) {
-              // 資料已安全儲存到雲端
+            } else {
+              UIFeedback.status.saved('排程資料已同步');
             }
           }).catch(err => {
             console.warn('⚠️ 後端同步失敗，資料已保存在本地:', err.message);
+            UIFeedback.status.failed('排程資料同步失敗', () => saveData());
           });
         }
       } catch (err) {

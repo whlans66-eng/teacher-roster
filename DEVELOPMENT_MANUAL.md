@@ -632,6 +632,144 @@ FormData:
 }
 ```
 
+#### POST /exec (帳號管理)
+
+僅 `role === 'admin'` 的 Session 可呼叫；其餘一律回 `Forbidden`。
+所有回應都不含 `password` 與 `salt`。
+
+| action | 說明 | 必要參數 |
+|---|---|---|
+| `users_list` | 取得所有帳號 | `token` |
+| `users_create` | 新增帳號 | `token`, `username`, `password`, `role`, `full_name`(選填) |
+| `users_update` | 更新帳號 | `token`, `id` + 要異動的欄位 |
+| `users_delete` | 刪除帳號 | `token`, `id` |
+
+**角色**：`admin`、`teacher`、`crew`、`guest`（定義於 `USER_ROLES`，
+前端 `js/auth.js` 的 `ROLES` 必須一致）。
+
+**請求範例：**
+```javascript
+POST https://script.google.com/.../exec
+Content-Type: application/x-www-form-urlencoded
+
+token=xxx&action=users_create&username=kim.lin&password=Passw0rd123&role=teacher&full_name=林小明
+```
+
+**回應：**
+```json
+{
+  "ok": true,
+  "data": { "id": "6", "username": "kim.lin", "full_name": "林小明", "role": "teacher" }
+}
+```
+
+**內建防護：**
+
+- 帳號格式 `^[A-Za-z0-9._-]{3,32}$`，不分大小寫檢查重複
+- 密碼至少 8 碼，以 `salt + SHA-256` 儲存，絕不存明文
+- 不可刪除自己的帳號
+- 不可刪除或降級最後一位 `admin`
+- 變更角色／帳號／密碼會寫入 `revoke_<username>` 撤銷記錄，
+  該帳號在此之前建立的 Session 會在下一次請求時失效（見 `_getSession`）
+- 欄位位置一律透過 `_headerIndex` 取得，不假設 Sheet 欄位順序與
+  `SHEETS_CONFIG.users.header` 相同
+
+### 5.4.1 前端操作回饋（js/ui-feedback.js）
+
+送出資料與「上次改到哪」的共用層，避免每頁各寫一套。
+
+| API | 用途 |
+|---|---|
+| `UIFeedback.submit(task, opts)` | 包住一次送出：蓋上「處理中」遮罩、按鈕轉圈停用，**只有 task 真的成功才顯示成功訊息**，失敗時丟出原錯誤 |
+| `UIFeedback.toast(msg, type)` | `success` / `error` / `info` 提示 |
+| `UIFeedback.status.saving/saved/failed/hide` | 背景（防抖）儲存的狀態膠囊；`failed` 不會自動消失，可帶重試 callback |
+| `UIFeedback.markLastEdited(scope, id, label)` | 編輯完成時記下這一筆（存 sessionStorage，1 小時後過期） |
+| `UIFeedback.highlightLastEdited(scope, opts)` | 清單渲染後標出該筆：貼合圓角的藍色外框＋捲到該筆，並在清單頂端插入提示列 |
+
+`submit` 的 `opts`：`button`、`pending`、`sub`、`success`（傳 `null` 表示自行決定訊息）、
+`error`（錯誤訊息前綴）、`block`（是否蓋遮罩，預設 true）。
+
+`highlightLastEdited` 的 `opts`：`selector`、`idAttr`（dataset key）、`container`（提示列容器）、
+`scroll`、`noun`。
+
+**標記樣式**：用 `box-shadow` 畫外框而不是 `outline`，才會貼合卡片既有的圓角。
+不放角落徽章 —— 卡片四角通常已有分類標籤會互相打架，且部分卡片是
+`overflow:hidden`，貼邊的徽章會被切掉。提示列沿用頁面既有的白卡樣式，
+不要用漸層或強色塊，否則看起來像外來元件。
+
+**注意**：選擇器要挑兩種渲染模式都有的屬性。例如師資卡在編輯模式與呈現模式的
+class 不同，只有 `data-teacher-id` 兩邊都在，所以用 `#teacherGrid [data-teacher-id]`
+而不是 `.teacher-card-wrapper`。
+
+### 5.4.2 帳號安全設計
+
+#### 密碼儲存
+
+Apps Script 沒有 bcrypt/scrypt，迭代次數又受執行時間限制，
+光靠雜湊擋不住離線破解。因此採取兩道防線：
+
+1. **pepper**：存在 Script Properties 的 `PASSWORD_PEPPER`，**不在試算表裡**。
+   就算整份 Sheet 外流，沒有 pepper 也無法比對。
+2. **迭代 HMAC-SHA256**：`PASSWORD_ITERATIONS`（預設 1000）輪。
+
+> ⚠️ **pepper 遺失等同所有密碼失效**，務必納入備份程序。
+> `setupDatabase()` 會自動產生一組並在執行紀錄提示。
+
+每筆密碼都記錄 `passwordAlgo`。舊資料是單輪 SHA-256，登入驗證成功時
+會**透明升級**為現行演算法，使用者無感，不需要全體重設密碼。
+
+移除了「salt 為空就比對明文」的退路 —— 那等於只要有一列沒 salt
+就退化成明文密碼。現在沒有 salt 一律驗證失敗。
+
+密碼比對使用 `_constantTimeEquals`，避免以回應時間逐位元猜出雜湊。
+
+#### 密碼政策
+
+參考 NIST SP 800-63B：重長度與弱密碼篩除，不強制大小寫符號組合。
+
+- 至少 `MIN_PASSWORD_LENGTH`（10）個字元，上限 128
+- 擋下 `WEAK_PASSWORDS` 清單中的常見密碼
+- 不可包含帳號名稱、不可為單一字元重複
+
+#### 帳號生命週期
+
+| 欄位 | 用途 |
+|---|---|
+| `status` | `active` / `disabled`。**停用優先於刪除**，保留稽核軌跡與歷史關聯 |
+| `mustChangePassword` | 管理者建立或重設密碼後為 TRUE，本人首次登入必須自行更換 |
+| `lastLoginAt` | 最後登入時間，用於盤點閒置帳號 |
+| `passwordUpdatedAt` | 密碼最後更新時間 |
+| `updatedBy` / `updatedAt` | 最後修改者與時間 |
+
+守則：不可刪除或停用自己；不可刪除、停用或降級**最後一位啟用中**的管理者
+（停用的管理者不計入人數，否則會把所有人鎖在系統外）。
+
+#### 稽核紀錄
+
+`userAuditLog` 分頁記錄 `timestamp / actor / action / target / detail`，
+涵蓋登入、登入被拒、建立、修改、刪除、本人改密碼、密碼升級。
+管理者可在 `admin.html` 下方檢視。此表與 `users` 一樣**不得經由一般資料 API 讀取**。
+
+#### 讀取權限
+
+`TABLE_READ_ROLES` 定義各資料表允許讀取的角色，於 `list` / `listall` 強制執行。
+
+前端隱藏按鈕不是權限控管 —— 後端不擋的話，任何登入者都能直接呼叫 API
+撈走整份師資資料。
+
+#### Token 傳遞
+
+Apps Script 讀不到自訂 HTTP 標頭，token 只能放在網址或請求主體。
+放網址會留在瀏覽器歷史與 Apps Script 執行紀錄裡，因此
+`api._get()` 實際改用 POST 送出（`ping` 例外，不需 token）。
+後端以 `READ_ACTIONS` + `_handleReadAction()` 讓 doGet 與 doPost 共用同一套邏輯。
+
+#### 初始帳號
+
+程式碼中**不得出現任何密碼字面值**。`setupDatabase()` 與
+`createAdminAccount()` 皆隨機產生密碼、只在執行紀錄顯示一次，
+並要求首次登入更換。
+
 ### 5.5 後端開發最佳實踐
 
 #### 1. Token 驗證

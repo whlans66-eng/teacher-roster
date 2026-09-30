@@ -225,12 +225,102 @@ class TeacherRosterAPI {
     }
   }
 
+  // ==================== 帳號管理（僅管理者）====================
+
+  /**
+   * 取得所有帳號（不含密碼）
+   * @returns {Array<{id, username, full_name, role}>}
+   */
+  async listUsers() {
+    const response = await this._post({ action: 'users_list' });
+    return response.data || [];
+  }
+
+  /**
+   * 新增帳號
+   * @param {{username: string, password: string, role: string, full_name?: string}} user
+   */
+  async createUser(user) {
+    const response = await this._post({
+      action: 'users_create',
+      username: user.username,
+      password: user.password,
+      role: user.role,
+      full_name: user.full_name || ''
+    });
+    return response.data;
+  }
+
+  /**
+   * 更新帳號；只傳有異動的欄位，password 留空表示不改密碼
+   * @param {string} id
+   * @param {{username?: string, full_name?: string, role?: string, password?: string}} changes
+   */
+  async updateUser(id, changes) {
+    const payload = { action: 'users_update', id: id };
+    ['username', 'full_name', 'role', 'password'].forEach(key => {
+      if (changes[key]) payload[key] = changes[key];
+    });
+    const response = await this._post(payload);
+    return response.data;
+  }
+
+  /**
+   * 刪除帳號
+   * @param {string} id
+   */
+  async deleteUser(id) {
+    await this._post({ action: 'users_delete', id: id });
+    return true;
+  }
+
+  /**
+   * 啟用／停用帳號（停用優先於刪除，可保留稽核軌跡）
+   * @param {string} id
+   * @param {'active'|'disabled'} status
+   */
+  async setUserStatus(id, status) {
+    const response = await this._post({ action: 'users_update', id: id, status: status });
+    return response.data;
+  }
+
+  /**
+   * 取得帳號操作稽核紀錄（僅管理者）
+   */
+  async listUserAudit(limit = 100) {
+    const response = await this._post({ action: 'users_audit', limit: limit });
+    return response.data || [];
+  }
+
+  /**
+   * 修改自己的密碼（需驗證目前密碼）
+   * 成功後後端會撤銷其他裝置的 Session，並回傳新的 token
+   */
+  async changeOwnPassword(currentPassword, newPassword) {
+    const response = await this._post({
+      action: 'account_change_password',
+      currentPassword: currentPassword,
+      newPassword: newPassword
+    });
+    return response.data;
+  }
+
   /**
    * GET 請求
    */
+  /**
+   * 讀取請求
+   *
+   * 雖然語意上是 GET，實際改用 POST 送出：
+   * Apps Script 讀不到自訂 HTTP 標頭，token 只能放網址或請求主體，
+   * 而放在網址會留在瀏覽器歷史與 Apps Script 的執行紀錄裡。
+   * ping 不需要 token，維持 GET 以便做連線檢查。
+   */
   async _get(params) {
+    if (params && params.action !== 'ping') {
+      return this._post(params);
+    }
     const url = new URL(this.baseUrl);
-    url.searchParams.append('token', this.token);
     Object.keys(params).forEach(key => {
       url.searchParams.append(key, params[key]);
     });
