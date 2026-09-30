@@ -1001,6 +1001,10 @@
     <div id="teacherDetail" class="hidden slide-in">
       <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
         <button onclick="backToList()" class="btn btn-plain mb-6">← 返回師資列表</button>
+
+        <!-- 授課強項雷達圖（唯讀，由訓練排程自動統計） -->
+        <div id="teacherRadarPanel"></div>
+
         <form id="teacherForm" class="space-y-6">
           <!-- 基本資訊 -->
           <div class="bg-gray-50 p-6 rounded-lg">
@@ -1983,6 +1987,8 @@
 
     function addNewTeacher(){
       currentTeacherId = null;
+      // 新增時沒有授課紀錄可統計，清掉上一位留下的圖
+      renderTeacherRadarInto('teacherRadarPanel', null);
       document.getElementById('teacherList').classList.add('hidden');
       document.getElementById('teacherDetail').classList.remove('hidden');
       document.getElementById('deleteBtn').classList.add('hidden');
@@ -2015,6 +2021,8 @@
       document.querySelector(`input[value="${teacherType}"]`).closest('label').querySelector('.teacher-type-option').classList.add('selected',teacherType);
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
       document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
+
+      renderTeacherRadarInto('teacherRadarPanel', teacher);
 
       const photoBox = document.getElementById('photoPreview');
       if (teacher.photo){
@@ -2171,6 +2179,234 @@
         </div>`;
     }
 
+    // ==================== 授課強項雷達圖 ====================
+    //
+    // 資料來源是「訓練排程」實際派給這位老師的課，再對應到課程分類，
+    // 不是靠固定標籤 —— 會議要的就是這個聯動：排課紀錄自動帶出授課經驗。
+
+    const RADAR_CATEGORY_SHORT = {
+      '01': '船舶操縱', '02': '領導統御', '03': '事故應變',
+      '04': '設備操作', '05': '法規合規', '06': '貨物裝卸',
+      '07': '經驗交流', '08': '職級轉換', '09': '其他'
+    };
+
+    /**
+     * 統計一位老師各分類的授課課程數
+     *
+     * 兩個來源合併去重（以課名為準）：
+     *   1. 訓練排程實際派給他的課（courseAssignments.teacherId）
+     *   2. 師資卡上登錄的「講授課程」（subjects 中 category === 'teach'）
+     *
+     * 分類只能靠課名對應到課程庫 —— subjects.category 存的是角色
+     * （講授／助教／影片協作），不是 01-09 的課程分類。
+     * 對不上的課名會單獨計數並在畫面上提示，通常是課程改名後沒同步。
+     *
+     * @returns {{counts, courseCount, sessionCount, unmatched, unmatchedNames, assistCount}}
+     */
+    function computeTeacherTeachingStats(teacher) {
+      const counts = {};
+      Object.keys(RADAR_CATEGORY_SHORT).forEach(k => { counts[k] = 0; });
+
+      const assignments = (typeof courseAssignments !== 'undefined' && Array.isArray(courseAssignments))
+        ? courseAssignments : [];
+      const courses = (typeof maritimeCourses !== 'undefined' && Array.isArray(maritimeCourses))
+        ? maritimeCourses : [];
+
+      const byName = {};
+      courses.forEach(c => {
+        if (c && c.name) byName[String(c.name).trim()] = c;
+      });
+
+      const taughtNames = new Set();
+      let sessionCount = 0, assistCount = 0;
+
+      // 來源 1：訓練排程
+      assignments.forEach(a => {
+        if (!a) return;
+        const isMain = String(a.teacherId) === String(teacher.id);
+        const isAssist = a.taId && String(a.taId) === String(teacher.id);
+        if (isMain) {
+          sessionCount++;
+          const nm = String(a.name || '').trim();
+          if (nm) taughtNames.add(nm);
+        } else if (isAssist) {
+          assistCount++;
+        }
+      });
+
+      // 來源 2：師資卡登錄的講授課程
+      (teacher.subjects || []).forEach(sub => {
+        if (!sub) return;
+        const role = typeof sub === 'object' ? sub.category : 'teach';
+        if (role && role !== 'teach') return;
+        const nm = String((typeof sub === 'object' ? sub.name : sub) || '').trim();
+        if (nm) taughtNames.add(nm);
+      });
+
+      const unmatchedNames = [];
+      taughtNames.forEach(nm => {
+        const course = byName[nm];
+        const cat = course && course.category ? String(course.category).padStart(2, '0') : '';
+        if (counts[cat] !== undefined) counts[cat]++;
+        else unmatchedNames.push(nm);
+      });
+
+      return {
+        counts: counts,
+        courseCount: taughtNames.size,
+        sessionCount: sessionCount,
+        unmatched: unmatchedNames.length,
+        unmatchedNames: unmatchedNames,
+        assistCount: assistCount
+      };
+    }
+
+    /**
+     * 產生雷達圖（inline SVG，不依賴外部圖表庫）
+     */
+    function renderTeacherRadar(teacher) {
+      const stats = computeTeacherTeachingStats(teacher);
+      const keys = Object.keys(RADAR_CATEGORY_SHORT);
+      const n = keys.length;
+
+      const hasAnyCategory = keys.some(k => stats.counts[k] > 0);
+      if (!hasAnyCategory) {
+        return `
+          <div class="bg-gray-50 rounded-xl p-6 mt-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-1 flex items-center">
+              <span class="mr-3 text-3xl"><i class="ph ph-chart-polar"></i></span>授課強項分布
+            </h3>
+            <p class="text-sm text-gray-500 mb-4">依訓練排程中實際派課的課程分類自動統計</p>
+            <div class="text-center py-10 text-gray-500">
+              <div class="text-4xl mb-2"><i class="ph ph-calendar-blank"></i></div>
+              <p class="font-medium text-gray-600">${stats.courseCount > 0 ? '課程無法對應分類' : '尚無授課紀錄'}</p>
+              ${stats.courseCount > 0 ? `
+                <p class="text-sm mt-1">這位師資有 ${stats.courseCount} 門課程，但課名在課程庫中找不到對應分類</p>
+                <div class="text-xs text-left bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3 inline-block max-w-md">
+                  <p class="text-amber-800 font-medium mb-1">對不上的課名：</p>
+                  ${stats.unmatchedNames.slice(0, 5).map(n => `<p class="text-amber-700">· ${n}</p>`).join('')}
+                  ${stats.unmatchedNames.length > 5 ? `<p class="text-amber-700">…另有 ${stats.unmatchedNames.length - 5} 筆</p>` : ''}
+                  <p class="text-amber-800 mt-2">通常是課程改名後，師資卡或排程仍沿用舊名稱。</p>
+                </div>`
+              : `<p class="text-sm mt-1">在訓練排程指派課程、或在師資卡填寫講授課程後，這裡會自動出現分布圖</p>`}
+              ${stats.assistCount > 0 ? `<p class="text-sm mt-3 text-gray-400">另有 ${stats.assistCount} 場助教紀錄，不計入主講分布</p>` : ''}
+            </div>
+          </div>`;
+      }
+
+      const size = 340, cx = size / 2, cy = size / 2, R = 106;
+      const maxCount = Math.max(1, ...keys.map(k => stats.counts[k]));
+      const point = (i, r) => {
+        const ang = (-90 + i * (360 / n)) * Math.PI / 180;
+        return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)];
+      };
+
+      // 背景格線：四層同心多邊形
+      let grid = '';
+      [0.25, 0.5, 0.75, 1].forEach(level => {
+        const pts = keys.map((_, i) => point(i, R * level).map(v => v.toFixed(1)).join(',')).join(' ');
+        grid += `<polygon points="${pts}" fill="none" stroke="#e5e7eb" stroke-width="1"></polygon>`;
+      });
+
+      // 軸線
+      let axes = '';
+      keys.forEach((_, i) => {
+        const [x, y] = point(i, R);
+        axes += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"></line>`;
+      });
+
+      // 資料多邊形
+      const dataPts = keys.map((k, i) => {
+        const ratio = stats.counts[k] / maxCount;
+        return point(i, R * ratio).map(v => v.toFixed(1)).join(',');
+      }).join(' ');
+
+      // 資料點
+      let dots = '';
+      keys.forEach((k, i) => {
+        if (!stats.counts[k]) return;
+        const [x, y] = point(i, R * (stats.counts[k] / maxCount));
+        dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="#4f46e5"></circle>`;
+      });
+
+      // 座標標籤
+      let labels = '';
+      keys.forEach((k, i) => {
+        const [x, y] = point(i, R + 24);
+        const anchor = Math.abs(x - cx) < 6 ? 'middle' : (x > cx ? 'start' : 'end');
+        const count = stats.counts[k];
+        const weight = count > 0 ? '600' : '400';
+        const color = count > 0 ? '#374151' : '#9ca3af';
+        labels += `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}"
+                     font-size="11.5" font-weight="${weight}" fill="${color}">${RADAR_CATEGORY_SHORT[k]}</text>`;
+        if (count > 0) {
+          labels += `<text x="${x.toFixed(1)}" y="${(y + 17).toFixed(1)}" text-anchor="${anchor}"
+                       font-size="10.5" font-weight="700" fill="#4f46e5">${count}</text>`;
+        }
+      });
+
+      // 依場次排序的明細
+      const ranked = keys
+        .map(k => ({ key: k, name: RADAR_CATEGORY_SHORT[k], count: stats.counts[k] }))
+        .filter(r => r.count > 0)
+        .sort((a, b) => b.count - a.count);
+
+      const bars = ranked.map(r => `
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-gray-700 w-20 flex-shrink-0">${r.name}</span>
+          <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full bg-indigo-500 rounded-full" style="width:${(r.count / maxCount * 100).toFixed(0)}%"></div>
+          </div>
+          <span class="text-sm font-semibold text-gray-800 w-12 text-right">${r.count} 門</span>
+        </div>`).join('');
+
+      return `
+        <div class="bg-gray-50 rounded-xl p-6 mt-8">
+          <h3 class="text-2xl font-bold text-gray-800 mb-1 flex items-center">
+            <span class="mr-3 text-3xl"><i class="ph ph-chart-polar"></i></span>授課強項分布
+          </h3>
+          <p class="text-sm text-gray-500 mb-5">
+            合併「訓練排程的派課紀錄」與「師資卡的講授課程」自動統計，
+            共 ${stats.courseCount} 門課程${stats.sessionCount > 0 ? `、${stats.sessionCount} 場排課` : ''}
+          </p>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+            <div class="flex justify-center">
+              <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="max-width:100%;height:auto">
+                ${grid}
+                ${axes}
+                <polygon points="${dataPts}" fill="rgba(79,70,229,0.18)" stroke="#4f46e5" stroke-width="2"
+                         stroke-linejoin="round"></polygon>
+                ${dots}
+                ${labels}
+              </svg>
+            </div>
+            <div class="space-y-3">
+              ${bars}
+              ${stats.assistCount > 0 ? `
+                <p class="text-xs text-gray-500 pt-2 border-t border-gray-200 mt-3">
+                  另有 ${stats.assistCount} 場助教紀錄，不計入主講分布
+                </p>` : ''}
+              ${stats.unmatched > 0 ? `
+                <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
+                  有 ${stats.unmatched} 門課的課名對不上課程庫，未納入分類統計。
+                  通常是課程改名後，師資卡或排程仍沿用舊名稱。
+                </p>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    /**
+     * 把雷達圖畫進指定容器（編輯表單用）
+     */
+    function renderTeacherRadarInto(containerId, teacher) {
+      const box = document.getElementById(containerId);
+      if (!box) return;
+      if (!teacher) { box.innerHTML = ''; return; }
+      box.innerHTML = renderTeacherRadar(teacher);
+    }
+
     function viewTeacherDetail(teacherId){
       const teacher = teachers.find(t=>t.id===teacherId); if(!teacher) return;
       document.getElementById('teacherList').classList.add('hidden');
@@ -2241,6 +2477,8 @@
               <div class="text-center py-8 text-gray-500"><div class="text-4xl mb-2"><i class="ph ph-graduation-cap"></i></div><p>尚未填寫證書資格</p></div>`}
           </div>
         </div>
+
+        ${renderTeacherRadar(teacher)}
 
         ${SUBJECT_CATEGORY_KEYS.map(k => renderSubjectSection(teacher, k)).join('')}
 
