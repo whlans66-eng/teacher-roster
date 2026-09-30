@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>船帳 Web 化管理系統 — 架構圖</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #f1f5f9;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 36px;
+    letter-spacing: 1px;
+  }
+
+  /* ── LANE LAYOUT ── */
+  .diagram {
+    display: grid;
+    grid-template-columns: 160px 1fr 120px 1fr 160px;
+    grid-template-rows: auto;
+    gap: 0;
+    max-width: 1280px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* Lane headers */
+  .lane-header {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    text-align: center;
+    padding: 16px 8px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .lane-header.crew    { background: #1e3a5f; color: #93c5fd; border: 1px solid #1d4ed8; }
+  .lane-header.ship    { background: #1a3a2a; color: #86efac; border: 1px solid #16a34a; }
+  .lane-header.api     { background: #2d1f3d; color: #c4b5fd; border: 1px solid #7c3aed; }
+  .lane-header.shore   { background: #3a2010; color: #fdba74; border: 1px solid #ea580c; }
+  .lane-header.ext     { background: #1a1f2e; color: #94a3b8; border: 1px solid #475569; }
+
+  /* Content columns */
+  .lane-content {
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-left: 2px dashed;
+    border-right: 2px dashed;
+  }
+  .lane-content.crew  { border-color: #1d4ed8; background: rgba(30,58,95,0.15); }
+  .lane-content.ship  { border-color: #16a34a; background: rgba(26,58,42,0.15); }
+  .lane-content.shore { border-color: #ea580c; background: rgba(58,32,16,0.15); }
+  .lane-content.ext   { border-color: #475569; background: rgba(26,31,46,0.1); }
+
+  /* Arrow column */
+  .arrow-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  /* Boxes */
+  .box {
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    position: relative;
+    border: 1px solid;
+  }
+  .box-title {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .box-title .code {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .box ul {
+    padding-left: 14px;
+    color: #cbd5e1;
+    font-size: 11px;
+  }
+  .box ul li { margin-bottom: 2px; }
+
+  /* Box themes */
+  .box.blue   { background: #1e3a5f; border-color: #3b82f6; }
+  .box.blue .box-title { color: #93c5fd; }
+  .box.blue .code { background: #1d4ed8; color: #bfdbfe; }
+
+  .box.green  { background: #1a3a2a; border-color: #22c55e; }
+  .box.green .box-title { color: #86efac; }
+  .box.green .code { background: #15803d; color: #bbf7d0; }
+
+  .box.green2 { background: #0f2a1a; border-color: #16a34a; }
+  .box.green2 .box-title { color: #4ade80; }
+  .box.green2 .code { background: #14532d; color: #86efac; }
+
+  .box.orange { background: #3a2010; border-color: #f97316; }
+  .box.orange .box-title { color: #fdba74; }
+  .box.orange .code { background: #c2410c; color: #fed7aa; }
+
+  .box.purple { background: #2d1f3d; border-color: #a855f7; }
+  .box.purple .box-title { color: #d8b4fe; }
+  .box.purple .code { background: #6d28d9; color: #ede9fe; }
+
+  .box.gray   { background: #1e2433; border-color: #475569; }
+  .box.gray .box-title { color: #94a3b8; }
+  .box.gray .code { background: #334155; color: #cbd5e1; }
+
+  .box.red    { background: #3a1a1a; border-color: #ef4444; }
+  .box.red .box-title { color: #fca5a5; }
+  .box.red .code { background: #b91c1c; color: #fecaca; }
+
+  .box.yellow { background: #2a2010; border-color: #eab308; }
+  .box.yellow .box-title { color: #fde047; }
+  .box.yellow .code { background: #854d0e; color: #fef08a; }
+
+  /* Status badge */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .badge.wip    { background: #78350f; color: #fde68a; }
+  .badge.plan   { background: #1e3a5f; color: #bae6fd; }
+  .badge.done   { background: #14532d; color: #bbf7d0; }
+  .badge.core   { background: #4c1d95; color: #ddd6fe; }
+
+  /* Arrow SVG area */
+  .arrows-overlay {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    pointer-events: none;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  /* Flow arrows between columns */
+  .flow-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #64748b;
+    gap: 2px;
+  }
+  .flow-arrow .arrow-line {
+    width: 2px;
+    flex: 1;
+    min-height: 20px;
+    background: linear-gradient(to bottom, transparent, #475569, transparent);
+  }
+  .flow-arrow .arrow-label {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 10px;
+    color: #94a3b8;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .flow-arrow .arrowhead {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1;
+  }
+
+  /* Section divider */
+  .section-label {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 11px;
+    color: #475569;
+    letter-spacing: 2px;
+    padding: 4px 0;
+    border-top: 1px solid #1e293b;
+    margin-top: 4px;
+  }
+
+  /* Legend */
+  .legend {
+    max-width: 1280px;
+    margin: 28px auto 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Full-width row for API layer */
+  .api-row {
+    grid-column: 1 / -1;
+    background: rgba(45,31,61,0.3);
+    border: 1px dashed #7c3aed;
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin: 8px 0;
+  }
+  .api-row-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #c4b5fd;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .api-boxes {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .api-boxes .box {
+    flex: 1;
+    min-width: 160px;
+  }
+
+  /* Top architecture overview */
+  .overview {
+    max-width: 1280px;
+    margin: 0 auto 28px;
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .ov-col {
+    flex: 1;
+    padding: 14px 16px;
+    text-align: center;
+    border-right: 1px solid #334155;
+    position: relative;
+  }
+  .ov-col:last-child { border-right: none; }
+  .ov-col.crew-bg  { background: rgba(30,58,95,0.35); }
+  .ov-col.ship-bg  { background: rgba(26,58,42,0.35); }
+  .ov-col.api-bg   { background: rgba(45,31,61,0.35); }
+  .ov-col.shore-bg { background: rgba(58,32,16,0.35); }
+  .ov-col.ext-bg   { background: rgba(26,31,46,0.2); }
+  .ov-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .ov-sub {
+    font-size: 10px;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+  .ov-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+  }
+  .chip {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    border: 1px solid;
+  }
+  .chip.blue   { border-color: #3b82f6; color: #93c5fd; background: rgba(59,130,246,0.1); }
+  .chip.green  { border-color: #22c55e; color: #86efac; background: rgba(34,197,94,0.1); }
+  .chip.purple { border-color: #a855f7; color: #d8b4fe; background: rgba(168,85,247,0.1); }
+  .chip.orange { border-color: #f97316; color: #fdba74; background: rgba(249,115,22,0.1); }
+  .chip.gray   { border-color: #475569; color: #94a3b8; background: rgba(71,85,105,0.1); }
+
+  .ov-arrow {
+    position: absolute;
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: #475569;
+    z-index: 10;
+  }
+
+  /* Main grid */
+  .main-grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr 80px 1fr;
+    gap: 0 0;
+  }
+  .col { padding: 8px; display: flex; flex-direction: column; gap: 10px; }
+  .col-header {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 8px;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 2px;
+  }
+  .col-header.crew   { background: #1e3a5f; color: #93c5fd; border-bottom: 2px solid #3b82f6; }
+  .col-header.ship   { background: #1a3a2a; color: #86efac; border-bottom: 2px solid #22c55e; }
+  .col-header.shore  { background: #3a2010; color: #fdba74; border-bottom: 2px solid #f97316; }
+
+  /* Between-column arrows */
+  .between-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    padding: 60px 0 20px;
+    gap: 6px;
+  }
+  .between-col .b-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: #475569;
+    font-size: 18px;
+  }
+  .between-col .b-label {
+    font-size: 9px;
+    color: #475569;
+    text-align: center;
+    max-width: 70px;
+    line-height: 1.3;
+  }
+
+  /* External systems row */
+  .ext-row {
+    max-width: 1280px;
+    margin: 16px auto 0;
+    border: 1px dashed #334155;
+    border-radius: 12px;
+    padding: 14px 20px;
+  }
+  .ext-title {
+    font-size: 11px;
+    color: #475569;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .ext-boxes {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid #1e293b;
+    margin: 20px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>船帳 Web 化管理系統</h1>
+<p class="subtitle">SHIP ACCOUNT WEB SYSTEM — ARCHITECTURE OVERVIEW</p>
+
+<!-- ══════════════════════════════════════════
+     LAYER 0: OVERVIEW BAR
+══════════════════════════════════════════ -->
+<div class="overview">
+  <div class="ov-col crew-bg">
+    <div class="ov-arrow">›</div>
+    <div class="ov-title" style="color:#93c5fd">① 船員端</div>
+    <div class="ov-sub">Crew Interface<br><span class="badge plan">規劃中</span></div>
+    <div class="ov-chips">
+      <span class="chip blue">萬海園地</span>
+      <span class="chip blue">手機APP</span>
+      <span class="chip blue">個人申報</span>
+    </div>
+  </div>
+  <div class="ov-col ship-bg">
+    <div class="ov-arrow">›</div>
+    <div class="ov-title" style="color:#86efac">② 船端主系統</div>
+    <div class="ov-sub">Ship Main System<br><span class="badge core">開發核心</span></div>
+    <div class="ov-chips">
+      <span class="chip green">Dashboard</span>
+      <span class="chip green">V科目</span>
+      <span class="chip green">A217</span>
+      <span class="chip green">PDF/Excel</span>
+    </div>
+  </div>
+  <div class="ov-col api-bg">
+    <div class="ov-arrow">›</div>
+    <div class="ov-title" style="color:#c4b5fd">③ API 串接層</div>
+    <div class="ov-sub">Integration Layer<br><span class="badge plan">規劃中</span></div>
+    <div class="ov-chips">
+      <span class="chip purple">FMS船員</span>
+      <span class="chip purple">匯率系統</span>
+      <span class="chip purple">獎金核准</span>
+    </div>
+  </div>
+  <div class="ov-col shore-bg">
+    <div class="ov-arrow">›</div>
+    <div class="ov-title" style="color:#fdba74">④ 岸端系統</div>
+    <div class="ov-sub">Shore System<br><span class="badge wip">開發中</span></div>
+    <div class="ov-chips">
+      <span class="chip orange">AI審核</span>
+      <span class="chip orange">異常分析</span>
+      <span class="chip orange">入帳匯入</span>
+    </div>
+  </div>
+  <div class="ov-col ext-bg">
+    <div class="ov-title" style="color:#94a3b8">⑤ 外部系統</div>
+    <div class="ov-sub">External Systems</div>
+    <div class="ov-chips">
+      <span class="chip gray">WDPCM116</span>
+      <span class="chip gray">PSF713</span>
+      <span class="chip gray">FMS</span>
+      <span class="chip gray">EC</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN GRID: 3 COLUMNS + 2 ARROW COLS
+══════════════════════════════════════════ -->
+<div class="main-grid">
+
+  <!-- ── COL A: 船員端 ── -->
+  <div class="col">
+    <div class="col-header crew">① 船員端 CREW</div>
+
+    <div class="box blue">
+      <div class="box-title">
+        <span>🔐</span> 身份驗證
+        <span class="badge plan">規劃</span>
+      </div>
+      <ul>
+        <li>萬海園地 EC 帳號 SSO 登入</li>
+        <li>Role：船員 / 船長 / 事務長</li>
+        <li>裝置：手機 PWA（書籤安裝）</li>
+      </ul>
+    </div>
+
+    <div class="box blue">
+      <div class="box-title">
+        <span>📋</span> 個人費用申報
+      </div>
+      <ul>
+        <li><b style="color:#93c5fd">V802</b> 上/下船交通費</li>
+        <li><b style="color:#93c5fd">V804</b> 醫療/體檢費</li>
+        <li>填寫表單 + 拍照上傳單據</li>
+        <li>AI OCR 自動辨識金額</li>
+        <li>送出後等待船長審核</li>
+      </ul>
+    </div>
+
+    <div class="box blue">
+      <div class="box-title">
+        <span>👤</span> 個人資料維護
+      </div>
+      <ul>
+        <li>通訊地址更新</li>
+        <li>受益人資料</li>
+        <li>串接 EC 人事系統</li>
+      </ul>
+    </div>
+
+    <div class="box blue">
+      <div class="box-title">
+        <span>🔔</span> 通知中心
+      </div>
+      <ul>
+        <li>申請審核結果通知</li>
+        <li>退回補件提醒（附說明）</li>
+        <li>本月薪資/獎金查詢</li>
+      </ul>
+    </div>
+
+    <div class="box blue" style="border-style:dashed; opacity:0.7;">
+      <div class="box-title">
+        <span>📱</span> 離線支援
+        <span class="badge plan">規劃</span>
+      </div>
+      <ul>
+        <li>IndexedDB 本地暫存</li>
+        <li>網路恢復後自動同步</li>
+        <li>操作狀態：本地/已同步</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── ARROW 1 ── -->
+  <div class="between-col">
+    <div class="b-arrow">
+      <span style="color:#3b82f6">→</span>
+      <div class="b-label">送出申報</div>
+    </div>
+    <div class="b-arrow">
+      <span style="color:#f97316">←</span>
+      <div class="b-label">審核結果<br>退回原因</div>
+    </div>
+    <div class="b-arrow">
+      <span style="color:#22c55e">↔</span>
+      <div class="b-label">船員名單<br>同步</div>
+    </div>
+  </div>
+
+  <!-- ── COL B: 船端主系統 ── -->
+  <div class="col">
+    <div class="col-header ship">② 船端主系統 SHIP CORE</div>
+
+    <div class="box green">
+      <div class="box-title">
+        <span>📊</span> Dashboard 儀表板
+        <span class="badge core">核心</span>
+      </div>
+      <ul>
+        <li>期初/期末結餘（USD/TWD）</li>
+        <li>A216 船用金彙整</li>
+        <li>V科目總支出彙整</li>
+        <li>A217 台籍/外籍分開統計</li>
+        <li>即時現金餘額計算</li>
+      </ul>
+    </div>
+
+    <div class="box green">
+      <div class="box-title">
+        <span>💵</span> A216 船用金
+        <span class="code">CASH ADVANCE</span>
+      </div>
+      <ul>
+        <li>港口別預支登錄</li>
+        <li>USD/TWD 雙幣換算</li>
+        <li>獨立匯率（A216 Rate）</li>
+        <li>總表明細下載（蓋船章）</li>
+      </ul>
+    </div>
+
+    <div class="box green">
+      <div class="box-title">
+        <span>🍽️</span> V200 伙食費
+        <span class="code">MEAL ALLOWANCE</span>
+      </div>
+      <ul>
+        <li>批次計算（日期區段×名單）</li>
+        <li>連動船員上下船日期取交集</li>
+        <li>年節加菜金（春節3天鎖定）</li>
+        <li>區段重疊防呆</li>
+      </ul>
+    </div>
+
+    <div class="box green">
+      <div class="box-title">
+        <span>🚌</span> V802 交通費
+        <span class="code">TRANSPORTATION</span>
+      </div>
+      <ul>
+        <li>個人關聯（連動船員名單）</li>
+        <li>計程車免憑證，其餘強制上傳</li>
+        <li>港口代碼強制 5碼 大寫</li>
+        <li>簽收單 + 頁腳四格簽核</li>
+      </ul>
+    </div>
+
+    <div class="box green">
+      <div class="box-title">
+        <span>🏥</span> V804 醫療費
+        <span class="code">MEDICAL</span>
+      </div>
+      <ul>
+        <li>體檢/就醫/疫苗/其他 分類</li>
+        <li>體檢品名下拉（3選1）</li>
+        <li>摘要格式強制：城市+醫院</li>
+        <li>AI 收據辨識 + 簽名檢核</li>
+      </ul>
+    </div>
+
+    <div class="box green">
+      <div class="box-title">
+        <span>🥂</span> V810 交際費
+        <span class="code">ENTERTAINMENT</span>
+      </div>
+      <ul>
+        <li>碼頭招待 / 招待使用 / PSC</li>
+        <li>菸品管控邏輯</li>
+        <li>AI誤差超1%警告</li>
+        <li>4 KEYMAN + MASTER 簽核</li>
+      </ul>
+    </div>
+
+    <div class="box green2">
+      <div class="box-title">
+        <span>📦</span> V401/V402 物料採購
+      </div>
+      <ul>
+        <li>甲板/機艙急缺物料</li>
+        <li>AI 上傳辨識日期/金額/項目</li>
+        <li>SUPPORTING → 整合 A274</li>
+      </ul>
+    </div>
+
+    <div class="box green2">
+      <div class="box-title">
+        <span>🎉</span> V819 船員活動費
+      </div>
+      <ul>
+        <li>集體活動（不關聯個人）</li>
+        <li>支援多張發票上傳</li>
+        <li>MASTER 簽名彙整表</li>
+      </ul>
+    </div>
+
+    <div class="box green2">
+      <div class="box-title">
+        <span>🧾</span> V911 雜費
+        <span class="code">MISC</span>
+      </div>
+      <ul>
+        <li>茶葉/香燭/圖書雜誌</li>
+        <li>AI上傳辨識</li>
+        <li>MASTER 蓋船章</li>
+      </ul>
+    </div>
+
+    <div class="box green">
+      <div class="box-title">
+        <span>🏆</span> A217 獎金/薪資模組
+        <span class="code">BONUS</span>
+      </div>
+      <ul>
+        <li>總覽：定義項目 + 核准總額</li>
+        <li>分配：個別船員分配金額</li>
+        <li>矩陣總表（縱:船員 橫:項目）</li>
+        <li>超額/未分配完 → 阻擋送出</li>
+        <li>台籍/外籍幣別自動切分</li>
+      </ul>
+    </div>
+
+    <div class="box yellow">
+      <div class="box-title">
+        <span>🧮</span> A274 稅務整合
+        <span class="code">TAX</span>
+      </div>
+      <ul>
+        <li>各科目 SUPPORTING 按鍵→帶入</li>
+        <li>台灣開立單據稅額計算</li>
+        <li>定位點欄位（IMPORT C）</li>
+      </ul>
+    </div>
+
+    <div class="box green">
+      <div class="box-title">
+        <span>📤</span> 報表產出
+      </div>
+      <ul>
+        <li><b style="color:#86efac">PDF</b>：各科目簽收單（船員簽名欄）</li>
+        <li><b style="color:#86efac">Excel</b>：定位點輸出（WDPCM116/PSF713）</li>
+        <li>送回前全檢（阻擋未完成項目）</li>
+        <li>匯出前乾跑驗證（筆數+加總）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── ARROW 2 ── -->
+  <div class="between-col">
+    <div class="b-arrow">
+      <span style="color:#22c55e">→</span>
+      <div class="b-label">月底整包<br>送回岸端</div>
+    </div>
+    <div class="b-arrow">
+      <span style="color:#a855f7">↔</span>
+      <div class="b-label">FMS船員<br>名單同步</div>
+    </div>
+    <div class="b-arrow">
+      <span style="color:#a855f7">↓</span>
+      <div class="b-label">匯率注入</div>
+    </div>
+    <div class="b-arrow">
+      <span style="color:#a855f7">↓</span>
+      <div class="b-label">獎金核准<br>金額帶入</div>
+    </div>
+    <div class="b-arrow">
+      <span style="color:#f97316">←</span>
+      <div class="b-label">審核結果<br>回傳</div>
+    </div>
+  </div>
+
+  <!-- ── COL C: 岸端系統 ── -->
+  <div class="col">
+    <div class="col-header shore">④ 岸端系統 SHORE</div>
+
+    <div class="box orange">
+      <div class="box-title">
+        <span>📥</span> 資料接收中心
+      </div>
+      <ul>
+        <li>接收船端月底整包資料</li>
+        <li>檔案版本管控</li>
+        <li>各船帳狀態追蹤（進度看板）</li>
+        <li>歷史查詢（含各版本修改紀錄）</li>
+      </ul>
+    </div>
+
+    <div class="box orange">
+      <div class="box-title">
+        <span>🤖</span> AI 自動審核
+        <span class="badge wip">開發中</span>
+      </div>
+      <ul>
+        <li>OCR 讀取：日期/廠商/金額</li>
+        <li>與輸入值比對誤差 &gt;1% 警告</li>
+        <li>簽名筆跡檢核（簽收單）</li>
+        <li>歷史異常值警示</li>
+      </ul>
+    </div>
+
+    <div class="box orange">
+      <div class="box-title">
+        <span>🔍</span> 綜合搜尋分析
+      </div>
+      <ul>
+        <li>全船隊各科目金額查詢</li>
+        <li>交際費菸品消耗量趨勢</li>
+        <li>醫療費/交通費異常偵測</li>
+        <li>伙食帳廠商/港口/日期查詢</li>
+      </ul>
+    </div>
+
+    <div class="box orange">
+      <div class="box-title">
+        <span>✅</span> 岸端審核作業
+      </div>
+      <ul>
+        <li>承辦人逐筆審核確認</li>
+        <li>主管電子簽核</li>
+        <li>退回補件（附說明通知船端）</li>
+        <li>列印驗收單供主管蓋章</li>
+      </ul>
+    </div>
+
+    <div class="box orange">
+      <div class="box-title">
+        <span>💰</span> 獎金核准流程
+      </div>
+      <ul>
+        <li>公務部/海技部輸入核准總額</li>
+        <li>API 推送 → 船端 A217 帶入</li>
+        <li>取代 Email 手動輸入流程</li>
+      </ul>
+    </div>
+
+    <div class="box red">
+      <div class="box-title">
+        <span>🗄️</span> 後端系統匯入
+        <span class="badge core">關鍵</span>
+      </div>
+      <ul>
+        <li><b style="color:#fca5a5">WDPCM116</b> IMPORT D&amp;C（V科目）</li>
+        <li><b style="color:#fca5a5">WDPCM116</b> IMPORT C（A274稅務）</li>
+        <li><b style="color:#fca5a5">WDPSF713</b> 薪資系統結算（A217）</li>
+        <li>定位點驗證 → 乾跑 → 匯入</li>
+      </ul>
+    </div>
+
+    <div class="box orange" style="border-style:dashed; opacity:0.7;">
+      <div class="box-title">
+        <span>📈</span> 報表與分析
+        <span class="badge plan">規劃</span>
+      </div>
+      <ul>
+        <li>成本品質分析報表</li>
+        <li>跨月/跨船比較</li>
+        <li>AI 分析摘要建議</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     API LAYER (FULL WIDTH)
+══════════════════════════════════════════ -->
+<div style="max-width:1280px; margin: 20px auto 0;">
+  <div class="api-row">
+    <div class="api-row-title">
+      <span>⚡</span> ③ API 串接層 — INTEGRATION LAYER
+      <span class="badge plan">規劃中</span>
+    </div>
+    <div class="api-boxes">
+
+      <div class="box purple">
+        <div class="box-title">
+          <span>👥</span> FMS 船員名單
+          <span class="code">Crewlist API</span>
+        </div>
+        <ul>
+          <li>即時抓取上/下船日期</li>
+          <li>職稱 (Rank) / 姓名</li>
+          <li>員編判別台籍/外籍</li>
+          <li>V200/V802/V804/A217 共用</li>
+          <li style="color:#f87171">降級：CSV手動匯入</li>
+        </ul>
+      </div>
+
+      <div class="box purple">
+        <div class="box-title">
+          <span>💱</span> 匯率系統
+          <span class="code">Exchange Rate API</span>
+        </div>
+        <ul>
+          <li>每月27日岸端財務發布</li>
+          <li>全域匯率 (Global Rate)</li>
+          <li>A216 獨立匯率分開管理</li>
+          <li>Redis快取，帶時間戳版本</li>
+          <li style="color:#f87171">降級：管理員手動輸入</li>
+        </ul>
+      </div>
+
+      <div class="box purple">
+        <div class="box-title">
+          <span>🏅</span> 獎金核准 API
+          <span class="code">Bonus Approval</span>
+        </div>
+        <ul>
+          <li>公務部/海技部核准後觸發</li>
+          <li>自動帶入 A217 核准總額</li>
+          <li>取代 Email 手動流程</li>
+          <li style="color:#f87171">降級：岸端手動輸入推送</li>
+        </ul>
+      </div>
+
+      <div class="box purple">
+        <div class="box-title">
+          <span>🧠</span> AI OCR 服務
+          <span class="code">Claude API</span>
+        </div>
+        <ul>
+          <li>多模態讀取 PDF/JPG 單據</li>
+          <li>擷取：日期/廠商/金額</li>
+          <li>簽名筆跡檢核</li>
+          <li>BullMQ 非同步佇列</li>
+          <li>結果人工確認後才入庫</li>
+        </ul>
+      </div>
+
+      <div class="box purple">
+        <div class="box-title">
+          <span>🔒</span> 身份驗證
+          <span class="code">Auth / SSO</span>
+        </div>
+        <ul>
+          <li>萬海園地 EC SSO 整合</li>
+          <li>JWT + Refresh Token</li>
+          <li>Role-based Access Control</li>
+          <li>船員 / 船長 / 事務長 / 岸端</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     EXTERNAL SYSTEMS ROW
+══════════════════════════════════════════ -->
+<div style="max-width:1280px; margin: 16px auto 0;">
+  <div class="ext-row">
+    <div class="ext-title">⑤ 外部系統 — EXTERNAL SYSTEMS（只接收，不回寫）</div>
+    <div class="ext-boxes">
+
+      <div class="box gray">
+        <div class="box-title"><span>📗</span> WDPCM116</div>
+        <ul>
+          <li>會計入帳系統</li>
+          <li>IMPORT D&amp;C（V科目）</li>
+          <li>IMPORT C（A274稅務）</li>
+          <li>定位點 Excel 匯入</li>
+        </ul>
+      </div>
+
+      <div class="box gray">
+        <div class="box-title"><span>📘</span> WDPSF713</div>
+        <ul>
+          <li>薪資結算系統</li>
+          <li>A217 獎金 SHEET2 匯入</li>
+          <li>定位點 Excel 匯入</li>
+        </ul>
+      </div>
+
+      <div class="box gray">
+        <div class="box-title"><span>🚢</span> FMS 系統</div>
+        <ul>
+          <li>WDFMSG109（修船獎金）</li>
+          <li>WDFMSC376（引水獎金）</li>
+          <li>WDFMSC540（基本薪）</li>
+          <li>WDFMSC311（船用金審核）</li>
+        </ul>
+      </div>
+
+      <div class="box gray">
+        <div class="box-title"><span>🌐</span> EC 人事系統</div>
+        <ul>
+          <li>員工基本資料</li>
+          <li>SSO 身份驗證來源</li>
+          <li>船員個資更新同步</li>
+        </ul>
+      </div>
+
+      <div class="box gray">
+        <div class="box-title"><span>🗂️</span> 檔案儲存</div>
+        <ul>
+          <li>S3 / MinIO 物件儲存</li>
+          <li>單據 PDF/JPG 上傳</li>
+          <li>簽收單 PDF 存檔</li>
+          <li>版本管控</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TECH STACK ROW
+══════════════════════════════════════════ -->
+<div style="max-width:1280px; margin: 16px auto 0; border:1px solid #1e293b; border-radius:12px; padding:14px 20px; background:rgba(15,23,42,0.5);">
+  <div style="font-size:11px; color:#475569; letter-spacing:2px; font-weight:600; margin-bottom:10px;">🛠️ 技術選型 — TECH STACK</div>
+  <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:10px; font-size:11px;">
+    <div>
+      <div style="color:#93c5fd; font-weight:700; margin-bottom:4px;">前端</div>
+      <div style="color:#94a3b8; line-height:1.8;">
+        React 18 + TypeScript<br>
+        Ant Design (企業表格)<br>
+        Zustand (狀態管理)<br>
+        AG Grid (大量欄位)<br>
+        jsPDF + xlsx (報表)
+      </div>
+    </div>
+    <div>
+      <div style="color:#86efac; font-weight:700; margin-bottom:4px;">後端</div>
+      <div style="color:#94a3b8; line-height:1.8;">
+        NestJS (Node.js)<br>
+        Prisma ORM<br>
+        PostgreSQL (主資料庫)<br>
+        Redis (快取/Session)<br>
+        BullMQ (AI非同步佇列)
+      </div>
+    </div>
+    <div>
+      <div style="color:#c4b5fd; font-weight:700; margin-bottom:4px;">AI / 離線</div>
+      <div style="color:#94a3b8; line-height:1.8;">
+        Claude API (OCR/辨識)<br>
+        FastAPI (AI微服務)<br>
+        Service Worker (PWA)<br>
+        IndexedDB (離線暫存)<br>
+        Background Sync API
+      </div>
+    </div>
+    <div>
+      <div style="color:#fdba74; font-weight:700; margin-bottom:4px;">部署 / 安全</div>
+      <div style="color:#94a3b8; line-height:1.8;">
+        Docker + Nginx<br>
+        MinIO (檔案儲存)<br>
+        JWT + Refresh Token<br>
+        Optimistic Locking<br>
+        定位點版本管控
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LEGEND
+══════════════════════════════════════════ -->
+<div class="legend" style="margin-top:20px;">
+  <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> 船員端</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> 船端主系統（開發核心）</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#a855f7"></span> API串接層</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> 岸端系統</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#475569"></span> 外部系統</div>
+  <div class="legend-item"><span class="badge core" style="font-size:10px;">核心</span> 優先開發</div>
+  <div class="legend-item"><span class="badge wip" style="font-size:10px;">開發中</span> 進行中</div>
+  <div class="legend-item"><span class="badge plan" style="font-size:10px;">規劃</span> 後續規劃</div>
+  <div class="legend-item" style="color:#f87171; font-size:11px;">⚠ 紅色文字 = 降級備援方案</div>
+</div>
+
+<div style="text-align:center; margin-top:24px; font-size:10px; color:#334155;">
+  WAN HAI LINES — SHIP ACCOUNT WEB SYSTEM ARCHITECTURE · 2026
+</div>
+
+</body>
+</html>
