@@ -1007,9 +1007,6 @@
   .instructor-name { font-size: 13px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .instructor-roles { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
   .instructor-role { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
-  .instructor-role-teach { background: #ede9fe; color: #6d28d9; }
-  .instructor-role-ta { background: #fef3c7; color: #b45309; }
-  .instructor-role-video { background: #ccfbf1; color: #0f766e; }
   .instructor-role-retired { background: #e5e7eb; color: #6b7280; }
   .instructor-more-btn {
     align-self: flex-start; margin-top: 2px; padding: 5px 10px;
@@ -4113,11 +4110,9 @@
     // 兩個來源取聯集：
     //   1. 師資卡的「講授課程／助教經驗／影片協作」課名與本課程相同
     //   2. 訓練排程實際派過這門課的主講與助教
-    const INSTRUCTOR_ROLES = {
-      teach: { label: '主講',   order: 1, cls: 'instructor-role-teach' },
-      ta:    { label: '助教',   order: 2, cls: 'instructor-role-ta' },
-      video: { label: '影片協作', order: 3, cls: 'instructor-role-video' }
-    };
+    // 會議決議（16:37）：授課講師只顯示姓名，不標「主講／助教」。
+    // 同一位老師可能同時是主講與助教，把角色固定標在人身上會誤導；
+    // 授課身分屬於「某一場排程」的屬性，要看請到訓練排程的派課紀錄。
 
     function _loadLocalArray(key) {
       try {
@@ -4134,7 +4129,7 @@
       const assignments = _loadLocalArray('courseAssignments');
       const found = new Map(); // key: 師資 id（找不到師資卡時用姓名）
 
-      const add = (teacher, role, fallbackName) => {
+      const add = (teacher, fallbackName) => {
         const name = String(teacher?.name || fallbackName || '').trim();
         if (!name) return;
         const key = teacher?.id != null ? `id:${teacher.id}` : `name:${name}`;
@@ -4143,36 +4138,31 @@
             id: teacher?.id ?? null,
             name,
             photo: teacher?.photo || '',
-            retired: teacher?.workLocation === 'retired',
-            roles: new Set()
+            retired: teacher?.workLocation === 'retired'
           });
         }
-        if (INSTRUCTOR_ROLES[role]) found.get(key).roles.add(role);
       };
 
       teachers.forEach(t => {
         (t?.subjects || []).forEach(s => {
           const name = String((typeof s === 'string' ? s : s?.name) || '').trim();
           if (name !== courseName) return;
-          const role = (typeof s === 'object' && s?.category) || 'teach';
-          add(t, INSTRUCTOR_ROLES[role] ? role : 'teach');
+          add(t);
         });
       });
 
       assignments.forEach(a => {
         if (String(a?.name || '').trim() !== courseName) return;
         const byId = id => teachers.find(t => String(t?.id) === String(id));
-        if (a.teacherId != null) add(byId(a.teacherId), 'teach', a.teacherName);
-        if (a.taId != null) add(byId(a.taId), 'ta', a.taName);
+        if (a.teacherId != null) add(byId(a.teacherId), a.teacherName);
+        if (a.taId != null) add(byId(a.taId), a.taName);
       });
 
-      return Array.from(found.values())
-        .map(p => ({ ...p, roles: Array.from(p.roles).sort((a, b) => INSTRUCTOR_ROLES[a].order - INSTRUCTOR_ROLES[b].order) }))
-        .sort((a, b) => {
-          const ra = INSTRUCTOR_ROLES[a.roles[0]]?.order ?? 9;
-          const rb = INSTRUCTOR_ROLES[b.roles[0]]?.order ?? 9;
-          return ra !== rb ? ra - rb : a.name.localeCompare(b.name, 'zh-Hant');
-        });
+      // 沒有角色可排了，改為在職者優先、同組依姓名排序
+      return Array.from(found.values()).sort((a, b) => {
+        if (a.retired !== b.retired) return a.retired ? 1 : -1;
+        return a.name.localeCompare(b.name, 'zh-Hant');
+      });
     }
 
     const INSTRUCTOR_PREVIEW_COUNT = 3;
@@ -4184,16 +4174,17 @@
       }
 
       const row = p => {
-        const roles = p.roles.map(r =>
-          `<span class="instructor-role ${INSTRUCTOR_ROLES[r].cls}">${INSTRUCTOR_ROLES[r].label}</span>`
-        ).join('') + (p.retired ? '<span class="instructor-role instructor-role-retired">退休</span>' : '');
+        // 退休是「還能不能排課」的狀態，不是授課身分，予以保留
+        const status = p.retired
+          ? '<span class="instructor-role instructor-role-retired">退休</span>'
+          : '';
         const inner = `
           <div class="instructor-avatar">
             ${p.photo ? `<img src="${escapeHtml(p.photo)}" alt="${escapeHtml(p.name)}">` : escapeHtml(p.name.trim()[0] || '?')}
           </div>
           <div class="instructor-text">
             <span class="instructor-name">${escapeHtml(p.name)}</span>
-            <span class="instructor-roles">${roles}</span>
+            ${status ? `<span class="instructor-roles">${status}</span>` : ''}
           </div>`;
         return p.id != null
           ? `<a class="instructor-item" href="teacher-management.html?teacherId=${encodeURIComponent(p.id)}" title="查看 ${escapeHtml(p.name)} 的師資卡">${inner}</a>`
