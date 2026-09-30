@@ -1001,10 +1001,6 @@
     <div id="teacherDetail" class="hidden slide-in">
       <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl mx-auto">
         <button onclick="backToList()" class="btn btn-plain mb-6">← 返回師資列表</button>
-
-        <!-- 授課強項雷達圖（唯讀，由訓練排程自動統計） -->
-        <div id="teacherRadarPanel"></div>
-
         <form id="teacherForm" class="space-y-6">
           <!-- 基本資訊 -->
           <div class="bg-gray-50 p-6 rounded-lg">
@@ -1987,8 +1983,6 @@
 
     function addNewTeacher(){
       currentTeacherId = null;
-      // 新增時沒有授課紀錄可統計，清掉上一位留下的圖
-      renderTeacherRadarInto('teacherRadarPanel', null);
       document.getElementById('teacherList').classList.add('hidden');
       document.getElementById('teacherDetail').classList.remove('hidden');
       document.getElementById('deleteBtn').classList.add('hidden');
@@ -2021,8 +2015,6 @@
       document.querySelector(`input[value="${teacherType}"]`).closest('label').querySelector('.teacher-type-option').classList.add('selected',teacherType);
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
       document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
-
-      renderTeacherRadarInto('teacherRadarPanel', teacher);
 
       const photoBox = document.getElementById('photoPreview');
       if (teacher.photo){
@@ -2395,16 +2387,6 @@
             </div>
           </div>
         </div>`;
-    }
-
-    /**
-     * 把雷達圖畫進指定容器（編輯表單用）
-     */
-    function renderTeacherRadarInto(containerId, teacher) {
-      const box = document.getElementById(containerId);
-      if (!box) return;
-      if (!teacher) { box.innerHTML = ''; return; }
-      box.innerHTML = renderTeacherRadar(teacher);
     }
 
     function viewTeacherDetail(teacherId){
