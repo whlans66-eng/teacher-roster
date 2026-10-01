@@ -24,7 +24,6 @@
       --apple-radius: 20px;      /* 卡片、Modal */
       --apple-radius-sm: 12px;   /* 卡片內層、按鈕、輸入框 */
       --brand: #0a4a7a;
-      --sidebar-w: 288px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -125,148 +124,388 @@
 
     /* ── Layout ── */
     .app-body {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    /* ── Sidebar ── */
-    .sidebar {
-      width: var(--sidebar-w);
-      background: var(--apple-white);
-      border-right: 1px solid var(--apple-border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      overflow: hidden;
-    }
-
-    .sidebar-header {
-      padding: 16px 14px 10px;
-      border-bottom: 1px solid var(--apple-border);
-    }
-
-    .sidebar-search {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--apple-bg);
-      border-radius: 10px;
-      padding: 8px 12px;
-      font-size: 13px;
-      color: var(--apple-gray);
-    }
-
-    .sidebar-search input {
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 13px;
-      color: var(--apple-text);
-      width: 100%;
-      font-family: inherit;
-    }
-
-    .sidebar-body {
       flex: 1;
       overflow-y: auto;
-      padding: 8px;
+      overflow-x: hidden;
     }
 
-    .sidebar-body::-webkit-scrollbar { width: 0; }
+    .app-body::-webkit-scrollbar { width: 8px; }
+    .app-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
 
-    .course-row {
+    .learn-wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 24px 64px;
+      animation: fadeUp 0.35s ease;
+    }
+
+    /* ── Section ── */
+    .sec-head {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 9px 10px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.18s ease;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
     }
 
-    .course-row:hover { background: var(--apple-bg); }
-
-    .course-row.active {
-      background: var(--apple-blue-light);
+    .sec-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--apple-text);
     }
 
-    .course-row-icon {
-      width: 36px; height: 36px;
-      border-radius: 9px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 17px;
-      flex-shrink: 0;
-    }
-
-    .course-row-text { flex: 1; min-width: 0; }
-
-    .course-row-name {
+    .sec-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       font-size: 13px;
       font-weight: 600;
       color: var(--apple-text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      background: var(--apple-white);
+      border: 1px solid var(--apple-border);
+      border-radius: 999px;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
     }
 
-    .course-row.active .course-row-name { color: var(--apple-blue); }
+    .sec-link:hover { background: var(--apple-bg); transform: translateX(2px); }
 
-    .course-row-cat {
-      font-size: 11px;
-      color: var(--apple-gray);
-      margin-top: 1px;
+    .sec + .sec { margin-top: 36px; }
+
+    /* ── 我的學習 Hero ── */
+    .hero-card {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      background: #1c1c1e;
+      border-radius: var(--apple-radius);
+      padding: 20px;
+      box-shadow: var(--apple-shadow-md);
     }
 
-    .mat-pill {
-      font-size: 10px;
-      font-weight: 700;
-      min-width: 20px;
-      height: 20px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0 6px;
+    .hero-thumb {
+      position: relative;
+      width: 188px;
+      height: 106px;
       flex-shrink: 0;
-      background: var(--apple-bg);
-      color: var(--apple-gray);
-    }
-
-    .mat-pill.filled {
-      background: var(--apple-blue-light);
-      color: var(--apple-blue);
-    }
-
-    /* ── Main ── */
-    .main {
-      flex: 1;
-      overflow-y: auto;
+      border-radius: var(--apple-radius-sm);
+      overflow: hidden;
       display: flex;
-      flex-direction: column;
-    }
-
-    .main::-webkit-scrollbar { width: 6px; }
-    .main::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
-
-    .empty-main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 14px;
+      cursor: pointer;
+    }
+
+    .hero-thumb i.cat-ico {
+      font-size: 42px;
+      color: rgba(255,255,255,0.92);
+    }
+
+    .hero-play {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.26);
+      transition: background 0.2s;
+    }
+
+    .hero-thumb:hover .hero-play { background: rgba(0,0,0,0.42); }
+
+    .hero-play span {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.92);
+      color: #1c1c1e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    }
+
+    .hero-info { flex: 1; min-width: 0; }
+
+    .hero-kicker {
+      font-size: 12px;
+      color: rgba(255,255,255,0.56);
+      margin-bottom: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hero-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+      margin-bottom: 16px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hero-prog {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .hero-prog-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.56);
+      flex-shrink: 0;
+    }
+
+    .hero-track {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.16);
+      overflow: hidden;
+    }
+
+    .hero-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #7c5cff, #c084fc);
+      transition: width 0.4s ease;
+    }
+
+    .hero-pct {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .hero-units {
+      font-size: 12px;
+      color: rgba(255,255,255,0.56);
+      flex-shrink: 0;
+    }
+
+    /* ── 學習路徑 ── */
+    .path-card {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: var(--apple-white);
+      border-radius: var(--apple-radius);
+      padding: 18px;
+      box-shadow: var(--apple-shadow-sm);
+      margin-bottom: 14px;
+    }
+
+    .path-cover {
+      width: 150px;
+      height: 92px;
+      flex-shrink: 0;
+      border-radius: var(--apple-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.92);
+      font-size: 34px;
+    }
+
+    .path-info { flex: 1; min-width: 0; }
+
+    .path-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+
+    .path-code {
+      font-size: 11px;
+      font-weight: 700;
       color: var(--apple-gray);
-      animation: fadeUp 0.5s ease;
+      background: var(--apple-bg);
+      border-radius: 6px;
+      padding: 2px 7px;
     }
 
-    .empty-main-icon {
-      font-size: 64px;
-      opacity: 0.15;
+    .path-desc {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--apple-gray-2);
     }
 
-    .empty-main p {
-      font-size: 15px;
-      font-weight: 500;
+    .path-ring {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--apple-bg);
+      border-radius: 999px;
+      padding: 8px 16px 8px 10px;
     }
+
+    .ring {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .ring-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .path-ring-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--apple-text);
+      white-space: nowrap;
+    }
+
+    /* ── 模組卡片 ── */
+    .mod-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(216px, 1fr));
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .mod-card {
+      background: var(--apple-white);
+      border-radius: var(--apple-radius-sm);
+      overflow: hidden;
+      box-shadow: var(--apple-shadow-sm);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mod-card:hover { transform: translateY(-3px); box-shadow: var(--apple-shadow-md); }
+
+    .mod-card.locked { cursor: default; }
+    .mod-card.locked:hover { transform: none; box-shadow: var(--apple-shadow-sm); }
+    .mod-card.locked .mod-cover { filter: grayscale(0.55); opacity: 0.6; }
+
+    .mod-cover {
+      position: relative;
+      height: 116px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.92);
+      font-size: 34px;
+    }
+
+    .mod-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(0,0,0,0.42);
+      backdrop-filter: blur(6px);
+      border-radius: 6px;
+      padding: 3px 8px;
+    }
+
+    .mod-lock {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.42);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #fff;
+    }
+
+    .mod-bar {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 4px;
+      background: rgba(0,0,0,0.22);
+    }
+
+    .mod-bar > span {
+      display: block;
+      height: 100%;
+      background: #7c5cff;
+    }
+
+    .mod-body { padding: 12px 14px 14px; }
+
+    .mod-name {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.45;
+      color: var(--apple-text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 7px;
+      min-height: 40px;
+    }
+
+    .mod-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11.5px;
+      color: var(--apple-gray);
+    }
+
+    .mod-meta i { font-size: 13px; }
+
+    /* ── Course detail view ── */
+    .detail-bar {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px 24px 0;
+    }
+
+    .detail-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--apple-blue);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+
+    .detail-back:hover { background: var(--apple-blue-light); }
+
+    .detail-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding-bottom: 56px;
+    }
+
+    .hidden { display: none !important; }
 
     /* ── Course Header ── */
     .course-header {
@@ -793,11 +1032,15 @@
     .toast.success i { color: #30d158; }
     .toast.error   i { color: #ff453a; }
 
-    @media (max-width: 640px) {
-      :root { --sidebar-w: 64px; }
-      .course-row-text, .course-row-cat, .mat-pill { display: none; }
-      .course-row { justify-content: center; }
-      .course-row-icon { margin: 0; }
+    @media (max-width: 760px) {
+      .learn-wrap { padding: 20px 16px 48px; }
+      .detail-bar, .detail-inner { padding-left: 16px; padding-right: 16px; }
+      .hero-card { flex-direction: column; align-items: stretch; gap: 14px; }
+      .hero-thumb { width: 100%; height: 150px; }
+      .path-card { flex-wrap: wrap; }
+      .path-cover { width: 100%; height: 110px; }
+      .path-ring { margin-left: auto; }
+      .mod-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
       .course-header { flex-wrap: wrap; padding: 16px; }
       .content-panel { padding: 16px; }
     }
@@ -824,26 +1067,42 @@
   <!-- App body -->
   <div class="app-body">
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-search">
-          <i class="ph ph-magnifying-glass" style="flex-shrink:0;font-size:14px"></i>
-          <input type="text" id="sidebarSearch" placeholder="搜尋課程…" oninput="filterSidebar()">
-        </div>
-      </div>
-      <div class="sidebar-body" id="sidebarBody">
-        <div style="padding:24px 10px;text-align:center;font-size:13px;color:var(--apple-gray)">載入中…</div>
-      </div>
-    </aside>
+    <!-- 學習總覽 -->
+    <div id="learnView">
+      <div class="learn-wrap">
 
-    <!-- Main -->
-    <main class="main" id="mainArea">
-      <div class="empty-main">
-        <div class="empty-main-icon"><i class="ph ph-books"></i></div>
-        <p>請從左側選擇課程</p>
+        <section class="sec">
+          <div class="sec-head">
+            <div class="sec-title">我的學習</div>
+            <button class="sec-link" onclick="goMyLearning()">前往我的學習 <i class="ph ph-caret-right"></i></button>
+          </div>
+          <div id="heroSlot"></div>
+        </section>
+
+        <section class="sec" id="pathSection">
+          <div class="sec-head">
+            <div class="sec-title">學習路徑</div>
+          </div>
+          <div id="pathSlot">
+            <div class="empty-state" style="padding:36px 0">
+              <i class="ph ph-circle-notch"></i>
+              <h3>載入中…</h3>
+            </div>
+          </div>
+        </section>
+
       </div>
-    </main>
+    </div>
+
+    <!-- 課程（模組）詳細 -->
+    <div id="courseView" class="hidden">
+      <div class="detail-bar">
+        <button class="detail-back" onclick="closeCourse()">
+          <i class="ph ph-caret-left"></i> 返回學習路徑
+        </button>
+      </div>
+      <div class="detail-inner" id="courseArea"></div>
+    </div>
 
   </div>
 
@@ -876,23 +1135,42 @@
     let progressTimer = null;
     let viewerMeta = null;
 
-    const CAT_ICON = {
-      STCW:'<i class="ph ph-boat"></i>', safety:'<i class="ph ph-lifebuoy"></i>', navigation:'<i class="ph ph-compass"></i>', engine:'<i class="ph ph-gear"></i>',
-      cargo:'<i class="ph ph-package"></i>', medical:'<i class="ph ph-first-aid-kit"></i>', fire:'<i class="ph ph-fire"></i>', security:'<i class="ph ph-lock"></i>',
-      environment:'<i class="ph ph-waves"></i>', leadership:'<i class="ph ph-crown"></i>', communication:'<i class="ph ph-broadcast"></i>', survival:'<i class="ph ph-sailboat"></i>'
+    // 課程分類：與智慧派課（maritime-courses.html）的 maritimeCategoryNames 一致
+    const CAT_NAME = {
+      '01': '船舶操縱與航行實務訓練',
+      '02': '領導統御與檢查應對管理',
+      '03': '事故案例分析與應變處置訓練',
+      '04': '船舶設備操作與技術知能訓練',
+      '05': '國際法規與環境合規知識',
+      '06': '船舶貨物裝卸作業實務',
+      '07': '船員經驗交流與職能回饋',
+      '08': '職級轉換與壓力調適',
+      '09': '其他'
     };
-    const CAT_BG = {
-      STCW:'#dbeafe', safety:'#fef3c7', navigation:'#dcfce7', engine:'#fce7f3',
-      cargo:'#e0e7ff', medical:'#ffe4e6', fire:'#ffedd5', security:'#f0f0f5',
-      environment:'#d1fae5', leadership:'#fef9c3', communication:'#ede9fe', survival:'#cffafe'
+    const CAT_ICON = {
+      '01': 'ph-anchor', '02': 'ph-users-three', '03': 'ph-warning-circle',
+      '04': 'ph-gear',   '05': 'ph-scales',      '06': 'ph-package',
+      '07': 'ph-chat-circle-dots', '08': 'ph-arrow-u-up-left', '09': 'ph-dots-three'
+    };
+    const CAT_COLOR = {
+      '01': '#4f46e5', '02': '#06b6d4', '03': '#10b981',
+      '04': '#f59e0b', '05': '#ef4444', '06': '#8b5cf6',
+      '07': '#f97316', '08': '#84cc16', '09': '#ec4899'
+    };
+    const CAT_ORDER = ['01','02','03','04','05','06','07','08','09'];
+
+    const catOf   = c => CAT_NAME[c?.category] ? c.category : '09';
+    const catIcon = code => `<i class="ph ${CAT_ICON[code] || 'ph-folder'}"></i>`;
+    const catGrad = code => {
+      const col = CAT_COLOR[code] || '#6e6e73';
+      return `linear-gradient(135deg, ${col} 0%, ${col}99 100%)`;
     };
 
     // ── Init ──
     document.addEventListener('DOMContentLoaded', () => {
       if (!initAuth()) return;
-      loadData();
       const p = new URLSearchParams(location.search);
-      if (p.get('courseId')) setTimeout(() => selectCourse(p.get('courseId')), 150);
+      loadData(p.get('courseId'));
     });
 
     function initAuth() {
@@ -914,81 +1192,265 @@
       return true;
     }
 
-    function loadData() {
-      allCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
-      renderSidebar(allCourses);
+    // ── Data ──
+    function readCourses() {
+      try {
+        const raw = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+        return Array.isArray(raw) ? raw : [];
+      } catch { return []; }
     }
 
-    // ── Sidebar ──
-    function renderSidebar(list) {
-      const body = document.getElementById('sidebarBody');
-      if (!list.length) {
-        body.innerHTML = `<div style="padding:24px 10px;text-align:center;font-size:13px;color:var(--apple-gray)">尚無課程</div>`;
+    // 先用本地快取立即上畫面，再從後端同步（與 maritime-courses.html 相同流程）
+    async function loadData(preselectId = null) {
+      allCourses = readCourses();
+      renderLearn();
+      if (preselectId) openCourse(preselectId);
+
+      if (typeof initializeDataSync === 'undefined') return;
+      try {
+        await initializeDataSync();
+      } catch (err) {
+        console.warn('⚠️ 後端同步失敗，使用本地資料:', err.message);
+        if (!allCourses.length) showToast('無法連線後端，目前沒有課程資料', 'error');
         return;
       }
-      body.innerHTML = list.map(c => {
-        const active = String(c.id) === String(activeCourseId);
-        const cnt = (c.materials || []).length;
-        return `
-          <div class="course-row ${active ? 'active' : ''}" onclick="selectCourse(${c.id})">
-            <div class="course-row-icon" style="background:${CAT_BG[c.category]||'#f5f5f7'}">${CAT_ICON[c.category]||'<i class="ph ph-books"></i>'}</div>
-            <div class="course-row-text">
-              <div class="course-row-name">${h(c.name)}</div>
-              <div class="course-row-cat">${h(c.category||'—')}</div>
+
+      allCourses = readCourses();
+      renderLearn();
+      const keep = activeCourseId || preselectId;
+      if (keep && allCourses.some(c => String(c.id) === String(keep))) openCourse(keep);
+      else if (activeCourseId) closeCourse();
+    }
+
+    // ── 進度計算 ──
+    function matDone(courseId, m) {
+      const prog = getProgress(courseId, m.fileName);
+      return !!(prog && (prog.completed || prog.viewed));
+    }
+
+    function courseStats(course) {
+      const mats = course.materials || [];
+      const done = mats.filter(m => matDone(course.id, m)).length;
+      return { total: mats.length, done, pct: mats.length ? Math.round(done / mats.length * 100) : 0 };
+    }
+
+    function pathStats(courses) {
+      let total = 0, done = 0;
+      courses.forEach(c => { const s = courseStats(c); total += s.total; done += s.done; });
+      return { total, done, pct: total ? Math.round(done / total * 100) : 0 };
+    }
+
+    // 最近一次觀看的教材（掃描本機進度紀錄）
+    function lastActivity() {
+      const prefix = `vp_${currentUser.username || 'u'}_`;
+      let best = null;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || key.indexOf(prefix) !== 0) continue;
+        let val;
+        try { val = JSON.parse(localStorage.getItem(key)); } catch { continue; }
+        if (!val || !val.lastViewed) continue;
+        if (best && val.lastViewed <= best.lastViewed) continue;
+        const rest = key.slice(prefix.length);
+        const sep = rest.indexOf('_');
+        if (sep < 0) continue;
+        best = {
+          courseId: rest.slice(0, sep),
+          fileName: decodeURIComponent(rest.slice(sep + 1)),
+          lastViewed: val.lastViewed
+        };
+      }
+      return best;
+    }
+
+    // ── 學習總覽 ──
+    function renderLearn() {
+      renderHero();
+      renderPaths();
+    }
+
+    function renderHero() {
+      const slot = document.getElementById('heroSlot');
+
+      // 優先顯示「繼續上次學習」，否則推薦第一門有教材的課程
+      const act = lastActivity();
+      let course = act ? allCourses.find(c => String(c.id) === String(act.courseId)) : null;
+      let kicker = course ? `繼續上次學習：${h(act.fileName)}` : '';
+
+      if (!course) {
+        course = allCourses.find(c => (c.materials || []).length);
+        kicker = course ? '開始學習：尚未觀看任何教材' : '';
+      }
+
+      if (!course) {
+        slot.innerHTML = `
+          <div class="hero-card">
+            <div class="hero-thumb" style="background:${catGrad('09')};cursor:default">
+              <i class="ph ph-books cat-ico"></i>
             </div>
-            <div class="mat-pill ${cnt ? 'filled' : ''}">${cnt}</div>
+            <div class="hero-info">
+              <div class="hero-kicker">目前沒有可學習的教材</div>
+              <div class="hero-name">${allCourses.length ? '課程尚未上傳教材' : '尚無課程資料'}</div>
+              <div class="hero-prog">
+                <span class="hero-prog-label">${isAdmin ? '請先到智慧派課建立課程，再回到此頁上傳教材' : '請等待管理員上傳教材'}</span>
+              </div>
+            </div>
           </div>`;
+        return;
+      }
+
+      const code = catOf(course);
+      const st = courseStats(course);
+      slot.innerHTML = `
+        <div class="hero-card">
+          <div class="hero-thumb" style="background:${catGrad(code)}" onclick="openCourse('${a(course.id)}')">
+            <i class="ph ${CAT_ICON[code]} cat-ico"></i>
+            <div class="hero-play"><span><i class="ph-fill ph-play"></i></span></div>
+          </div>
+          <div class="hero-info">
+            <div class="hero-kicker">${kicker}</div>
+            <div class="hero-name">${h(course.name || '未命名課程')}</div>
+            <div class="hero-prog">
+              <span class="hero-prog-label">上課進度</span>
+              <div class="hero-track"><div class="hero-fill" style="width:${st.pct}%"></div></div>
+              <span class="hero-pct">${st.pct}%</span>
+              <span class="hero-units">已完成 ${st.done}/${st.total} 個單元</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderPaths() {
+      const slot = document.getElementById('pathSlot');
+
+      // 依智慧派課的課程分類分組：一個分類＝一條學習路徑，分類底下每門課＝一個模組
+      const groups = new Map();
+      allCourses.forEach(c => {
+        const code = catOf(c);
+        if (!groups.has(code)) groups.set(code, []);
+        groups.get(code).push(c);
+      });
+
+      const codes = CAT_ORDER.filter(code => groups.has(code));
+      if (!codes.length) {
+        slot.innerHTML = `
+          <div class="empty-state" style="padding:48px 0">
+            <i class="ph ph-path"></i>
+            <h3>尚無學習路徑</h3>
+            <p>${isAdmin ? '請先到「智慧派課」建立課程，課程會依分類自動歸入學習路徑' : '管理員尚未建立課程'}</p>
+          </div>`;
+        return;
+      }
+
+      slot.innerHTML = codes.map(code => {
+        const courses = groups.get(code);
+        const st = pathStats(courses);
+        const col = CAT_COLOR[code];
+        const matCount = courses.reduce((n, c) => n + (c.materials || []).length, 0);
+
+        const ring = `conic-gradient(${col} ${st.pct * 3.6}deg, rgba(0,0,0,0.08) 0deg)`;
+
+        const mods = courses.map((c, i) => {
+          const cs = courseStats(c);
+          const locked = cs.total === 0;
+          return `
+            <div class="mod-card ${locked ? 'locked' : ''}" ${locked ? '' : `onclick="openCourse('${a(c.id)}')"`}>
+              <div class="mod-cover" style="background:${catGrad(code)}">
+                <span class="mod-badge">模組 ${i + 1}</span>
+                ${locked ? '<span class="mod-lock" title="尚未上傳教材"><i class="ph ph-lock-simple"></i></span>' : ''}
+                ${catIcon(code)}
+                ${cs.pct > 0 ? `<div class="mod-bar"><span style="width:${cs.pct}%"></span></div>` : ''}
+              </div>
+              <div class="mod-body">
+                <div class="mod-name">${h(c.name || '未命名課程')}</div>
+                <div class="mod-meta">
+                  <span><i class="ph ph-folder"></i> ${cs.total} 份教材</span>
+                  ${cs.total ? `<span><i class="ph ph-check-circle"></i> ${cs.done}/${cs.total}</span>` : '<span>尚未開放</span>'}
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="path-card">
+            <div class="path-cover" style="background:${catGrad(code)}">${catIcon(code)}</div>
+            <div class="path-info">
+              <div class="path-title">
+                <span class="path-code">${code}</span>${h(CAT_NAME[code])}
+              </div>
+              <div class="path-desc">
+                共 ${courses.length} 門課程 · ${matCount} 份教材${st.total ? ` · 已完成 ${st.done} 份` : ' · 尚未上傳教材'}
+              </div>
+            </div>
+            <div class="path-ring">
+              <span class="ring" style="background:${ring}"><span class="ring-inner" style="background:var(--apple-bg);transform:scale(0.58)"></span></span>
+              <span class="path-ring-text">${st.pct}% 完成</span>
+            </div>
+          </div>
+          <div class="mod-grid">${mods}</div>`;
       }).join('');
     }
 
-    function filterSidebar() {
-      const q = document.getElementById('sidebarSearch').value.toLowerCase();
-      renderSidebar(allCourses.filter(c =>
-        c.name.toLowerCase().includes(q) || (c.category||'').toLowerCase().includes(q)
-      ));
+    function goMyLearning() {
+      closeCourse();
+      document.getElementById('heroSlot')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // ── Select course ──
-    function selectCourse(id) {
-      activeCourseId = String(id);
-      const course = allCourses.find(c => String(c.id) === activeCourseId);
+    // ── 課程（模組）詳細 ──
+    function openCourse(id) {
+      const course = allCourses.find(c => String(c.id) === String(id));
       if (!course) return;
-      renderSidebar(allCourses);
+      activeCourseId = String(id);
+      activeTab = 'materials';
+      document.getElementById('learnView').classList.add('hidden');
+      document.getElementById('courseView').classList.remove('hidden');
       renderMain(course);
+      document.querySelector('.app-body').scrollTop = 0;
       const url = new URL(location.href);
       url.searchParams.set('courseId', id);
       history.replaceState(null, '', url);
     }
 
+    function closeCourse() {
+      activeCourseId = null;
+      document.getElementById('courseView').classList.add('hidden');
+      document.getElementById('learnView').classList.remove('hidden');
+      renderLearn();
+      const url = new URL(location.href);
+      url.searchParams.delete('courseId');
+      history.replaceState(null, '', url);
+    }
+
     // ── Main ──
     function renderMain(course) {
-      const icon = CAT_ICON[course.category] || '<i class="ph ph-books"></i>';
-      const bg   = CAT_BG[course.category]  || '#f5f5f7';
+      const code = catOf(course);
       const mats = course.materials || [];
+      const st = courseStats(course);
 
       const uploadBtn = isAdmin ? `
-        <button class="btn-apple btn-apple-primary" onclick="triggerUpload(${course.id})">
+        <button class="btn-apple btn-apple-primary" onclick="triggerUpload('${a(course.id)}')">
           <i class="ph ph-upload-simple"></i> 上傳教材
         </button>
-        <input type="file" id="fi_${course.id}" multiple
-          accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.webm,.mov,.jpg,.jpeg,.png,.gif,.webp,.zip"
-          style="display:none" onchange="handleFiles(this,${course.id})">` : '';
+        <input type="file" id="fi_${a(course.id)}" multiple
+          accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.webm,.mov,.jpg,.jpeg,.png,.gif,.webp"
+          style="display:none" onchange="handleFiles(this,'${a(course.id)}')">` : '';
 
       const commentTab = (isCrew || isAdmin) ? `
         <button class="seg-btn" data-tab="comments" onclick="switchTab('comments',this)">
           <i class="ph ph-chat-circle-dots"></i> 留言討論
         </button>` : '';
 
-      document.getElementById('mainArea').innerHTML = `
+      document.getElementById('courseArea').innerHTML = `
         <div class="course-header">
-          <div class="course-hero-icon" style="background:${bg}">${icon}</div>
+          <div class="course-hero-icon" style="background:${catGrad(code)};color:#fff">${catIcon(code)}</div>
           <div class="course-hero-info">
-            <div class="course-hero-name">${h(course.name)}</div>
+            <div class="course-hero-name">${h(course.name || '未命名課程')}</div>
             <div class="course-hero-tags">
-              ${course.category ? `<span class="tag tag-blue"><i class="ph ph-tag"></i>${h(course.category)}</span>` : ''}
+              <span class="tag tag-blue"><i class="ph ph-path"></i>${h(CAT_NAME[code])}</span>
               ${course.method   ? `<span class="tag tag-green">${h(course.method)}</span>` : ''}
-              ${course.duration ? `<span class="tag tag-gray"><i class="ph ph-clock"></i>${course.duration} 分</span>` : ''}
+              ${course.duration ? `<span class="tag tag-gray"><i class="ph ph-clock"></i>${h(course.duration)} 分</span>` : ''}
               <span class="tag tag-gray"><i class="ph ph-folder"></i>${mats.length} 個教材</span>
+              ${st.total ? `<span class="tag tag-purple"><i class="ph ph-check-circle"></i>已完成 ${st.done}/${st.total}</span>` : ''}
             </div>
           </div>
           <div class="course-hero-actions">${uploadBtn}</div>
@@ -1003,34 +1465,16 @@
           </div>
         </div>
 
-        <div class="content-panel active" id="panel-materials">
-          ${renderMatsPanel(course)}
-        </div>
-
-        ${(isCrew||isAdmin) ? `
-        <div class="content-panel" id="panel-comments">
-          ${renderCommentsPanel(course.id)}
-        </div>` : ''}
+        <div class="content-panel active" id="panel-materials">${renderMatsPanel(course)}</div>
+        <div class="content-panel" id="panel-comments">${(isCrew || isAdmin) ? renderCommentsPanel(course.id) : ''}</div>
       `;
-
-      // drag-drop for admin
-      if (isAdmin) {
-        const panel = document.getElementById('panel-materials');
-        panel.addEventListener('dragover', e => { e.preventDefault(); panel.querySelector('.upload-zone')?.classList.add('drag-over'); });
-        panel.addEventListener('dragleave', () => panel.querySelector('.upload-zone')?.classList.remove('drag-over'));
-        panel.addEventListener('drop', e => {
-          e.preventDefault();
-          panel.querySelector('.upload-zone')?.classList.remove('drag-over');
-          if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files, course.id);
-        });
-      }
     }
 
     function switchTab(tab, btn) {
       activeTab = tab;
-      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('#courseArea .seg-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      document.querySelectorAll('#courseArea .content-panel').forEach(p => p.classList.remove('active'));
       document.getElementById('panel-' + tab)?.classList.add('active');
     }
 
@@ -1038,10 +1482,10 @@
     function renderMatsPanel(course) {
       const mats = course.materials || [];
       const zone = isAdmin ? `
-        <div class="upload-zone" onclick="triggerUpload(${course.id})">
+        <div class="upload-zone" onclick="triggerUpload('${a(course.id)}')">
           <div class="upload-zone-icon"><i class="ph ph-cloud-arrow-up"></i></div>
           <p>點擊或將檔案<strong>拖曳</strong>到此上傳</p>
-          <p style="font-size:12px;margin-top:4px;opacity:.7">支援 PDF、Word、PPT、MP4、圖片（上限 50 MB）</p>
+          <p style="font-size:12px;margin-top:4px;opacity:.7">支援 PDF、Word、PPT、MP4、圖片（上限 50 MB），上傳後同步至雲端</p>
         </div>` : '';
 
       if (!mats.length) return `${zone}
@@ -1058,7 +1502,7 @@
       const { icon, bg, color } = fileStyle(m.fileName || '');
       const prog = getProgress(courseId, m.fileName);
       const isVid = isVideo(m.fileName);
-      const hasUrl = !!(m.fileUrl || m.dataUrl);
+      const hasUrl = !!(m.fileUrl || m.dataUrl || m.fileId);
 
       let badgeHtml = `<span class="status-badge badge-new">未觀看</span>`;
       let progressHtml = '';
@@ -1079,13 +1523,13 @@
       }
 
       const viewBtn = hasUrl
-        ? `<button class="btn-view" onclick="openMaterial('${a(m.fileName||'')}','${a(m.fileUrl||m.dataUrl||'')}','${courseId}')">
+        ? `<button class="btn-view" onclick="openMaterialAt('${a(courseId)}',${idx})">
             <i class="ph ph-${isVid ? 'play' : 'arrow-square-out'}"></i> 開啟
            </button>`
         : `<span style="font-size:12px;color:var(--apple-gray)">無連結</span>`;
 
       const trashBtn = isAdmin
-        ? `<button class="btn-trash" onclick="deleteMat(${courseId},${idx})" title="移除"><i class="ph ph-trash"></i></button>`
+        ? `<button class="btn-trash" onclick="deleteMat('${a(courseId)}',${idx})" title="移除"><i class="ph ph-trash"></i></button>`
         : '';
 
       return `
@@ -1171,15 +1615,32 @@
     }
 
     // ── Viewer ──
-    function openMaterial(fileName, fileUrl, courseId) {
-      if (!fileUrl) return;
-      viewerMeta = { fileName, fileUrl, courseId };
+    // 雲端（Google Drive）教材的預覽網址
+    function drivePreview(m) { return m.fileId ? `https://drive.google.com/file/d/${m.fileId}/preview` : null; }
+    function driveImage(m)   { return m.fileId ? `https://drive.google.com/thumbnail?id=${m.fileId}&sz=w1600` : null; }
+
+    function openMaterialAt(courseId, idx) {
+      const course = allCourses.find(c => String(c.id) === String(courseId));
+      const m = course?.materials?.[idx];
+      if (m) openMaterial(m, courseId);
+    }
+
+    function openMaterial(m, courseId) {
+      const fileName = m.fileName || m.name || '';
+      const fileUrl  = m.dataUrl || m.fileUrl || '';
+      if (!fileUrl && !m.fileId) return;
+      viewerMeta = { fileName, courseId };
       document.getElementById('viewerTitle').textContent = fileName;
       const body = document.getElementById('viewerBody');
       body.innerHTML = '';
       const ext = (fileName||'').split('.').pop().toLowerCase();
 
-      if (isVideo(fileName)) {
+      if (isVideo(fileName) && !m.dataUrl && m.fileId) {
+        const fr = document.createElement('iframe');
+        fr.id = 'viewerIframe'; fr.src = drivePreview(m); fr.allow = 'autoplay';
+        body.appendChild(fr);
+        saveProgress(courseId, fileName, { viewed: true });
+      } else if (isVideo(fileName)) {
         const prog = getProgress(courseId, fileName);
         const start = prog && !prog.completed ? (prog.seconds || 0) : 0;
         const vid = document.createElement('video');
@@ -1200,13 +1661,18 @@
         body.appendChild(vid);
       } else if (ext === 'pdf') {
         const fr = document.createElement('iframe');
-        fr.id = 'viewerIframe'; fr.src = fileUrl;
+        fr.id = 'viewerIframe'; fr.src = drivePreview(m) || fileUrl;
         body.appendChild(fr);
         saveProgress(courseId, fileName, { viewed: true });
       } else if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
         const img = document.createElement('img');
-        img.id = 'viewerImage'; img.src = fileUrl; img.alt = fileName;
+        img.id = 'viewerImage'; img.src = m.dataUrl || driveImage(m) || fileUrl; img.alt = fileName;
         body.appendChild(img);
+        saveProgress(courseId, fileName, { viewed: true });
+      } else if (m.fileId) {
+        const fr = document.createElement('iframe');
+        fr.id = 'viewerIframe'; fr.src = drivePreview(m);
+        body.appendChild(fr);
         saveProgress(courseId, fileName, { viewed: true });
       } else {
         window.open(fileUrl, '_blank');
@@ -1239,41 +1705,77 @@
     function triggerUpload(id) { document.getElementById('fi_' + id)?.click(); }
     function handleFiles(input, id) { if (input.files?.length) processFiles(input.files, id); input.value = ''; }
 
-    function processFiles(files, courseId) {
+    const UPLOAD_TYPES = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp'
+    ];
+
+    // 教材上傳到 Google Drive，課程資料寫回後端，所有裝置都看得到
+    async function processFiles(files, courseId) {
       if (!isAdmin) return;
       const course = allCourses.find(c => String(c.id) === String(courseId));
       if (!course) return;
       if (!course.materials) course.materials = [];
-      const ok = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'video/mp4','video/webm','video/ogg','video/quicktime',
-        'image/jpeg','image/png','image/gif','image/webp','application/zip'];
+
       for (const file of files) {
-        if (!ok.includes(file.type)) { showToast(`不支援格式：${file.name}`, 'error'); continue; }
-        if (file.size > 50*1024*1024) { showToast(`檔案過大：${file.name}`, 'error'); continue; }
-        const reader = new FileReader();
-        reader.onload = e => {
-          course.materials.push({ fileName: file.name, fileType: file.type, fileUrl: e.target.result, dataUrl: e.target.result, uploadedAt: new Date().toISOString(), uploadedBy: currentUser.username });
-          localStorage.setItem('maritimeCourses', JSON.stringify(allCourses));
-          refreshMats(courseId);
-          renderSidebar(allCourses);
+        if (!UPLOAD_TYPES.includes(file.type)) { showToast(`不支援格式：${file.name}`, 'error'); continue; }
+        if (file.size > 50 * 1024 * 1024)      { showToast(`檔案過大：${file.name}`, 'error'); continue; }
+
+        showToast(`上傳中：${file.name}`);
+        try {
+          const res = await api.uploadFile(file);
+          course.materials.push({
+            fileName: file.name,
+            fileType: file.type,
+            fileId: res.id,
+            fileUrl: res.url,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString(),
+            uploadedBy: currentUser.username
+          });
+          await persistCourses();
+          renderMain(course);
           showToast(`已上傳：${file.name}`, 'success');
-        };
-        reader.readAsDataURL(file);
+        } catch (err) {
+          console.error('上傳失敗:', err);
+          showToast(`上傳失敗：${file.name}（${err.message || '未知錯誤'}）`, 'error');
+        }
       }
     }
 
-    function deleteMat(courseId, idx) {
+    async function deleteMat(courseId, idx) {
       if (!isAdmin) return;
       const course = allCourses.find(c => String(c.id) === String(courseId));
       if (!course?.materials) return;
       const name = course.materials[idx]?.fileName || '此教材';
       if (!confirm(`確定移除「${name}」？`)) return;
-      course.materials.splice(idx, 1);
+
+      const removed = course.materials.splice(idx, 1);
+      try {
+        await persistCourses();
+        renderMain(course);
+        showToast('已移除', 'success');
+      } catch (err) {
+        course.materials.splice(idx, 0, ...removed);
+        renderMain(course);
+        showToast(`移除失敗：${err.message || '未知錯誤'}`, 'error');
+      }
+    }
+
+    // 寫入本地快取並同步回後端
+    async function persistCourses() {
       localStorage.setItem('maritimeCourses', JSON.stringify(allCourses));
-      refreshMats(courseId);
-      renderSidebar(allCourses);
-      showToast('已移除', 'success');
+      if (typeof syncManager === 'undefined') return;
+      const result = await syncManager.saveTable('maritimeCourses');
+      if (result?.conflict) {
+        showToast('課程資料已被其他人修改，請重新整理後再試', 'error');
+        throw new Error('資料衝突');
+      }
     }
 
     // ── Helpers ──
