@@ -2043,12 +2043,23 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
 
     // 寫入本地快取並同步回後端
     async function persistCourses() {
+      // 先留快照：saveTable 失敗時要連 localStorage 一起退回，
+      // 否則重新整理後 readCourses() 會把「沒存成功」的資料當成已存在。
+      const snapshot = localStorage.getItem('maritimeCourses');
       localStorage.setItem('maritimeCourses', JSON.stringify(allCourses));
       if (typeof syncManager === 'undefined') return;
-      const result = await syncManager.saveTable('maritimeCourses');
-      if (result?.conflict) {
-        showToast('課程資料已被其他人修改，請重新整理後再試', 'error');
-        throw new Error('資料衝突');
+      try {
+        const result = await syncManager.saveTable('maritimeCourses');
+        if (result?.conflict) {
+          showToast('課程資料已被其他人修改，請重新整理後再試', 'error');
+          throw new Error('資料衝突');
+        }
+      } catch (err) {
+        try {
+          if (snapshot === null) localStorage.removeItem('maritimeCourses');
+          else localStorage.setItem('maritimeCourses', snapshot);
+        } catch (_) {}
+        throw err;
       }
     }
 
@@ -2085,12 +2096,15 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
     }
 
     function openLesson(courseId, idx) {
+      // 切換單元時面板不關（保留對話），但要重繪，否則「目前正在看」停在上一課
+      const _reAi = typeof aiOpen !== 'undefined' && aiOpen;
       const course = allCourses.find(c => String(c.id) === String(courseId));
       if (!course) { goHome(); return; }
       const mats = course.materials || [];
       if (!mats[idx]) { openModule(courseId); return; }
       activeCourseId = String(course.id); activeMatIdx = Number(idx);
       setView('lesson'); syncUrl(); renderLesson(course, Number(idx));
+      if (_reAi && typeof renderAiPanel === 'function') renderAiPanel();
     }
 
     function activeCourse() {
@@ -2394,7 +2408,8 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
     .hm-cover > i { font-size: 36px; color: rgba(255,255,255,0.30); }
     .hm-badge {
       position: absolute; top: 10px; left: 10px; padding: 3px 9px; border-radius: 999px;
-      background: var(--brand); color: #fff; font-size: 11px; font-weight: 700;
+      /* 不用 --brand：分類 01 的封面漸層同色，徽章會整顆融進去 */
+      background: rgba(29,29,31,0.55); color: #fff; font-size: 11px; font-weight: 700;
       pointer-events: none;
     }
     .hm-lock {
@@ -2498,8 +2513,9 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
       const kw = (course.keywords || []).filter(k => typeof k === 'string' && k.trim());
       if (kw.length) return kw.slice(0, 6).join('・');
       const bits = [];
+      // 時長一律交給 meta 列（由教材推估），這裡再寫一次 course.duration
+      // 會變成同一張卡出現兩個對不起來的分鐘數
       if (course.method) bits.push(course.method);
-      if (course.duration) bits.push(`課程時數 ${course.duration} 分鐘`);
       if (bits.length) return bits.join('・');
       return '這個模組尚未填寫課程說明。';
     }
@@ -2598,7 +2614,7 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
       <div class="hm-wrap" style="padding:44px 20px 0">
         <div class="hm-sec-head">
           <h2>我的學習</h2>
-          <button type="button" class="btn btn-sm btn-secondary hm-pill" onclick="hmGoLearning()">
+          <button type="button" class="btn btn-sm btn-soft u-pill" onclick="hmGoLearning()">
             前往我的學習<i class="ph ph-caret-right" aria-hidden="true"></i>
           </button>
         </div>
@@ -2811,7 +2827,7 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
 
     // 時長：互動型用 estMinutes；檔案型用 fileSize 推估，推不出來就顯示副檔名
     function mdlDur(m) {
-      const mins = matMinutes(m);
+      const mins = Number(matMinutes(m)) || 0;
       if (mins) return { icon: 'ph-clock', text: `約 ${mins} 分鐘` };
       const ext = String((m && m.fileName) || '').split('.').pop().toUpperCase();
       if (ext && ext.length <= 8 && /^[A-Z0-9]+$/.test(ext)) return { icon: 'ph-paperclip', text: ext };
@@ -2851,6 +2867,9 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
     }
 
     function mdlUnitKey(ev, el) {
+      // 焦點在內層的編輯／刪除鈕時不要攔；否則 Enter 會被改成「進入課程」
+      const self = el || ev.currentTarget;
+      if (ev.target !== self) return;
       if (ev.key !== 'Enter' && ev.key !== ' ') return;
       ev.preventDefault();
       (el || ev.currentTarget).click();
@@ -3162,7 +3181,7 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
       display: block; width: 100%; height: min(74vh, 640px);
       border: 0; border-radius: 12px; background: var(--apple-bg);
     }
-    .ls-video { display: block; width: 100%; border-radius: 12px; background: #000; }
+    .ls-video { display: block; width: 100%; border-radius: 12px; background: var(--apple-text); }
     .ls-img   { display: block; width: 100%; height: auto; border-radius: 12px; background: var(--apple-bg); }
     .ls-fallback {
       border-radius: 12px; background: var(--apple-bg);
@@ -3252,7 +3271,7 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
 
     // ── 麵包屑列 ──────────────────────────────────────────────────
     function lsBarHtml(course, m) {
-      const mins = matMinutes(m);
+      const mins = Number(matMinutes(m)) || 0;
       const ai = (typeof canUseAi === 'function' && canUseAi())
         ? `<button type="button" class="btn btn-sm btn-secondary u-pill" onclick="lsToggleAi()"
               title="AI 助教" aria-label="開啟 AI 助教">
@@ -3401,11 +3420,19 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
     //  互動型教材：區塊卡外殼
     // ══════════════════════════════════════════════════════════════
 
+    // tracks 會過濾掉沒有節點的路線。渲染出的 data-t 索引與點擊時解析的索引
+    // 必須來自同一份陣列，否則兩套索引錯開 → 點第 N 條會跑到別條線。
+    // 注意：編輯器（ed*）要的是未過濾的原始陣列，不可共用這支。
+    function lsTracks(b) {
+      return (b && Array.isArray(b.tracks) ? b.tracks : [])
+        .filter(t => t && Array.isArray(t.nodes) && t.nodes.length);
+    }
+
     function lsInitState(b) {
       if (!b) return {};
       if (b.type === 'tabs') return { activeTab: 0 };
       if (b.type === 'ladder') {
-        const tracks = Array.isArray(b.tracks) ? b.tracks : [];
+      const tracks = lsTracks(b);
         const nodes = (tracks[0] && Array.isArray(tracks[0].nodes)) ? tracks[0].nodes : [];
         // 原型刻意預選第 4 個節點，讓「已過」與「未到」兩種樣式一開場就同時出現
         return { trackIdx: 0, nodeIdx: Math.max(0, Math.min(3, nodes.length - 1)) };
@@ -3575,7 +3602,7 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
     // ══════════════════════════════════════════════════════════════
 
     function lsLadderDetailInner(b, st) {
-      const tracks = Array.isArray(b.tracks) ? b.tracks : [];
+      const tracks = lsTracks(b);
       const track = tracks[st.trackIdx] || {};
       const nodes = Array.isArray(track.nodes) ? track.nodes : [];
       const node = nodes[st.nodeIdx] || {};
@@ -3591,7 +3618,7 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
     }
 
     function lsLadderHtml(b, bi) {
-      const tracks = (Array.isArray(b.tracks) ? b.tracks : []).filter(t => t && Array.isArray(t.nodes) && t.nodes.length);
+      const tracks = lsTracks(b);
       if (!tracks.length) return lsIntroHtml(b);
       const st = lsState(bi, b);
       if (!tracks[st.trackIdx]) { st.trackIdx = 0; st.nodeIdx = 0; }
@@ -3659,7 +3686,7 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
     function lsLadderPick(bi, ti, ni) {
       const b = lsBlocks(lsCurMat())[bi];
       if (!b) return;
-      const tracks = Array.isArray(b.tracks) ? b.tracks : [];
+      const tracks = lsTracks(b);
       const nodes = tracks[ti] && Array.isArray(tracks[ti].nodes) ? tracks[ti].nodes : null;
       if (!nodes || !nodes[ni]) return;
       const st = lsState(bi, b);
@@ -3677,7 +3704,7 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
       if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
       const b = lsBlocks(lsCurMat())[bi];
       if (!b) return;
-      const tracks = Array.isArray(b.tracks) ? b.tracks : [];
+      const tracks = lsTracks(b);
       const nodes = tracks[ti] && Array.isArray(tracks[ti].nodes) ? tracks[ti].nodes : [];
       if (nodes.length < 2) return;
       ev.preventDefault();
@@ -4631,8 +4658,9 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
       edFocusPath = idx == null ? 'fileName' : null;
 
       edBindKeys();
-      edRender();
+      // .open 要先加：未開啟時 overlay 是 visibility:hidden，focus() 對隱藏子樹無效
       host.classList.add('open');
+      edRender();
       document.body.style.overflow = 'hidden';
     }
 
@@ -4714,6 +4742,7 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
     let aiDraft = '';             // 重繪面板時把使用者沒送出的草稿帶回來
     let aiCooldownUntil = 0;      // aiChat.chat 丟 rateLimited 時進入冷卻
     let aiCdTimer = null;
+    let aiSessionReady = false;   // aiChat 是全站單例，第一次開面板要切新對話，免得帶到其他頁的上下文
 
     const AI_SUGGESTIONS = [
       '這個單元的重點是什麼？',
@@ -4832,6 +4861,16 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
       if (!aiAllowed()) {
         showToast('AI 助教僅開放教師與管理員使用', 'error');
         return;
+      }
+      // aiChat 建構時會自動還原最近一個 session（js/api.js switchSession），
+      // 那可能是在智慧派課頁聊的內容。這裡 UI 是空的，模型卻記得 —— 開新對話讓兩邊一致。
+      if (!aiSessionReady) {
+        aiSessionReady = true;
+        try {
+          if (typeof aiChat !== 'undefined' && typeof aiChat.startNewSession === 'function') {
+            aiChat.startNewSession();
+          }
+        } catch (_) {}
       }
       aiOpen = true;
       renderAiPanel();
@@ -4967,17 +5006,26 @@ body.ai-open .les-grid { padding-right: var(--ai-w); }
       const payload = ctx ? `${ctx}\n${q}` : q;
 
       try {
-        const reply = await aiChat.chat(payload);
-        aiMsgs.push({ role: 'bot', text: String(reply || '抱歉，我沒有收到回覆，請再試一次。') });
+        const rawReply = await aiChat.chat(payload);
+        // api.js 的 system prompt 會要求模型輸出 [WHAI_ACTION]{...}；chat() 只剝 [MEMORY:]
+        // 不剝 action，必須自己過 cleanDisplayText（與 maritime-courses.html 同作法）
+        const reply = (typeof aiChat.cleanDisplayText === 'function'
+          ? aiChat.cleanDisplayText(String(rawReply || ''))
+          : String(rawReply || '')).trim();
+        aiMsgs.push({ role: 'bot', text: reply || '抱歉，我沒有收到回覆，請再試一次。' });
       } catch (err) {
         const msg = (err && err.message) ? String(err.message) : '連線發生問題';
+        // api.js 失敗時會把這題從 conversationHistory pop 掉，這裡同步退回泡泡，
+        // 並把內容還回輸入框，否則使用者得整段重打。
+        if (aiMsgs.length && aiMsgs[aiMsgs.length - 1].role === 'me') aiMsgs.pop();
+        aiDraft = q;
         if (err && err.rateLimited) {
           // api.js 會進入 60 秒冷卻，這段期間送出鈕一律禁用
           aiCooldownUntil = Date.now() + 60000;
-          aiMsgs.push({ role: 'err', text: `${msg}\n（提問太密集了，稍等一下再問，剛才的問題沒有送出。）` });
+          aiMsgs.push({ role: 'err', text: `${msg}\n（提問太密集了，問題已退回輸入框，稍等一下再送。）` });
           showToast('AI 請求已達上限，請稍後再試', 'error');
         } else {
-          aiMsgs.push({ role: 'err', text: `回答失敗：${msg}\n可以再送一次，或稍後再問。` });
+          aiMsgs.push({ role: 'err', text: `回答失敗：${msg}\n問題已退回輸入框，可以直接再送一次。` });
         }
       } finally {
         aiBusy = false;
