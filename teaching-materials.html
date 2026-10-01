@@ -305,6 +305,13 @@
     .hm-card-desc { font-size: 13px; line-height: 1.65; color: var(--dim); text-wrap: pretty; flex: 1; }
     .hm-card-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); margin-top: 4px; }
     .hm-card-meta i { font-size: 13px; }
+    .hm-admin-hint {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 999px;
+      background: var(--blue-soft); border: 1px solid var(--blue-line); color: var(--blue-deep);
+      font-size: 12px; font-weight: 600;
+    }
+    .hm-admin-hint i { font-size: 14px; }
     .hm-empty {
       text-align: center; padding: 48px 20px; color: var(--dim); font-size: 14px; line-height: 1.8;
       background: var(--muted); border-radius: 24px;
@@ -1349,11 +1356,15 @@
     function hmCardHtml(course, n) {
       const cat = catOf(course);
       const st = courseStats(course);
-      const locked = st.total === 0;                   // 沒有教材 → 鎖定、不可點
+      const empty  = st.total === 0;                   // 沒有教材
+      // 一般學員：空課程鎖定不可點。管理員：一定可以點進去，否則教材全空時
+      // 根本到不了模組頁，永遠看不到「上傳教材」按鈕。
+      const locked = empty && !isAdmin;
       const mins = hmCourseMinutes(course);
 
       let metaIcon, metaText;
-      if (locked)           { metaIcon = 'ph-lock-simple'; metaText = '尚未開放'; }
+      if (empty && isAdmin) { metaIcon = 'ph-upload-simple'; metaText = '尚無教材 · 點此上傳'; }
+      else if (locked)      { metaIcon = 'ph-lock-simple';   metaText = '尚未開放'; }
       else if (st.pct >= 100) { metaIcon = 'ph-check-circle'; metaText = `已完成 · ${st.total} 個單元`; }
       else                  { metaIcon = 'ph-clock';       metaText = mins ? `約 ${mins} 分鐘 · ${st.total} 個單元` : `${st.total} 個單元`; }
 
@@ -1365,7 +1376,7 @@
           <div class="hm-cover" style="background:${a(catGrad(cat))}">
             ${catIcon(cat)}
             <span class="hm-badge">模組 ${n}</span>
-            ${locked ? `<span class="hm-lock" aria-hidden="true"><i class="ph ph-lock-simple"></i></span>` : ''}
+            ${empty ? `<span class="hm-lock" aria-hidden="true"><i class="ph ${isAdmin ? 'ph-upload-simple' : 'ph-lock-simple'}"></i></span>` : ''}
             ${(!locked && st.pct > 0) ? `<div class="hm-cover-prog"><div style="width:${st.pct}%"></div></div>` : ''}
           </div>
           <div class="hm-card-body">
@@ -1397,10 +1408,15 @@
         <div class="hm-sec-head"><h2>學習路徑</h2></div>
         <div class="hm-empty">
           <i class="ph ph-compass" aria-hidden="true"></i>
-          目前還沒有任何課程資料。<br>課程建立後會自動依分類排進學習路徑。
+          目前還沒有任何課程資料。<br>${isAdmin
+            ? '請先到「智慧派課」建立課程，課程會自動依分類排進這裡，再回來上傳教材。'
+            : '課程建立後會自動依分類排進學習路徑。'}
         </div>
       </div>`;
       }
+
+      const adminHint = isAdmin ? `
+          <span class="hm-admin-hint"><i class="ph ph-shield-check" aria-hidden="true"></i>管理員：點任一模組即可上傳教材或新增互動單元</span>` : '';
 
       const paths = codes.map(code => {
         const list = groups.get(code);
@@ -1425,7 +1441,7 @@
 
       return `
       <div class="hm-wrap" id="hmPaths" style="padding:44px 20px 72px">
-        <div class="hm-sec-head"><h2>學習路徑</h2></div>
+        <div class="hm-sec-head"><h2>學習路徑</h2>${adminHint}</div>
         ${paths}
       </div>`;
     }
