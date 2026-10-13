@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>船帳 Web 化管理系統 — 工作流程圖</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 32px 24px;
+  min-width: 1100px;
+}
+h1 { text-align:center; font-size:22px; font-weight:700; letter-spacing:2px; color:#f1f5f9; margin-bottom:4px; }
+.subtitle { text-align:center; font-size:12px; color:#475569; letter-spacing:1px; margin-bottom:32px; }
+
+/* ── SWIMLANE WRAPPER ── */
+.swimlane-wrap {
+  max-width: 1300px;
+  margin: 0 auto 32px;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.swimlane-title {
+  background: #1e293b;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #94a3b8;
+  border-bottom: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* lanes */
+.lanes {
+  display: grid;
+}
+.lane-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  border-bottom: 1px solid #1e293b;
+  min-height: 90px;
+}
+.lane-row:last-child { border-bottom: none; }
+.lane-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-right: 2px solid;
+  writing-mode: horizontal-tb;
+}
+.lane-label.crew   { background: rgba(30,58,95,0.4);  color:#93c5fd; border-color:#1d4ed8; }
+.lane-label.master { background: rgba(20,50,30,0.4);  color:#86efac; border-color:#16a34a; }
+.lane-label.system { background: rgba(45,31,61,0.4);  color:#c4b5fd; border-color:#7c3aed; }
+.lane-label.shore  { background: rgba(58,32,16,0.4);  color:#fdba74; border-color:#ea580c; }
+.lane-label.finance{ background: rgba(40,20,20,0.4);  color:#fca5a5; border-color:#dc2626; }
+
+.lane-body {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── NODES ── */
+.node {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  border: 1px solid;
+  min-width: 110px;
+  max-width: 160px;
+  flex-shrink: 0;
+  position: relative;
+}
+.node-title { font-weight:700; font-size:11px; margin-bottom:3px; }
+.node p { font-size:10px; color:#94a3b8; }
+
+.node.blue   { background:#1e3a5f; border-color:#3b82f6; }
+.node.blue .node-title { color:#93c5fd; }
+.node.green  { background:#1a3a2a; border-color:#22c55e; }
+.node.green .node-title { color:#86efac; }
+.node.purple { background:#2d1f3d; border-color:#a855f7; }
+.node.purple .node-title { color:#d8b4fe; }
+.node.orange { background:#3a2010; border-color:#f97316; }
+.node.orange .node-title { color:#fdba74; }
+.node.red    { background:#3a1a1a; border-color:#ef4444; }
+.node.red .node-title { color:#fca5a5; }
+.node.gray   { background:#1e2433; border-color:#475569; }
+.node.gray .node-title { color:#94a3b8; }
+.node.yellow { background:#2a2010; border-color:#eab308; }
+.node.yellow .node-title { color:#fde047; }
+
+.node.diamond {
+  clip-path: none;
+  border-radius: 8px;
+  border-style: dashed;
+}
+.node.diamond .node-title::before { content:"◆ "; font-size:9px; }
+
+/* arrows between nodes */
+.arr { font-size:18px; color:#334155; flex-shrink:0; align-self:center; }
+.arr.right { color:#475569; }
+.arr.down  { transform:rotate(90deg); color:#475569; }
+.arr.red-arr { color:#ef4444; }
+.arr.green-arr { color:#22c55e; }
+
+/* arrow with label */
+.arr-wrap { display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
+.arr-wrap .arr-label { font-size:9px; color:#475569; text-align:center; max-width:60px; }
+
+/* decision diamond */
+.decision {
+  border-radius:8px;
+  border:2px dashed;
+  padding:8px 10px;
+  font-size:10px;
+  text-align:center;
+  min-width:90px;
+  max-width:120px;
+  flex-shrink:0;
+  background:#0f172a;
+}
+.decision.green-d { border-color:#22c55e; color:#86efac; }
+.decision.orange-d { border-color:#f97316; color:#fdba74; }
+.decision.red-d { border-color:#ef4444; color:#fca5a5; }
+
+/* ── MONTH TIMELINE ── */
+.timeline {
+  max-width: 1300px;
+  margin: 0 auto 32px;
+  position: relative;
+}
+.tl-title {
+  font-size:12px; font-weight:700; color:#64748b;
+  letter-spacing:2px; margin-bottom:12px;
+  text-align:center;
+}
+.tl-track {
+  display:flex;
+  align-items:stretch;
+  border: 1px solid #1e293b;
+  border-radius:10px;
+  overflow:hidden;
+}
+.tl-item {
+  flex:1;
+  padding:12px 8px;
+  text-align:center;
+  border-right:1px solid #1e293b;
+  font-size:11px;
+  position:relative;
+}
+.tl-item:last-child { border-right:none; }
+.tl-day { font-size:15px; font-weight:700; margin-bottom:4px; }
+.tl-desc { font-size:10px; color:#64748b; line-height:1.4; }
+.tl-item.highlight { background:rgba(34,197,94,0.08); }
+.tl-item.warn      { background:rgba(249,115,22,0.08); }
+.tl-item.danger    { background:rgba(239,68,68,0.08); }
+.tl-badge {
+  display:inline-block; font-size:9px; padding:1px 6px;
+  border-radius:8px; margin-top:4px;
+}
+.tl-badge.g { background:#14532d; color:#86efac; }
+.tl-badge.o { background:#7c2d12; color:#fed7aa; }
+.tl-badge.r { background:#7f1d1d; color:#fecaca; }
+.tl-badge.b { background:#1e3a8a; color:#bfdbfe; }
+
+/* ── DATA FLOW ── */
+.dataflow {
+  max-width:1300px; margin:0 auto 32px;
+}
+.df-row {
+  display:flex; align-items:center; gap:0;
+  margin-bottom:0;
+}
+.df-box {
+  flex:1; padding:14px 16px;
+  border:1px solid; border-radius:0;
+  font-size:11px; min-height:70px;
+  display:flex; flex-direction:column; justify-content:center;
+}
+.df-box:first-child { border-radius:10px 0 0 10px; }
+.df-box:last-child  { border-radius:0 10px 10px 0; }
+.df-title { font-size:12px; font-weight:700; margin-bottom:4px; }
+.df-arrow-col {
+  width:60px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  font-size:20px; color:#334155; flex-shrink:0;
+  position:relative; z-index:1;
+  background:#0f172a;
+  gap:2px;
+}
+.df-arrow-col .df-arr-label { font-size:9px; color:#475569; text-align:center; }
+
+/* ── STATUS BADGES ── */
+.badge { display:inline-block; font-size:9px; padding:1px 5px; border-radius:8px; font-weight:600; }
+.badge.core  { background:#4c1d95; color:#ddd6fe; }
+.badge.plan  { background:#1e3a5f; color:#bae6fd; }
+.badge.auto  { background:#14532d; color:#86efac; }
+.badge.manual{ background:#7c2d12; color:#fed7aa; }
+.badge.block { background:#7f1d1d; color:#fca5a5; }
+
+/* section header */
+.sec-header {
+  max-width:1300px; margin:0 auto 12px;
+  font-size:12px; color:#475569; letter-spacing:2px;
+  font-weight:600; padding-bottom:6px;
+  border-bottom:1px solid #1e293b;
+  display:flex; align-items:center; gap:8px;
+}
+
+/* note block */
+.note-row {
+  max-width:1300px; margin:0 auto 24px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
+}
+.note {
+  background:#1e293b; border-radius:8px; padding:12px 14px;
+  font-size:11px; border-left:3px solid;
+}
+.note-title { font-weight:700; margin-bottom:6px; font-size:12px; }
+.note ul { padding-left:14px; }
+.note ul li { margin-bottom:3px; color:#94a3b8; }
+.note.g { border-color:#22c55e; } .note.g .note-title { color:#86efac; }
+.note.o { border-color:#f97316; } .note.o .note-title { color:#fdba74; }
+.note.r { border-color:#ef4444; } .note.r .note-title { color:#fca5a5; }
+</style>
+</head>
+<body>
+
+<h1>船帳 Web 化管理系統</h1>
+<p class="subtitle">SHIP ACCOUNT WEB SYSTEM — WORKFLOW DESIGN</p>
+
+<!-- ══════════════════════
+  0. 月度時間軸
+══════════════════════ -->
+<div class="sec-header">📅 月度作業時間軸 MONTHLY TIMELINE</div>
+<div class="timeline">
+  <div class="tl-track">
+    <div class="tl-item">
+      <div class="tl-day" style="color:#93c5fd">月初</div>
+      <div class="tl-desc">船員上下船<br>名單更新</div>
+      <div class="tl-badge b">FMS同步</div>
+    </div>
+    <div class="tl-item highlight">
+      <div class="tl-day" style="color:#86efac">全月</div>
+      <div class="tl-desc">船員自助申報<br>V802/V804</div>
+      <div class="tl-badge g">持續進行</div>
+    </div>
+    <div class="tl-item highlight">
+      <div class="tl-day" style="color:#86efac">全月</div>
+      <div class="tl-desc">事務長填寫<br>V科目/A216</div>
+      <div class="tl-badge g">持續進行</div>
+    </div>
+    <div class="tl-item warn">
+      <div class="tl-day" style="color:#fde047">~20日</div>
+      <div class="tl-desc">公務/海技部<br>核准獎金總額</div>
+      <div class="tl-badge o">A217觸發</div>
+    </div>
+    <div class="tl-item warn">
+      <div class="tl-day" style="color:#fdba74">~22日</div>
+      <div class="tl-desc">A217 獎金<br>分配給船員</div>
+      <div class="tl-badge o">船端作業</div>
+    </div>
+    <div class="tl-item danger">
+      <div class="tl-day" style="color:#fca5a5">25日</div>
+      <div class="tl-desc">船帳整包<br>送回岸端</div>
+      <div class="tl-badge r">截止日</div>
+    </div>
+    <div class="tl-item warn">
+      <div class="tl-day" style="color:#fdba74">27日</div>
+      <div class="tl-desc">財務發布<br>結帳匯率</div>
+      <div class="tl-badge o">匯率鎖定</div>
+    </div>
+    <div class="tl-item danger">
+      <div class="tl-day" style="color:#fca5a5">月底</div>
+      <div class="tl-desc">岸端審核<br>匯入ERP</div>
+      <div class="tl-badge r">入帳完成</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════
+  1. 船員端申報流程
+══════════════════════ -->
+<div class="sec-header">👤 流程一：船員自助申報（V802 交通費 / V804 醫療費）</div>
+<div class="swimlane-wrap">
+  <div class="swimlane-title">🔵 角色：船員（Crew）→ 船長（Master）</div>
+  <div class="lanes">
+
+    <div class="lane-row">
+      <div class="lane-label crew">船員<br>CREW</div>
+      <div class="lane-body">
+        <div class="node blue">
+          <div class="node-title">登入系統</div>
+          <p>EC帳號 SSO<br>身份綁定船員名單</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node blue">
+          <div class="node-title">選擇申報類別</div>
+          <p>V802 交通費<br>V804 醫療費</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node blue">
+          <div class="node-title">填寫申報表單</div>
+          <p>日期/港口/金額<br>類別/摘要說明</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node blue">
+          <div class="node-title">上傳單據</div>
+          <p>拍照上傳<br>AI OCR自動辨識<br>左側即時預覽</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="decision green-d">審核通過？</div>
+        <div class="arr-wrap">
+          <span class="arr green-arr">→</span>
+          <span class="arr-label" style="color:#86efac">核准</span>
+        </div>
+        <div class="node green">
+          <div class="node-title">✅ 申報完成</div>
+          <p>收到核准通知<br>本月費用確認</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane-row">
+      <div class="lane-label system">系統<br>SYSTEM</div>
+      <div class="lane-body">
+        <div class="node purple" style="margin-left:340px;">
+          <div class="node-title">防呆檢核</div>
+          <p>必填欄位驗證<br>港口代碼5碼大寫<br>計程車免憑證<br>其餘強制上傳</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">AI OCR辨識</div>
+          <p>擷取日期/廠商/金額<br>自動帶入欄位<br>標記辨識信心度</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">送出通知船長</div>
+          <p>推播通知<br>待審核提醒</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane-row">
+      <div class="lane-label master">船長<br>MASTER</div>
+      <div class="lane-body" style="gap:6px;">
+        <div class="node green" style="margin-left:480px;">
+          <div class="node-title">查看待審清單</div>
+          <p>所有船員申報<br>依科目分類顯示</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node green">
+          <div class="node-title">審核單筆</div>
+          <p>查看單據預覽<br>核對AI辨識結果<br>可調整核准金額</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="decision green-d">核准 or<br>退回？</div>
+        <div class="arr-wrap">
+          <span class="arr red-arr">→</span>
+          <span class="arr-label" style="color:#ef4444">退回</span>
+        </div>
+        <div class="node orange">
+          <div class="node-title">退回補件</div>
+          <p>填寫退回原因<br>通知船員補件</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════
+  2. 事務長作業流程
+══════════════════════ -->
+<div class="sec-header">📋 流程二：事務長每月船帳作業（船端主系統核心）</div>
+<div class="swimlane-wrap">
+  <div class="swimlane-title">🟢 角色：事務長 / 船長（船端主系統操作）</div>
+  <div class="lanes">
+
+    <div class="lane-row">
+      <div class="lane-label master">事務長<br>/ 船長</div>
+      <div class="lane-body" style="flex-wrap:wrap; gap:8px;">
+
+        <div class="node green">
+          <div class="node-title">① 月初確認設定</div>
+          <p>確認匯率（全域/A216）<br>確認船員名單同步<br>設定期初金額</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node green">
+          <div class="node-title">② 填寫 A216</div>
+          <p>各港口船用金<br>預支明細登錄<br>上傳收據單據</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node green">
+          <div class="node-title">③ 填寫 V200</div>
+          <p>設定日期區段<br>每日補助金額<br>系統批次帶入全員</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node green">
+          <div class="node-title">④ 審核船員申報</div>
+          <p>V802/V804<br>船員已送出的申請<br>逐筆核准/退回</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node green">
+          <div class="node-title">⑤ 其他V科目</div>
+          <p>V810 交際費<br>V401/V402 物料<br>V819 活動費<br>V911 雜費</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="lane-row">
+      <div class="lane-label master">事務長<br>/ 船長</div>
+      <div class="lane-body" style="flex-wrap:wrap; gap:8px;">
+
+        <div class="node green">
+          <div class="node-title">⑥ A217 收到核准</div>
+          <p>岸端核准後<br>API自動帶入總額<br>（或手動輸入）</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node green">
+          <div class="node-title">⑦ A217 分配獎金</div>
+          <p>逐項分配給船員<br>超額/不足 → 紅色警告<br>確認全部分配完畢</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node yellow">
+          <div class="node-title">⑧ A274 稅務整合</div>
+          <p>各科目SUPPORTING<br>帶入稅額資料<br>系統自動彙整</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node green">
+          <div class="node-title">⑨ Dashboard確認</div>
+          <p>確認結餘正確<br>所有科目狀態<br>無紅色警告</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="decision green-d">全部<br>完成？</div>
+        <div class="arr-wrap">
+          <span class="arr green-arr">→</span>
+          <span class="arr-label" style="color:#86efac">是</span>
+        </div>
+        <div class="node green">
+          <div class="node-title">⑩ 送回岸端</div>
+          <p>月底25日前<br>整包資料送出<br>附PDF+Excel</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="lane-row">
+      <div class="lane-label system">系統<br>SYSTEM</div>
+      <div class="lane-body" style="flex-wrap:wrap; gap:8px;">
+        <div class="node purple">
+          <div class="node-title">送出前全檢</div>
+          <p>A217未分配完 → 阻擋<br>必填欄位缺漏 → 阻擋<br>金額加總核對 → 驗證</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">產生PDF簽收單</div>
+          <p>各科目簽收單<br>船員簽名欄<br>MASTER蓋章區</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">產生Excel定位點</div>
+          <p>WDPCM116格式<br>WDPSF713格式<br>乾跑驗證通過</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">整包壓縮送出</div>
+          <p>PDF + Excel<br>單據檔案<br>版本標記</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════
+  3. 岸端審核流程
+══════════════════════ -->
+<div class="sec-header">🏢 流程三：岸端審核與入帳</div>
+<div class="swimlane-wrap">
+  <div class="swimlane-title">🟠 角色：岸端承辦人 → 主管 → 財務</div>
+  <div class="lanes">
+
+    <div class="lane-row">
+      <div class="lane-label system">系統<br>AI</div>
+      <div class="lane-body">
+        <div class="node purple">
+          <div class="node-title">接收船端資料</div>
+          <p>版本管控存檔<br>解壓縮分類</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">AI自動初審</div>
+          <p>OCR比對金額<br>誤差&gt;1%標記<br>簽名筆跡檢核<br>歷史異常偵測</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">產生審核報告</div>
+          <p>異常項目清單<br>自動通過清單<br>需人工確認清單</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane-row">
+      <div class="lane-label shore">承辦人<br>OFFICER</div>
+      <div class="lane-body">
+        <div class="node orange" style="margin-left:10px;">
+          <div class="node-title">查看審核報告</div>
+          <p>AI標記異常優先<br>逐筆確認明細</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="decision orange-d">有<br>異常？</div>
+        <div class="arr-wrap">
+          <span class="arr red-arr">↑</span>
+          <span class="arr-label" style="color:#ef4444">有</span>
+        </div>
+        <div class="node orange">
+          <div class="node-title">退回船端</div>
+          <p>標記問題項目<br>填寫說明<br>通知補件</p>
+        </div>
+        <div class="arr-wrap" style="margin-left:20px;">
+          <span class="arr green-arr">→</span>
+          <span class="arr-label" style="color:#86efac">無異常</span>
+        </div>
+        <div class="node orange">
+          <div class="node-title">確認審核通過</div>
+          <p>列印驗收單<br>送主管簽核</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane-row">
+      <div class="lane-label finance">主管<br>/ 財務</div>
+      <div class="lane-body">
+        <div class="node red" style="margin-left:320px;">
+          <div class="node-title">主管電子簽核</div>
+          <p>確認驗收單<br>蓋章授權</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node red">
+          <div class="node-title">WDPCM116匯入</div>
+          <p>IMPORT D&amp;C（V科目）<br>IMPORT C（A274稅務）<br>定位點驗證</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node red">
+          <div class="node-title">WDPSF713匯入</div>
+          <p>A217獎金SHEET2<br>薪資系統結算<br>定位點驗證</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node green">
+          <div class="node-title">✅ 入帳完成</div>
+          <p>本月船帳歸檔<br>歷史資料庫更新</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════
+  4. A217獎金流程
+══════════════════════ -->
+<div class="sec-header">🏆 流程四：A217 獎金核准與分配（跨部門）</div>
+<div class="swimlane-wrap">
+  <div class="swimlane-title">🟡 跨部門流程：公務部/海技部 → 船端 → 岸端薪資</div>
+  <div class="lanes">
+
+    <div class="lane-row">
+      <div class="lane-label shore">公務部<br>海技部</div>
+      <div class="lane-body">
+        <div class="node orange">
+          <div class="node-title">審核獎金申請</div>
+          <p>修船獎金(103001/2)<br>引水獎金(104001/2)<br>清潔獎金(111002)</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node orange">
+          <div class="node-title">核准總金額</div>
+          <p>輸入核准USD總額<br>對應 Wage Code</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">API推送</div>
+          <p>自動推送至<br>對應船端A217項目</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane-row">
+      <div class="lane-label master">船端<br>事務長</div>
+      <div class="lane-body">
+        <div class="node green" style="margin-left:380px;">
+          <div class="node-title">A217總覽確認</div>
+          <p>核准金額已自動帶入<br>紅色提示：尚未分配項目</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node green">
+          <div class="node-title">逐項分配船員</div>
+          <p>矩陣介面<br>USD/TWD雙幣顯示<br>已分配/剩餘即時計算</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="decision green-d">全部<br>分配完？</div>
+        <div class="arr-wrap">
+          <span class="arr red-arr">↑</span>
+          <span class="arr-label" style="color:#ef4444">未完成<br>阻擋送出</span>
+        </div>
+        <div class="node green" style="margin-left:8px;">
+          <div class="node-title">繼續分配</div>
+          <p>Remaining &gt; 0<br>無法下載簽收單</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lane-row">
+      <div class="lane-label system">系統<br>SYSTEM</div>
+      <div class="lane-body">
+        <div class="node purple" style="margin-left:340px;">
+          <div class="node-title">台籍/外籍判別</div>
+          <p>TW開頭→台幣<br>其他→外幣<br>自動分流統計</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">產生綜合矩陣</div>
+          <p>縱:船員 橫:獎金項目<br>各員USD/TWD總計</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node purple">
+          <div class="node-title">產生個別簽收單</div>
+          <p>各項獎金一張<br>船員簽名欄位<br>MASTER簽核</p>
+        </div>
+        <div class="arr right">→</div>
+        <div class="node red">
+          <div class="node-title">PSF713匯入格式</div>
+          <p>SHEET2定位點<br>薪資系統結算用</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════
+  5. 資料流向圖
+══════════════════════ -->
+<div class="sec-header">🔄 資料流向：從輸入到入帳</div>
+<div class="dataflow">
+  <div class="df-row">
+    <div class="df-box" style="background:rgba(30,58,95,0.3); border-color:#3b82f6;">
+      <div class="df-title" style="color:#93c5fd">船員輸入</div>
+      <div style="font-size:10px; color:#64748b;">V802/V804申報<br>單據拍照上傳</div>
+    </div>
+    <div class="df-arrow-col">→<div class="df-arr-label">審核</div></div>
+    <div class="df-box" style="background:rgba(26,58,42,0.3); border-color:#22c55e;">
+      <div class="df-title" style="color:#86efac">船端彙整</div>
+      <div style="font-size:10px; color:#64748b;">所有V科目<br>A217/A216/A274</div>
+    </div>
+    <div class="df-arrow-col">→<div class="df-arr-label">月底25日</div></div>
+    <div class="df-box" style="background:rgba(45,31,61,0.3); border-color:#a855f7;">
+      <div class="df-title" style="color:#c4b5fd">AI初審</div>
+      <div style="font-size:10px; color:#64748b;">OCR比對<br>異常標記</div>
+    </div>
+    <div class="df-arrow-col">→<div class="df-arr-label">人工確認</div></div>
+    <div class="df-box" style="background:rgba(58,32,16,0.3); border-color:#f97316;">
+      <div class="df-title" style="color:#fdba74">岸端審核</div>
+      <div style="font-size:10px; color:#64748b;">承辦人核對<br>主管簽核</div>
+    </div>
+    <div class="df-arrow-col">→<div class="df-arr-label">匯入</div></div>
+    <div class="df-box" style="background:rgba(40,20,20,0.3); border-color:#dc2626;">
+      <div class="df-title" style="color:#fca5a5">ERP入帳</div>
+      <div style="font-size:10px; color:#64748b;">WDPCM116<br>WDPSF713</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════
+  6. 防呆機制總覽
+══════════════════════ -->
+<div class="sec-header">🚧 關鍵防呆機制（阻擋點）</div>
+<div class="note-row">
+  <div class="note g">
+    <div class="note-title">📝 輸入層防呆</div>
+    <ul>
+      <li>港口代碼強制5碼大寫</li>
+      <li>計程車以外強制上傳單據</li>
+      <li>V804體檢摘要強制格式（城市+醫院）</li>
+      <li>伙食費區段不可重疊</li>
+      <li>天數不可為負，最少1天</li>
+      <li>A217分配不可超過核准總額</li>
+    </ul>
+  </div>
+  <div class="note o">
+    <div class="note-title">🚫 送出層阻擋</div>
+    <ul>
+      <li>A217任一項目Remaining &gt; 0 → 阻擋</li>
+      <li>必填欄位缺漏 → 阻擋下載簽收單</li>
+      <li>體檢摘要格式錯誤 → 阻擋下載</li>
+      <li>非計程車未上傳憑證 → 阻擋下載</li>
+      <li>Excel乾跑筆數/加總不符 → 阻擋匯出</li>
+      <li>名單姓名/職稱為空 → 阻擋V200簽收單</li>
+    </ul>
+  </div>
+  <div class="note r">
+    <div class="note-title">⚠️ AI警示層</div>
+    <ul>
+      <li>AI讀取金額 vs 輸入金額誤差&gt;1% → 警告</li>
+      <li>簽收單有紀錄但無簽名筆跡 → 紅色警告</li>
+      <li>單據日期與錄入日期不符 → 警示</li>
+      <li>交際費菸品消耗量異常 → 岸端標示</li>
+      <li>歷史金額異常偏高 → 岸端提示</li>
+      <li>農曆春節鎖定3天，端午/中秋鎖定1天</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════════════════════
+  7. 離線/弱網策略
+══════════════════════ -->
+<div class="sec-header">📡 離線與弱網策略（船端核心問題）</div>
+<div class="note-row">
+  <div class="note g">
+    <div class="note-title">✅ 操作不依賴網路</div>
+    <ul>
+      <li>所有船端輸入先存入 IndexedDB</li>
+      <li>離線狀態顯示「本地暫存」標記</li>
+      <li>可完整填完整份船帳再一次上傳</li>
+      <li>操作紀錄 idempotent，可重播</li>
+    </ul>
+  </div>
+  <div class="note o">
+    <div class="note-title">🔄 網路恢復後同步</div>
+    <ul>
+      <li>Service Worker 背景自動同步</li>
+      <li>版本號衝突時提示使用者確認</li>
+      <li>同步完成後標記「已同步」</li>
+      <li>每次同步保留完整操作紀錄</li>
+    </ul>
+  </div>
+  <div class="note r">
+    <div class="note-title">⚡ API 降級備援</div>
+    <ul>
+      <li>FMS無回應 → 手動匯入CSV船員名單</li>
+      <li>匯率API失效 → 管理員手動輸入鎖定</li>
+      <li>獎金API失效 → 岸端手動輸入後推送</li>
+      <li>AI服務中斷 → 人工手動填寫繼續作業</li>
+    </ul>
+  </div>
+</div>
+
+<div style="text-align:center; margin-top:24px; font-size:10px; color:#334155; padding-bottom:16px;">
+  WAN HAI LINES — SHIP ACCOUNT WEB SYSTEM WORKFLOW · 2026
+</div>
+
+</body>
+</html>

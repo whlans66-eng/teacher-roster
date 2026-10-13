@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>船帳系統 — 工作流程圖</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 32px 20px;
+  min-width: 900px;
+}
+h1 { text-align:center; font-size:20px; font-weight:700; letter-spacing:2px; color:#f1f5f9; margin-bottom:4px; }
+.subtitle { text-align:center; font-size:12px; color:#475569; letter-spacing:1px; margin-bottom:24px; }
+
+.tabs {
+  display:flex; gap:8px; justify-content:center; margin-bottom:28px; flex-wrap:wrap;
+}
+.tab-btn {
+  padding:7px 18px; border-radius:20px; font-size:12px; cursor:pointer;
+  border:1px solid #334155; background:#1e293b; color:#64748b; transition:all .2s;
+  letter-spacing:1px;
+}
+.tab-btn.active { background:#1e3a5f; border-color:#3b82f6; color:#93c5fd; font-weight:700; }
+
+.flow-wrap { display:none; max-width:1000px; margin:0 auto; }
+.flow-wrap.active { display:block; }
+
+svg text { font-family: 'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif; }
+</style>
+</head>
+<body>
+
+<h1>船帳 Web 化管理系統</h1>
+<p class="subtitle">WORKFLOW DIAGRAMS — 工作流程圖</p>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="show('w1')">① 船員申報</button>
+  <button class="tab-btn" onclick="show('w2')">② 每月船帳作業</button>
+  <button class="tab-btn" onclick="show('w3')">③ 岸端審核入帳</button>
+  <button class="tab-btn" onclick="show('w4')">④ A217 獎金分配</button>
+</div>
+
+<!-- ═══════════════════════════════
+  W1: 船員申報流程
+═══════════════════════════════ -->
+<div id="w1" class="flow-wrap active">
+<svg width="100%" viewBox="0 0 960 1020" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="#475569"/>
+  </marker>
+  <marker id="arr-g" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="#22c55e"/>
+  </marker>
+  <marker id="arr-r" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/>
+  </marker>
+  <marker id="arr-b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6"/>
+  </marker>
+  <marker id="arr-o" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="#f97316"/>
+  </marker>
+  <marker id="arr-p" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="#a855f7"/>
+  </marker>
+</defs>
+<rect width="960" height="1020" fill="#0f172a"/>
+
+<!-- 角色標題列 -->
+<rect x="0" y="0" width="960" height="50" fill="#0f172a"/>
+<!-- 船員欄 -->
+<rect x="10" y="5" width="210" height="38" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="21" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="bold">👤 船員</text>
+<text x="115" y="36" text-anchor="middle" fill="#64748b" font-size="10">CREW</text>
+<!-- 系統欄 -->
+<rect x="240" y="5" width="200" height="38" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="340" y="21" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">⚙️ 系統自動</text>
+<text x="340" y="36" text-anchor="middle" fill="#64748b" font-size="10">SYSTEM AUTO</text>
+<!-- 船長欄 -->
+<rect x="460" y="5" width="200" height="38" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="560" y="21" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⚓ 船長</text>
+<text x="560" y="36" text-anchor="middle" fill="#64748b" font-size="10">MASTER</text>
+<!-- 主系統欄 -->
+<rect x="680" y="5" width="265" height="38" rx="8" fill="#1a3a2a" stroke="#16a34a" stroke-width="1.5"/>
+<text x="812" y="21" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="bold">🗄️ 主系統資料庫</text>
+<text x="812" y="36" text-anchor="middle" fill="#64748b" font-size="10">MAIN SYSTEM DB</text>
+
+<!-- 垂直分隔線 -->
+<line x1="230" y1="50" x2="230" y2="1005" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="450" y1="50" x2="450" y2="1005" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="670" y1="50" x2="670" y2="1005" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+
+<!-- ── START ── -->
+<ellipse cx="115" cy="85" rx="45" ry="20" fill="#1d4ed8" stroke="#3b82f6" stroke-width="2"/>
+<text x="115" y="90" text-anchor="middle" fill="white" font-size="11" font-weight="bold">開始</text>
+
+<!-- 1. 登入 -->
+<line x1="115" y1="105" x2="115" y2="128" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="128" width="170" height="48" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="148" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="bold">① 登入系統</text>
+<text x="115" y="163" text-anchor="middle" fill="#64748b" font-size="10">EC帳號 SSO</text>
+
+<!-- 2. 選類別 -->
+<line x1="115" y1="176" x2="115" y2="199" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="199" width="170" height="48" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="219" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="bold">② 選擇申報科目</text>
+<text x="115" y="234" text-anchor="middle" fill="#64748b" font-size="10">V802 交通費 / V804 醫療費</text>
+
+<!-- 3. 填表 -->
+<line x1="115" y1="247" x2="115" y2="270" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="270" width="170" height="60" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="290" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="bold">③ 填寫申報資料</text>
+<text x="115" y="304" text-anchor="middle" fill="#64748b" font-size="10">日期 / 港口 / 類別</text>
+<text x="115" y="316" text-anchor="middle" fill="#64748b" font-size="10">金額 / 摘要說明</text>
+
+<!-- 4. 上傳單據 -->
+<line x1="115" y1="330" x2="115" y2="353" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+<rect x="30" y="353" width="170" height="48" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="373" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="bold">④ 拍照上傳單據</text>
+<text x="115" y="388" text-anchor="middle" fill="#64748b" font-size="10">PDF / JPG</text>
+
+<!-- AI辨識 (系統欄) -->
+<line x1="200" y1="377" x2="255" y2="377" stroke="#a855f7" stroke-width="1.5" marker-end="url(#arr-p)"/>
+<rect x="255" y="353" width="170" height="48" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="340" y="373" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">AI OCR 辨識</text>
+<text x="340" y="388" text-anchor="middle" fill="#64748b" font-size="10">日期/廠商/金額自動帶入</text>
+<!-- 回傳 -->
+<line x1="255" y1="395" x2="200" y2="395" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-p)"/>
+<text x="228" y="408" text-anchor="middle" fill="#a855f7" font-size="9">辨識結果</text>
+
+<!-- 防呆檢核 (系統欄) -->
+<line x1="115" y1="401" x2="115" y2="424" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="115" y1="424" x2="255" y2="424" stroke="#475569" stroke-width="1.5" marker-end="url(#arr-p)"/>
+<rect x="255" y="410" width="170" height="48" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="340" y="430" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">🚧 防呆檢核</text>
+<text x="340" y="445" text-anchor="middle" fill="#64748b" font-size="10">港口5碼/憑證/格式驗證</text>
+
+<!-- 決策：通過? -->
+<line x1="340" y1="458" x2="340" y2="481" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+<polygon points="340,481 385,510 340,539 295,510" fill="#1e293b" stroke="#eab308" stroke-width="2"/>
+<text x="340" y="506" text-anchor="middle" fill="#fde047" font-size="11" font-weight="bold">驗證</text>
+<text x="340" y="520" text-anchor="middle" fill="#fde047" font-size="10">通過？</text>
+
+<!-- 不通過 → 回去修改 -->
+<line x1="295" y1="510" x2="230" y2="510" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-r)"/>
+<text x="262" y="503" text-anchor="middle" fill="#ef4444" font-size="10">不通過</text>
+<line x1="180" y1="510" x2="115" y2="510" stroke="#ef4444" stroke-width="1.5"/>
+<line x1="115" y1="510" x2="115" y2="330" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3"/>
+<text x="60" y="430" text-anchor="middle" fill="#ef4444" font-size="9">重新</text>
+<text x="60" y="442" text-anchor="middle" fill="#ef4444" font-size="9">填寫</text>
+
+<!-- 通過 → 送出 -->
+<line x1="340" y1="539" x2="340" y2="562" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-g)"/>
+<text x="360" y="552" fill="#22c55e" font-size="10">通過</text>
+<line x1="340" y1="562" x2="115" y2="562" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-g)"/>
+<rect x="30" y="562" width="170" height="48" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="115" y="582" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑤ 送出申請</text>
+<text x="115" y="597" text-anchor="middle" fill="#64748b" font-size="10">狀態：待審核</text>
+
+<!-- 推播通知船長 -->
+<line x1="200" y1="586" x2="455" y2="586" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-p)"/>
+<text x="328" y="579" text-anchor="middle" fill="#a855f7" font-size="10">🔔 推播通知</text>
+
+<!-- 船長看待審 -->
+<rect x="470" y="562" width="175" height="48" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="557" y="582" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑥ 船長查看待審</text>
+<text x="557" y="597" text-anchor="middle" fill="#64748b" font-size="10">查閱單據 / 核對AI辨識</text>
+
+<!-- 決策：核准? -->
+<line x1="557" y1="610" x2="557" y2="633" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+<polygon points="557,633 610,665 557,697 504,665" fill="#1e293b" stroke="#eab308" stroke-width="2"/>
+<text x="557" y="661" text-anchor="middle" fill="#fde047" font-size="11" font-weight="bold">審核</text>
+<text x="557" y="675" text-anchor="middle" fill="#fde047" font-size="10">結果？</text>
+
+<!-- 退回 -->
+<line x1="504" y1="665" x2="200" y2="665" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-r)"/>
+<text x="352" y="657" text-anchor="middle" fill="#ef4444" font-size="10">退回補件</text>
+<rect x="30" y="641" width="170" height="48" rx="8" fill="#3a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+<text x="115" y="661" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="bold">收到退回通知</text>
+<text x="115" y="676" text-anchor="middle" fill="#64748b" font-size="10">查看退回原因</text>
+<!-- 重送 -->
+<line x1="115" y1="689" x2="115" y2="720" stroke="#ef4444" stroke-width="1.5"/>
+<line x1="115" y1="720" x2="20" y2="720" stroke="#ef4444" stroke-width="1.5"/>
+<line x1="20" y1="720" x2="20" y2="280" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3"/>
+<line x1="20" y1="280" x2="30" y2="280" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-r)"/>
+<text x="10" y="510" fill="#ef4444" font-size="9" transform="rotate(-90,10,510)">補件重送</text>
+
+<!-- 核准 -->
+<line x1="557" y1="697" x2="557" y2="730" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-g)"/>
+<text x="575" y="715" fill="#22c55e" font-size="10">核准</text>
+<rect x="470" y="730" width="175" height="48" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="557" y="750" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑦ 批核確認</text>
+<text x="557" y="765" text-anchor="middle" fill="#64748b" font-size="10">可調整核准金額</text>
+
+<!-- 寫入DB -->
+<line x1="645" y1="754" x2="675" y2="754" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr-g)"/>
+<rect x="685" y="730" width="255" height="60" rx="8" fill="#0f2a1a" stroke="#16a34a" stroke-width="1.5"/>
+<text x="812" y="752" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="bold">⑧ 寫入資料庫</text>
+<text x="812" y="767" text-anchor="middle" fill="#64748b" font-size="10">匯入 V802 / V804</text>
+<text x="812" y="780" text-anchor="middle" fill="#64748b" font-size="10">觸發 A274 稅務整合</text>
+
+<!-- 通知船員 -->
+<line x1="557" y1="778" x2="557" y2="808" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-p)"/>
+<line x1="557" y1="808" x2="200" y2="808" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-p)"/>
+<rect x="30" y="784" width="170" height="48" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="115" y="804" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="bold">收到核准通知</text>
+<text x="115" y="819" text-anchor="middle" fill="#64748b" font-size="10">本月費用確認完成</text>
+
+<!-- Dashboard更新 -->
+<line x1="812" y1="790" x2="812" y2="820" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-g)"/>
+<rect x="685" y="820" width="255" height="48" rx="8" fill="#0f2a1a" stroke="#16a34a" stroke-width="1.5"/>
+<text x="812" y="840" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="bold">Dashboard 餘額更新</text>
+<text x="812" y="855" text-anchor="middle" fill="#64748b" font-size="10">即時反映結餘</text>
+
+<!-- END -->
+<line x1="115" y1="832" x2="115" y2="945" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="557" y1="832" x2="115" y2="870" stroke="#475569" stroke-width="1" stroke-dasharray="3,3"/>
+<ellipse cx="115" cy="965" rx="55" ry="22" fill="#14532d" stroke="#22c55e" stroke-width="2"/>
+<text x="115" y="970" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">✅ 申報完成</text>
+</svg>
+</div>
+
+<!-- ═══════════════════════════════
+  W2: 每月船帳作業
+═══════════════════════════════ -->
+<div id="w2" class="flow-wrap">
+<svg width="100%" viewBox="0 0 960 1100" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#475569"/></marker>
+  <marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#22c55e"/></marker>
+  <marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+  <marker id="a4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#a855f7"/></marker>
+  <marker id="a5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f97316"/></marker>
+</defs>
+<rect width="960" height="1100" fill="#0f172a"/>
+
+<!-- 欄位頭 -->
+<rect x="10"  y="8" width="200" height="38" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="24" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">🧑‍✈️ 事務長 / 船長</text>
+<text x="110" y="38" text-anchor="middle" fill="#64748b" font-size="10">MASTER / PURSER</text>
+<rect x="230" y="8" width="200" height="38" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="330" y="24" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">⚙️ 系統自動處理</text>
+<text x="330" y="38" text-anchor="middle" fill="#64748b" font-size="10">SYSTEM AUTO</text>
+<rect x="450" y="8" width="200" height="38" rx="8" fill="#1e2433" stroke="#475569" stroke-width="1.5"/>
+<text x="550" y="24" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="bold">🌐 外部系統</text>
+<text x="550" y="38" text-anchor="middle" fill="#64748b" font-size="10">FMS / 匯率 API</text>
+<rect x="670" y="8" width="275" height="38" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="807" y="24" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">🏢 岸端 / 報表產出</text>
+<text x="807" y="38" text-anchor="middle" fill="#64748b" font-size="10">SHORE / OUTPUT</text>
+
+<line x1="220" y1="50" x2="220" y2="1080" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="440" y1="50" x2="440" y2="1080" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="660" y1="50" x2="660" y2="1080" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+
+<!-- START -->
+<ellipse cx="110" cy="80" rx="50" ry="22" fill="#1d4ed8" stroke="#3b82f6" stroke-width="2"/>
+<text x="110" y="85" text-anchor="middle" fill="white" font-size="11" font-weight="bold">月初開始</text>
+
+<!-- 步驟1: 確認船員名單 -->
+<line x1="110" y1="102" x2="110" y2="125" stroke="#475569" stroke-width="1.5" marker-end="url(#a1)"/>
+<rect x="20" y="125" width="180" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="146" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">① 確認船員名單</text>
+<text x="110" y="161" text-anchor="middle" fill="#64748b" font-size="10">FMS 串接 or CSV匯入</text>
+<!-- FMS -->
+<line x1="200" y1="150" x2="445" y2="150" stroke="#475569" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a1)"/>
+<rect x="455" y="128" width="185" height="44" rx="8" fill="#1e2433" stroke="#475569" stroke-width="1.5"/>
+<text x="547" y="146" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="bold">FMS 船員名單 API</text>
+<text x="547" y="161" text-anchor="middle" fill="#64748b" font-size="10">上下船日期/職稱/員編</text>
+<line x1="445" y1="163" x2="200" y2="163" stroke="#475569" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a1)"/>
+
+<!-- 步驟2: 設定匯率期初 -->
+<line x1="110" y1="175" x2="110" y2="198" stroke="#475569" stroke-width="1.5" marker-end="url(#a1)"/>
+<rect x="20" y="198" width="180" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="219" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">② 設定匯率與期初</text>
+<text x="110" y="234" text-anchor="middle" fill="#64748b" font-size="10">全域匯率 / A216獨立匯率</text>
+<line x1="200" y1="223" x2="445" y2="223" stroke="#475569" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a1)"/>
+<rect x="455" y="205" width="185" height="36" rx="8" fill="#1e2433" stroke="#475569" stroke-width="1.5"/>
+<text x="547" y="220" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="bold">岸端匯率系統</text>
+<text x="547" y="234" text-anchor="middle" fill="#64748b" font-size="10">每月27日自動發布</text>
+<line x1="445" y1="235" x2="200" y2="235" stroke="#475569" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a1)"/>
+
+<!-- 步驟3: A216 -->
+<line x1="110" y1="248" x2="110" y2="271" stroke="#475569" stroke-width="1.5" marker-end="url(#a1)"/>
+<rect x="20" y="271" width="180" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="292" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">③ 填寫 A216 船用金</text>
+<text x="110" y="307" text-anchor="middle" fill="#64748b" font-size="10">各港口預支 / 上傳單據</text>
+
+<!-- 步驟4: V200 -->
+<line x1="110" y1="321" x2="110" y2="344" stroke="#475569" stroke-width="1.5" marker-end="url(#a1)"/>
+<rect x="20" y="344" width="180" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="364" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">④ 填寫 V200 伙食費</text>
+<text x="110" y="379" text-anchor="middle" fill="#64748b" font-size="10">設定區段 + 金額</text>
+<!-- 批次計算 -->
+<line x1="200" y1="369" x2="225" y2="369" stroke="#a855f7" stroke-width="1.5" marker-end="url(#a4)"/>
+<rect x="235" y="352" width="185" height="36" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="327" y="366" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">批次計算（取交集）</text>
+<text x="327" y="380" text-anchor="middle" fill="#64748b" font-size="10">名單×天數 → 逐人明細</text>
+<line x1="225" y1="385" x2="200" y2="385" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a4)"/>
+
+<!-- 步驟5: 其他V科目 -->
+<line x1="110" y1="394" x2="110" y2="417" stroke="#475569" stroke-width="1.5" marker-end="url(#a1)"/>
+<rect x="20" y="417" width="180" height="60" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="437" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑤ 填寫其他V科目</text>
+<text x="110" y="452" text-anchor="middle" fill="#64748b" font-size="10">V802/V804（審核船員申報）</text>
+<text x="110" y="465" text-anchor="middle" fill="#64748b" font-size="10">V810 / V401 / V819 / V911</text>
+
+<!-- 步驟6: 等待A217核准 -->
+<line x1="110" y1="477" x2="110" y2="500" stroke="#475569" stroke-width="1.5" marker-end="url(#a1)"/>
+<rect x="20" y="500" width="180" height="60" rx="8" fill="#2a2010" stroke="#eab308" stroke-width="1.5"/>
+<text x="110" y="521" text-anchor="middle" fill="#fde047" font-size="11" font-weight="bold">⑥ 等待A217獎金核准</text>
+<text x="110" y="536" text-anchor="middle" fill="#64748b" font-size="10">公務/海技部核准後</text>
+<text x="110" y="549" text-anchor="middle" fill="#64748b" font-size="10">API自動帶入總額</text>
+<!-- 外部核准 -->
+<line x1="200" y1="530" x2="665" y2="530" stroke="#f97316" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a5)"/>
+<rect x="675" y="513" width="265" height="36" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="807" y="527" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">🏢 公務/海技部 核准獎金總額</text>
+<text x="807" y="541" text-anchor="middle" fill="#64748b" font-size="10">API推送 → 船端自動帶入</text>
+<line x1="665" y1="545" x2="200" y2="545" stroke="#f97316" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a5)"/>
+
+<!-- 步驟7: A217分配 -->
+<line x1="110" y1="560" x2="110" y2="583" stroke="#475569" stroke-width="1.5" marker-end="url(#a1)"/>
+<rect x="20" y="583" width="180" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="604" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑦ A217 分配獎金</text>
+<text x="110" y="618" text-anchor="middle" fill="#64748b" font-size="10">矩陣介面逐員分配</text>
+
+<!-- 步驟8: A274 -->
+<line x1="110" y1="633" x2="110" y2="656" stroke="#475569" stroke-width="1.5" marker-end="url(#a1)"/>
+<rect x="20" y="656" width="180" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="676" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑧ A274 稅務整合</text>
+<text x="110" y="691" text-anchor="middle" fill="#64748b" font-size="10">各科目SUPPORTING帶入</text>
+
+<!-- 決策：Dashboard全綠? -->
+<line x1="110" y1="706" x2="110" y2="729" stroke="#475569" stroke-width="1.5" marker-end="url(#a1)"/>
+<polygon points="110,729 180,762 110,795 40,762" fill="#1e293b" stroke="#eab308" stroke-width="2"/>
+<text x="110" y="757" text-anchor="middle" fill="#fde047" font-size="11" font-weight="bold">Dashboard</text>
+<text x="110" y="773" text-anchor="middle" fill="#fde047" font-size="10">全部完成？</text>
+
+<!-- 未完成 → 補填 -->
+<line x1="40" y1="762" x2="10" y2="762" stroke="#ef4444" stroke-width="1.5"/>
+<line x1="10" y1="762" x2="10" y2="583" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3"/>
+<line x1="10" y1="583" x2="20" y2="583" stroke="#ef4444" stroke-width="1.5" marker-end="url(#a3)"/>
+<text x="10" y="682" fill="#ef4444" font-size="9" transform="rotate(-90,10,682)">有未完成項目</text>
+
+<!-- 完成 → 產生報表 -->
+<line x1="110" y1="795" x2="110" y2="825" stroke="#22c55e" stroke-width="1.5" marker-end="url(#a2)"/>
+<text x="130" y="812" fill="#22c55e" font-size="10">全部完成</text>
+
+<!-- 系統全檢 -->
+<rect x="235" y="825" width="185" height="50" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="327" y="845" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">⑨ 系統送出前全檢</text>
+<text x="327" y="860" text-anchor="middle" fill="#64748b" font-size="10">乾跑驗證 / 定位點核對</text>
+<line x1="200" y1="850" x2="235" y2="850" stroke="#a855f7" stroke-width="1.5" marker-end="url(#a4)"/>
+<line x1="235" y1="862" x2="200" y2="862" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a4)"/>
+
+<!-- 產生PDF/Excel -->
+<rect x="235" y="892" width="185" height="50" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="327" y="912" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">⑩ 產生 PDF + Excel</text>
+<text x="327" y="927" text-anchor="middle" fill="#64748b" font-size="10">各科目簽收單 / 定位點格式</text>
+<line x1="327" y1="875" x2="327" y2="892" stroke="#a855f7" stroke-width="1.5" marker-end="url(#a4)"/>
+
+<!-- 送回岸端 -->
+<rect x="20" y="960" width="180" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="980" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑪ 月底25日前</text>
+<text x="110" y="995" text-anchor="middle" fill="#64748b" font-size="10">整包資料送回岸端</text>
+<line x1="235" y1="942" x2="200" y2="942" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a4)"/>
+<line x1="200" y1="942" x2="110" y2="942" stroke="#a855f7" stroke-width="1.5"/>
+<line x1="110" y1="942" x2="110" y2="960" stroke="#a855f7" stroke-width="1.5" marker-end="url(#a4)"/>
+
+<!-- 岸端接收 -->
+<line x1="200" y1="985" x2="665" y2="985" stroke="#22c55e" stroke-width="2" marker-end="url(#a2)"/>
+<rect x="675" y="960" width="265" height="50" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="807" y="980" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">🏢 岸端接收</text>
+<text x="807" y="995" text-anchor="middle" fill="#64748b" font-size="10">版本管控 → 進入審核流程</text>
+
+<!-- END -->
+<ellipse cx="110" cy="1060" rx="55" ry="22" fill="#14532d" stroke="#22c55e" stroke-width="2"/>
+<text x="110" y="1065" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">✅ 船端完成</text>
+<line x1="110" y1="1010" x2="110" y2="1038" stroke="#22c55e" stroke-width="1.5" marker-end="url(#a2)"/>
+</svg>
+</div>
+
+<!-- ═══════════════════════════════
+  W3: 岸端審核入帳
+═══════════════════════════════ -->
+<div id="w3" class="flow-wrap">
+<svg width="100%" viewBox="0 0 960 960" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="b1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#475569"/></marker>
+  <marker id="b2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#22c55e"/></marker>
+  <marker id="b3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+  <marker id="b4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#a855f7"/></marker>
+  <marker id="b5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f97316"/></marker>
+  <marker id="b6" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#7c3aed"/></marker>
+  <marker id="b7" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#0ea5e9"/></marker>
+</defs>
+<rect width="960" height="960" fill="#0f172a"/>
+
+<!-- 欄位頭 -->
+<rect x="10"  y="8" width="200" height="38" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="110" y="25" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">🏢 岸端承辦</text>
+<text x="110" y="39" text-anchor="middle" fill="#64748b" font-size="10">SHORE OFFICER</text>
+<rect x="230" y="8" width="200" height="38" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="330" y="25" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">🤖 AI 自動審核</text>
+<text x="330" y="39" text-anchor="middle" fill="#64748b" font-size="10">AUTO AUDIT</text>
+<rect x="450" y="8" width="200" height="38" rx="8" fill="#3a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+<text x="550" y="25" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="bold">👔 主管</text>
+<text x="550" y="39" text-anchor="middle" fill="#64748b" font-size="10">MANAGER</text>
+<rect x="670" y="8" width="275" height="38" rx="8" fill="#1a1020" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="807" y="25" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="bold">🗄️ ERP 系統</text>
+<text x="807" y="39" text-anchor="middle" fill="#64748b" font-size="10">WDPCM116 / PSF713</text>
+
+<line x1="220" y1="50" x2="220" y2="930" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="440" y1="50" x2="440" y2="930" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="660" y1="50" x2="660" y2="930" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+
+<!-- START -->
+<ellipse cx="110" cy="80" rx="65" ry="22" fill="#7c2d12" stroke="#f97316" stroke-width="2"/>
+<text x="110" y="85" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">接收船端資料</text>
+
+<!-- 1: AI初審 -->
+<line x1="110" y1="102" x2="220" y2="150" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#b4)"/>
+<rect x="235" y="130" width="185" height="60" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="327" y="151" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">① AI 自動初審</text>
+<text x="327" y="165" text-anchor="middle" fill="#64748b" font-size="10">OCR比對金額誤差&gt;1%→標記</text>
+<text x="327" y="179" text-anchor="middle" fill="#64748b" font-size="10">簽名筆跡 / 歷史異常偵測</text>
+
+<!-- 生成審核報告 -->
+<line x1="327" y1="190" x2="327" y2="213" stroke="#a855f7" stroke-width="1.5" marker-end="url(#b4)"/>
+<rect x="235" y="213" width="185" height="44" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="327" y="231" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">生成審核報告</text>
+<text x="327" y="246" text-anchor="middle" fill="#64748b" font-size="10">異常清單 / 自動通過清單</text>
+
+<!-- 回傳承辦人 -->
+<line x1="235" y1="248" x2="200" y2="248" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#b4)"/>
+
+<!-- 2: 人工審核 -->
+<line x1="110" y1="130" x2="110" y2="270" stroke="#f97316" stroke-width="1.5" marker-end="url(#b5)"/>
+<rect x="20" y="270" width="180" height="50" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="110" y="291" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">② 逐筆人工審核</text>
+<text x="110" y="306" text-anchor="middle" fill="#64748b" font-size="10">AI標記異常優先處理</text>
+
+<!-- 決策：有異常? -->
+<line x1="110" y1="320" x2="110" y2="343" stroke="#475569" stroke-width="1.5" marker-end="url(#b1)"/>
+<polygon points="110,343 175,376 110,409 45,376" fill="#1e293b" stroke="#eab308" stroke-width="2"/>
+<text x="110" y="372" text-anchor="middle" fill="#fde047" font-size="11" font-weight="bold">有異常</text>
+<text x="110" y="386" text-anchor="middle" fill="#fde047" font-size="10">項目？</text>
+
+<!-- 有異常 → 退回 -->
+<line x1="45" y1="376" x2="10" y2="376" stroke="#ef4444" stroke-width="1.5"/>
+<rect x="5" y="359" width="5" height="2" fill="none"/>
+<text x="10" y="370" fill="#ef4444" font-size="10">有</text>
+<line x1="10" y1="395" x2="10" y2="440" stroke="#ef4444" stroke-width="1.5"/>
+<rect x="20" y="420" width="180" height="50" rx="8" fill="#3a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+<text x="110" y="440" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="bold">退回船端補件</text>
+<text x="110" y="455" text-anchor="middle" fill="#64748b" font-size="10">標記問題 + 通知說明</text>
+<line x1="10" y1="376" x2="10" y2="440" stroke="#ef4444" stroke-width="1.5" marker-end="url(#b3)"/>
+
+<!-- 等待補件回來 (loop) -->
+<line x1="110" y1="470" x2="110" y2="500" stroke="#ef4444" stroke-width="1.5"/>
+<line x1="110" y1="500" x2="230" y2="500" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3"/>
+<text x="170" y="493" fill="#ef4444" font-size="9">等待船端重送</text>
+<line x1="230" y1="500" x2="230" y2="160" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3"/>
+<line x1="230" y1="160" x2="235" y2="160" stroke="#ef4444" stroke-width="1.5" marker-end="url(#b3)"/>
+
+<!-- 無異常 → 列印驗收單 -->
+<line x1="110" y1="409" x2="110" y2="520" stroke="#22c55e" stroke-width="1.5" marker-end="url(#b2)"/>
+<text x="130" y="468" fill="#22c55e" font-size="10">無異常</text>
+<rect x="20" y="520" width="180" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="541" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">③ 列印驗收單</text>
+<text x="110" y="556" text-anchor="middle" fill="#64748b" font-size="10">送主管簽核</text>
+
+<!-- 主管簽核 -->
+<line x1="200" y1="545" x2="445" y2="545" stroke="#f97316" stroke-width="1.5" marker-end="url(#b5)"/>
+<rect x="455" y="520" width="185" height="50" rx="8" fill="#3a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+<text x="547" y="541" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="bold">④ 主管電子簽核</text>
+<text x="547" y="556" text-anchor="middle" fill="#64748b" font-size="10">確認 / 蓋章授權</text>
+<line x1="445" y1="558" x2="200" y2="558" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#b5)"/>
+
+<!-- WDPCM116 匯入 -->
+<line x1="110" y1="570" x2="110" y2="600" stroke="#475569" stroke-width="1.5" marker-end="url(#b1)"/>
+<rect x="20" y="600" width="180" height="50" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="110" y="621" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">⑤ 匯入 WDPCM116</text>
+<text x="110" y="636" text-anchor="middle" fill="#64748b" font-size="10">V科目 IMPORT D&amp;C</text>
+
+<line x1="200" y1="625" x2="665" y2="625" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#b6)"/>
+<rect x="675" y="600" width="265" height="50" rx="8" fill="#1a1020" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="807" y="621" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="bold">✅ WDPCM116 V科目入帳</text>
+<text x="807" y="636" text-anchor="middle" fill="#64748b" font-size="10">定位點驗證 → 會計分錄</text>
+
+<!-- A274 稅務 -->
+<line x1="110" y1="650" x2="110" y2="680" stroke="#475569" stroke-width="1.5" marker-end="url(#b1)"/>
+<rect x="20" y="680" width="180" height="50" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="110" y="700" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">⑥ 匯入 A274 稅務</text>
+<text x="110" y="715" text-anchor="middle" fill="#64748b" font-size="10">IMPORT C 定位點</text>
+
+<line x1="200" y1="705" x2="665" y2="705" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#b6)"/>
+<rect x="675" y="680" width="265" height="50" rx="8" fill="#1a1020" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="807" y="701" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="bold">✅ WDPCM116 稅務入帳</text>
+<text x="807" y="716" text-anchor="middle" fill="#64748b" font-size="10">A274 IMPORT C 完成</text>
+
+<!-- PSF713 -->
+<line x1="110" y1="730" x2="110" y2="760" stroke="#475569" stroke-width="1.5" marker-end="url(#b1)"/>
+<rect x="20" y="760" width="180" height="50" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="110" y="781" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">⑦ 匯入 PSF713</text>
+<text x="110" y="796" text-anchor="middle" fill="#64748b" font-size="10">A217 SHEET2 薪資結算</text>
+
+<line x1="200" y1="785" x2="665" y2="785" stroke="#0ea5e9" stroke-width="1.5" marker-end="url(#b7)"/>
+<rect x="675" y="760" width="265" height="50" rx="8" fill="#1e2433" stroke="#0ea5e9" stroke-width="1.5"/>
+<text x="807" y="781" text-anchor="middle" fill="#7dd3fc" font-size="11" font-weight="bold">✅ PSF713 薪資入帳</text>
+<text x="807" y="796" text-anchor="middle" fill="#64748b" font-size="10">A217 獎金結算完成</text>
+
+<!-- END -->
+<line x1="110" y1="810" x2="110" y2="850" stroke="#22c55e" stroke-width="1.5" marker-end="url(#b2)"/>
+<rect x="20" y="850" width="180" height="50" rx="8" fill="#0f2a1a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="110" y="871" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑧ 本月船帳歸檔</text>
+<text x="110" y="886" text-anchor="middle" fill="#64748b" font-size="10">歷史資料庫更新</text>
+
+<ellipse cx="110" cy="930" rx="60" ry="22" fill="#14532d" stroke="#22c55e" stroke-width="2"/>
+<text x="110" y="935" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">✅ 入帳完成</text>
+<line x1="110" y1="900" x2="110" y2="908" stroke="#22c55e" stroke-width="1.5" marker-end="url(#b2)"/>
+</svg>
+</div>
+
+<!-- ═══════════════════════════════
+  W4: A217 獎金分配
+═══════════════════════════════ -->
+<div id="w4" class="flow-wrap">
+<svg width="100%" viewBox="0 0 960 900" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="c1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#475569"/></marker>
+  <marker id="c2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#22c55e"/></marker>
+  <marker id="c3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+  <marker id="c4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f97316"/></marker>
+  <marker id="c5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#a855f7"/></marker>
+  <marker id="c6" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#0ea5e9"/></marker>
+</defs>
+<rect width="960" height="900" fill="#0f172a"/>
+
+<!-- 欄位頭 -->
+<rect x="10"  y="8" width="180" height="38" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="100" y="25" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">🏢 公務/海技部</text>
+<text x="100" y="39" text-anchor="middle" fill="#64748b" font-size="10">DEPT APPROVAL</text>
+<rect x="210" y="8" width="180" height="38" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="300" y="25" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">⚡ API / 系統</text>
+<text x="300" y="39" text-anchor="middle" fill="#64748b" font-size="10">INTEGRATION</text>
+<rect x="410" y="8" width="200" height="38" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="510" y="25" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">🧑‍✈️ 事務長</text>
+<text x="510" y="39" text-anchor="middle" fill="#64748b" font-size="10">MASTER / PURSER</text>
+<rect x="630" y="8" width="315" height="38" rx="8" fill="#1e2433" stroke="#0ea5e9" stroke-width="1.5"/>
+<text x="787" y="25" text-anchor="middle" fill="#7dd3fc" font-size="11" font-weight="bold">📘 PSF713 薪資系統</text>
+<text x="787" y="39" text-anchor="middle" fill="#64748b" font-size="10">PAYROLL SYSTEM</text>
+
+<line x1="200" y1="50" x2="200" y2="870" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="400" y1="50" x2="400" y2="870" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="620" y1="50" x2="620" y2="870" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+
+<!-- START -->
+<ellipse cx="100" cy="80" rx="60" ry="22" fill="#7c2d12" stroke="#f97316" stroke-width="2"/>
+<text x="100" y="85" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">獎金申請提出</text>
+
+<!-- 1: 部門審核 -->
+<line x1="100" y1="102" x2="100" y2="125" stroke="#475569" stroke-width="1.5" marker-end="url(#c1)"/>
+<rect x="15" y="125" width="170" height="50" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="100" y="146" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">① 部門審核獎金申請</text>
+<text x="100" y="161" text-anchor="middle" fill="#64748b" font-size="10">修船/清潔/引水/其他</text>
+
+<!-- 2: 輸入核准金額 -->
+<line x1="100" y1="175" x2="100" y2="198" stroke="#475569" stroke-width="1.5" marker-end="url(#c1)"/>
+<rect x="15" y="198" width="170" height="50" rx="8" fill="#3a2010" stroke="#f97316" stroke-width="1.5"/>
+<text x="100" y="219" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="bold">② 輸入核准 USD 總額</text>
+<text x="100" y="234" text-anchor="middle" fill="#64748b" font-size="10">對應 Wage Code</text>
+
+<!-- API推送 -->
+<line x1="185" y1="223" x2="205" y2="223" stroke="#f97316" stroke-width="1.5" marker-end="url(#c4)"/>
+<rect x="215" y="205" width="175" height="44" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="302" y="223" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">③ API 推送</text>
+<text x="302" y="238" text-anchor="middle" fill="#64748b" font-size="10">對應船端 A217 自動帶入</text>
+<!-- push to ship -->
+<line x1="390" y1="227" x2="405" y2="227" stroke="#a855f7" stroke-width="1.5" marker-end="url(#c5)"/>
+
+<!-- 4: 系統提示 -->
+<rect x="415" y="205" width="190" height="44" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="510" y="223" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">④ A217 總覽更新</text>
+<text x="510" y="238" text-anchor="middle" fill="#64748b" font-size="10">🔴 待分配項目紅色提示</text>
+
+<!-- 5: 矩陣分配 -->
+<line x1="510" y1="249" x2="510" y2="272" stroke="#475569" stroke-width="1.5" marker-end="url(#c1)"/>
+<rect x="415" y="272" width="190" height="60" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="510" y="293" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑤ 矩陣介面分配</text>
+<text x="510" y="308" text-anchor="middle" fill="#64748b" font-size="10">縱：船員　橫：獎金項目</text>
+<text x="510" y="322" text-anchor="middle" fill="#64748b" font-size="10">已分配 / 剩餘 即時計算</text>
+
+<!-- 幣別判斷 (系統) -->
+<line x1="415" y1="302" x2="390" y2="302" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#c5)"/>
+<rect x="215" y="284" width="175" height="36" rx="8" fill="#2d1f3d" stroke="#a855f7" stroke-width="1.5"/>
+<text x="302" y="299" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">幣別自動判斷</text>
+<text x="302" y="312" text-anchor="middle" fill="#64748b" font-size="10">TW開頭→台幣 / 其他→外幣</text>
+
+<!-- 決策1: 超額? -->
+<line x1="510" y1="332" x2="510" y2="355" stroke="#475569" stroke-width="1.5" marker-end="url(#c1)"/>
+<polygon points="510,355 575,385 510,415 445,385" fill="#1e293b" stroke="#eab308" stroke-width="2"/>
+<text x="510" y="381" text-anchor="middle" fill="#fde047" font-size="11" font-weight="bold">超過</text>
+<text x="510" y="395" text-anchor="middle" fill="#fde047" font-size="10">核准總額？</text>
+
+<!-- 超額 → 阻擋 -->
+<line x1="575" y1="385" x2="640" y2="385" stroke="#ef4444" stroke-width="1.5"/>
+<text x="607" y="377" fill="#ef4444" font-size="10">超額</text>
+<rect x="645" y="362" width="185" height="44" rx="8" fill="#3a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+<text x="737" y="380" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="bold">🚫 系統阻擋</text>
+<text x="737" y="395" text-anchor="middle" fill="#64748b" font-size="10">無法存檔，顯示錯誤</text>
+<!-- 回到分配 -->
+<line x1="737" y1="406" x2="737" y2="435" stroke="#ef4444" stroke-width="1.5"/>
+<line x1="737" y1="435" x2="605" y2="435" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3"/>
+<line x1="605" y1="435" x2="605" y2="302" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3"/>
+<line x1="605" y1="302" x2="605" y2="302" stroke="#ef4444" stroke-width="1.5" marker-end="url(#c3)"/>
+
+<!-- 未超額 → 決策2: 全部分配完? -->
+<line x1="510" y1="415" x2="510" y2="438" stroke="#22c55e" stroke-width="1.5" marker-end="url(#c2)"/>
+<text x="530" y="430" fill="#22c55e" font-size="10">未超額</text>
+<polygon points="510,438 580,468 510,498 440,468" fill="#1e293b" stroke="#eab308" stroke-width="2"/>
+<text x="510" y="464" text-anchor="middle" fill="#fde047" font-size="11" font-weight="bold">全部</text>
+<text x="510" y="478" text-anchor="middle" fill="#fde047" font-size="10">分配完畢？</text>
+
+<!-- 未完成 -->
+<line x1="440" y1="468" x2="400" y2="468" stroke="#ef4444" stroke-width="1.5"/>
+<text x="420" y="460" fill="#ef4444" font-size="10">未完成</text>
+<line x1="400" y1="468" x2="400" y2="302" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3"/>
+<line x1="400" y1="302" x2="415" y2="302" stroke="#ef4444" stroke-width="1.5" marker-end="url(#c3)"/>
+<text x="385" y="400" fill="#ef4444" font-size="9" transform="rotate(-90,385,400)">補充分配</text>
+
+<!-- 全部完成 → 產生簽收單 -->
+<line x1="510" y1="498" x2="510" y2="521" stroke="#22c55e" stroke-width="1.5" marker-end="url(#c2)"/>
+<text x="530" y="512" fill="#22c55e" font-size="10">完成</text>
+<rect x="415" y="521" width="190" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="510" y="542" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑥ 產生個別簽收單</text>
+<text x="510" y="557" text-anchor="middle" fill="#64748b" font-size="10">各項獎金一張 / MASTER簽核</text>
+
+<!-- 產生矩陣總表 -->
+<line x1="510" y1="571" x2="510" y2="594" stroke="#475569" stroke-width="1.5" marker-end="url(#c1)"/>
+<rect x="415" y="594" width="190" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="510" y="615" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑦ 綜合獎金矩陣總表</text>
+<text x="510" y="630" text-anchor="middle" fill="#64748b" font-size="10">所有船員 × 所有獎金項目</text>
+
+<!-- Excel定位點匯出 -->
+<line x1="510" y1="644" x2="510" y2="667" stroke="#475569" stroke-width="1.5" marker-end="url(#c1)"/>
+<rect x="415" y="667" width="190" height="50" rx="8" fill="#1a3a2a" stroke="#22c55e" stroke-width="1.5"/>
+<text x="510" y="688" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">⑧ 匯出 Excel SHEET2</text>
+<text x="510" y="703" text-anchor="middle" fill="#64748b" font-size="10">PSF713 定位點格式</text>
+
+<!-- 匯入PSF713 -->
+<line x1="605" y1="692" x2="625" y2="692" stroke="#22c55e" stroke-width="1.5" marker-end="url(#c2)"/>
+<rect x="635" y="667" width="275" height="50" rx="8" fill="#1e2433" stroke="#0ea5e9" stroke-width="1.5"/>
+<text x="772" y="688" text-anchor="middle" fill="#7dd3fc" font-size="11" font-weight="bold">⑨ WDPSF713 定位點匯入</text>
+<text x="772" y="703" text-anchor="middle" fill="#64748b" font-size="10">驗證 → 薪資系統結算</text>
+
+<!-- END -->
+<line x1="510" y1="717" x2="510" y2="760" stroke="#22c55e" stroke-width="1.5" marker-end="url(#c2)"/>
+<ellipse cx="510" cy="790" rx="75" ry="25" fill="#14532d" stroke="#22c55e" stroke-width="2"/>
+<text x="510" y="795" text-anchor="middle" fill="#86efac" font-size="12" font-weight="bold">✅ A217 獎金完成</text>
+
+<line x1="772" y1="717" x2="772" y2="760" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#c6)"/>
+<ellipse cx="772" cy="790" rx="80" ry="25" fill="#0c2333" stroke="#0ea5e9" stroke-width="2"/>
+<text x="772" y="795" text-anchor="middle" fill="#7dd3fc" font-size="12" font-weight="bold">✅ 薪資系統入帳</text>
+</svg>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.flow-wrap').forEach(d => d.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const map = {w1:0,w2:1,w3:2,w4:3};
+  document.querySelectorAll('.tab-btn')[map[id]].classList.add('active');
+}
+</script>
+</body>
+</html>
