@@ -1150,6 +1150,24 @@ function _readTable(tableName) {
   });
 }
 
+const _ARRAY_FIELDS = ['experiences', 'certificates', 'subjects', 'tags', 'keywords',
+                       'questions', 'answers', 'targetCategories', 'targetRanks', 'materials'];
+
+/**
+ * 整表寫入
+ *
+ * 重點：payload 裡「沒有出現」的欄位，一律沿用該筆原本的值，不清空。
+ *
+ * 舊版把缺少的欄位直接寫成空字串（陣列欄寫成 "[]"），
+ * 於是前端只要漏送一個欄位，整張表所有人的那一欄就會被抹掉。
+ * 實際發生過：前端存檔時沒帶 tags / rank / teacherCategory，
+ * 任何人存一次師資，全部人的標籤、職級、新進狀態就全沒了。
+ *
+ * 客戶端不知道某個欄位，不該有能力刪掉它。
+ * 「欄位不存在」與「欄位存在但為空」必須分開看待：
+ *   - 不存在 → 保留原值
+ *   - 存在但為空 → 使用者真的要清空，照做
+ */
 function _writeTable(tableName, dataArray) {
   const config = SHEETS_CONFIG[tableName];
   if (!config) throw new Error('Unknown table');
@@ -1163,11 +1181,37 @@ function _writeTable(tableName, dataArray) {
   const idx = _headerIndex(sh, config.header);
   const header = config.header;
 
+  // 先讀現有資料，依 id 建索引，供缺漏欄位沿用原值
+  const existingById = {};
+  const lastRow = sh.getLastRow();
+  if (lastRow >= 2 && header.indexOf('id') >= 0) {
+    const existingValues = sh.getRange(2, 1, lastRow - 1, idx._len).getValues();
+    existingValues.forEach(row => {
+      const rowId = String(row[idx['id']] || '').trim();
+      if (rowId) existingById[rowId] = row;
+    });
+  }
+
+  let preservedCount = 0;
+
   const rows = dataArray.map(item => {
     const row = new Array(idx._len).fill('');
-    header.forEach((key, i) => {
+    const prev = existingById[String((item && item.id) || '').trim()];
+
+    header.forEach(key => {
+      const present = item && Object.prototype.hasOwnProperty.call(item, key);
+
+      // payload 沒提到這個欄位：沿用原值（新資料則留空）
+      if (!present) {
+        if (prev !== undefined) {
+          row[idx[key]] = prev[idx[key]];
+          if (prev[idx[key]] !== '' && prev[idx[key]] !== null) preservedCount++;
+        }
+        return;
+      }
+
       const val = item[key];
-      if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers', 'targetCategories', 'targetRanks', 'materials'].includes(key)) {
+      if (_ARRAY_FIELDS.indexOf(key) >= 0) {
         row[idx[key]] = JSON.stringify(_asArray(val));
       } else if (key === 'category' && tableName === 'maritimeCourses') {
         row[idx[key]] = val !== undefined && val !== null ? "'" + String(val) : '';
@@ -1176,16 +1220,35 @@ function _writeTable(tableName, dataArray) {
         row[idx[key]] = _sanitizeSheetValue(strVal);
       }
     });
+
+    // 來源沒有的欄位（例如 Sheet 上多出來的自訂欄）也要保住
+    if (prev !== undefined) {
+      for (let c = 0; c < idx._len; c++) {
+        const owned = header.some(k => idx[k] === c);
+        if (!owned) row[c] = prev[c];
+      }
+    }
+
     return row;
   });
 
-  const lastRow = sh.getLastRow();
+  if (preservedCount > 0) {
+    Logger.log('[_writeTable] ' + tableName + '：沿用了 ' + preservedCount + ' 個 payload 未提供的欄位值');
+  }
+
   // 先寫入新資料（覆蓋現有內容），再清除多餘的舊 rows（避免清除後馬上覆寫的浪費）
   sh.getRange(2, 1, rows.length, idx._len).setValues(rows);
   const extraRows = lastRow - 1 - rows.length;
   if (extraRows > 0) sh.getRange(2 + rows.length, 1, extraRows, idx._len).clearContent();
 }
 
+/**
+ * 更新單筆
+ *
+ * 一律以 _headerIndex 取得實際欄位位置。舊版用設定檔的順序索引
+ * （oldRowValues[i]）又從第 1 欄開始整列寫回，只要 Sheet 的欄位順序
+ * 和 SHEETS_CONFIG 不同就會讀錯欄、寫錯欄。
+ */
 function _updateRow(tableName, id, dataObj) {
   const config = SHEETS_CONFIG[tableName];
   const sheet = _getOrCreateSheet(tableName, config.header);
@@ -1193,32 +1256,39 @@ function _updateRow(tableName, id, dataObj) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) throw new Error('Table empty');
 
-  const idColumn = sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
-  const rowIndex = idColumn.findIndex(rowId => String(rowId) === String(id));
+  const idx = _headerIndex(sheet, header);
+  const idCol = idx['id'] !== undefined ? idx['id'] : 0;
+
+  const allValues = sheet.getRange(2, 1, lastRow - 1, idx._len).getValues();
+  const rowIndex = allValues.findIndex(row => String(row[idCol]) === String(id));
   if (rowIndex === -1) throw new Error('Record not found');
 
   const actualRow = rowIndex + 2;
-  const idx = _headerIndex(sheet, header);
-  const oldRowValues = sheet.getRange(actualRow, 1, 1, idx._len).getValues()[0];
+  const oldRowValues = allValues[rowIndex];
 
-  const newRow = header.map((key, i) => {
-    let val = dataObj.hasOwnProperty(key) ? dataObj[key] : oldRowValues[i];
-    if (['experiences', 'certificates', 'subjects', 'tags', 'keywords', 'questions', 'answers', 'targetCategories', 'targetRanks', 'materials'].includes(key)) {
-      if (Array.isArray(val)) val = JSON.stringify(val);
+  // 從原列出發，只覆寫 dataObj 真的有提供的欄位
+  const newRow = oldRowValues.slice();
+
+  header.forEach(key => {
+    if (!Object.prototype.hasOwnProperty.call(dataObj, key)) return;
+
+    let val = dataObj[key];
+    if (_ARRAY_FIELDS.indexOf(key) >= 0) {
+      val = JSON.stringify(_asArray(val));
     } else if (key === 'category' && tableName === 'maritimeCourses') {
       val = val !== undefined && val !== null ? "'" + String(val) : '';
     } else {
       val = val !== undefined && val !== null ? String(val) : '';
       val = _sanitizeSheetValue(val);
     }
-    return val;
+    newRow[idx[key]] = val;
   });
 
-  sheet.getRange(actualRow, 1, 1, newRow.length).setValues([newRow]);
-  if (header.includes('lastModifiedAt')) {
-     const timeCol = idx['lastModifiedAt'] + 1;
-     sheet.getRange(actualRow, timeCol).setValue(new Date().toISOString());
+  if (header.indexOf('lastModifiedAt') >= 0) {
+    newRow[idx['lastModifiedAt']] = new Date().toISOString();
   }
+
+  sheet.getRange(actualRow, 1, 1, idx._len).setValues([newRow]);
 }
 
 function _getOrCreateSheet(sheetName, header) {
