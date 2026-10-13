@@ -1578,7 +1578,11 @@
                 : []
             })).filter(x => x.name)
           : [],
-        tags: arrStr(t?.tags), 
+        tags: arrStr(t?.tags),
+        // 這兩個欄位後端有、畫面也在用（職級徽章、新進標記），
+        // 漏掉的話每次存檔都會把它們從資料庫抹掉
+        teacherCategory: toStr(t?.teacherCategory),
+        rank: toStr(t?.rank)
       }));
     }
     const initial = name => (String(name ?? '').trim()[0] || '?');
@@ -1606,15 +1610,20 @@
     const SYNC_DEBOUNCE_MS = 100;
     let syncTimer = null, syncing = false, syncAgain = false;
 
+    // 注意：雲端儲存不是送記憶體裡的 teachers，而是重新讀 localStorage
+    //（js/api.js 的 loadArrayFromStorage）。所以這裡少放一個欄位，
+    // 那個欄位就永遠到不了後端 —— 標籤存不進去就是這樣來的。
     function slimForLocal(items){
       return (items||[]).map(t=>({
         id:t.id, name:t.name, email:t.email,
         teacherType:t.teacherType, workLocation:t.workLocation,
+        teacherCategory:t.teacherCategory||'', rank:t.rank||'',
         photo:t.photo, experiences:t.experiences||[],
         certificates:(t.certificates||[]).map(c=> typeof c==='string' ? c : ({name:c.name,fileName:c.fileName,fileUrl:c.fileUrl})),
         subjects:(t.subjects||[]).map(s=> typeof s==='string'
           ? ({name:s, category:'teach', materials:[]})
-          : ({name:s.name, category:subjectCategory(s), materials:s.materials||[]}))
+          : ({name:s.name, category:subjectCategory(s), materials:s.materials||[]})),
+        tags:t.tags||[]
       }));
     }
     function saveLocalSilently(){
@@ -1623,7 +1632,11 @@
       }catch(err){
         console.warn('localStorage 超額，已改存最小資訊：', err);
         try{
-          const min = teachers.map(t=>({id:t.id,name:t.name,teacherType:t.teacherType,workLocation:t.workLocation}));
+          // 這幾個欄位都很小，即使配額吃緊也要留著，否則一樣會被寫回後端清空
+          const min = teachers.map(t=>({
+            id:t.id, name:t.name, teacherType:t.teacherType, workLocation:t.workLocation,
+            teacherCategory:t.teacherCategory||'', rank:t.rank||'', tags:t.tags||[]
+          }));
           localStorage.setItem('teachers', JSON.stringify(min));
         }catch(e){}
       }
@@ -2783,7 +2796,15 @@
       const photoBox = document.getElementById('photoPreview');
       const photoUrl = photoBox.getAttribute('data-url') || '';
 
-      const teacherData = { id: currentTeacherId || Date.now(), name, email, teacherType, workLocation, photo: photoUrl, experiences, certificates, subjects, tags };
+      // 表單沒有職級與新進狀態的欄位，沿用原本的值，不要在存檔時弄丟
+      const existing = currentTeacherId ? teachers.find(t => t.id === currentTeacherId) : null;
+      const teacherData = {
+        id: currentTeacherId || Date.now(),
+        name, email, teacherType, workLocation,
+        teacherCategory: existing?.teacherCategory || '',
+        rank: existing?.rank || '',
+        photo: photoUrl, experiences, certificates, subjects, tags
+      };
 
       if(currentTeacherId){
         const idx = teachers.findIndex(t=>t.id===currentTeacherId); teachers[idx]=teacherData;

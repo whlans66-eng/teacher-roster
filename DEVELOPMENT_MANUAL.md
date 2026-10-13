@@ -770,6 +770,32 @@ Apps Script 讀不到自訂 HTTP 標頭，token 只能放在網址或請求主�
 `createAdminAccount()` 皆隨機產生密碼、只在執行紀錄顯示一次，
 並要求首次登入更換。
 
+### 5.4.3 整表寫入的欄位保護
+
+`_writeTable` 對 payload 中**沒有出現**的欄位，一律沿用該筆原本的值。
+
+區分兩種情況：
+
+| 情況 | 行為 |
+|---|---|
+| 欄位不存在於 payload（`hasOwnProperty` 為 false） | **保留原值** |
+| 欄位存在但為空字串／空陣列 | 照寫（使用者真的要清空） |
+
+**為什麼必要**：舊版把缺少的欄位直接寫成空字串、陣列欄寫成 `"[]"`。
+前端 `slimForLocal()` 漏掉 `tags`／`rank`／`teacherCategory`，
+導致任何人存一次師資，整張 `teachers` 表所有人的這三欄就被清空。
+
+客戶端不知道某個欄位，不該有能力刪掉它。Sheet 上額外的自訂欄位
+（不在 `SHEETS_CONFIG.header` 內）同樣會被保留。
+
+`_updateRow` 也一律以 `_headerIndex` 取得實際欄位位置並從原列出發覆寫，
+不再假設 Sheet 的欄位順序與 `SHEETS_CONFIG` 一致。
+
+**前端注意**：雲端儲存送出的不是記憶體中的陣列，而是重新讀取
+localStorage（`js/api.js` 的 `loadArrayFromStorage`）。
+所以 `slimForLocal()` 少放一個欄位，那個欄位就永遠到不了後端。
+新增欄位時，`normalize()`、`slimForLocal()` 與後端 header 三者必須同步。
+
 ### 5.5 後端開發最佳實踐
 
 #### 1. Token 驗證
