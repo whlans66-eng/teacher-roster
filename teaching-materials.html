@@ -72,7 +72,8 @@
 
     /* ── 頂欄（原型結構：sticky 60px；視覺依規範） ── */
     .topbar {
-      position: sticky; top: 0; z-index: 40;
+      /* 接在共用導覽列（Auth.mountNav）下面，沒有導覽列時 --app-nav-h 為 0 */
+      position: sticky; top: var(--app-nav-h, 0px); z-index: 40;
       height: var(--topbar-h);
       background: rgba(255,255,255,.82);
       backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -347,7 +348,7 @@
        課程頁（閱讀器）
        ══════════════════════════════════════════════════════════════ */
     .les-bar {
-      position: sticky; top: var(--topbar-h); z-index: 50; height: var(--lesbar-h);
+      position: sticky; top: calc(var(--app-nav-h, 0px) + var(--topbar-h)); z-index: 50; height: var(--lesbar-h);
       background: rgba(255,255,255,.82); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
       border-bottom: 1px solid var(--line-soft);
       display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px;
@@ -480,8 +481,8 @@
        AI 助教側欄
        ══════════════════════════════════════════════════════════════ */
     .ai-panel {
-      position: fixed; top: calc(var(--topbar-h) + var(--lesbar-h)); right: 0; z-index: 60;
-      width: var(--ai-w); height: calc(100vh - var(--topbar-h) - var(--lesbar-h));
+      position: fixed; top: calc(var(--app-nav-h, 0px) + var(--topbar-h) + var(--lesbar-h)); right: 0; z-index: 60;
+      width: var(--ai-w); height: calc(100vh - var(--app-nav-h, 0px) - var(--topbar-h) - var(--lesbar-h));
       background: var(--surface); border-left: 1px solid var(--line-soft); box-shadow: var(--shadow-lg);
       display: none; flex-direction: column;
     }
@@ -600,21 +601,17 @@
 </head>
 <body>
 
-  <!-- Topbar -->
+  <!-- Topbar
+       「返回首頁」與使用者資訊已由共用導覽列（Auth.mountNav）提供，
+       這裡只留頁面標題，避免同一畫面出現兩次帳號資訊。 -->
   <header class="topbar">
-    <a href="index.html" class="back-btn"><i class="ph ph-caret-left"></i> 返回</a>
-    <div class="topbar-sep"></div>
     <span class="topbar-brand" onclick="goHome()">教材管理</span>
     <nav class="topbar-nav">
       <span class="topbar-nav-link" onclick="goHome()">學習路徑</span>
       <span class="topbar-nav-link" onclick="goHome()">我的學習</span>
     </nav>
     <div class="topbar-right">
-      <div class="user-pill">
-        <div class="user-avatar" id="userInitial">—</div>
-        <span id="userName">載入中</span>
-        <span class="role-pill" id="rolePill"></span>
-      </div>
+      <span class="role-pill" id="rolePill"></span>
     </div>
   </header>
 
@@ -698,6 +695,7 @@
     // ── Init ──
     document.addEventListener('DOMContentLoaded', () => {
       if (!initAuth()) return;
+      Auth.mountNav();          // 全站共用主導覽（依角色過濾）
       const p = new URLSearchParams(location.search);
       loadData(p.get('courseId'), p.get('unit'));
     });
@@ -711,10 +709,7 @@
       isAdmin = role === 'admin';
       isCrew  = role === 'crew';
 
-      const name = Auth.displayName(currentUser);
-      document.getElementById('userName').textContent = name;
-      document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
-
+      // 姓名與頭像由共用導覽列的帳號選單顯示，這裡只標角色
       const pill = document.getElementById('rolePill');
       pill.textContent = Auth.getRoleLabel(role);
       pill.className = 'role-pill role-' + (role || 'guest');
