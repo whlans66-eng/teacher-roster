@@ -700,7 +700,7 @@
        flex/grid 垮掉）才補上，看起來像轉跳失敗。改成同步載入的靜態 CSS 就沒有空窗。
        位置刻意放在 <style> 之後、</head> 之前，對齊原本 CDN 在 runtime 注入的順序，
        以免層疊優先序跑掉。 -->
-  <link rel="stylesheet" href="shared/tailwind.css?v=5018da67">
+  <link rel="stylesheet" href="shared/tailwind.css?v=f23eae79">
 </head>
 <body>
   <!-- Authentication -->
@@ -923,7 +923,7 @@
                    style="font-size: 14px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
           </div>
           <!-- 師資列表 -->
-          <div id="teacherHoursList" class="space-y-2">
+          <div id="teacherHoursList" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
             <!-- 師資時數條將在這裡顯示 -->
           </div>
           <!-- 顯示更多按鈕 -->
@@ -1870,52 +1870,38 @@
       const listContainer = document.getElementById('teacherHoursList');
       const showMoreContainer = document.getElementById('showMoreContainer');
 
-      // 根據日期範圍篩選課程
-      const filteredCourses = courseAssignments.filter(c => c.date && isDateInRange(c.date));
+      // 這份清單只列「日曆現在停在的那個月份（或所選日期）真的有課的人」，
+      // 主講與助教都算。原本是把師資管理裡的每一位都列出來，所以一展開
+      // 就跳出一大堆 0 堂課 0.0 小時的卡片，要找有排課的人反而得用翻的。
+      //
+      // 範圍判定與下面算時數用的是同一個條件，確保不會出現 0 小時的卡片。
+      const inScope = c => !!c.date && (selectedDate !== null
+        ? c.date === selectedDate
+        : isDateInRange(c.date));
+      const scopedCourses = courseAssignments.filter(inScope);
 
-      console.log('📊 師資時數分析調試信息：');
-      console.log('- 日期範圍:', dateRangeStart, '至', dateRangeEnd);
-      console.log('- 範圍內課程數:', filteredCourses.length);
-      console.log('- 師資列表人數:', teachers.length);
-
-      // 統一 teacherId 為數字型別（有些可能是字串）
-      // 同時收集主講老師和助教的 ID
-      const teacherIds = filteredCourses.map(c => Number(c.teacherId)).filter(id => !isNaN(id));
-      const taIds = filteredCourses.map(c => Number(c.taId)).filter(id => !isNaN(id));
+      // 統一 teacherId 為數字型別（有些可能是字串），主講與助教一起收
+      const teacherIds = scopedCourses.map(c => Number(c.teacherId)).filter(id => !isNaN(id));
+      const taIds = scopedCourses.map(c => Number(c.taId)).filter(id => !isNaN(id));
       const teacherIdsWithCourses = [...new Set([...teacherIds, ...taIds])];
 
-      console.log('- 有課程的師資ID（含助教）:', teacherIdsWithCourses);
-
-      // 建立師資列表：包含師資管理中的所有老師 + 不在列表中但有課程的老師
-      const teacherMap = new Map();
-
-      // 1. 先加入所有在師資管理列表中的老師
-      teachers.forEach(teacher => {
-        teacherMap.set(Number(teacher.id), teacher);
+      // 名稱優先用師資管理裡的資料，查不到才退回派課紀錄上存的名字
+      const roster = new Map(teachers.map(t => [Number(t.id), t]));
+      const allTeachers = teacherIdsWithCourses.map(teacherId => {
+        const known = roster.get(teacherId);
+        if (known) return known;
+        const asTeacher = scopedCourses.find(c => Number(c.teacherId) === teacherId);
+        const asTa = scopedCourses.find(c => Number(c.taId) === teacherId);
+        return {
+          id: teacherId,
+          name: asTeacher?.teacherName || asTa?.taName || `未知師資 (ID: ${teacherId})`,
+          notInTeacherList: true
+        };
       });
-
-      // 2. 再加入有課程但不在師資列表中的老師（包含主講和助教）
-      teacherIdsWithCourses.forEach(teacherId => {
-        if (!teacherMap.has(teacherId)) {
-          // 嘗試從主講或助教身份找到名稱
-          const courseAsTeacher = filteredCourses.find(c => Number(c.teacherId) === teacherId);
-          const courseAsTa = filteredCourses.find(c => Number(c.taId) === teacherId);
-          const name = courseAsTeacher?.teacherName || courseAsTa?.taName || `未知師資 (ID: ${teacherId})`;
-
-          teacherMap.set(teacherId, {
-            id: teacherId,
-            name: name,
-            notInTeacherList: true
-          });
-        }
-      });
-
-      const allTeachers = Array.from(teacherMap.values());
-
-      console.log('- 總師資數（包含有課程和無課程）:', allTeachers.length);
 
       if (allTeachers.length === 0) {
-        listContainer.innerHTML = '<p class="text-center text-gray-500 py-8">尚無師資資料</p>';
+        const scopeLabel = selectedDate !== null ? '這一天' : '這個月';
+        listContainer.innerHTML = `<p class="text-center text-gray-500 py-8">${scopeLabel}還沒有人排課</p>`;
         showMoreContainer.style.display = 'none';
         document.getElementById('targetAchievedAlert').style.display = 'none';
         return;
@@ -1936,33 +1922,17 @@
         return;
       }
 
-      // 計算每位師資的時數並排序
+      // 計算每位師資的時數並排序。
+      // 範圍用上面的 scopedCourses（選了特定日期就只算那一天，否則算整個範圍），
+      // 主講與助教的課都算，加總方式與門檻都沒變。
       const teachersWithHours = filteredTeachers.map(teacher => {
-        // 根據選擇情境彈性統計時數：
-        // 1. 選擇特定日期 → 只統計該日期的課程時數
-        // 2. 無選擇特定日期 → 統計日期範圍內的所有課程時數
-
-        const courses = courseAssignments.filter(c => {
-          // 計算主講老師和助教的課程
-          const matchesTeacher = Number(c.teacherId) === Number(teacher.id);
-          const matchesTa = c.taId && Number(c.taId) === Number(teacher.id);
-          const matchesAny = matchesTeacher || matchesTa;
-          const hasValidDate = c.date;
-
-          // 如果選擇了特定日期，只統計該日期的課程
-          if (selectedDate !== null) {
-            return matchesAny && hasValidDate && c.date === selectedDate;
-          }
-
-          // 否則統計日期範圍內的所有課程
-          return matchesAny && hasValidDate && isDateInRange(c.date);
-        });
-
+        const courses = scopedCourses.filter(c =>
+          Number(c.teacherId) === Number(teacher.id) ||
+          (c.taId && Number(c.taId) === Number(teacher.id))
+        );
         const hours = courses.reduce((sum, c) => sum + calculateHours(c.time), 0);
         return { teacher, hours, courses };
       });
-
-      console.log('- 師資時數統計:', teachersWithHours.map(t => `${t.teacher.name}: ${t.hours}小時 (${t.courses.length}堂課)`));
 
       // 排序：已達標(>=12小時)排在前面，按時數降序
       teachersWithHours.sort((a, b) => {
@@ -1983,8 +1953,8 @@
         alertElement.style.display = 'none';
       }
 
-      // 決定顯示的師資數量
-      const displayLimit = 4;
+      // 決定顯示的師資數量（三欄的方形字卡，一次給兩整排比較不會缺角）
+      const displayLimit = 6;
       const shouldShowMore = teachersWithHours.length > displayLimit && teacherSearchQuery === '';
       const displayTeachers = (shouldShowMore && !showAllTeachers)
         ? teachersWithHours.slice(0, displayLimit)
@@ -2054,40 +2024,38 @@
         }).join('') : '<p style="color:#9ca3af;font-size:12px;padding:6px 10px;border-top:1px solid #f3f4f6;">無課程記錄</p>';
 
         return `
-          <div class="${selectedStyle} rounded-xl px-4 py-3 transition-colors duration-200">
+          <div class="${selectedStyle} rounded-2xl p-4 transition-colors duration-200 flex flex-col">
             <div onclick="selectTeacher(${teacher.id})" class="cursor-pointer">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
+              <div class="flex items-start justify-between gap-2">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
                      style="background:#eef2ff; color:#4338ca;">${(teacher.name || '?')[0]}</div>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-baseline gap-2">
-                    <h4 class="font-semibold text-gray-900 truncate">${teacher.name}</h4>
-                    ${isSelected ? '<span class="text-[11px] font-medium text-blue-700 flex-shrink-0">已選擇</span>' : ''}
-                  </div>
-                  <p class="text-xs text-gray-500">${courses.length} 堂課</p>
-                </div>
-                <div class="text-right flex-shrink-0">
-                  <p class="text-[11px] text-gray-500 leading-none mb-1">${hoursCaption}</p>
-                  <p class="leading-none"><span class="text-lg font-semibold text-gray-900">${hoursValue}</span><span class="text-xs text-gray-500 ml-1">小時</span></p>
-                </div>
-              </div>
-              <div class="flex items-center gap-2 mt-2.5">
-                <div class="flex-1 rounded-full overflow-hidden" style="height:6px; background:${trackColor}; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);"
-                     title="已累計 ${hoursValue} 小時，目標 12 小時">
-                  <div class="rounded-full transition-all duration-500" style="width:${percentage}%; height:6px; background:${barColor};"></div>
-                </div>
                 <span class="text-xs font-medium ${statusInk} flex items-center gap-1 flex-shrink-0">
                   <i class="ph ${statusIcon}" style="font-size:13px;"></i>${statusText}
                 </span>
               </div>
+
+              <h4 class="font-semibold text-gray-900 truncate mt-3" title="${escapeAttr(teacher.name)}">${teacher.name}</h4>
+              <p class="text-xs text-gray-500 mt-0.5">
+                ${courses.length} 堂課${isSelected ? ' ・ <span class="text-blue-700 font-medium">已選擇</span>' : ''}
+              </p>
+
+              <p class="text-[11px] text-gray-500 mt-3 leading-none">${hoursCaption}</p>
+              <p class="leading-none mt-1">
+                <span class="text-2xl font-semibold text-gray-900">${hoursValue}</span><span class="text-xs text-gray-500 ml-1">小時</span>
+              </p>
+
+              <div class="rounded-full overflow-hidden mt-2.5" style="height:6px; background:${trackColor}; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);"
+                   title="已累計 ${hoursValue} 小時，目標 12 小時">
+                <div class="rounded-full transition-all duration-500" style="width:${percentage}%; height:6px; background:${barColor};"></div>
+              </div>
             </div>
             <button onclick="event.stopPropagation(); toggleCourseList('${courseListId}')"
-                    class="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors">
+                    class="mt-3 inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors self-start">
               <i class="ph ph-clock-counter-clockwise" style="font-size:13px;"></i>
               <span>協助課程記錄</span>
               <i class="ph ph-caret-down" id="${courseListId}_icon" style="font-size:11px;transition:transform 0.2s;"></i>
             </button>
-            <div id="${courseListId}" style="display:none;max-height:200px;overflow-y:auto;margin-top:6px;">
+            <div id="${courseListId}" style="display:none;max-height:170px;overflow-y:auto;margin-top:6px;">
               ${courseListHtml}
             </div>
           </div>
