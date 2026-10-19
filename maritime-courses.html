@@ -3143,6 +3143,25 @@
       })).filter(m => m.fileUrl);
     }
 
+    // 教材附件是先顯示 placeholder 再背景上傳，上傳完成才寫回網址。
+    // 中間那幾秒畫面看起來像好了，使用者搶著按「儲存變更」就會存到
+    // 還沒有網址的教材清單，所以上傳期間把儲存鈕鎖起來。
+    let maritimeUploadsInFlight = 0;
+    function setMaritimeUploadsInFlight(delta) {
+      maritimeUploadsInFlight = Math.max(0, maritimeUploadsInFlight + delta);
+      const btn = document.getElementById('maritimeCourseSaveBtn');
+      if (!btn) return;
+      if (maritimeUploadsInFlight > 0) {
+        if (!btn.dataset.uploadHold) btn.dataset.uploadHold = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = `檔案上傳中…（${maritimeUploadsInFlight}）`;
+      } else if (btn.dataset.uploadHold) {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.uploadHold;
+        delete btn.dataset.uploadHold;
+      }
+    }
+
     async function handleMaritimeCourseMaterialUpload(input) {
       if (!input.files || !input.files.length) return;
       const list = document.getElementById('maritimeMaterialListModal');
@@ -3154,6 +3173,8 @@
       for (const file of input.files) {
         if (!okTypes.includes(file.type)) { alert(`不支援的檔案格式：${file.name}\n支援：JPG, PNG, PDF, MP4, WebM, MOV, PPT, PPTX, DOC, DOCX`); continue; }
         if (file.size > 50*1024*1024) { alert(`檔案太大：${file.name}（上限 50MB）`); continue; }
+
+        setMaritimeUploadsInFlight(1);   // 上傳完成前不准存檔，否則會存到還沒上傳完的教材
 
         const placeholder = document.createElement('div');
         placeholder.style.cssText = 'display:flex;align-items:center;gap:10px;background:#fefce8;padding:10px 14px;border-radius:10px;border:1px solid #fde68a;';
@@ -3171,6 +3192,8 @@
             <span style="flex:1;font-size:12px;color:#991b1b;">上傳失敗：${file.name} - ${err.message}</span>
             <button type="button" onclick="this.parentElement.remove()" class="btn btn-icon btn-plain btn-sm" style="color:#ff3b30;"><i class="ph ph-x"></i></button>
           </div>`;
+        } finally {
+          setMaritimeUploadsInFlight(-1);
         }
       }
       input.value = '';
@@ -3194,6 +3217,11 @@
     }
 
     async function saveMaritimeCourseFromModal(e) {
+      if (maritimeUploadsInFlight > 0) {
+        e.preventDefault();
+        alert('還有檔案正在上傳，請等上傳完成再儲存，否則這些教材不會被保留。');
+        return;
+      }
       e.preventDefault();
       const newData = {
         name: document.getElementById('maritimeCourseNameModal').value,
@@ -3539,24 +3567,43 @@
     async function forceOverwrite() {
       if (!confirm('確定要強制覆蓋嗎？這會覆蓋後端其他人的修改。')) return;
       document.querySelector('.modal-backdrop')?.remove();
-      try {
-        await syncManager.saveTable('maritimeCourses', true);
-        showMaritimeMessage('✓ 已強制儲存', 'success');
-      } catch (e) {
-        showMaritimeMessage('✗ 儲存失敗', 'error');
-      }
+      // 對話框一關、後端還要跑兩秒，中間原本完全沒有提示
+      await UIFeedback.submit(() => syncManager.saveTable('maritimeCourses', true), {
+        key: 'force-overwrite', pending: '強制覆蓋中…', sub: '正在覆寫雲端資料，請稍候',
+        success: '已強制儲存', error: '儲存失敗'
+      }).catch(() => {});
     }
 
     async function kickUser(sid, name) {
-      if(confirm(`確定踢出 ${name}?`)) {
-        try {
-          await sessionManager.kickUser(sid);
-          showMaritimeMessage('✓ 已踢出使用者', 'success');
-        } catch(e) {
-          showMaritimeMessage('✗ 踢出失敗', 'error');
-        }
-      }
+      if (!confirm(`確定踢出 ${name}?`)) return;
+      await UIFeedback.submit(() => sessionManager.kickUser(sid), {
+        key: 'kick-user', pending: `正在踢出「${name}」…`,
+        success: '已踢出使用者', error: '踢出失敗'
+      }).catch(() => {});
     }
+
+    // 三個匯出都是純前端產檔（SheetJS／列印／pptxgenjs），不打後端，
+    // 但組檔會卡住主執行緒——課程多時 PPT 要好幾秒，畫面完全不動，
+    // 使用者會以為沒按到而重複按，於是跑出好幾份檔案。
+    // 函式本身不動，在外面包一層遮罩與防連點就好。
+    ['exportToExcel', 'exportToPDF', 'exportToPPT'].forEach(name => {
+      const original = window[name];
+      if (typeof original !== 'function') return;
+      const label = { exportToExcel: 'Excel', exportToPDF: 'PDF', exportToPPT: 'PowerPoint' }[name];
+      window[name] = async function () {
+        return UIFeedback.submit(async () => {
+          // 先讓瀏覽器把遮罩畫出來，再開始佔用主執行緒
+          await new Promise(r => setTimeout(r, 50));
+          return original.apply(this, arguments);
+        }, {
+          key: 'maritime-export',
+          pending: `產生 ${label} 中…`,
+          sub: '課程較多時需要幾秒，請稍候',
+          success: null,                 // 原本的函式自己會報成功，不要重複
+          error: `${label} 匯出失敗`
+        }).catch(() => {});
+      };
+    });
 
     // 動畫
     const style = document.createElement('style');
@@ -4090,7 +4137,8 @@
         closeAIActionModal();
       } catch (err) {
         console.error('AI 操作執行失敗:', err);
-        alert('操作失敗，請稍後再試。');
+        // 原本只說「操作失敗，請稍後再試」，使用者完全不知道是為什麼失敗
+        UIFeedback.toast('操作失敗：' + ((err && err.message) || '未知原因'), 'error');
         btn.disabled = false;
         btn.innerHTML = '<i class="ph ph-check-circle"></i> 確認執行';
       }
