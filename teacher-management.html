@@ -299,6 +299,20 @@
 
     /* 師資卡片包裝 (多選圓圈定位用) */
     .teacher-card-wrapper { position: relative; }
+    /* 名字後面的職級標籤：字級、粗細都繼承名字，只加一層淺色底，與名字一樣顯眼 */
+    .rank-tag {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 0 0.5em;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+      font-size: inherit;
+      font-weight: inherit;
+      line-height: 1.5;
+      white-space: nowrap;
+      vertical-align: baseline;
+    }
   </style>
 
   <!-- API 層：與後端通訊 -->
@@ -1585,6 +1599,13 @@
     const initial = name => (String(name ?? '').trim()[0] || '?');
 
     /* ---------- 工作狀態（在船／在岸／退休） ---------- */
+    // 職級接在名字後面，用跟名字一樣的字級與粗細（客戶不要縮成小標籤）。
+    // 只用 inherit，不另外指定尺寸，所以編輯模式 18px、呈現模式 24px 都會跟著名字走。
+    function rankTag(teacher) {
+      if (!teacher.rank) return '';
+      return ` <span class="rank-tag">${escapeHtml(Options.label('crewRank', teacher.rank))}</span>`;
+    }
+
     const WORK_STATUS = {
       onboard: { label:'在船', text:'海上工作', icon:'ph-boat',     tag:'[Sea]',  textClass:'text-orange-600', badgeClass:'bg-orange-500' },
       onshore: { label:'在岸', text:'陸地工作', icon:'ph-building', tag:'[Land]', textClass:'text-green-600',  badgeClass:'bg-green-600' },
@@ -1912,10 +1933,6 @@
                   <div class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                     <span><i class="ph ph-check-circle"></i></span><span>現有</span>
                   </div>`}
-                ${teacher.rank ? `
-                  <div class="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                    ${escapeHtml(Options.label('crewRank', teacher.rank))}
-                  </div>` : ''}
                 ${teacher.teacherType==='internal' ? `
                   <div class="bg-blue-400 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                     <span><i class="ph ph-user-circle"></i></span><span>內部</span>
@@ -1930,7 +1947,7 @@
               <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
                 ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : initial(teacher.name)}
               </div>
-              <h3 class="text-lg font-semibold text-gray-800">${teacher.name}</h3>
+              <h3 class="text-lg font-semibold text-gray-800">${teacher.name}${rankTag(teacher)}</h3>
               <div class="mt-1 text-sm ${workStatus(teacher).textClass} font-medium">
                 <i class="ph ${workStatus(teacher).icon}"></i> ${workStatus(teacher).text}
               </div>
@@ -1964,10 +1981,6 @@
                   <div class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                     <span><i class="ph ph-user-plus"></i></span><span>新進</span>
                   </div>` : ''}
-                ${teacher.rank ? `
-                  <div class="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs font-bold">
-                    ${escapeHtml(Options.label('crewRank', teacher.rank))}
-                  </div>` : ''}
               </div>
               <div class="absolute top-3 right-3">
                 <div class="${categoryBadgeColor} text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
@@ -1979,7 +1992,7 @@
                   ${teacher.photo ? `<img src="${teacher.photo}" class="w-full h-full object-cover rounded-full">` : `<span class="text-xl font-bold text-gray-600">${initial(teacher.name)}</span>`}
                 </div>
               </div>
-              <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}</h3>
+              <h3 class="text-2xl font-bold ${titleColor} mb-2">${teacher.name}${rankTag(teacher)}</h3>
               <div class="text-sm ${workStatus(teacher).textClass} font-medium mb-2">
                 <i class="ph ${workStatus(teacher).icon}"></i> ${workStatus(teacher).text}
               </div>
