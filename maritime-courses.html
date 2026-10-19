@@ -1295,7 +1295,7 @@
   <script src="js/auth.js"></script>
   <script src="js/ui-feedback.js"></script>
   <script>
-    const _authData = protectPage(['admin', 'teacher']);
+    const _authData = protectPage();   // 角色以 js/auth.js 的 PAGE_ACCESS 為準
     // 每一頁都顯示首頁的模組選項，只列出這個帳號進得去的
     document.addEventListener('DOMContentLoaded', () => Auth.mountNav());
     const _isReadOnly = _authData && _authData.role === 'teacher';

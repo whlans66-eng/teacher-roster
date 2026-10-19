@@ -824,6 +824,21 @@ class DataSyncManager {
         };
       }
 
+      // 後端擋下了某幾張表（權限不足）。以前後端是靜默跳過並回 ok:true，
+      // 這裡就把 hasLocalChanges 清掉——teacher 看到「儲存成功」，
+      // 實際上師資那張表一個字都沒寫進去，連本地暫存也沒了。
+      // 現在後端會回 denied[]，有被擋就保留修改標記並往上報。
+      if (Array.isArray(saveResult.denied) && saveResult.denied.length > 0) {
+        const TABLE_LABELS = {
+          teachers: '師資資料', maritimeCourses: '課程資料',
+          courseAssignments: '派課資料', teacherLeaves: '請假資料'
+        };
+        const names = saveResult.denied.map(t => TABLE_LABELS[t] || t).join('、');
+        localStorage.setItem('lastSyncTime', new Date().toISOString());
+        _mergeDataVersions(saveResult.newVersions);
+        throw new Error(`${names} 需要管理者權限才能儲存，您的修改仍保留在這台裝置上`);
+      }
+
       // 清除修改標記，並用回傳的新版本指紋更新 localStorage（無需額外請求）
       localStorage.removeItem('hasLocalChanges');
       localStorage.setItem('lastSyncTime', new Date().toISOString());

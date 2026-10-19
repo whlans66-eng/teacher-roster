@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>資料同步修復工具</title>
+  <!-- 這頁有「清空所有資料」的按鈕，必須擋住非管理者。
+       以前它不在 PAGE_ACCESS 裡、也沒載入 js/auth.js，任何人打網址就能清掉整個 localStorage。 -->
+  <script src="js/security.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    if (!protectPage()) {
+      // protectPage 會顯示無權限畫面；這裡不要讓後面的初始化繼續跑
+      window.__accessDenied = true;
+    }
+  </script>
   <style>
     * {
       margin: 0;

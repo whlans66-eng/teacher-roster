@@ -708,7 +708,7 @@
   <script src="js/ui-feedback.js"></script>
   <script>
     // Protect this page - admin and teacher can access
-    protectPage(['admin', 'teacher']);
+    protectPage();   // 角色以 js/auth.js 的 PAGE_ACCESS 為準
     // 每一頁都顯示首頁的模組選項，只列出這個帳號進得去的
     document.addEventListener('DOMContentLoaded', () => Auth.mountNav());
   </script>
