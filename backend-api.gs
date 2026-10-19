@@ -50,7 +50,9 @@ const TABLE_READ_ROLES = {
   teacherLeaves:     ['admin', 'teacher'],
   activeSessions:    ['admin'],
   users:             [],   // 一律不得經由一般資料 API 讀取
-  userAuditLog:      []
+  userAuditLog:      [],
+  // 選項清單決定表單怎麼畫，任何登入者都要讀得到；只有管理者能改
+  options:           ['admin', 'teacher', 'crew', 'guest']
 };
 
 function _canReadTable(session, tableName) {
@@ -100,6 +102,12 @@ const SHEETS_CONFIG = {
   activeSessions: {
     name: 'activeSessions',
     header: ['sessionId','userName','userEmail','pageUrl','lastActiveTime','userAgent','kicked']
+  },
+  // 下拉選單的選項。value 是存進其他資料表的鍵，不可變更；
+  // 不要的選項改成 active=FALSE 而不是刪除，舊資料才查得到顯示名稱。
+  options: {
+    name: 'options',
+    header: ['id','listKey','value','label','sublabel','groupName','sortOrder','active','icon','builtin','updatedBy','updatedAt']
   }
 };
 
@@ -614,6 +622,258 @@ function _handleChangeOwnPassword(p, bodyObj, session) {
   return _json({ ok: true, data: { token: freshToken } });
 }
 
+// ==================== 下拉選單選項（options） ====================
+//
+// 為什麼要有這張表：職級清單原本寫死在 maritime-courses.html 的三個地方
+//（主表單 checkbox、modal checkbox、顯示名稱查表），客戶每要改一次
+// 就得改三處程式再重新部署。課程分類同樣散在四個檔案裡。
+// 現在集中成資料，管理者可以自己維護，前端只是把資料畫出來。
+//
+// 兩個關鍵設計：
+//
+// 1. value 是資料的一部分，不可改。選過的課程存的是 value（例如
+//    targetRanks: ['deckCadet']），改 value 等於讓舊資料對不上。
+//    所以 options_save 只允許改 label / sublabel / 排序 / 啟用狀態，
+//    要換 value 只能停用舊的、新增一個。
+//
+// 2. 停用而不是刪除（active = FALSE）。停用後選單不再列出它，
+//    但既有資料仍然查得到顯示名稱，不會變成一串看不懂的代碼。
+//    真的要刪，前端會先擋下來並說明有幾筆資料正在用。
+
+const OPTION_LISTS = {
+  crewRank:       { label: '船員職級',   grouped: true  },
+  personnelType:  { label: '人員類別',   grouped: false },
+  teacherType:    { label: '師資類別',   grouped: false },
+  workLocation:   { label: '工作狀態',   grouped: false },
+  courseCategory: { label: '課程分類',   grouped: false },
+  teachingMethod: { label: '授課方式',   grouped: false }
+};
+
+// 種子資料。sortOrder 對職級來說同時也是「階層順序」——
+// 數字小的職級高，講師選單依這個排序，同職級自然排在一起。
+// [listKey, value, label, sublabel, groupName, sortOrder, active, icon]
+const OPTION_DEFAULTS = [
+  ['crewRank', 'C/P',            'C/P',        '船長',            '甲板部門', 10,  true,  'ph-anchor'],
+  ['crewRank', 'pilot',          '領港',       'Pilot',           '甲板部門', 15,  true,  'ph-path'],
+  ['crewRank', 'C/O',            'C/O',        '大副',            '甲板部門', 20,  true,  'ph-compass'],
+  ['crewRank', '2/O',            '2/O',        '二副',            '甲板部門', 30,  true,  'ph-binoculars'],
+  ['crewRank', '3/O',            '3/O',        '三副',            '甲板部門', 40,  true,  'ph-navigation-arrow'],
+  ['crewRank', 'bosun',          '水手長',     'Bosun',           '甲板部門', 50,  true,  'ph-users-three'],
+  ['crewRank', 'carpenter',      '木匠',       'Carpenter',       '甲板部門', 60,  true,  'ph-hammer'],
+  ['crewRank', 'AB',             '幹練水手',   'A.B.',            '甲板部門', 70,  true,  'ph-user-check'],
+  ['crewRank', 'OS',             '普通水手',   'O.S.',            '甲板部門', 80,  true,  'ph-user'],
+  // 實習生：客戶要求不要出現在選單（「對客戶來說，很弱」）。
+  // 停用而不是刪掉，既有課程若已勾選過仍顯示得出名稱。
+  ['crewRank', 'deckCadet',      '甲板實習生', 'Deck Cadet',      '甲板部門', 90,  false, 'ph-student'],
+  ['crewRank', 'C/E',            'C/E',        '輪機長',          '輪機部門', 110, true,  'ph-gear'],
+  ['crewRank', '2/E',            '2/E',        '大管',            '輪機部門', 120, true,  'ph-engine'],
+  ['crewRank', '3/E',            '3/E',        '二管',            '輪機部門', 130, true,  'ph-wrench'],
+  ['crewRank', '4/E',            '4/E',        '三管',            '輪機部門', 140, true,  'ph-screwdriver'],
+  ['crewRank', 'oiler',          '加油長',     'Oiler',           '輪機部門', 150, true,  'ph-drop'],
+  ['crewRank', 'fitter',         '銅匠',       'Fitter',          '輪機部門', 160, true,  'ph-toolbox'],
+  ['crewRank', 'engineCadet',    '輪機實習生', 'Engine Cadet',    '輪機部門', 170, false, 'ph-student'],
+  // 客戶說「有時候是某公司的總經理、處長」，所以標準船員職級之外另立一組
+  ['crewRank', 'generalManager', '總經理',     'General Manager', '岸上主管', 210, true,  'ph-briefcase'],
+  ['crewRank', 'director',       '處長',       'Director',        '岸上主管', 220, true,  'ph-buildings'],
+
+  ['personnelType', 'existing', '現有', '既有船員',   '', 10, true, 'ph-check-circle'],
+  ['personnelType', 'new',      '新進', '新加入船員', '', 20, true, 'ph-user-plus'],
+
+  ['teacherType', 'internal', '內部師資', '公司內部教師', '', 10, true, 'ph-user-circle'],
+  ['teacherType', 'external', '外部師資', '外聘專業教師', '', 20, true, 'ph-graduation-cap'],
+
+  ['workLocation', 'onboard', '在船', '海上工作', '', 10, true, 'ph-boat'],
+  ['workLocation', 'onshore', '在岸', '陸地工作', '', 20, true, 'ph-building'],
+  ['workLocation', 'retired', '退休', '已退休',   '', 30, true, 'ph-armchair'],
+
+  ['courseCategory', '01', '01 船舶操縱與航行實務訓練',   '', '', 10, true, ''],
+  ['courseCategory', '02', '02 領導統御與檢查應對管理',   '', '', 20, true, ''],
+  ['courseCategory', '03', '03 事故案例分析與應變處置訓練', '', '', 30, true, ''],
+  ['courseCategory', '04', '04 船舶設備操作與技術知能訓練', '', '', 40, true, ''],
+  ['courseCategory', '05', '05 國際法規與環境合規知識',   '', '', 50, true, ''],
+  ['courseCategory', '06', '06 船舶貨物裝卸作業實務',     '', '', 60, true, ''],
+  ['courseCategory', '07', '07 船員經驗交流與職能回饋',   '', '', 70, true, ''],
+  ['courseCategory', '08', '08 職級轉換與壓力調適',       '', '', 80, true, ''],
+  ['courseCategory', '09', '09 其他',                     '', '', 90, true, ''],
+
+  ['teachingMethod', '實體課程', '實體課程', '面對面課堂教學，互動性強',   '', 10, true, 'ph-chalkboard-teacher'],
+  ['teachingMethod', '線上課程', '線上課程', '遠距線上授課，時間彈性',     '', 20, true, 'ph-monitor-play'],
+  ['teachingMethod', '混合課程', '混合課程', '結合實體與線上的混合式教學', '', 30, true, 'ph-shuffle']
+];
+
+function _optionsContext() {
+  const header = SHEETS_CONFIG.options.header;
+  const sh = _getOrCreateSheet('options', header);
+  return { sh: sh, header: header, idx: _headerIndex(sh, header) };
+}
+
+/** 讀出所有選項；第一次呼叫會自動寫入種子資料 */
+function _readOptions() {
+  const ctx = _optionsContext();
+  if (ctx.sh.getLastRow() < 2) _seedOptions(ctx);
+  const lastRow = ctx.sh.getLastRow();
+  if (lastRow < 2) return [];
+  const rows = ctx.sh.getRange(2, 1, lastRow - 1, ctx.idx._len).getValues();
+  const out = [];
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    const get = k => (ctx.idx[k] === undefined ? '' : row[ctx.idx[k]]);
+    if (!String(get('listKey'))) continue;
+    out.push({
+      id:        String(get('id')),
+      listKey:   String(get('listKey')),
+      value:     String(get('value')),
+      label:     String(get('label')),
+      sublabel:  String(get('sublabel')),
+      groupName: String(get('groupName')),
+      sortOrder: Number(get('sortOrder')) || 0,
+      active:    String(get('active')).toUpperCase() !== 'FALSE',
+      icon:      String(get('icon')),
+      builtin:   String(get('builtin')).toUpperCase() === 'TRUE'
+    });
+  }
+  out.sort((a, b) => a.listKey.localeCompare(b.listKey) || a.sortOrder - b.sortOrder);
+  return out;
+}
+
+function _seedOptions(ctx) {
+  const now = new Date().toISOString();
+  const rows = OPTION_DEFAULTS.map((d, i) => {
+    const row = new Array(ctx.idx._len).fill('');
+    const set = (k, v) => { if (ctx.idx[k] !== undefined) row[ctx.idx[k]] = v; };
+    set('id', String(i + 1));
+    set('listKey', d[0]);
+    set('value', d[1]);
+    set('label', d[2]);
+    set('sublabel', d[3]);
+    set('groupName', d[4]);
+    set('sortOrder', d[5]);
+    set('active', d[6] ? 'TRUE' : 'FALSE');
+    set('icon', d[7] || '');
+    set('builtin', 'TRUE');
+    set('updatedBy', 'system');
+    set('updatedAt', now);
+    return row;
+  });
+  if (rows.length) {
+    ctx.sh.getRange(2, 1, rows.length, ctx.idx._len).setValues(rows);
+  }
+}
+
+function _nextOptionId(all) {
+  let max = 0;
+  all.forEach(o => { const n = parseInt(o.id, 10); if (!isNaN(n) && n > max) max = n; });
+  return String(max + 1);
+}
+
+/**
+ * 選項維護（僅管理者）
+ *
+ * options_save：一次送一整份清單（某個 listKey 的全部項目），整批覆蓋。
+ *   前端送過來的每一筆要帶 value；沒有 id 的視為新增。
+ *   既有項目的 value 不允許變更——value 是存進課程／師資資料裡的鍵。
+ */
+function _handleOptionsAction(action, p, bodyObj, session) {
+  const ctx = _optionsContext();
+  const all = _readOptions();
+
+  if (action === 'options_save') {
+    const listKey = String(p.listKey || (bodyObj && bodyObj.listKey) || '');
+    if (!OPTION_LISTS[listKey]) return _json({ ok: false, error: '不認得的清單：' + listKey });
+
+    let items = p.items || (bodyObj && bodyObj.items);
+    if (typeof items === 'string') { try { items = JSON.parse(items); } catch (e) { items = null; } }
+    if (!Array.isArray(items)) return _json({ ok: false, error: '缺少 items' });
+    if (!items.length) return _json({ ok: false, error: '清單不能全空，請至少保留一個選項' });
+
+    const existing = all.filter(o => o.listKey === listKey);
+    const byId = {};
+    existing.forEach(o => { byId[o.id] = o; });
+
+    // 檢查：value 不可重複、不可改、不可空
+    const seen = {};
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const value = String(it.value || '').trim();
+      const label = String(it.label || '').trim();
+      if (!value) return _json({ ok: false, error: '第 ' + (i + 1) + ' 項缺少代碼（value）' });
+      if (!label) return _json({ ok: false, error: '「' + value + '」缺少顯示名稱' });
+      if (seen[value]) return _json({ ok: false, error: '代碼重複：' + value });
+      seen[value] = true;
+      const prev = it.id ? byId[String(it.id)] : null;
+      if (prev && prev.value !== value) {
+        return _json({ ok: false, error: '「' + prev.label + '」的代碼不能改（舊資料存的是代碼）。' +
+                                        '請把它停用，再新增一個新的。' });
+      }
+    }
+
+    // 整批重寫：先刪掉這個 listKey 的所有列，再寫回來
+    const keep = all.filter(o => o.listKey !== listKey);
+    let nextId = parseInt(_nextOptionId(all), 10);
+    const rebuilt = items.map((it, i) => {
+      const prev = it.id ? byId[String(it.id)] : null;
+      return {
+        id:        prev ? prev.id : String(nextId++),
+        listKey:   listKey,
+        value:     String(it.value).trim(),
+        label:     String(it.label).trim(),
+        sublabel:  String(it.sublabel || '').trim(),
+        groupName: String(it.groupName || '').trim(),
+        sortOrder: (i + 1) * 10,
+        active:    it.active !== false && String(it.active).toUpperCase() !== 'FALSE',
+        icon:      String(it.icon || '').trim(),
+        builtin:   prev ? prev.builtin : false
+      };
+    });
+
+    _writeOptionRows(ctx, keep.concat(rebuilt), session);
+    _auditLog(session.username, 'options_save', listKey,
+              '共 ' + rebuilt.length + ' 項，啟用 ' + rebuilt.filter(o => o.active).length + ' 項');
+    return _json({ ok: true, data: _readOptions() });
+  }
+
+  if (action === 'options_reset') {
+    const listKey = String(p.listKey || (bodyObj && bodyObj.listKey) || '');
+    if (!OPTION_LISTS[listKey]) return _json({ ok: false, error: '不認得的清單：' + listKey });
+    const keep = all.filter(o => o.listKey !== listKey);
+    let nextId = parseInt(_nextOptionId(all), 10);
+    const restored = OPTION_DEFAULTS.filter(d => d[0] === listKey).map(d => ({
+      id: String(nextId++), listKey: d[0], value: d[1], label: d[2],
+      sublabel: d[3], groupName: d[4], sortOrder: d[5], active: d[6], icon: d[7] || '', builtin: true
+    }));
+    _writeOptionRows(ctx, keep.concat(restored), session);
+    _auditLog(session.username, 'options_reset', listKey, '還原為預設值');
+    return _json({ ok: true, data: _readOptions() });
+  }
+
+  return _json({ ok: false, error: 'Unknown action' });
+}
+
+function _writeOptionRows(ctx, options, session) {
+  const now = new Date().toISOString();
+  const who = (session && session.username) || 'system';
+  const rows = options.map(o => {
+    const row = new Array(ctx.idx._len).fill('');
+    const set = (k, v) => { if (ctx.idx[k] !== undefined) row[ctx.idx[k]] = v; };
+    set('id', o.id);
+    set('listKey', o.listKey);
+    set('value', o.value);
+    set('label', o.label);
+    set('sublabel', o.sublabel);
+    set('groupName', o.groupName);
+    set('sortOrder', o.sortOrder);
+    set('active', o.active ? 'TRUE' : 'FALSE');
+    set('icon', o.icon || '');
+    set('builtin', o.builtin ? 'TRUE' : 'FALSE');
+    set('updatedBy', who);
+    set('updatedAt', now);
+    return row;
+  });
+  const last = ctx.sh.getLastRow();
+  if (last > 1) ctx.sh.getRange(2, 1, last - 1, ctx.idx._len).clearContent();
+  if (rows.length) ctx.sh.getRange(2, 1, rows.length, ctx.idx._len).setValues(rows);
+}
+
 // ==================== 速率限制 ====================
 
 function _checkRateLimit(username) {
@@ -639,7 +899,7 @@ function _clearLoginFailures(username) {
 
 // ==================== 路由處理 ====================
 
-const READ_ACTIONS = ['list', 'listall', 'getversions', 'session_register',
+const READ_ACTIONS = ['list', 'listall', 'getversions', 'options_list', 'session_register',
                      'session_heartbeat', 'session_list', 'session_kick', 'session_check_kicked'];
 
 /**
@@ -671,6 +931,11 @@ function _handleReadAction(action, p, session) {
     });
     _writeCachedFingerprints(versions);
     return _json({ ok: true, data: allData, versions: versions });
+  }
+
+  // 任何登入者都要讀得到選項，否則表單畫不出下拉選單
+  if (action === 'options_list') {
+    return _json({ ok: true, data: _readOptions() });
   }
 
   if (action === 'getversions') {
@@ -847,6 +1112,19 @@ function doPost(e) {
         if (pwMsg === 'Unauthorized' || pwMsg === 'Forbidden') throw pwErr;
         Logger.log('change password error: ' + pwMsg);
         return _json({ ok: false, error: pwMsg });
+      }
+    }
+
+    // ===== 選單選項維護（僅管理者；options_list 已在上面的讀取類處理掉）=====
+    if (action.indexOf('options_') === 0) {
+      _requireRole(session, ['admin']);
+      try {
+        return _handleOptionsAction(action, p, bodyObj, session);
+      } catch (optErr) {
+        const optMsg = String(optErr.message || optErr);
+        if (optMsg === 'Unauthorized' || optMsg === 'Forbidden') throw optErr;
+        Logger.log('options action error: ' + optMsg);
+        return _json({ ok: false, error: optMsg });
       }
     }
 

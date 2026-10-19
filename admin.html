@@ -114,6 +114,52 @@
     .meta-line { font-size: 12px; color: var(--ui-text-secondary); margin-top: 3px; }
 
     /* 稽核紀錄 */
+    /* ── 選單管理 ── */
+    .tabs { display: flex; gap: 4px; margin-bottom: 18px; background: #fff; padding: 4px;
+            border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.05); width: fit-content; }
+    .tab-btn { padding: 8px 18px; border: 0; background: transparent; border-radius: 9px;
+               font-size: 14px; font-weight: 600; color: var(--ui-dim); cursor: pointer;
+               font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+    .tab-btn.active { background: #eff6ff; color: #1d4ed8; }
+    .pane[hidden] { display: none; }
+
+    .opt-layout { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 760px) { .opt-layout { grid-template-columns: 1fr; } }
+    .opt-nav { background: #fff; border-radius: 14px; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+    .opt-nav button { display: flex; width: 100%; align-items: center; justify-content: space-between;
+                      gap: 8px; padding: 10px 12px; border: 0; background: transparent; cursor: pointer;
+                      border-radius: 10px; font-size: 14px; font-family: inherit; color: var(--ui-text); text-align: left; }
+    .opt-nav button:hover { background: var(--ui-fill); }
+    .opt-nav button.active { background: #eff6ff; color: #1d4ed8; font-weight: 600; }
+    .opt-nav .count { font-size: 12px; color: var(--ui-dim); }
+
+    .opt-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+                flex-wrap: wrap; padding: 18px 20px 0; }
+    .opt-head h3 { font-size: 16px; }
+    .opt-head p { font-size: 13px; color: var(--ui-dim); margin-top: 2px; }
+    .opt-rows { padding: 14px 20px 4px; display: flex; flex-direction: column; gap: 8px; }
+    .opt-row { display: grid; grid-template-columns: 26px 92px 1fr 1fr 118px 120px auto;
+               gap: 8px; align-items: center; padding: 10px; border: 1px solid var(--ui-line);
+               border-radius: 12px; background: #fff; }
+    .opt-row.off { background: #fafafa; opacity: .7; }
+    .opt-row input, .opt-row select { width: 100%; padding: 7px 9px; border: 1px solid var(--ui-line);
+                                      border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; }
+    .opt-row input[readonly] { background: var(--ui-fill); color: var(--ui-dim); cursor: not-allowed; }
+    .opt-icon { display: flex; align-items: center; justify-content: center; font-size: 18px; color: #6366f1; }
+    .opt-move { display: flex; flex-direction: column; gap: 2px; }
+    .opt-move button, .opt-toggle { border: 1px solid var(--ui-line); background: #fff; border-radius: 7px;
+                                    cursor: pointer; font-size: 12px; line-height: 1; padding: 3px 6px; font-family: inherit; }
+    .opt-move button:disabled { opacity: .3; cursor: default; }
+    .opt-toggle { padding: 6px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .opt-toggle.on { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+    .opt-toggle.off { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+    .opt-colhead { display: grid; grid-template-columns: 26px 92px 1fr 1fr 118px 120px auto; gap: 8px;
+                   padding: 0 10px; font-size: 11px; color: var(--ui-dim); font-weight: 600; }
+    .opt-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 20px 20px; }
+    .opt-note { font-size: 12px; color: var(--ui-dim); line-height: 1.7; padding: 0 20px 16px; }
+    .opt-note code { background: var(--ui-fill); padding: 1px 5px; border-radius: 5px; font-size: 11px; }
+    .opt-dirty { font-size: 12px; color: #b45309; font-weight: 600; margin-left: auto; }
+
     .audit-card { margin-top: 20px; }
     .audit-head {
       display: flex; align-items: center; justify-content: space-between;
@@ -258,6 +304,12 @@
   </header>
 
   <div class="container">
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab-btn active" data-pane="usersPane" role="tab"><i class="ph ph-users"></i> 帳號</button>
+      <button type="button" class="tab-btn" data-pane="optionsPane" role="tab"><i class="ph ph-list-checks"></i> 選單管理</button>
+    </div>
+
+    <div class="pane" id="usersPane">
     <div class="toolbar">
       <div class="search-box">
         <i class="ph ph-magnifying-glass"></i>
@@ -292,6 +344,39 @@
         <div class="state" style="padding:32px 24px"><span class="spinner-dark"></span></div>
       </div>
     </div>
+    </div><!-- /usersPane -->
+
+    <!-- 選單管理：讓管理者自己維護各頁的下拉選單，不用每次改程式重新部署 -->
+    <div class="pane" id="optionsPane" hidden>
+      <div class="opt-layout">
+        <nav class="opt-nav" id="optNav"></nav>
+        <div class="card">
+          <div class="opt-head">
+            <div>
+              <h3 id="optTitle">船員職級</h3>
+              <p id="optDesc">改完按「儲存」才會生效</p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button type="button" class="btn btn-secondary btn-sm" id="optAddBtn"><i class="ph ph-plus"></i> 新增選項</button>
+              <button type="button" class="btn btn-plain btn-sm" id="optResetBtn"><i class="ph ph-arrow-counter-clockwise"></i> 還原預設</button>
+            </div>
+          </div>
+          <div class="opt-rows" id="optRows"></div>
+          <div class="opt-note">
+            <strong>代碼</strong>是存進課程與師資資料裡的鍵，所以既有項目不能改——要換請先停用舊的、再新增一個。<br>
+            不要的選項請按<strong>「啟用中」切成「已停用」</strong>而不是刪除：停用後各頁選單就不再列出它，
+            但早就選過它的舊資料仍然顯示得出名稱，不會變成一串看不懂的代碼。<br>
+            <strong>圖示</strong>填 Phosphor 的名稱，例如 <code>ph-anchor</code>、<code>ph-user</code>；留空會用預設圖示。
+            職級的<strong>分組</strong>（甲板部門／輪機部門／岸上主管）會變成選單上的小標題，順序就是上下排列的順序。
+          </div>
+          <div class="opt-foot">
+            <button type="button" class="btn btn-primary" id="optSaveBtn"><i class="ph ph-check"></i> 儲存</button>
+            <button type="button" class="btn btn-secondary" id="optRevertBtn">放棄變更</button>
+            <span class="opt-dirty" id="optDirty" hidden>尚未儲存</span>
+          </div>
+        </div>
+      </div>
+    </div><!-- /optionsPane -->
   </div>
 
   <!-- 新增／編輯帳號 -->
@@ -375,6 +460,7 @@
 
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/options.js"></script>
   <script src="js/auth.js"></script>
   <script>
     // 只有管理者能進這頁；js/auth.js 會依 PAGE_ACCESS['admin.html'] 擋下其他角色
@@ -759,6 +845,188 @@
       $('deleteModal').classList.add('show');
     }
 
+    // ==================== 選單管理 ====================
+    //
+    // 職級清單以前寫死在 maritime-courses.html 的三個地方，課程分類散在四個檔案，
+    // 客戶每要改一次就得改程式再重新部署。現在清單是資料，這裡是維護它的地方。
+
+    const OPT_LISTS = [
+      { key: 'crewRank',       name: '船員職級', desc: '課程的適用對象、師資的職級、以及新增課程時講師選單的排序都用這一份。順序就是職級高低。' },
+      { key: 'personnelType',  name: '人員類別', desc: '課程適用對象的「現有／新進」。' },
+      { key: 'teacherType',    name: '師資類別', desc: '師資卡上的「內部／外部」。' },
+      { key: 'workLocation',   name: '工作狀態', desc: '師資的在船／在岸／退休。「退休」的師資不會出現在呈現模式，這個行為綁在代碼 retired 上。' },
+      { key: 'courseCategory', name: '課程分類', desc: '智慧派課與教材管理的九大分類，兩邊用的是同一份。' },
+      { key: 'teachingMethod', name: '授課方式', desc: '實體／線上／混合。' }
+    ];
+
+    let optCurrent = OPT_LISTS[0].key;
+    let optDraft = [];          // 目前編輯中的那一份
+    let optBaseline = '';       // 進入編輯時的快照，用來判斷有沒有改過
+
+    function optDirty() { return JSON.stringify(optDraft) !== optBaseline; }
+
+    function optLoadDraft(key) {
+      optCurrent = key;
+      optDraft = Options.all(key).map(o => ({
+        id: o.id, value: o.value, label: o.label, sublabel: o.sublabel,
+        groupName: o.groupName, active: o.active, icon: o.icon, builtin: o.builtin,
+        isNew: false
+      }));
+      optBaseline = JSON.stringify(optDraft);
+      renderOptNav();
+      renderOptRows();
+    }
+
+    function renderOptNav() {
+      $('optNav').innerHTML = OPT_LISTS.map(l => {
+        const n = Options.all(l.key).filter(o => o.active).length;
+        return `<button type="button" data-key="${escapeAttr(l.key)}" class="${l.key === optCurrent ? 'active' : ''}">
+                  <span>${escapeHtml(l.name)}</span><span class="count">${n}</span>
+                </button>`;
+      }).join('');
+    }
+
+    function renderOptRows() {
+      const meta = OPT_LISTS.find(l => l.key === optCurrent);
+      $('optTitle').textContent = meta ? meta.name : optCurrent;
+      $('optDesc').textContent = meta ? meta.desc : '';
+      $('optDirty').hidden = !optDirty();
+
+      const hasGroups = optDraft.some(o => o.groupName) || optCurrent === 'crewRank';
+      const head = `<div class="opt-colhead">
+          <span></span><span>代碼</span><span>顯示名稱</span><span>副標</span>
+          <span>${hasGroups ? '分組' : ''}</span><span>圖示</span><span></span>
+        </div>`;
+
+      $('optRows').innerHTML = head + optDraft.map((o, i) => `
+        <div class="opt-row ${o.active ? '' : 'off'}" data-i="${i}">
+          <div class="opt-move">
+            <button type="button" data-act="up" ${i === 0 ? 'disabled' : ''} aria-label="上移">▲</button>
+            <button type="button" data-act="down" ${i === optDraft.length - 1 ? 'disabled' : ''} aria-label="下移">▼</button>
+          </div>
+          <input data-f="value" value="${escapeAttr(o.value)}" ${o.isNew ? '' : 'readonly'}
+                 title="${o.isNew ? '新項目可以自訂代碼，存檔後就不能改了' : '代碼是存進資料裡的鍵，不能改'}">
+          <input data-f="label" value="${escapeAttr(o.label)}" placeholder="顯示名稱">
+          <input data-f="sublabel" value="${escapeAttr(o.sublabel)}" placeholder="副標（選填）">
+          <input data-f="groupName" value="${escapeAttr(o.groupName)}" placeholder="${hasGroups ? '例如 甲板部門' : '（不分組）'}">
+          <div style="display:flex; gap:6px; align-items:center">
+            <span class="opt-icon"><i class="ph ${escapeAttr(o.icon || 'ph-circle-dashed')}"></i></span>
+            <input data-f="icon" value="${escapeAttr(o.icon)}" placeholder="ph-anchor">
+          </div>
+          <button type="button" class="opt-toggle ${o.active ? 'on' : 'off'}" data-act="toggle">${o.active ? '啟用中' : '已停用'}</button>
+        </div>`).join('');
+    }
+
+    function initOptionsPane() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+          document.querySelectorAll('.pane').forEach(p => { p.hidden = p.id !== btn.dataset.pane; });
+        });
+      });
+
+      $('optNav').addEventListener('click', e => {
+        const btn = e.target.closest('button[data-key]');
+        if (!btn || btn.dataset.key === optCurrent) return;
+        if (optDirty() && !confirm('這份清單有還沒儲存的變更，切走會放棄它。要繼續嗎？')) return;
+        optLoadDraft(btn.dataset.key);
+      });
+
+      // 輸入即時寫回草稿；移動與停用重畫
+      $('optRows').addEventListener('input', e => {
+        const row = e.target.closest('.opt-row'); if (!row) return;
+        const f = e.target.dataset.f; if (!f) return;
+        optDraft[Number(row.dataset.i)][f] = e.target.value;
+        $('optDirty').hidden = !optDirty();
+        if (f === 'icon') {
+          const prev = row.querySelector('.opt-icon i');
+          if (prev) prev.className = 'ph ' + (e.target.value || 'ph-circle-dashed');
+        }
+      });
+
+      $('optRows').addEventListener('click', e => {
+        const btn = e.target.closest('button[data-act]'); if (!btn) return;
+        const row = btn.closest('.opt-row'); const i = Number(row.dataset.i);
+        if (btn.dataset.act === 'toggle') optDraft[i].active = !optDraft[i].active;
+        if (btn.dataset.act === 'up' && i > 0) { const t = optDraft[i - 1]; optDraft[i - 1] = optDraft[i]; optDraft[i] = t; }
+        if (btn.dataset.act === 'down' && i < optDraft.length - 1) { const t = optDraft[i + 1]; optDraft[i + 1] = optDraft[i]; optDraft[i] = t; }
+        renderOptRows();
+      });
+
+      $('optAddBtn').addEventListener('click', () => {
+        optDraft.push({ id: '', value: '', label: '', sublabel: '', groupName: '', active: true, icon: '', builtin: false, isNew: true });
+        renderOptRows();
+        const inputs = $('optRows').querySelectorAll('.opt-row:last-child input');
+        if (inputs.length) inputs[0].focus();
+      });
+
+      $('optRevertBtn').addEventListener('click', () => {
+        if (optDirty() && !confirm('放棄這份清單所有還沒儲存的變更？')) return;
+        optLoadDraft(optCurrent);
+      });
+
+      $('optSaveBtn').addEventListener('click', saveOptions);
+      $('optResetBtn').addEventListener('click', resetOptions);
+
+      optLoadDraft(optCurrent);
+      Options.ready(true).then(() => { if (!optDirty()) optLoadDraft(optCurrent); });
+    }
+
+    // 存檔／還原都要讓人知道正在跑，不能按了之後畫面毫無反應
+    function optBusy(on, btn, label) {
+      ['optSaveBtn', 'optResetBtn', 'optAddBtn', 'optRevertBtn'].forEach(id => { $(id).disabled = on; });
+      if (!btn) return;
+      if (on) {
+        btn.dataset.html = btn.innerHTML;
+        btn.innerHTML = `<span class="spinner"></span> ${label}`;
+      } else if (btn.dataset.html) {
+        btn.innerHTML = btn.dataset.html;
+        delete btn.dataset.html;
+      }
+    }
+
+    async function saveOptions() {
+      const empty = optDraft.find(o => !String(o.value).trim() || !String(o.label).trim());
+      if (empty) { showToast('每一列都要填代碼與顯示名稱', 'error'); return; }
+      if (!optDraft.length) { showToast('清單不能全空', 'error'); return; }
+
+      const btn = $('optSaveBtn');
+      optBusy(true, btn, '儲存中…');
+      try {
+        const rows = await api.saveOptions(optCurrent, optDraft.map(o => ({
+          id: o.isNew ? '' : o.id,
+          value: String(o.value).trim(), label: String(o.label).trim(),
+          sublabel: String(o.sublabel || '').trim(), groupName: String(o.groupName || '').trim(),
+          icon: String(o.icon || '').trim(), active: !!o.active
+        })));
+        Options.apply(rows);
+        optLoadDraft(optCurrent);
+        showToast('已儲存，其他頁面重新整理後就會看到');
+      } catch (err) {
+        // 後端的驗證訊息要原樣給管理者看（例如「代碼不能改」），不要蓋成通用訊息
+        showToast(err && err.message ? err.message : '儲存失敗，請再試一次', 'error');
+      } finally {
+        optBusy(false, btn);
+      }
+    }
+
+    async function resetOptions() {
+      const meta = OPT_LISTS.find(l => l.key === optCurrent);
+      if (!confirm(`把「${meta ? meta.name : optCurrent}」還原成系統預設值？目前的修改會被覆蓋。`)) return;
+      const btn = $('optResetBtn');
+      optBusy(true, btn, '還原中…');
+      try {
+        const rows = await api.resetOptions(optCurrent);
+        Options.apply(rows);
+        optLoadDraft(optCurrent);
+        showToast('已還原為預設值');
+      } catch (err) {
+        showToast(err && err.message ? err.message : '還原失敗，請再試一次', 'error');
+      } finally {
+        optBusy(false, btn);
+      }
+    }
+
     function closeDeleteModal() {
       $('deleteModal').classList.remove('show');
       deletingUser = null;
@@ -798,6 +1066,8 @@
       updateRoleHint();
       loadUsers();
       loadAudit();
+
+      initOptionsPane();
 
       $('addUserBtn').addEventListener('click', () => openUserModal(null));
       $('reloadAuditBtn').addEventListener('click', loadAudit);
