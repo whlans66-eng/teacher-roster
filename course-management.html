@@ -8,31 +8,12 @@
   <!-- 預連接到資源服務器 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
 
   <!-- 字體樣式表 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
 
   <!-- Phosphor Icons：regular 粗細，鎖定 2.1.1 -->
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
-
-  <!-- Chart.js - 延遲加載，僅在需要時加載 -->
-  <script>
-    // 延遲加載 Chart.js - 僅在需要圖表時才加載
-    window.loadChartJS = function() {
-      return new Promise((resolve, reject) => {
-        if (window.Chart) {
-          resolve();
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-    };
-  </script>
 
   <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
   <link rel="stylesheet" href="shared/ui.css">
@@ -719,7 +700,7 @@
        flex/grid 垮掉）才補上，看起來像轉跳失敗。改成同步載入的靜態 CSS 就沒有空窗。
        位置刻意放在 <style> 之後、</head> 之前，對齊原本 CDN 在 runtime 注入的順序，
        以免層疊優先序跑掉。 -->
-  <link rel="stylesheet" href="shared/tailwind.css?v=e0d9c4cb">
+  <link rel="stylesheet" href="shared/tailwind.css?v=5018da67">
 </head>
 <body>
   <!-- Authentication -->
@@ -922,19 +903,15 @@
           </button>
         </div>
         <div id="teacherHoursAnalysis">
-          <!-- 達標提醒 -->
+          <!-- 達標提醒：原本是一整塊漸層底加 24px 圖示，份量太重；
+               壓成一行、圖示縮小，訊息與數字維持原樣 -->
           <div id="targetAchievedAlert" class="mb-4" style="display: none;">
-            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <span style="font-size:24px;color:#34c759;"><i class="ph ph-confetti"></i></span>
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm font-medium text-green-800">
-                    恭喜！本月有 <span id="targetAchievedCount" class="font-bold text-green-900"></span> 位師資已達標 12 小時
-                  </p>
-                </div>
-              </div>
+            <div class="flex items-center gap-2 rounded-xl px-3 py-2"
+                 style="background:#f0f9f0; color:#15803d;">
+              <i class="ph ph-confetti" style="font-size:16px; color:#0ca30c;"></i>
+              <p class="text-sm">
+                恭喜！本月有 <span id="targetAchievedCount" class="font-semibold"></span> 位師資已達標 12 小時
+              </p>
             </div>
           </div>
           <!-- 搜尋框 -->
@@ -942,11 +919,11 @@
             <input type="text" id="teacherSearchInput"
                    placeholder="搜尋師資姓名..."
                    oninput="filterTeachers()"
-                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                   style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+                   class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   style="font-size: 14px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
           </div>
           <!-- 師資列表 -->
-          <div id="teacherHoursList" class="space-y-4">
+          <div id="teacherHoursList" class="space-y-2">
             <!-- 師資時數條將在這裡顯示 -->
           </div>
           <!-- 顯示更多按鈕 -->
@@ -955,14 +932,6 @@
               <span id="showMoreText">顯示更多</span> <span id="showMoreIcon">▼</span>
             </button>
           </div>
-        </div>
-      </div>
-
-      <!-- 課程類型分佈 -->
-      <div class="card p-6 fade-in" style="animation-delay: 0.4s">
-        <h2 class="text-gray-900 mb-6" style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em;"><i class="ph ph-chart-pie"></i> 課程類型分佈</h2>
-        <div style="position: relative; height: 300px; max-width: 600px; margin: 0 auto;">
-          <canvas id="courseTypeChart"></canvas>
         </div>
       </div>
 
@@ -1397,7 +1366,6 @@
 
     let currentDate = new Date();
     let viewMode = 'month';
-    let courseTypeChart = null;
     let showAllTeachers = false;
     let teacherSearchQuery = '';
     let selectedTeacherId = null;
@@ -1660,7 +1628,6 @@
       loadTeachers();
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
       updateTodayDate();
@@ -2037,25 +2004,38 @@
         const { teacher, hours, courses } = item;
         const percentage = Math.min((hours / 12) * 100, 100);
 
-        let statusClass = 'bg-red-500';
+        // 門檻與判定完全沿用原本的：>=12 已達標、>=8 接近達標、其餘未達標。
+        // 只改配色與樣式——原本是飽和色塊（bg-green-500 的粗條 + 白字藥丸），
+        // 大面積飽和色在清單裡會很吵。改成細色條 + 同色系淺色軌道，
+        // 狀態另外用圖示搭文字表示，不單靠顏色。
         let statusText = '未達標';
+        let statusIcon = 'ph-x-circle';
+        let barColor   = '#d03b3b';   // critical
+        let trackColor = '#fbeaea';
+        let statusInk  = 'text-red-700';
         if (hours >= 12) {
-          statusClass = 'bg-green-500';
           statusText = '已達標';
+          statusIcon = 'ph-check-circle';
+          barColor   = '#0ca30c';     // good
+          trackColor = '#e8f7e8';
+          statusInk  = 'text-green-700';
         } else if (hours >= 8) {
-          statusClass = 'bg-yellow-500';
           statusText = '接近達標';
+          statusIcon = 'ph-warning-circle';
+          barColor   = '#fab219';     // warning
+          trackColor = '#fef8ec';
+          statusInk  = 'text-amber-700';
         }
 
         const isSelected = selectedTeacherId === teacher.id;
         const selectedStyle = isSelected
-          ? 'border-2 border-blue-500 bg-blue-50 shadow-lg'
-          : 'border border-gray-200 hover:border-blue-300 hover:shadow-md';
+          ? 'border border-blue-500 bg-blue-50/60'
+          : 'border border-gray-200 hover:border-gray-300 hover:bg-gray-50';
 
-        // 根據選擇情境顯示不同的時數標籤
-        const hoursLabel = selectedDate !== null
-          ? `該日時數: ${hours.toFixed(1)} 小時`
-          : `總時數: ${hours.toFixed(1)} 小時`;
+        // 根據選擇情境顯示不同的時數標籤（判斷與數值格式都沒變，
+        // 只是把標籤與數字拆開排版，讓時數本身看得清楚）
+        const hoursCaption = selectedDate !== null ? '該日時數' : '總時數';
+        const hoursValue = hours.toFixed(1);
 
         // 產生課程歷史列表 HTML
         const courseListId = `courseList_${teacher.id}`;
@@ -2064,47 +2044,51 @@
           const isMainTeacher = Number(c.teacherId) === Number(teacher.id);
           const roleLabel = isMainTeacher ? '主講' : '助教';
           const roleColor = isMainTeacher ? 'background:#dbeafe;color:#1e40af;' : 'background:#fef3c7;color:#92400e;';
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f9fafb;border-radius:12px;margin-bottom:4px;">
+          return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-top:1px solid #f3f4f6;">
             <div style="flex:1;min-width:0;">
-              <span style="font-size:13px;font-weight:500;color:#1f2937;">${courseDisplayName(c)}</span>
-              <span style="font-size:11px;color:#6b7280;margin-left:8px;">${c.date || ''} ${c.time || ''}</span>
+              <span style="font-size:13px;color:#1f2937;">${courseDisplayName(c)}</span>
+              <span style="font-size:11px;color:#9ca3af;margin-left:8px;">${c.date || ''} ${c.time || ''}</span>
             </div>
-            <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap;${roleColor}">${roleLabel}</span>
+            <span style="font-size:11px;font-weight:500;padding:1px 7px;border-radius:9999px;white-space:nowrap;${roleColor}">${roleLabel}</span>
           </div>`;
-        }).join('') : '<p style="text-align:center;color:#9ca3af;font-size:13px;padding:8px 0;">無課程記錄</p>';
+        }).join('') : '<p style="color:#9ca3af;font-size:12px;padding:6px 10px;border-top:1px solid #f3f4f6;">無課程記錄</p>';
 
         return `
-          <div class="${selectedStyle} rounded-xl p-4 transition-all duration-300">
+          <div class="${selectedStyle} rounded-xl px-4 py-3 transition-colors duration-200">
             <div onclick="selectTeacher(${teacher.id})" class="cursor-pointer">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
-                    ${(teacher.name || '?')[0]}
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
+                     style="background:#eef2ff; color:#4338ca;">${(teacher.name || '?')[0]}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-baseline gap-2">
+                    <h4 class="font-semibold text-gray-900 truncate">${teacher.name}</h4>
+                    ${isSelected ? '<span class="text-[11px] font-medium text-blue-700 flex-shrink-0">已選擇</span>' : ''}
                   </div>
-                  <div>
-                    <h4 class="font-semibold text-gray-900">${teacher.name}</h4>
-                    <p class="text-xs text-gray-500">${courses.length} 堂課</p>
-                  </div>
+                  <p class="text-xs text-gray-500">${courses.length} 堂課</p>
                 </div>
-                <div class="text-right">
-                  <p class="text-sm font-bold text-gray-900">${hoursLabel}</p>
-                  <span class="text-xs ${statusClass} text-white px-2 py-1 rounded-full">${statusText}</span>
+                <div class="text-right flex-shrink-0">
+                  <p class="text-[11px] text-gray-500 leading-none mb-1">${hoursCaption}</p>
+                  <p class="leading-none"><span class="text-lg font-semibold text-gray-900">${hoursValue}</span><span class="text-xs text-gray-500 ml-1">小時</span></p>
                 </div>
               </div>
-              <div class="w-full bg-gray-200 rounded-full h-3">
-                <div class="${statusClass} h-3 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+              <div class="flex items-center gap-2 mt-2.5">
+                <div class="flex-1 rounded-full overflow-hidden" style="height:6px; background:${trackColor}; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);"
+                     title="已累計 ${hoursValue} 小時，目標 12 小時">
+                  <div class="rounded-full transition-all duration-500" style="width:${percentage}%; height:6px; background:${barColor};"></div>
+                </div>
+                <span class="text-xs font-medium ${statusInk} flex items-center gap-1 flex-shrink-0">
+                  <i class="ph ${statusIcon}" style="font-size:13px;"></i>${statusText}
+                </span>
               </div>
-              ${isSelected ? '<p class="text-xs text-blue-600 font-semibold mt-2 text-center">~ 已選擇</p>' : ''}
             </div>
-            <div style="margin-top:8px;">
-              <button onclick="event.stopPropagation(); toggleCourseList('${courseListId}')" class="btn btn-plain btn-sm btn-block">
-                <i class="ph ph-clock-counter-clockwise" style="font-size:14px;"></i>
-                <span>協助課程記錄</span>
-                <i class="ph ph-caret-down" id="${courseListId}_icon" style="font-size:12px;transition:transform 0.2s;"></i>
-              </button>
-              <div id="${courseListId}" style="display:none;max-height:200px;overflow-y:auto;margin-top:4px;padding:4px 0;">
-                ${courseListHtml}
-              </div>
+            <button onclick="event.stopPropagation(); toggleCourseList('${courseListId}')"
+                    class="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors">
+              <i class="ph ph-clock-counter-clockwise" style="font-size:13px;"></i>
+              <span>協助課程記錄</span>
+              <i class="ph ph-caret-down" id="${courseListId}_icon" style="font-size:11px;transition:transform 0.2s;"></i>
+            </button>
+            <div id="${courseListId}" style="display:none;max-height:200px;overflow-y:auto;margin-top:6px;">
+              ${courseListHtml}
             </div>
           </div>
         `;
@@ -2131,60 +2115,6 @@
       renderTeacherHoursAnalysis();
     }
 
-    // ==================== 課程類型分佈圖 ====================
-    async function renderCourseTypeChart() {
-      // 延遲加載 Chart.js
-      try {
-        await window.loadChartJS();
-      } catch (error) {
-        console.error('無法加載 Chart.js:', error);
-        return;
-      }
-
-      // 根據選擇的師資和日期過濾課程
-      let filteredCourses = courseAssignments;
-
-      if (selectedTeacherId !== null) {
-        filteredCourses = filteredCourses.filter(c => c.teacherId === selectedTeacherId);
-      }
-
-      if (selectedDate !== null) {
-        filteredCourses = filteredCourses.filter(c => c.date === selectedDate);
-      }
-
-      const typeCount = {};
-      filteredCourses.forEach(c => {
-        typeCount[c.type] = (typeCount[c.type] || 0) + 1;
-      });
-
-      const typeCtx = document.getElementById('courseTypeChart').getContext('2d');
-      if (courseTypeChart) courseTypeChart.destroy();
-
-      courseTypeChart = new Chart(typeCtx, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(typeCount),
-          datasets: [{
-            data: Object.values(typeCount),
-            backgroundColor: ['#007aff', '#34c759', '#ff9500', '#ff3b30', '#5856d6'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: { size: 14 },
-                padding: 15
-              }
-            }
-          }
-        }
-      });
-    }
 
     // ==================== 師資選擇功能 ====================
     function selectTeacher(teacherId) {
@@ -2209,7 +2139,6 @@
       // 更新所有相關數據
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
     }
 
@@ -2223,7 +2152,6 @@
       // 更新所有相關數據
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
     }
 
@@ -2256,7 +2184,6 @@
       // 更新所有相關數據
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
     }
 
@@ -2270,7 +2197,6 @@
       // 更新所有相關數據
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
     }
 
@@ -3366,7 +3292,6 @@
 
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
 
@@ -3497,7 +3422,6 @@
 
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
       // 失敗時不關表單，使用者填的東西還在，可以直接重試
@@ -3526,7 +3450,6 @@
 
       updateStatistics();
       renderTeacherHoursAnalysis();
-      renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
     }
