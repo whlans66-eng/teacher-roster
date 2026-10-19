@@ -3265,6 +3265,12 @@
 
       edSaving = true;
       edSyncSave();
+      // 邏輯本來就完整（防重入、失敗還原、編輯器留著），
+      // 缺的只是「看得到的處理中」——原本只把按鈕設成 disabled，
+      // 使用者只會覺得按鈕按不動，不知道它正在存。
+      const doneBusy = (window.UIFeedback && UIFeedback.showBusy)
+        ? UIFeedback.showBusy('儲存互動教材中…', '正在同步到雲端，請稍候')
+        : function () {};
       try {
         await persistCourses();
         edSaving = false;
@@ -3276,6 +3282,8 @@
         edSaving = false;
         edSyncSave();
         showToast(`儲存失敗：${(err && err.message) || '未知錯誤'}`, 'error');
+      } finally {
+        doneBusy();
       }
     }
 

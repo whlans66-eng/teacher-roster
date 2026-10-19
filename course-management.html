@@ -1567,25 +1567,32 @@
         return;
       }
 
+      // 踢人本身要等後端，接著還刻意等兩秒讓對方反應、再重存一次。
+      // 原本這整整四秒畫面上什麼都沒有，使用者會以為當掉。
       try {
-        await sessionManager.kickUser(sessionId);
-        alert(`✓ 已踢出使用者「${userName}」`);
-
-        // 重新整理對話框
-        closeConflictDialog();
-
-        // 等待一下讓被踢的使用者有時間反應
-        setTimeout(async () => {
+        await UIFeedback.submit(async () => {
+          await sessionManager.kickUser(sessionId);
+          closeConflictDialog();
+          // 等一下讓被踢的使用者有時間反應
+          await new Promise(r => setTimeout(r, 2000));
           const result = await syncManager.saveToBackendSafe();
-          if (result.conflict) {
+          if (result && result.conflict) {
             showConflictDialog(result);
-          } else if (result.success) {
-            alert('✓ 儲存成功！');
-            window.location.reload();
+            throw new Error('對方仍佔用中，請再試一次');
           }
-        }, 2000);
+          // success 以外的情形原本是靜默什麼都不做，使用者只會覺得沒反應
+          if (!result || !result.success) throw new Error('後端沒有回報儲存成功');
+          return result;
+        }, {
+          key: 'kick-user',
+          pending: `正在踢出「${userName}」…`,
+          sub: '踢出後會自動重新儲存，請稍候',
+          success: '已踢出並儲存成功',
+          error: '踢出失敗'
+        });
+        window.location.reload();
       } catch (error) {
-        alert('✗ 踢出失敗: ' + error.message);
+        // UIFeedback 已經把原因顯示出來了，這裡不再重複跳 alert
       }
     }
 
@@ -3423,7 +3430,7 @@
     }
 
     // ==================== Excel 匯出 ====================
-    function exportToExcel() {
+    async function exportToExcel() {
       // 根據目前篩選條件取得課程資料
       let filteredCourses = courseAssignments.filter(c => c.date && isDateInRange(c.date));
 
@@ -3473,18 +3480,28 @@
         { wch: 30 }   // 備註
       ];
 
-      // 建立活頁簿並匯出
-      const wb = XLSX.utils.book_new();
-      const startDate = document.getElementById('startDate')?.value || '';
-      const endDate = document.getElementById('endDate')?.value || '';
-      const sheetName = '課程資料';
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      // 建立活頁簿並匯出。
+      // 不打後端，但 XLSX 組檔會卡住主執行緒，課程多時好幾秒畫面不動，
+      // 使用者會以為沒按到而重複按，所以先蓋上提示再做。
+      const closeBusy = UIFeedback.showBusy('產生 Excel 中…', `共 ${filteredCourses.length} 筆課程`);
+      // 讓瀏覽器有機會把遮罩畫出來，再開始佔用主執行緒
+      await new Promise(r => setTimeout(r, 50));
+      try {
+        const wb = XLSX.utils.book_new();
+        const startDate = document.getElementById('startDate')?.value || '';
+        const endDate = document.getElementById('endDate')?.value || '';
+        const sheetName = '課程資料';
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-      // 檔名包含日期範圍
-      const fileName = `課程匯出_${startDate}_${endDate}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-
-      showMessage(`已匯出 ${filteredCourses.length} 筆課程資料`, 'success');
+        // 檔名包含日期範圍
+        const fileName = `課程匯出_${startDate}_${endDate}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        showMessage(`已匯出 ${filteredCourses.length} 筆課程資料`, 'success');
+      } catch (err) {
+        showMessage('匯出失敗：' + ((err && err.message) || '未知原因'), 'error');
+      } finally {
+        closeBusy();
+      }
     }
 
     // ==================== 工具函數 ====================
