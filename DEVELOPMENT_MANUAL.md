@@ -796,6 +796,39 @@ localStorage（`js/api.js` 的 `loadArrayFromStorage`）。
 所以 `slimForLocal()` 少放一個欄位，那個欄位就永遠到不了後端。
 新增欄位時，`normalize()`、`slimForLocal()` 與後端 header 三者必須同步。
 
+### 5.4.4 課程 ↔ 派課的關聯（courseId）
+
+派課紀錄原本與課程之間**只有一個課名字串的快照**，沒有外鍵。
+課程在智慧派課改名或刪除後，訓練排程就永遠停在舊名稱。
+（對照：老師一直都有 `teacherId`，所以不會有這個問題。）
+
+`courseAssignments` 新增 `courseId` 欄位對應 `maritimeCourses.id`：
+
+| 情境 | 行為 |
+|---|---|
+| 有 `courseId` 且課程存在 | 顯示課程庫中**目前**的名稱——改名自動反映，不需同步程式碼 |
+| 有 `courseId` 但課程已刪除 | 顯示存起來的 `name`，標為 orphan |
+| 無 `courseId`（舊資料） | 以課名完全比對回填；對不上就標為 orphan |
+
+關鍵函式都在 `course-management.html`：
+
+- `resolveCourse(assignment)` → `{name, courseId, orphan}`
+- `courseDisplayName(assignment)` — **所有顯示課名的地方都要用它**，不要直接用 `c.name`
+- `backfillCourseIds()` — 在 `reloadCourseDataFromStorage()` 內回填舊資料
+- `readCourseSelection(selectId)` — 從下拉選單讀出 `{courseId, name}`
+
+課程下拉選單的 `option.value` 是 **courseId**（不是課名）。
+`name` 仍會一併存下，作為課程被刪除時的顯示備援。
+
+Orphan 的紀錄會在詳情頁明確提示「此課名已不存在」，並可在編輯畫面
+重新選到正確的課程——不會靜默顯示錯誤的課名。
+
+### 5.4.5 行事曆排序
+
+同一天的課依**開始時間**排序（`byStartTime`／`coursesOnDate(dateKey)`）。
+原本是照陣列順序輸出，所以 14:00 的課可能排在 09:00 之前。
+沒有時間或格式不符的排在最後，不會影響其他項目。
+
 ### 5.5 後端開發最佳實踐
 
 #### 1. Token 驗證

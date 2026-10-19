@@ -85,7 +85,9 @@ const SHEETS_CONFIG = {
   },
   courseAssignments: {
     name: 'courseAssignments',
-    header: ['id','teacherId','teacherName','taId','taName','name','date','time','type','status','note','tags','rsvpStatus','reminderTime','createdBy','createdAt','updatedAt','version','lastModifiedBy','lastModifiedAt']
+    // courseId：對應 maritimeCourses.id。原本只存 name 字串，課程一改名
+    // 訓練排程就永遠停在舊名稱，這是「關聯沒做好」的根因。
+    header: ['id','teacherId','teacherName','taId','taName','courseId','name','date','time','type','status','note','tags','rsvpStatus','reminderTime','createdBy','createdAt','updatedAt','version','lastModifiedBy','lastModifiedAt']
   },
   maritimeCourses: {
     name: 'maritimeCourses',

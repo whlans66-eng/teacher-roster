@@ -2020,6 +2020,21 @@
         }
       }
 
+      // 由訓練排程等頁面帶 ?courseId= 進來時，直接打開該課程的詳情
+      try {
+        const deepLinkId = new URLSearchParams(location.search).get('courseId');
+        if (deepLinkId) {
+          const target = maritimeCourses.find(c => String(c.id) === String(deepLinkId));
+          if (target) {
+            setTimeout(() => viewCourseDetail(target.id), 150);
+          } else {
+            showMaritimeMessage('找不到該課程，可能已被刪除', 'info');
+          }
+        }
+      } catch (err) {
+        console.warn('處理 courseId 深層連結失敗:', err);
+      }
+
       // 適用對象 checkbox 事件監聽（新增表單）
       document.querySelectorAll('#maritimeCourseForm .target-checkbox input').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
