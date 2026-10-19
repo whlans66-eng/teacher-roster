@@ -845,6 +845,64 @@ Orphan 的紀錄會在詳情頁明確提示「此課名已不存在」，並可�
 
 `mountNav()` 內建重複掛載防護（偵測到既有 `.app-nav` 就跳過）。
 
+### 5.4.7 Tailwind 改為預先編譯（shared/tailwind.css）
+
+`teacher-management.html` 與 `course-management.html` 用 Tailwind，
+原本是這樣載入的：
+
+```html
+<script defer src="https://cdn.tailwindcss.com"></script>
+```
+
+**這一行是首次載入版面錯亂的原因。** `cdn.tailwindcss.com` 不是一份現成的
+CSS，它是在瀏覽器裡即時編譯的 runtime：要先下載、執行、掃整份 DOM、算出
+需要哪些樣式、再注入。加上 `defer` 之後還得等 HTML 解析完才開始，所以瀏覽器
+會先把**完全沒有 Tailwind 的版面**畫出來。
+
+最難看的不是少了排版，是 `.hidden{display:none}` 還不存在——所有本來該藏起來
+的區塊會全部露出來。實測 course-management 漏出 4/4、teacher-management
+漏出 21/21（三個分頁疊成一頁），`body` 高度分別是正常值的 1.7 倍與 14.6 倍。
+使用者形容成「像 HTML 轉跳失敗」就是這個。
+
+現在改成預先編好的靜態 CSS：
+
+```html
+<link rel="stylesheet" href="shared/tailwind.css?v=xxxxxxxx">
+```
+
+#### 改了 Tailwind class 之後一定要重編
+
+```bash
+npm install            # 只需要做一次
+scripts/build-tailwind.sh
+```
+
+這支腳本會重新產生 `shared/tailwind.css`，並把內容雜湊蓋進各頁的 `?v=`。
+**忘記重跑的話，新加的 class 會永久沒有樣式**（不是閃一下，是一直壞著），
+所以務必連同 `shared/tailwind.css` 一起 commit——GitHub Pages 直接發佈
+分支內容，沒有建置步驟。
+
+#### 幾個不能動的地方
+
+- **`<link>` 必須排在頁面自己的 `<style>` 之後、`</head>` 之前。**
+  原本 CDN 是在 runtime 把 `<style>` 附加到 head 最後面，所以 Tailwind
+  的優先序高於頁面樣式。把 `<link>` 往前移會讓層疊順序反過來。
+- **`tailwind.config.js` 的 `safelist` 不要拿掉。** 有幾個 class 名稱是
+  查表查出來的，而表的鍵來自後端資料（`course.type`、使用者挑的色票、
+  API 狀態），例如 `getCourseTypeColor()` 回傳 `bg-blue-500` 這類字串並
+  存進 `calendarEvents[].color`。今天表裡的值都還是字面字串所以掃得到，
+  但只要有人在表裡加一行就會漏，safelist 是這層保險。
+- **不要把 class 名稱用字串拼出來**（`'bg-' + color`）。拼出來的名稱
+  靜態掃描看不到，預編時一定會漏。要分支就把完整名稱寫出來。
+
+#### 已知仍在的小位移
+
+`Auth.mountNav()` 是在 DOMContentLoaded 才把導覽列插進 body 最前面，
+會把內容往下推 57px。改成同步 CSS 之後 DOMContentLoaded 從約 3000ms
+降到約 140ms，所以幾乎看不出來，但位移本身還在。要徹底消除的話，得在
+HTML 裡預留一個固定高度的導覽列容器讓 `mountNav()` 填進去，而不是
+`insertBefore`。
+
 ### 5.5 後端開發最佳實踐
 
 #### 1. Token 驗證
