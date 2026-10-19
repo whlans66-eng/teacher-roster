@@ -1882,13 +1882,24 @@
           targetCategories: Array.from(document.querySelectorAll('#maritimeCourseForm input[name="targetCategory"]:checked')).map(i => i.value),
           targetRanks: Array.from(document.querySelectorAll('#maritimeCourseForm input[name="targetRank"]:checked')).map(i => i.value)
         };
+        const backup = maritimeCourses.slice();
         maritimeCourses.push(course);
+
+        // 以前是 catch 住錯誤只寫 console，然後無條件說「新增成功」。
+        // 現在等後端真的回來才說成功，失敗就還原並把表單留著讓人重試。
         try {
-          await saveMaritimeCourses();
+          await UIFeedback.submit(() => saveMaritimeCourses(), {
+            key: 'maritime-save', button: submitBtn,
+            pending: '新增課程中…', sub: '正在同步到雲端，請稍候',
+            success: '課程新增成功', error: '新增失敗'
+          });
         } catch (err) {
-          console.error('儲存到後端失敗（已存至本機）:', err);
+          maritimeCourses = backup;
+          displayManageMaritimeCourses();
+          submitBtn.disabled = false;
+          return;
         }
-        showMaritimeMessage('✓ 課程新增成功', 'success');
+
         document.getElementById('maritimeCourseForm').reset();
         document.getElementById('maritimeKeywordList').innerHTML = '';
         setMaritimeLang('zh');
@@ -2249,9 +2260,23 @@
           copiedCourses.push(copy);
         }
       });
+      const backup = maritimeCourses.slice();
       copiedCourses.forEach(c => maritimeCourses.push(c));
-      await saveMaritimeCourses();
-      showMaritimeMessage(`✓ 已複製 ${copiedCourses.length} 個課程`, 'success');
+
+      // 原本 await 外面沒有 try/catch：後端失敗時整個函式 reject，
+      // 連一句訊息都不會出現，但記憶體與畫面已經是複製後的樣子。
+      try {
+        await UIFeedback.submit(() => saveMaritimeCourses(), {
+          key: 'maritime-save', pending: `複製 ${copiedCourses.length} 個課程中…`,
+          sub: '正在同步到雲端，請稍候',
+          success: `已複製 ${copiedCourses.length} 個課程`, error: '複製失敗'
+        });
+      } catch (err) {
+        maritimeCourses = backup;
+        displayMaritimeCourses();
+        displayManageMaritimeCourses();
+        return;
+      }
       toggleCourseSelectMode();
       displayMaritimeCourses();
       displayManageMaritimeCourses();
@@ -2263,9 +2288,21 @@
       if (!confirm(`確定要刪除選取的 ${count} 個課程嗎？此操作無法復原。`)) return;
 
       const ids = new Set(selectedCourseIds);
+      const backup = maritimeCourses.slice();
       maritimeCourses = maritimeCourses.filter(c => !ids.has(c.id));
-      await saveMaritimeCourses();
-      showMaritimeMessage(`✓ 已刪除 ${count} 個字卡`, 'success');
+
+      try {
+        await UIFeedback.submit(() => saveMaritimeCourses(), {
+          key: 'maritime-delete', pending: `刪除 ${count} 個字卡中…`,
+          sub: '正在同步到雲端，請稍候',
+          success: `已刪除 ${count} 個字卡`, error: '刪除失敗'
+        });
+      } catch (err) {
+        maritimeCourses = backup;          // 後端拒絕就把卡片放回來
+        displayMaritimeCourses();
+        displayManageMaritimeCourses();
+        return;
+      }
       toggleCourseSelectMode(); // 退出選取模式
       displayMaritimeCourses();
       displayManageMaritimeCourses();
@@ -2331,8 +2368,19 @@
         const displayedIds = new Set(newOrder);
         const hiddenCourses = maritimeCourses.filter(c => !displayedIds.has(c.id));
 
+        const backup = maritimeCourses.slice();
         maritimeCourses = [...reorderedCourses, ...hiddenCourses];
-        saveMaritimeCourses();
+        // 拖曳不擋畫面（會太煩），改用右下角狀態膠囊；
+        // 但失敗一定要說，而且要把順序放回去，不能讓畫面停在沒存成功的排列。
+        UIFeedback.status.saving('儲存排序…');
+        saveMaritimeCourses().then(r => {
+          if (r && r.conflict) throw new Error('資料衝突');
+          UIFeedback.status.saved('排序已儲存');
+        }).catch(() => {
+          maritimeCourses = backup;
+          displayMaritimeCourses();
+          UIFeedback.status.failed('排序沒有存成功，已還原');
+        });
       }
 
       return false;
@@ -2797,9 +2845,19 @@
       const course = maritimeCourses.find(c => c.id === courseId);
       const courseName = course ? course.name : '';
       showDeleteConfirmModal(courseName, async () => {
+        const backup = maritimeCourses.slice();
         maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
-        await saveMaritimeCourses();
-        showMaritimeMessage('✓ 課程已刪除', 'success');
+        try {
+          await UIFeedback.submit(() => saveMaritimeCourses(), {
+            key: 'maritime-delete', pending: '刪除課程中…', sub: '正在同步到雲端，請稍候',
+            success: '課程已刪除', error: '刪除失敗'
+          });
+        } catch (err) {
+          maritimeCourses = backup;
+          displayMaritimeCourses();
+          displayManageMaritimeCourses();
+          return;                          // 失敗就留在明細頁，不要假裝刪掉了
+        }
         backToCourseList();
         displayMaritimeCourses();
         displayManageMaritimeCourses();
@@ -3218,17 +3276,33 @@
     // 儲存（含衝突檢查）
     // 回傳 { conflict }，讓呼叫端知道這次到底算不算存成功；
     // 後端錯誤直接往外丟，不在這裡吞掉。
+    /**
+     * 寫入本機並同步到後端
+     *
+     * 本機快取在後端失敗時要退回原狀。原本是先 setItem 再 await，
+     * catch 裡什麼都沒做，所以後端拒絕的內容會留在 localStorage，
+     * 重新整理之後畫面顯示的是後端根本沒接受的資料。
+     */
     async function saveMaritimeCourses() {
+      const snapshot = localStorage.getItem('maritimeCourses');
       localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
 
-      if (typeof syncManager !== 'undefined') {
-        const result = await syncManager.saveTable('maritimeCourses');
-        if (result && result.conflict) {
-          showConflictDialog(result);
-          return { conflict: true };
+      try {
+        if (typeof syncManager !== 'undefined') {
+          const result = await syncManager.saveTable('maritimeCourses');
+          if (result && result.conflict) {
+            if (snapshot === null) localStorage.removeItem('maritimeCourses');
+            else localStorage.setItem('maritimeCourses', snapshot);
+            showConflictDialog(result);
+            return { conflict: true };
+          }
+        } else if (typeof api !== 'undefined') {
+          await api.save('maritimeCourses', maritimeCourses);
         }
-      } else if (typeof api !== 'undefined') {
-        await api.save('maritimeCourses', maritimeCourses);
+      } catch (err) {
+        if (snapshot === null) localStorage.removeItem('maritimeCourses');
+        else localStorage.setItem('maritimeCourses', snapshot);
+        throw err;
       }
       return { conflict: false };
     }

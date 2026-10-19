@@ -3357,16 +3357,21 @@
         };
       }
 
-      saveData();
+      // 等後端真的寫進去才說成功。以前是 saveData() 送出就不管，
+      // alert 在 13ms 跳出、後端兩秒後才失敗，使用者早就走了。
+      const ok = await UIFeedback.submit(() => saveDataAsync(), {
+        key: 'course-save', pending: '更新課程中…', sub: '正在同步到雲端，請稍候',
+        success: '課程已更新', error: '更新失敗'
+      }).then(() => true).catch(() => false);
+
       updateStatistics();
       renderTeacherHoursAnalysis();
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
 
-      // 🔓 關閉對話框並釋放鎖定
-      await closeViewEventModal();
-      alert('✓ 課程已更新！');
+      // 失敗就留在對話框，讓使用者看得到內容並重試
+      if (ok) await closeViewEventModal();
     }
 
     function checkConflictExcludingSelf(excludeId, teacherId, date, time) {
@@ -3411,7 +3416,7 @@
     }
 
     // ==================== 課程管理 ====================
-    function handleAddCourse(e) {
+    async function handleAddCourse(e) {
       e.preventDefault();
 
       const teacherId = Number(document.getElementById('courseTeacherId').value);
@@ -3485,26 +3490,45 @@
         courseId: courseData.id
       });
 
-      saveData();
-      closeAddCourseModal();
+      const ok = await UIFeedback.submit(() => saveDataAsync(), {
+        key: 'course-save', pending: '新增課程中…', sub: '正在同步到雲端，請稍候',
+        success: '課程新增成功', error: '新增失敗'
+      }).then(() => true).catch(() => false);
+
       updateStatistics();
       renderTeacherHoursAnalysis();
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
-      alert('✓ 課程新增成功！');
+      // 失敗時不關表單，使用者填的東西還在，可以直接重試
+      if (ok) closeAddCourseModal();
     }
 
-    function deleteCourse(id) {
+    async function deleteCourse(id) {
+      // 先備份：後端拒絕時要還原，不能讓畫面與本機快取停在「已刪除」
+      const backupCourses = courseAssignments.slice();
+      const backupEvents = calendarEvents.slice();
+
       courseAssignments = courseAssignments.filter(c => c.id !== id);
       calendarEvents = calendarEvents.filter(e => e.courseId !== id);
-      saveData();
+
+      try {
+        await UIFeedback.submit(() => saveDataAsync(), {
+          key: 'course-delete', pending: '刪除課程中…', sub: '正在同步到雲端，請稍候',
+          success: '課程已刪除', error: '刪除失敗'
+        });
+      } catch (err) {
+        courseAssignments = backupCourses;
+        calendarEvents = backupEvents;
+        localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+        localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+      }
+
       updateStatistics();
       renderTeacherHoursAnalysis();
       renderCourseTypeChart();
       renderTodayCourses();
       renderCalendar();
-      alert('✓ 課程已刪除！');
     }
 
     // ==================== Excel 匯出 ====================
@@ -3857,7 +3881,7 @@
     /**
      * 確認複製課程到新日期
      */
-    function confirmDuplicateCourse() {
+    async function confirmDuplicateCourse() {
       const newDate = document.getElementById('duplicateNewDate').value;
       if (!newDate) {
         alert('請選擇新日期！');
@@ -3905,14 +3929,15 @@
       };
       calendarEvents.push(newEvent);
 
-      // 儲存並更新介面
-      saveData();
+      const ok = await UIFeedback.submit(() => saveDataAsync(), {
+        key: 'course-save', pending: '複製課程中…', sub: '正在同步到雲端，請稍候',
+        success: `課程已複製到 ${newDate}`, error: '複製失敗'
+      }).then(() => true).catch(() => false);
+
       updateStatistics();
       renderCalendar();
       renderTodayCourses();
-      closeDuplicateDateModal();
-
-      showMessage(`課程已成功複製到 ${newDate}！`, 'success');
+      if (ok) closeDuplicateDateModal();
     }
 
     /**
@@ -4072,7 +4097,7 @@
     /**
      * 設定提醒
      */
-    function setReminder() {
+    async function setReminder() {
       const course = courseAssignments.find(c => c.id === currentCourseId);
       if (!course) return;
 
@@ -4113,13 +4138,21 @@
         return;
       }
 
+      const prevReminder = course.reminderTime;
       course.reminderTime = selectedReminder;
       course.updatedAt = new Date().toISOString();
 
-      saveData();
-      logActivity(currentCourseId, selectedReminder ? `設定提醒：${selectedReminder}` : '清除提醒', 'reminder');
+      try {
+        await UIFeedback.submit(() => saveDataAsync(), {
+          key: 'course-save', pending: '設定提醒中…',
+          success: selectedReminder ? `提醒已設定：${selectedReminder}` : '提醒已清除',
+          error: '設定提醒失敗'
+        });
+        logActivity(currentCourseId, selectedReminder ? `設定提醒：${selectedReminder}` : '清除提醒', 'reminder');
+      } catch (err) {
+        course.reminderTime = prevReminder;   // 後端拒絕就還原
+      }
       viewEvent(currentCourseId);
-      showMessage(selectedReminder ? `提醒已設定：${selectedReminder}` : '提醒已清除', 'success');
     }
 
     /**
@@ -4219,34 +4252,41 @@
       }
     }
 
+    /**
+     * 寫入本機並同步到後端，**會等後端回應**
+     *
+     * 使用者按新增／刪除／複製之後必須真的知道成不成功，所以這支會 reject，
+     * 由呼叫端用 UIFeedback.submit() 包起來顯示「處理中」與結果。
+     * 以前是 saveData() 送出就不管，alert('✓ 成功') 跟後端寫入是平行的，
+     * 後端兩秒後失敗時使用者早就按掉 alert 走了。
+     *
+     * @returns {Promise<void>} 後端成功才 resolve；衝突與失敗都 reject
+     */
+    async function saveDataAsync() {
+      localStorage.setItem('teachers', JSON.stringify(teachers));
+      localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+      localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+
+      if (typeof syncManager === 'undefined') return;
+      syncManager.markAsChanged();
+
+      const result = await syncManager.saveToBackendSafe();
+      if (result && result.conflict) {
+        showConflictDialog(result);
+        throw new Error('別人也改了同一份資料，請看衝突提示');
+      }
+    }
+
+    /** 背景儲存：不擋畫面，用右下角狀態膠囊回報。只給不需要等的地方用。 */
     function saveData() {
       try {
-        // 儲存到 localStorage
-        localStorage.setItem('teachers', JSON.stringify(teachers));
-        localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
-        localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
-
-        // 標記本地資料已修改
-        if (typeof syncManager !== 'undefined') {
-          syncManager.markAsChanged();
-
-          // 使用安全儲存模式（檢查衝突）
-          // 這是背景儲存，用右下角狀態膠囊回報；
-          // 原本成功無聲、失敗只寫 console，使用者無從得知有沒有存成功。
-          UIFeedback.status.saving('同步排程資料…');
-          syncManager.saveToBackendSafe().then(result => {
-            if (result.conflict) {
-              UIFeedback.status.hide();
-              showConflictDialog(result);
-              console.warn('發現資料衝突，請重新整理頁面');
-            } else {
-              UIFeedback.status.saved('排程資料已同步');
-            }
-          }).catch(err => {
-            console.warn('⚠️ 後端同步失敗，資料已保存在本地:', err.message);
-            UIFeedback.status.failed('排程資料同步失敗', () => saveData());
-          });
-        }
+        UIFeedback.status.saving('同步排程資料…');
+        saveDataAsync().then(() => {
+          UIFeedback.status.saved('排程資料已同步');
+        }).catch(err => {
+          console.warn('⚠️ 後端同步失敗，資料已保存在本地:', err.message);
+          UIFeedback.status.failed('排程資料同步失敗', () => saveData());
+        });
       } catch (err) {
         console.error('儲存失敗:', err);
       }

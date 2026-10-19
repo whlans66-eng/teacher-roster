@@ -643,6 +643,7 @@
 
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/ui-feedback.js"></script>
   <script src="js/auth.js"></script>
   <script>
     // ══════════════════════════════════════════════════════════════
@@ -934,30 +935,39 @@
       if (!course) return;
       if (!course.materials) course.materials = [];
 
-      for (const file of files) {
-        if (!UPLOAD_TYPES.includes(file.type)) { showToast(`不支援格式：${file.name}`, 'error'); continue; }
-        if (file.size > 50 * 1024 * 1024)      { showToast(`檔案過大：${file.name}`, 'error'); continue; }
+      // 上傳整段都蓋遮罩：以前只有一個 2.8 秒就消失的 toast，
+      // 但整條流程（上傳 Drive + 寫回課程）要四秒以上，中間畫面看起來像沒反應。
+      const list = Array.from(files);
+      await withBusy(`upload:${courseId}`, '上傳教材中…', '正在上傳並同步，請稍候', async () => {
+        let n = 0;
+        for (const file of list) {
+          n++;
+          if (!UPLOAD_TYPES.includes(file.type)) { showToast(`不支援格式：${file.name}`, 'error'); continue; }
+          if (file.size > 50 * 1024 * 1024)      { showToast(`檔案過大：${file.name}`, 'error'); continue; }
 
-        showToast(`上傳中：${file.name}`);
-        try {
-          const res = await api.uploadFile(file);
-          course.materials.push({
-            fileName: file.name,
-            fileType: file.type,
-            fileId: res.id,
-            fileUrl: res.url,
-            fileSize: file.size,
-            uploadedAt: new Date().toISOString(),
-            uploadedBy: currentUser.username
-          });
-          await persistCourses();
-          renderModule(course);
-          showToast(`已上傳：${file.name}`, 'success');
-        } catch (err) {
-          console.error('上傳失敗:', err);
-          showToast(`上傳失敗：${file.name}（${err.message || '未知錯誤'}）`, 'error');
+          if (window.UIFeedback && UIFeedback.showBusy) {
+            UIFeedback.showBusy(`上傳教材中…（${n}/${list.length}）`, file.name);
+          }
+          try {
+            const res = await api.uploadFile(file);
+            course.materials.push({
+              fileName: file.name,
+              fileType: file.type,
+              fileId: res.id,
+              fileUrl: res.url,
+              fileSize: file.size,
+              uploadedAt: new Date().toISOString(),
+              uploadedBy: currentUser.username
+            });
+            await persistCourses();
+            renderModule(course);
+            showToast(`已上傳：${file.name}`, 'success');
+          } catch (err) {
+            console.error('上傳失敗:', err);
+            showToast(`上傳失敗：${file.name}（${err.message || '未知錯誤'}）`, 'error');
+          }
         }
-      }
+      });
     }
 
     async function deleteMat(courseId, idx) {
@@ -968,14 +978,37 @@
       if (!confirm(`確定移除「${name}」？`)) return;
 
       const removed = course.materials.splice(idx, 1);
+      await withBusy(`del:${courseId}:${idx}`, '移除教材中…', '正在同步到雲端，請稍候', async () => {
+        try {
+          await persistCourses();
+          renderModule(course);
+          showToast('已移除', 'success');
+        } catch (err) {
+          course.materials.splice(idx, 0, ...removed);
+          renderModule(course);
+          showToast(`移除失敗：${err.message || '未知錯誤'}`, 'error');
+        }
+      });
+    }
+
+    // ── 處理中遮罩 ──
+    //
+    // 這頁以前完全沒有等待提示：按下移除之後兩秒內畫面毫無變化，
+    // 而且連點兩下會跳兩次 confirm、送出兩筆，第二筆把下一份教材也刪掉。
+    // 遮罩擋住重複點擊，inFlight 再擋一次（confirm 會先卡住事件迴圈）。
+    const inFlight = new Set();
+
+    async function withBusy(key, text, sub, task) {
+      if (inFlight.has(key)) return;
+      inFlight.add(key);
+      const done = (window.UIFeedback && UIFeedback.showBusy)
+        ? UIFeedback.showBusy(text, sub)
+        : function () {};
       try {
-        await persistCourses();
-        renderModule(course);
-        showToast('已移除', 'success');
-      } catch (err) {
-        course.materials.splice(idx, 0, ...removed);
-        renderModule(course);
-        showToast(`移除失敗：${err.message || '未知錯誤'}`, 'error');
+        return await task();
+      } finally {
+        done();
+        inFlight.delete(key);
       }
     }
 
@@ -2925,7 +2958,16 @@
 
     function edSyncSave() {
       const btn = document.getElementById('edSave');
-      if (btn) btn.disabled = !!edSaving;
+      if (!btn) return;
+      btn.disabled = !!edSaving;
+      // 只把按鈕變灰看不出在做事，要講出來
+      if (edSaving) {
+        if (!btn.dataset.idleText) btn.dataset.idleText = btn.textContent;
+        btn.textContent = '儲存中…';
+      } else if (btn.dataset.idleText) {
+        btn.textContent = btn.dataset.idleText;
+        delete btn.dataset.idleText;
+      }
     }
 
     // ── 欄位寫回（不重繪，避免打字時失焦） ─────────────────────────
