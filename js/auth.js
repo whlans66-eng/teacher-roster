@@ -551,6 +551,7 @@
     const style = document.createElement('style');
     style.id = 'auth-nav-styles';
     style.textContent = `
+      :root { --app-nav-h: 0px; }
       .app-nav {
         background: #ffffff;
         border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -591,6 +592,26 @@
       }
     `;
     document.head.appendChild(style);
+  }
+
+  /**
+   * 把導覽列實際高度寫進 --app-nav-h
+   *
+   * 導覽列是 sticky top:0，頁面自己的 header（教材管理的 topbar、
+   * 帳號管理的 page-header）也是 sticky top:0，兩條會疊在一起而
+   * 把頁面標題吃掉。各頁改用 top: var(--app-nav-h) 接在導覽列下面，
+   * 這裡負責提供正確的高度（視窗變窄時連結會換行，高度會變）。
+   */
+  function trackNavHeight(nav) {
+    const apply = () => {
+      const h = nav.offsetHeight || 0;
+      document.documentElement.style.setProperty('--app-nav-h', h + 'px');
+    };
+    apply();
+    if (typeof ResizeObserver === 'function') new ResizeObserver(apply).observe(nav);
+    else window.addEventListener('resize', apply);
+    // 圖示字型載入後高度可能再變一次
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(apply).catch(() => {});
   }
 
   /**
@@ -635,6 +656,7 @@
       if (container) container.appendChild(nav);
       else document.body.insertBefore(nav, document.body.firstChild);
       mountAccountMenu(nav.querySelector('[data-nav-account]'));
+      trackNavHeight(nav);
     };
 
     if (document.body) mount();
