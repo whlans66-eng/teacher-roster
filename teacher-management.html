@@ -312,7 +312,7 @@
        flex/grid 垮掉）才補上，看起來像轉跳失敗。改成同步載入的靜態 CSS 就沒有空窗。
        位置刻意放在 <style> 之後、</head> 之前，對齊原本 CDN 在 runtime 注入的順序，
        以免層疊優先序跑掉。 -->
-  <link rel="stylesheet" href="shared/tailwind.css?v=e0d9c4cb">
+  <link rel="stylesheet" href="shared/tailwind.css?v=f23eae79">
 </head>
 <body class="min-h-screen">
   <!-- Authentication -->
@@ -1060,7 +1060,7 @@
               <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-2">照片</label>
                 <div class="flex items-center space-x-4">
-                  <div id="photoPreview" class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-2xl"><i class="ph ph-user"></i></div>
+                  <div id="photoPreview" class="relative overflow-hidden w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-2xl"><i class="ph ph-user"></i></div>
                   <input type="file" id="teacherPhoto" accept="image/*" class="hidden" onchange="previewPhoto(this)">
                   <button type="button" onclick="document.getElementById('teacherPhoto').click()" class="btn btn-secondary btn-sm">選擇照片</button>
                 </div>
@@ -2162,15 +2162,30 @@
       }
     }
 
-    function deleteSelectedTeachers() {
+    async function deleteSelectedTeachers() {
       const count = selectedTeacherIds.size;
       if (count === 0) return;
       if (!confirm(`確定要刪除選取的 ${count} 位師資嗎？此操作無法復原。`)) return;
 
       const ids = new Set(selectedTeacherIds);
+      const backup = teachers.slice();
       teachers = teachers.filter(t => !ids.has(t.id));
       saveLocalSilently();
-      scheduleCloudSave();
+
+      // 以前只排一次背景同步（右下角小膠囊），卡片當場消失、刪完也不說一聲，
+      // 後端失敗時資料不會還原。改成等後端，失敗就把人放回來。
+      try {
+        await UIFeedback.submit(() => flushCloudSave(), {
+          key: 'teacher-delete', pending: `刪除 ${count} 位師資中…`,
+          sub: '正在同步到雲端，請稍候',
+          success: `已刪除 ${count} 位師資`, error: '刪除失敗'
+        });
+      } catch (err) {
+        teachers = backup;
+        saveLocalSilently();
+        renderTeacherGrid();
+        return;
+      }
       toggleTeacherSelectMode();
       renderTeacherGrid();
     }
@@ -2589,6 +2604,7 @@
 
       const old = info.textContent;
       info.textContent = '上傳中...';
+      setUploadsInFlight(1);   // 上傳完成前不准存檔，否則會存到沒有網址的證照
       try{
         const r = await apiUploadToDrive(file);
         info.setAttribute('data-filename', r.name || file.name);
@@ -2607,6 +2623,8 @@
         console.error(err);
         info.textContent = old || '上傳失敗';
         alert('上傳失敗：' + err.message);
+      }finally{
+        setUploadsInFlight(-1);
       }
     }
 
@@ -2697,6 +2715,7 @@
         placeholder.innerHTML = `<span class="text-sm text-yellow-700">上傳中... ${file.name}</span>`;
         matList.appendChild(placeholder);
 
+        setUploadsInFlight(1);
         try {
           const r = await apiUploadToDrive(file);
           const mat = { fileName: r.name || file.name, fileUrl: r.url, fileType: file.type };
@@ -2708,6 +2727,8 @@
             <span class="text-sm text-red-700">上傳失敗：${file.name} - ${err.message}</span>
             <button type="button" onclick="this.parentElement.remove()" class="btn btn-icon btn-plain btn-sm" style="color:#ff3b30;"><i class="ph ph-x"></i></button>
           </div>`;
+        } finally {
+          setUploadsInFlight(-1);
         }
       }
       input.value = '';
@@ -2768,25 +2789,63 @@
       if(next){ item.parentNode.insertBefore(next, item); item.style.transform='translateY(5px)'; setTimeout(()=>{item.style.transform='translateY(0)'},200); }
     }
 
+    // ── 檔案上傳進行中的計數 ──
+    //
+    // 照片／證照／教材都是先在畫面上顯示本地預覽，再背景上傳到 Drive，
+    // 上傳完成才把網址寫回 data-url。中間那兩秒畫面看起來像「好了」，
+    // 使用者只要在這時候按儲存，存進去的 photo 就是空字串——照片靜默消失，
+    // 而且沒有任何錯誤訊息。所以上傳期間要鎖住儲存鈕。
+    let uploadsInFlight = 0;
+
+    function setUploadsInFlight(delta) {
+      uploadsInFlight = Math.max(0, uploadsInFlight + delta);
+      const btn = document.getElementById('saveTeacherBtn');
+      if (!btn) return;
+      if (uploadsInFlight > 0) {
+        if (!btn.dataset.uploadHold) btn.dataset.uploadHold = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = `檔案上傳中…（${uploadsInFlight}）`;
+      } else if (btn.dataset.uploadHold) {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.uploadHold;
+        delete btn.dataset.uploadHold;
+      }
+    }
+
     async function previewPhoto(input){
       if (!(input.files && input.files[0])) return;
       const file = input.files[0];
       if (file.size > 30*1024*1024){ alert('照片不能超過 30MB'); return; }
 
+      const box = document.getElementById('photoPreview');
+      // 換照片時先把舊網址清掉，免得上傳失敗卻存進上一張的網址
+      box.removeAttribute('data-url');
+
       // 先本地預覽
       const reader = new FileReader();
-      reader.onload = e => { document.getElementById('photoPreview').innerHTML = `<img src="${escapeAttr(e.target.result)}" class="w-full h-full object-cover rounded-full">`; };
+      reader.onload = e => { box.innerHTML = `<img src="${escapeAttr(e.target.result)}" class="w-full h-full object-cover rounded-full">` + PHOTO_UPLOADING_HTML; };
       reader.readAsDataURL(file);
 
       // 直傳 Drive，寫回 URL
+      setUploadsInFlight(1);
       try{
         const r = await apiUploadToDrive(file);
-        document.getElementById('photoPreview').setAttribute('data-url', r.url);
+        box.setAttribute('data-url', r.url);
+        const badge = box.querySelector('.photo-uploading');
+        if (badge) badge.remove();
       }catch(err){
         console.error(err);
-        alert('照片上傳失敗：' + err.message);
+        const badge = box.querySelector('.photo-uploading');
+        if (badge) { badge.textContent = '上傳失敗'; badge.style.background = 'rgba(255,59,48,.85)'; }
+        alert('照片上傳失敗：' + err.message + '\n\n請重新選一次照片，直接儲存的話這張照片不會被保留。');
+      } finally {
+        setUploadsInFlight(-1);
       }
     }
+
+    const PHOTO_UPLOADING_HTML =
+      '<span class="photo-uploading" style="position:absolute; inset:auto 0 0 0; background:rgba(0,0,0,.6); color:#fff;' +
+      ' font-size:10px; text-align:center; padding:2px 0; border-radius:0 0 999px 999px;">上傳中…</span>';
 
     // 儲存（靜默：本機快取 + 雲端上傳）
     document.getElementById('teacherForm').addEventListener('submit', function(e){
@@ -2797,6 +2856,8 @@
       const workLocation = document.querySelector('input[name="workLocation"]:checked')?.value;
       if(!name){ alert('請輸入師資姓名'); return; }
       if(!teacherType){ alert('請選擇師資類型'); return; }
+      // 按鈕雖然已經停用，但 Enter 送出會繞過，所以這裡再擋一次
+      if(uploadsInFlight > 0){ alert('還有檔案正在上傳，請等上傳完成再儲存，否則這些檔案不會被保留。'); return; }
       if(!workLocation){ alert('請選擇工作狀態'); return; }
       if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('請輸入正確的Email格式'); return; }
 
@@ -2912,11 +2973,20 @@
         tags: [...(t.tags||[])]
       };
       const i = teachers.findIndex(x=>x.id===teacherId);
+      const backup = teachers.slice();
       teachers.splice(i+1,0,copy);
       teachers = normalize(teachers);
       saveLocalSilently();
-      scheduleCloudSave();
       renderTeacherGrid();
+
+      UIFeedback.submit(() => flushCloudSave(), {
+        key: 'teacher-copy', pending: '複製師資中…', sub: '正在同步到雲端，請稍候',
+        success: `已複製「${t.name || ''}」`, error: '複製失敗'
+      }).catch(() => {
+        teachers = backup;          // 後端拒絕就把複製出來的那張收回去
+        saveLocalSilently();
+        renderTeacherGrid();
+      });
     }
 
     function handleDragStart(e){ draggedElement = this; this.style.opacity='0.5'; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/html', this.outerHTML); }
@@ -2927,11 +2997,22 @@
         const di = parseInt(draggedElement.dataset.index);
         const ti = parseInt(this.dataset.index);
         const d = teachers[di];
+        const backup = teachers.slice();
         teachers.splice(di,1);
         teachers.splice(ti,0,d);
         saveLocalSilently();
-        scheduleCloudSave();
         renderTeacherGrid();
+        // 拖曳不擋畫面，但失敗一定要說並把順序放回去
+        UIFeedback.status.saving('儲存排序…');
+        flushCloudSave().then(r => {
+          if (r && r.conflict) throw new Error('資料衝突');
+          UIFeedback.status.saved('排序已儲存');
+        }).catch(() => {
+          teachers = backup;
+          saveLocalSilently();
+          renderTeacherGrid();
+          UIFeedback.status.failed('排序沒有存成功，已還原');
+        });
       }
       return false;
     }
@@ -4226,7 +4307,7 @@
   }
 
   // 提交新增課程
-  function addCourseSubmit(event) {
+  async function addCourseSubmit(event) {
     event.preventDefault();
 
     const courseName = document.getElementById('addCourseName').value;
@@ -4260,8 +4341,9 @@
       type: courseType
     };
 
+    const backupCourses = courseAssignments.slice();
+    const backupEvents = calendarEvents.slice();
     courseAssignments.push(newCourse);
-    saveCourseLocal();
 
     // 同步到行事曆
     const teacher = teachers.find(t => t.id === currentCourseTeacherId);
@@ -4280,6 +4362,21 @@
     });
     saveCalendarLocal();
 
+    // 以前 Modal 在 15ms 就關掉，只剩右下角小膠囊；使用者看到視窗關了
+    // 就以為成功了，但後端還要兩秒，失敗時表單內容已經沒了要重打。
+    const ok = await UIFeedback.submit(() => saveCourseFlush(), {
+      key: 'assign-save', pending: '新增派課中…', sub: '正在同步到雲端，請稍候',
+      success: '派課已新增', error: '新增失敗'
+    }).then(() => true).catch(() => false);
+
+    if (!ok) {
+      courseAssignments = backupCourses;
+      calendarEvents = backupEvents;
+      saveCalendarLocal();
+      updateCourseView();
+      return;                       // 表單留著，直接重試就好
+    }
+
     updateCourseView();
     closeAddCourseModal();
 
@@ -4288,19 +4385,29 @@
   }
 
   // 刪除課程
-  function deleteCourseAssignment(courseId) {
+  async function deleteCourseAssignment(courseId) {
     if (!confirm('確定要刪除此課程嗎？')) return;
 
-    courseAssignments = courseAssignments.filter(c => c.id !== courseId);
-    saveCourseLocal();
+    // 以前 alert('✓ 課程已刪除') 在 15ms 就跳出來，後端兩秒後才失敗，
+    // 那時只有右下角膠囊悄悄變紅，使用者早就按掉 alert 走了。
+    const backupCourses = courseAssignments.slice();
+    const backupEvents = calendarEvents.slice();
 
-    // 同步刪除行事曆中的對應事件
+    courseAssignments = courseAssignments.filter(c => c.id !== courseId);
     calendarEvents = calendarEvents.filter(e => e.courseId !== courseId);
     saveCalendarLocal();
 
+    try {
+      await UIFeedback.submit(() => saveCourseFlush(), {
+        key: 'assign-delete', pending: '刪除課程中…', sub: '正在同步到雲端，請稍候',
+        success: '課程已刪除，行事曆同步更新', error: '刪除失敗'
+      });
+    } catch (err) {
+      courseAssignments = backupCourses;
+      calendarEvents = backupEvents;
+      saveCalendarLocal();
+    }
     updateCourseView();
-
-    alert('✓ 課程已刪除，已同步更新行事曆');
   }
 
   // 儲存到 localStorage 和後端
@@ -4331,6 +4438,33 @@
     } catch (error) {
       console.warn('[Warning] 派課數據後端同步失敗:', error);
       UIFeedback.status.failed('派課資料同步失敗', () => saveCourseToBackend());
+    }
+  }
+
+  /**
+   * 派課：寫本機並等後端，失敗會 reject
+   *
+   * saveCourseLocal() 是 fire-and-forget（只有右下角膠囊），
+   * 但新增／刪除派課這種動作使用者必須知道成不成功，所以另外給一支會等的。
+   */
+  async function saveCourseFlush() {
+    localStorage.setItem('courseAssignments', JSON.stringify(courseAssignments));
+    if (!api || !syncManager) return;
+    const result = await syncManager.saveTable('courseAssignments');
+    if (result && result.conflict) {
+      showConflictAlert('courseAssignments', result);
+      throw new Error('別人也改了同一份資料，請看衝突提示');
+    }
+  }
+
+  /** 海事課程：寫本機並等後端，失敗會 reject */
+  async function saveMaritimeCoursesFlush() {
+    localStorage.setItem('maritimeCourses', JSON.stringify(maritimeCourses));
+    if (!api || !syncManager) return;
+    const result = await syncManager.saveTable('maritimeCourses');
+    if (result && result.conflict) {
+      showConflictAlert('maritimeCourses', result);
+      throw new Error('別人也改了同一份資料，請看衝突提示');
     }
   }
 
@@ -5047,22 +5181,32 @@
   }
 
   // 從彈跳視窗刪除課程
-  function deleteMaritimeCourseFromModal() {
+  async function deleteMaritimeCourseFromModal() {
     if (!editingMaritimeCourseId) return;
+    if (!confirm('確定要刪除這個課程嗎？此操作無法復原。')) return;
 
-    if (confirm('確定要刪除這個課程嗎？此操作無法復原。')) {
-      maritimeCourses = maritimeCourses.filter(c => c.id !== editingMaritimeCourseId);
-      saveMaritimeCourses();
+    const backup = maritimeCourses.slice();
+    maritimeCourses = maritimeCourses.filter(c => c.id !== editingMaritimeCourseId);
+    try {
+      await UIFeedback.submit(() => saveMaritimeCoursesFlush(), {
+        key: 'mc-delete', pending: '刪除課程中…', sub: '正在同步到雲端，請稍候',
+        success: '課程已刪除', error: '刪除失敗'
+      });
+    } catch (err) {
+      maritimeCourses = backup;
       displayMaritimeCourses();
       displayManageMaritimeCourses();
-      closeMaritimeCourseModal();
-      showMaritimeMessage('課程已刪除', 'success');
+      return;                       // 失敗就留在 modal，不要假裝刪掉了
     }
+    displayMaritimeCourses();
+    displayManageMaritimeCourses();
+    closeMaritimeCourseModal();
   }
 
   // 從彈跳視窗儲存課程
-  function saveMaritimeCourseFromModal(event) {
+  async function saveMaritimeCourseFromModal(event) {
     event.preventDefault();
+    const backup = maritimeCourses.slice();
 
     const name = document.getElementById('maritimeCourseNameModal').value.trim();
     const category = document.getElementById('maritimeCourseCategoryModal').value;
@@ -5095,22 +5239,40 @@
       maritimeCourses.push(newCourse);
     }
 
-    saveMaritimeCourses();
+    const wasEditing = !!editingMaritimeCourseId;
+    try {
+      await UIFeedback.submit(() => saveMaritimeCoursesFlush(), {
+        key: 'mc-save', pending: wasEditing ? '更新課程中…' : '新增課程中…',
+        sub: '正在同步到雲端，請稍候',
+        success: wasEditing ? '課程已更新' : '課程已新增', error: '儲存失敗'
+      });
+    } catch (err) {
+      maritimeCourses = backup;
+      displayMaritimeCourses();
+      displayManageMaritimeCourses();
+      return;                       // 失敗就留在 modal，填的內容還在
+    }
     displayMaritimeCourses();
     displayManageMaritimeCourses();
     closeMaritimeCourseModal();
-    showMaritimeMessage(editingMaritimeCourseId ? '課程已更新' : '課程已新增', 'success');
   }
 
   // 刪除課程
-  function deleteMaritimeCourse(courseId) {
-    if (confirm('確定要刪除這個課程嗎？')) {
-      maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
-      saveMaritimeCourses();
-      displayMaritimeCourses(); // 更新搜尋頁面
-      displayManageMaritimeCourses(); // 更新管理頁面
-      showMaritimeMessage('課程已刪除', 'success');
+  async function deleteMaritimeCourse(courseId) {
+    if (!confirm('確定要刪除這個課程嗎？')) return;
+
+    const backup = maritimeCourses.slice();
+    maritimeCourses = maritimeCourses.filter(c => c.id !== courseId);
+    try {
+      await UIFeedback.submit(() => saveMaritimeCoursesFlush(), {
+        key: 'mc-delete', pending: '刪除課程中…', sub: '正在同步到雲端，請稍候',
+        success: '課程已刪除', error: '刪除失敗'
+      });
+    } catch (err) {
+      maritimeCourses = backup;     // 後端拒絕就把課程放回來
     }
+    displayMaritimeCourses();
+    displayManageMaritimeCourses();
   }
 
   // 顯示統計資料
@@ -5315,6 +5477,7 @@
           .split(',')
           .map(k => k.trim())
           .filter(k => k.length > 0);
+        const backup = maritimeCourses.slice();
 
         if (editingMaritimeCourseId) {
           // 編輯現有課程
@@ -5341,11 +5504,17 @@
           maritimeCourses.push(newCourse);
         }
 
-        saveMaritimeCourses();
-        this.reset();
-        displayManageMaritimeCourses();
-
-        showMaritimeMessage('課程已成功儲存！', 'success');
+        const form = this;
+        UIFeedback.submit(() => saveMaritimeCoursesFlush(), {
+          key: 'mc-save', pending: '儲存課程中…', sub: '正在同步到雲端，請稍候',
+          success: '課程已儲存', error: '儲存失敗'
+        }).then(() => {
+          form.reset();
+          displayManageMaritimeCourses();
+        }).catch(() => {
+          maritimeCourses = backup;   // 失敗還原，表單留著讓人重試
+          displayManageMaritimeCourses();
+        });
       });
     }
 

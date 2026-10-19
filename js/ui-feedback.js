@@ -263,8 +263,25 @@
    *   block    是否蓋整頁遮罩，預設 true
    * @returns {Promise} task 的結果；失敗時原樣往外丟
    */
+  // 同一個動作還在跑時忽略重複送出。
+  // 遮罩雖然擋得住大部分連點，但 confirm() 會先擋住事件迴圈、
+  // 遮罩還沒出現使用者就可能按到第二下（教材管理的刪除就這樣刪掉兩筆）。
+  const inFlight = new Set();
+
   async function submit(task, opts) {
     const o = opts || {};
+    if (o.key) {
+      if (inFlight.has(o.key)) return undefined;
+      inFlight.add(o.key);
+    }
+    try {
+      return await _submit(task, o);
+    } finally {
+      if (o.key) inFlight.delete(o.key);
+    }
+  }
+
+  async function _submit(task, o) {
     const useOverlay = o.block !== false;
     const restoreButton = setButtonBusy(o.button, o.pending || '儲存中…');
     const closeBusy = useOverlay ? showBusy(o.pending || '儲存中…', o.sub) : function () {};
