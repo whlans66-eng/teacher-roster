@@ -8,16 +8,12 @@
   <!-- 預連接到資源服務器 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://cdn.tailwindcss.com">
 
   <!-- 字體樣式表 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
 
   <!-- Phosphor Icons：regular 粗細，鎖定 2.1.1 -->
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
-
-  <!-- Tailwind CDN - 使用 defer 避免阻塞渲染 -->
-  <script defer src="https://cdn.tailwindcss.com"></script>
 
   <!-- 共用按鈕規範：全站唯一的按鈕來源，勿在頁面內另外定義 -->
   <link rel="stylesheet" href="shared/ui.css">
@@ -308,6 +304,14 @@
   <!-- API 層：與後端通訊 -->
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+
+  <!-- Tailwind：預先編好的靜態 CSS（scripts/build-tailwind.sh 產生）
+       以前這裡是 <script defer src="https://cdn.tailwindcss.com">，那是在瀏覽器裡
+       即時編譯的 runtime，首次載入會先畫出沒有 Tailwind 的版面（.hidden 失效、
+       flex/grid 垮掉）才補上，看起來像轉跳失敗。改成同步載入的靜態 CSS 就沒有空窗。
+       位置刻意放在 <style> 之後、</head> 之前，對齊原本 CDN 在 runtime 注入的順序，
+       以免層疊優先序跑掉。 -->
+  <link rel="stylesheet" href="shared/tailwind.css?v=e0d9c4cb">
 </head>
 <body class="min-h-screen">
   <!-- Authentication -->

@@ -1,0 +1,11 @@
+{
+  "name": "teacher-roster",
+  "private": true,
+  "description": "海事訓練師資與排程管理系統（純靜態站，GitHub Pages）",
+  "scripts": {
+    "build:css": "./scripts/build-tailwind.sh"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}
