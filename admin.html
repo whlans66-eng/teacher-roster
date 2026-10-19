@@ -7,6 +7,13 @@
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
   <link rel="stylesheet" href="shared/ui.css">
   <style>
+    /* 本頁用到的兩個別名。以前沒定義，所有 var(--ui-line) 的邊框都被瀏覽器丟掉，
+       選項編輯器的輸入框因此看起來像純文字，管理者以為既有項目不能改。 */
+    :root {
+      --ui-line: var(--ui-border);
+      --ui-dim:  var(--ui-text-secondary);
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
@@ -144,7 +151,8 @@
     .opt-row.off { background: #fafafa; opacity: .7; }
     .opt-row input, .opt-row select { width: 100%; padding: 7px 9px; border: 1px solid var(--ui-line);
                                       border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; }
-    .opt-row input[readonly] { background: var(--ui-fill); color: var(--ui-dim); cursor: not-allowed; }
+    .opt-row input[readonly] { background: var(--ui-fill); color: var(--ui-dim); cursor: not-allowed; border-style: dashed; }
+    .opt-row input:not([readonly]):focus { outline: none; border-color: var(--ui-primary); box-shadow: 0 0 0 3px rgba(0,122,255,.15); }
     .opt-icon { display: flex; align-items: center; justify-content: center; font-size: 18px; color: #6366f1; }
     .opt-move { display: flex; flex-direction: column; gap: 2px; }
     .opt-move button, .opt-toggle { border: 1px solid var(--ui-line); background: #fff; border-radius: 7px;
