@@ -51,6 +51,109 @@
         0 2px 6px rgba(0, 0, 0, 0.04);
     }
 
+    /* ── 目前篩選列：一列標籤，取代原本的漸層橫幅 ───────────────────── */
+    .card.filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px !important;
+    }
+    .filter-bar-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ui-text-secondary);
+    }
+    .filter-bar-label i { font-size: 16px; }
+    .filter-bar-hint {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--ui-text-secondary);
+    }
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 6px 6px 12px;
+      border-radius: var(--ui-radius-pill);
+      font-size: 14px;
+      line-height: 1.3;
+      max-width: 100%;
+    }
+    .filter-chip > i { font-size: 16px; flex-shrink: 0; }
+    .filter-chip-key {
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0.75;
+    }
+    .filter-chip-value {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .filter-chip-teacher { background: var(--ui-primary-light); color: var(--ui-primary); }
+    .filter-chip-date    { background: rgba(255, 149, 0, 0.12); color: #b35f00; }
+    /* 清除鈕：正圓；手機版有一條 button 的全域 padding，所以這裡要壓回去 */
+    .filter-chip-clear {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      padding: 0 !important;
+      border: 0;
+      border-radius: var(--ui-radius-round);
+      background: rgba(0, 0, 0, 0.06);
+      color: inherit;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background-color 0.2s ease;
+    }
+    .filter-chip-clear i { font-size: 13px !important; }
+    .filter-chip-clear:hover { background: rgba(0, 0, 0, 0.12); }
+    .filter-chip-clear:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+    }
+    @media (max-width: 640px) {
+      .filter-bar-hint { display: none; }
+    }
+
+    /* ── 統計卡圖示：淺色方塊，三張一致 ─────────────────────────────── */
+    .stat-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: var(--ui-radius-btn);
+      background: var(--ui-fill);
+      color: var(--ui-text-secondary);
+      flex-shrink: 0;
+    }
+    .stat-icon i { font-size: 22px; }
+    .stat-icon-accent {
+      background: var(--ui-primary-light);
+      color: var(--ui-primary);
+    }
+
+    /* ── 搜尋框：共用 .input 前面放放大鏡 ───────────────────────────── */
+    .search-field { position: relative; }
+    .search-field > i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: var(--ui-text-secondary);
+      pointer-events: none;
+    }
+    .search-field .input { padding-left: 42px; }
+
     .calendar-day {
       min-height: 120px;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -829,34 +932,28 @@
       </div>
 
       <!-- 統計分析區 -->
-      <div id="selectedTeacherBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="text-2xl"><i class="ph ph-chalkboard-teacher"></i></div>
-            <div class="text-white">
-              <p class="text-sm opacity-90">目前檢視師資（再次點選師資可取消）</p>
-              <p id="selectedTeacherName" class="text-xl font-bold"></p>
-            </div>
-          </div>
-          <button onclick="clearTeacherSelection()" class="btn btn-on-color">
-            <i class="ph ph-x"></i> 清除
+      <!-- 目前篩選：原本是兩塊整寬的漸層橫幅（師資紫、日期粉）疊在一起，
+           跟全站的白卡／純色規範打架，份量也太重。改成一列輕量標籤，
+           師資與日期各一顆，id 與 clear 函式都沿用，只有外觀變了。 -->
+      <div id="activeFilterBar" class="card filter-bar fade-in" style="display: none;">
+        <span class="filter-bar-label"><i class="ph ph-funnel"></i>目前篩選</span>
+        <div id="selectedTeacherBanner" class="filter-chip filter-chip-teacher" style="display: none;">
+          <i class="ph ph-chalkboard-teacher"></i>
+          <span class="filter-chip-key">師資</span>
+          <span id="selectedTeacherName" class="filter-chip-value"></span>
+          <button type="button" onclick="clearTeacherSelection()" class="filter-chip-clear" aria-label="清除師資篩選" title="清除師資篩選">
+            <i class="ph ph-x"></i>
           </button>
         </div>
-      </div>
-
-      <div id="selectedDateBanner" class="card p-4 mb-6 fade-in" style="display: none; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="text-2xl"><i class="ph ph-calendar"></i></div>
-            <div class="text-white">
-              <p class="text-sm opacity-90">目前檢視日期（再次點選日期可取消）</p>
-              <p id="selectedDateText" class="text-xl font-bold"></p>
-            </div>
-          </div>
-          <button onclick="clearDateSelection()" class="btn btn-on-color">
-            <i class="ph ph-x"></i> 清除
+        <div id="selectedDateBanner" class="filter-chip filter-chip-date" style="display: none;">
+          <i class="ph ph-calendar"></i>
+          <span class="filter-chip-key">日期</span>
+          <span id="selectedDateText" class="filter-chip-value"></span>
+          <button type="button" onclick="clearDateSelection()" class="filter-chip-clear" aria-label="清除日期篩選" title="清除日期篩選">
+            <i class="ph ph-x"></i>
           </button>
         </div>
+        <span class="filter-bar-hint">再次點選師資或日期也可取消</span>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -867,7 +964,7 @@
               <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">總課程數</p>
               <p id="totalCoursesCount" class="font-bold text-gray-900" style="font-size: 32px; letter-spacing: -0.02em;">0</p>
             </div>
-            <div style="font-size: 36px;"><i class="ph ph-books"></i></div>
+            <div class="stat-icon"><i class="ph ph-books"></i></div>
           </div>
         </div>
 
@@ -878,7 +975,7 @@
               <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">總授課時數</p>
               <p id="totalHoursCount" class="font-bold text-gray-900" style="font-size: 32px; letter-spacing: -0.02em;">0</p>
             </div>
-            <div style="font-size: 36px;">⏱️</div>
+            <div class="stat-icon"><i class="ph ph-timer"></i></div>
           </div>
         </div>
 
@@ -889,7 +986,7 @@
               <p class="text-gray-600 mb-1" style="font-size: 13px; font-weight: 500;">範圍內總時數</p>
               <p id="monthlyHoursCount" class="font-bold text-blue-600" style="font-size: 32px; letter-spacing: -0.02em;">0</p>
             </div>
-            <div style="font-size: 36px; color:#007aff;"><i class="ph ph-chart-bar"></i></div>
+            <div class="stat-icon stat-icon-accent"><i class="ph ph-chart-bar"></i></div>
           </div>
         </div>
       </div>
@@ -915,12 +1012,13 @@
             </div>
           </div>
           <!-- 搜尋框 -->
-          <div class="mb-4">
+          <div class="mb-4 search-field">
+            <i class="ph ph-magnifying-glass"></i>
             <input type="text" id="teacherSearchInput"
                    placeholder="搜尋師資姓名..."
                    oninput="filterTeachers()"
-                   class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                   style="font-size: 14px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+                   class="input"
+                   aria-label="搜尋師資姓名">
           </div>
           <!-- 師資列表 -->
           <div id="teacherHoursList" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
@@ -2092,6 +2190,13 @@
 
 
     // ==================== 師資選擇功能 ====================
+    // 篩選列只在至少選了一個師資或日期時才出現，兩個都清掉就整列收起
+    function syncActiveFilterBar() {
+      const bar = document.getElementById('activeFilterBar');
+      if (!bar) return;
+      bar.style.display = (selectedTeacherId !== null || selectedDate !== null) ? 'flex' : 'none';
+    }
+
     function selectTeacher(teacherId) {
       // Toggle 功能：如果點選已選擇的師資，則取消選擇
       if (selectedTeacherId === teacherId) {
@@ -2108,8 +2213,9 @@
       const nameElement = document.getElementById('selectedTeacherName');
       if (teacher) {
         nameElement.textContent = teacher.name;
-        banner.style.display = 'block';
+        banner.style.display = 'inline-flex';
       }
+      syncActiveFilterBar();
 
       // 更新所有相關數據
       updateStatistics();
@@ -2123,6 +2229,7 @@
       // 隱藏選擇的師資橫幅
       const banner = document.getElementById('selectedTeacherBanner');
       banner.style.display = 'none';
+      syncActiveFilterBar();
 
       // 更新所有相關數據
       updateStatistics();
@@ -2154,7 +2261,8 @@
       });
 
       textElement.textContent = formattedDate;
-      banner.style.display = 'block';
+      banner.style.display = 'inline-flex';
+      syncActiveFilterBar();
 
       // 更新所有相關數據
       updateStatistics();
@@ -2168,6 +2276,7 @@
       // 隱藏選擇的日期橫幅
       const banner = document.getElementById('selectedDateBanner');
       banner.style.display = 'none';
+      syncActiveFilterBar();
 
       // 更新所有相關數據
       updateStatistics();
