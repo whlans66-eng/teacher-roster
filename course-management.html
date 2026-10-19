@@ -711,6 +711,7 @@
   <!-- API 層：與後端通訊 -->
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/options.js"></script>
 
   <!-- Tailwind：預先編好的靜態 CSS（scripts/build-tailwind.sh 產生）
        以前這裡是 <script defer src="https://cdn.tailwindcss.com">，那是在瀏覽器裡
@@ -1796,27 +1797,70 @@
       return new Set(teacherLeaves.filter(l => l.date === date).map(l => l.teacherId));
     }
 
+    /**
+     * 把師資填進一個 <select>，依職級分組排序
+     *
+     * 客戶要求：「新增課程的講師選單，也請幫我排序（同職級排在一起）」
+     * 「我想要顯示可以直接顯示職級」。
+     *
+     * 排序鍵用 js/options.js 的職級順序（數字小的職級高），不是字母序——
+     * 船長要排在大副前面。沒填職級的集中在最後一組「未指定職級」，
+     * 仍然看得到、選得到，不會因為沒填就被擠掉。
+     *
+     * optgroup 的標題就是職級，所以展開時一眼看得出分組；
+     * 選項文字也帶職級，收合時才知道選到的人是什麼職級。
+     *
+     * @param {HTMLSelectElement} select
+     * @param {object} opts {placeholder, selected, onLeaveIds}
+     */
+    function fillTeacherSelect(select, opts) {
+      if (!select) return;
+      const o = opts || {};
+      const onLeave = o.onLeaveIds || new Set();
+      const selected = o.selected === undefined || o.selected === null ? '' : String(o.selected);
+
+      const sorted = (teachers || []).slice().sort((a, b) => {
+        const ra = Options.order('crewRank', a && a.rank);
+        const rb = Options.order('crewRank', b && b.rank);
+        if (ra !== rb) return ra - rb;
+        return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), 'zh-Hant');
+      });
+
+      const groups = [];
+      const at = {};
+      sorted.forEach(t => {
+        const key = t && t.rank ? String(t.rank) : '';
+        if (at[key] === undefined) {
+          at[key] = groups.length;
+          groups.push({ title: key ? Options.fullLabel('crewRank', key) : '未指定職級', items: [] });
+        }
+        groups[at[key]].items.push(t);
+      });
+
+      let html = `<option value="">${escapeHtml(o.placeholder || '請選擇師資')}</option>`;
+      groups.forEach(g => {
+        html += `<optgroup label="${escapeAttr(g.title + '（' + g.items.length + ' 人）')}">`;
+        g.items.forEach(t => {
+          const leave = onLeave.has(t.id);
+          const rank = t.rank ? '（' + Options.fullLabel('crewRank', t.rank) + '）' : '';
+          const text = escapeHtml(String(t.name || '') + rank + (leave ? '（請假）' : ''));
+          html += `<option value="${escapeAttr(t.id)}"${leave ? ' disabled style="color:#aaa;"' : ''}` +
+                  `${String(t.id) === selected ? ' selected' : ''}>${text}</option>`;
+        });
+        html += '</optgroup>';
+      });
+      select.innerHTML = html;
+    }
+
     function loadTeachers(date) {
       const onLeaveIds = getTeachersOnLeave(date || document.getElementById('courseDate').value);
 
       const select = document.getElementById('courseTeacherId');
-      const prevTeacher = select.value;
-      select.innerHTML = '<option value="">請選擇師資</option>';
-      teachers.forEach(t => {
-        const isOnLeave = onLeaveIds.has(t.id);
-        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
-        select.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''}${String(t.id) === prevTeacher ? ' selected' : ''}>${label}</option>`;
-      });
+      fillTeacherSelect(select, { selected: select.value, onLeaveIds, placeholder: '請選擇師資' });
 
       // 同時載入助教選單（助教請假不強制限制，僅標注）
       const taSelect = document.getElementById('courseTaId');
-      const prevTa = taSelect.value;
-      taSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
-      teachers.forEach(t => {
-        const isOnLeave = onLeaveIds.has(t.id);
-        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
-        taSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''}${String(t.id) === prevTa ? ' selected' : ''}>${label}</option>`;
-      });
+      fillTeacherSelect(taSelect, { selected: taSelect.value, onLeaveIds, placeholder: '請選擇助教（選填）' });
     }
 
     function updateTodayDate() {
@@ -3125,21 +3169,10 @@
       const onLeaveIds = getTeachersOnLeave(date);
       const editTeacherSelect = document.getElementById('editTeacherId');
       const prevTeacher = editTeacherSelect.value;
-      editTeacherSelect.innerHTML = '<option value="">請選擇師資</option>';
-      teachers.forEach(t => {
-        const isOnLeave = onLeaveIds.has(t.id);
-        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
-        editTeacherSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''}${String(t.id) === prevTeacher ? ' selected' : ''}>${label}</option>`;
-      });
+      fillTeacherSelect(editTeacherSelect, { selected: prevTeacher, onLeaveIds, placeholder: '請選擇師資' });
 
       const editTaSelect = document.getElementById('editTaId');
-      const prevTa = editTaSelect.value;
-      editTaSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
-      teachers.forEach(t => {
-        const isOnLeave = onLeaveIds.has(t.id);
-        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
-        editTaSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''}${String(t.id) === prevTa ? ' selected' : ''}>${label}</option>`;
-      });
+      fillTeacherSelect(editTaSelect, { selected: editTaSelect.value, onLeaveIds, placeholder: '請選擇助教（選填）' });
     }
 
     function enterEditMode() {
@@ -3150,21 +3183,11 @@
       const onLeaveIds = getTeachersOnLeave(course.date);
 
       const editTeacherSelect = document.getElementById('editTeacherId');
-      editTeacherSelect.innerHTML = '<option value="">請選擇師資</option>';
-      teachers.forEach(t => {
-        const isOnLeave = onLeaveIds.has(t.id);
-        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
-        editTeacherSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''} ${t.id === course.teacherId ? 'selected' : ''}>${label}</option>`;
-      });
+      fillTeacherSelect(editTeacherSelect, { selected: course.teacherId, onLeaveIds, placeholder: '請選擇師資' });
 
       // 載入助教列表到編輯表單
       const editTaSelect = document.getElementById('editTaId');
-      editTaSelect.innerHTML = '<option value="">請選擇助教（選填）</option>';
-      teachers.forEach(t => {
-        const isOnLeave = onLeaveIds.has(t.id);
-        const label = isOnLeave ? `${escapeHtml(t.name)}（請假）` : escapeHtml(t.name);
-        editTaSelect.innerHTML += `<option value="${escapeAttr(t.id)}"${isOnLeave ? ' disabled style="color:#aaa;"' : ''} ${t.id === course.taId ? 'selected' : ''}>${label}</option>`;
-      });
+      fillTeacherSelect(editTaSelect, { selected: course.taId, onLeaveIds, placeholder: '請選擇助教（選填）' });
 
       // 載入課程名稱下拉選單
       const editCourseNameSelect = document.getElementById('editCourseName');
@@ -4230,7 +4253,14 @@
     }
 
     // ==================== 啟動應用 ====================
-    window.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('DOMContentLoaded', () => {
+      init();
+      // 職級清單拿到後重畫講師選單，管理員改過的職級與排序才會反映出來。
+      // 先用內建預設值畫，所以後端掛掉時選單照樣有東西。
+      Options.ready().then(() => {
+        if (typeof loadTeachers === 'function') loadTeachers();
+      });
+    });
   </script>
 
 

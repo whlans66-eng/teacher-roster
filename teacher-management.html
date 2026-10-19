@@ -304,6 +304,7 @@
   <!-- API 層：與後端通訊 -->
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/options.js"></script>
 
   <!-- Tailwind：預先編好的靜態 CSS（scripts/build-tailwind.sh 產生）
        以前這裡是 <script defer src="https://cdn.tailwindcss.com">，那是在瀏覽器裡
@@ -1045,6 +1046,17 @@
                 <p class="text-xs text-gray-500 mt-2">選擇「退休」後，此師資不會出現在呈現模式，但資料保留可供日後追溯。</p>
               </div>
 
+              <!-- 職級：以前後端有這個欄位、字卡也在顯示，卻沒有任何地方可以輸入。
+                   選項來自 js/options.js（管理員可在「帳號管理 → 選單管理」增減），
+                   新增課程的講師選單也靠它排序（同職級排在一起）。 -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2" for="teacherRank">職級</label>
+                <select id="teacherRank" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white">
+                  <option value="">未指定</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-2">填了職級，新增課程挑講師時同職級的會排在一起；沒填的排在最後。</p>
+              </div>
+
               <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-2">照片</label>
                 <div class="flex items-center space-x-4">
@@ -1696,6 +1708,14 @@
       setupApiStatusUI();
       handleApiStatusCheck(false);
 
+      // 下拉選單的選項（職級等）。先用內建預設值畫，拿到後端最新清單再重畫一次，
+      // 這樣管理員改過的名稱會反映出來，而且後端掛掉時畫面照樣能用。
+      renderRankSelect();
+      Options.ready().then(() => {
+        renderRankSelect();
+        if (typeof renderTeacherGrid === 'function') renderTeacherGrid();
+      });
+
       // 唯讀模式：teacher 帳號只能預覽，不能修改
       if (_isReadOnly) {
         window.currentMode = 'display';
@@ -1894,7 +1914,7 @@
                   </div>`}
                 ${teacher.rank ? `
                   <div class="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                    ${teacher.rank}
+                    ${escapeHtml(Options.label('crewRank', teacher.rank))}
                   </div>` : ''}
                 ${teacher.teacherType==='internal' ? `
                   <div class="bg-blue-400 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
@@ -1946,7 +1966,7 @@
                   </div>` : ''}
                 ${teacher.rank ? `
                   <div class="bg-indigo-600 text-white px-2 py-1 rounded-full text-xs font-bold">
-                    ${teacher.rank}
+                    ${escapeHtml(Options.label('crewRank', teacher.rank))}
                   </div>` : ''}
               </div>
               <div class="absolute top-3 right-3">
@@ -1979,6 +1999,33 @@
       });
     }
 
+    // ── 職級下拉 ──
+    //
+    // 選項來自 js/options.js。重畫會把 <option> 換新，所以先記住目前選的值。
+    // 已停用的職級（例如實習生）若某位師資還掛著，仍要列出來，
+    // 否則編輯一次就會把他的職級默默清掉。
+    function renderRankSelect(selected) {
+      const sel = document.getElementById('teacherRank');
+      if (!sel) return;
+      const want = selected !== undefined ? String(selected || '') : sel.value;
+      const groups = Options.grouped('crewRank');
+      const stillNeeded = want && !Options.isActive('crewRank', want);
+
+      let html = '<option value="">未指定</option>';
+      groups.forEach(g => {
+        html += `<optgroup label="${escapeAttr(g.group || '其他')}">`;
+        g.items.forEach(o => {
+          html += `<option value="${escapeAttr(o.value)}">${escapeHtml(o.sublabel ? o.label + '（' + o.sublabel + '）' : o.label)}</option>`;
+        });
+        html += '</optgroup>';
+      });
+      if (stillNeeded) {
+        html += `<optgroup label="已停用"><option value="${escapeAttr(want)}">${escapeHtml(Options.label('crewRank', want))}（已停用）</option></optgroup>`;
+      }
+      sel.innerHTML = html;
+      sel.value = want;
+    }
+
     function addNewTeacher(){
       currentTeacherId = null;
       document.getElementById('teacherList').classList.add('hidden');
@@ -1993,6 +2040,7 @@
       document.getElementById('tagList').innerHTML = '';
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
       document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
+      renderRankSelect('');
       addExperience(); addCertificate(); addSubject(); addTag();
     }
 
@@ -2013,6 +2061,7 @@
       document.querySelector(`input[value="${teacherType}"]`).closest('label').querySelector('.teacher-type-option').classList.add('selected',teacherType);
       document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
       document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
+      renderRankSelect(teacher.rank || '');
 
       const photoBox = document.getElementById('photoPreview');
       if (teacher.photo){
@@ -2418,7 +2467,7 @@
                 ${teacher.email ? `<div class="flex items-center justify-center md:justify-start space-x-2"><span class="text-gray-600"><i class="ph ph-envelope"></i></span><span class="text-gray-700">${teacher.email}</span></div>` : ''}
                 ${teacher.rank ? `<div class="flex items-center justify-center md:justify-start space-x-2">
                   <span class="text-indigo-600"><i class="ph ph-identification-badge"></i></span>
-                  <span class="text-indigo-600 font-bold">${teacher.rank}</span>
+                  <span class="text-indigo-600 font-bold">${escapeHtml(Options.fullLabel('crewRank', teacher.rank))}</span>
                   ${teacher.teacherCategory==='new' ? '<span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs ml-2">新進</span>' : ''}
                 </div>` : ''}
                 <div class="flex items-center justify-center md:justify-start space-x-2">
@@ -2781,13 +2830,15 @@
       const photoBox = document.getElementById('photoPreview');
       const photoUrl = photoBox.getAttribute('data-url') || '';
 
-      // 表單沒有職級與新進狀態的欄位，沿用原本的值，不要在存檔時弄丟
+      // 職級現在表單上有欄位了，直接讀。
+      // teacherCategory（新進標記）還是沒有欄位，沿用原本的值，不要在存檔時弄丟。
       const existing = currentTeacherId ? teachers.find(t => t.id === currentTeacherId) : null;
+      const rankSel = document.getElementById('teacherRank');
       const teacherData = {
         id: currentTeacherId || Date.now(),
         name, email, teacherType, workLocation,
         teacherCategory: existing?.teacherCategory || '',
-        rank: existing?.rank || '',
+        rank: rankSel ? rankSel.value : (existing?.rank || ''),
         photo: photoUrl, experiences, certificates, subjects, tags
       };
 

@@ -305,9 +305,39 @@ class TeacherRosterAPI {
     return response.data;
   }
 
+  // ==================== 下拉選單選項 ====================
+
   /**
-   * GET 請求
+   * 讀取所有下拉選單選項（任何登入者都能讀，表單要靠它畫選項）
+   * 回傳含停用項目；要不要顯示由 js/options.js 決定——
+   * 停用的項目仍需保留，舊資料才查得到顯示名稱。
    */
+  async listOptions() {
+    const response = await this._post({ action: 'options_list' });
+    return response.data || [];
+  }
+
+  /**
+   * 整批覆蓋某一份清單（僅管理者）
+   * @param {string} listKey crewRank / courseCategory / ...
+   * @param {Array<{id?:string,value:string,label:string,sublabel?:string,groupName?:string,active?:boolean}>} items
+   *        送出的順序就是顯示順序。既有項目的 value 不可變更，後端會擋。
+   */
+  async saveOptions(listKey, items) {
+    const response = await this._post({
+      action: 'options_save',
+      listKey: listKey,
+      items: JSON.stringify(items)
+    });
+    return response.data || [];
+  }
+
+  /** 把某一份清單還原成預設值（僅管理者） */
+  async resetOptions(listKey) {
+    const response = await this._post({ action: 'options_reset', listKey: listKey });
+    return response.data || [];
+  }
+
   /**
    * 讀取請求
    *

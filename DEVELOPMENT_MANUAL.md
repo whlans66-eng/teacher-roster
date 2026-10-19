@@ -903,6 +903,94 @@ scripts/build-tailwind.sh
 HTML 裡預留一個固定高度的導覽列容器讓 `mountNav()` 填進去，而不是
 `insertBefore`。
 
+### 5.4.8 下拉選單選項交由管理者維護（options）
+
+船員職級清單以前寫死在 `maritime-courses.html` 的**三個地方**（主表單的
+checkbox、編輯 modal 的 checkbox、`getRankDisplayName()` 的查表），課程分類
+散在四個檔案。客戶每要改一次清單就得改好幾處程式再重新部署。
+
+現在這些清單是資料，管理者在**帳號管理 → 選單管理**自己維護。
+
+#### 目前交由管理者維護的六份
+
+| listKey | 內容 | 誰在用 |
+|---|---|---|
+| `crewRank` | 船員職級 | 課程適用對象、師資職級、講師選單排序 |
+| `personnelType` | 人員類別（現有／新進） | 課程適用對象 |
+| `teacherType` | 師資類別（內部／外部） | 師資卡 |
+| `workLocation` | 工作狀態（在船／在岸／退休） | 師資卡、呈現模式過濾 |
+| `courseCategory` | 課程分類 01–09 | 智慧派課、教材管理（同一份） |
+| `teachingMethod` | 授課方式 | 智慧派課 |
+
+帳號角色（admin/teacher/crew/guest）**刻意不放進來**：角色字串同時是後端
+權限判斷的依據，讓前端能改等於讓人能繞過權限。
+
+#### 兩條不能破壞的規則
+
+**1. `value` 是資料的一部分，不可變更。** 課程存的是
+`targetRanks: ['deckCadet']` 這種代碼，改掉 value 等於讓舊資料對不上。
+後端 `options_save` 會擋下對既有項目改 value 的請求；要換只能停用舊的、
+再新增一個。
+
+**2. 用停用（`active = FALSE`）取代刪除。** 停用後各頁選單不再列出它，
+但 `Options.label()` 仍查得到顯示名稱，所以早就選過它的舊資料不會變成一串
+看不懂的代碼。編輯既有課程或師資時，已停用但**這筆資料正在用**的選項仍會
+被列出來並維持選取，否則使用者編輯一次就會把它默默清掉。
+
+客戶要求拿掉的「甲板實習生／輪機實習生」就是用停用處理的，不是刪除。
+
+#### 前端怎麼用
+
+```html
+<script src="js/api.js"></script>
+<script src="js/options.js"></script>   <!-- 要排在 api.js 之後 -->
+```
+
+```js
+Options.list('crewRank')                 // 啟用中的，已排序
+Options.all('crewRank')                  // 含停用（管理頁用）
+Options.grouped('crewRank')              // 依 groupName 分組
+Options.label('crewRank', 'deckCadet')   // '甲板實習生'（停用的也查得到）
+Options.fullLabel('crewRank', 'C/O')     // 'C/O 大副'
+Options.order('crewRank', 'C/O')         // 排序鍵，數字小的職級高
+Options.isActive('crewRank', v)
+await Options.ready()                    // 向後端要最新的
+Options.apply(rows)                      // 管理頁存檔後直接換掉，免得要重新整理
+```
+
+**三層降級**，任何一層壞掉畫面都還能用：後端 → localStorage 快取 →
+`js/options.js` 內建預設值。所以頁面要先用現有資料畫一次，`Options.ready()`
+回來後再畫一次：
+
+```js
+renderRankSelect();
+Options.ready().then(() => renderRankSelect());
+```
+
+重畫會把 `<option>` / checkbox 換新，**記得先記住目前選取的值再還原**，
+否則使用者填到一半、選項剛好載完，就被清掉了。動態產生的選項也不能再用
+「每個元素各綁一次」的事件監聽，要改成綁在容器上做事件委派。
+
+#### 內建預設值必須和後端一致
+
+`js/options.js` 的 `DEFAULTS` 和 `backend-api.gs` 的 `OPTION_DEFAULTS`
+是同一份資料的兩個副本（為了後端連不到時還能用）。同一個代碼在兩邊顯示成
+不同名稱會讓人以為資料壞了，所以有一條測試在盯這件事，改了一邊就要改另一邊。
+
+#### 講師選單依職級排序
+
+客戶要求「新增課程的講師選單，請幫我排序（同職級排在一起）」「可以直接顯示
+職級」。`course-management.html` 的 `fillTeacherSelect()` 負責這件事，
+三組選單（新增、編輯 modal、enterEditMode）共用它：
+
+- 排序鍵是 `Options.order('crewRank', t.rank)`，也就是職級階層，不是字母序
+- 同職級收進同一個 `<optgroup>`，標題是職級加人數
+- 選項文字帶職級，收合時才看得出選到的人是什麼職級
+- **沒填職級的集中在最後一組「未指定職級」**，仍然看得到、選得到
+
+師資的職級在師資表單的「職級」欄位設定——這個欄位以前不存在，
+後端有 `rank` 欄、字卡也在顯示，卻沒有任何地方可以輸入。
+
 ### 5.5 後端開發最佳實踐
 
 #### 1. Token 驗證
