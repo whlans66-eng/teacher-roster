@@ -1310,6 +1310,86 @@
     let calendarEvents = loadArray('calendarEvents');
     let teacherLeaves = loadArray('teacherLeaves');
 
+    // ── 課程關聯與排序 ────────────────────────────────────────────────
+    //
+    // 派課紀錄原本與課程之間只有一個「課名字串的快照」，沒有 id。
+    // 課程在智慧派課改名或刪除後，訓練排程就永遠停在舊名稱 —— 這就是
+    // 「關聯沒做好」的根因（對照：老師一直都有 teacherId，所以不會這樣）。
+    //
+    // 改法：派課紀錄存 courseId，顯示時即時去課程庫解析目前的名稱。
+    // 這樣課程一改名，訓練排程立刻跟著變，不需要任何同步程式碼。
+
+    function getMaritimeCourses() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) { return []; }
+    }
+
+    /**
+     * 解析一筆派課紀錄目前該顯示的課程
+     * @returns {{name, courseId, orphan}} orphan = 對應的課程已不在課程庫
+     */
+    function resolveCourse(assignment) {
+      const stored = String((assignment && assignment.name) || '').trim();
+      const courses = getMaritimeCourses();
+
+      const hasId = assignment && assignment.courseId !== undefined
+                    && assignment.courseId !== null && assignment.courseId !== '';
+      if (hasId) {
+        const hit = courses.find(c => String(c.id) === String(assignment.courseId));
+        if (hit) return { name: hit.name, courseId: hit.id, orphan: false };
+        return { name: stored || '（課程已刪除）', courseId: null, orphan: true };
+      }
+
+      // 舊資料沒有 courseId，用課名回去對
+      const byName = courses.find(c => String(c.name).trim() === stored);
+      if (byName) return { name: byName.name, courseId: byName.id, orphan: false };
+
+      // 對不上：課程可能已改名或刪除。課程庫還沒載入時不要誤判為孤兒。
+      return { name: stored || '未命名課程', courseId: null, orphan: !!stored && courses.length > 0 };
+    }
+
+    function courseDisplayName(assignment) {
+      return resolveCourse(assignment).name;
+    }
+
+    /**
+     * 舊派課紀錄依課名回填 courseId，之後課程再改名就不會斷鏈。
+     * 只回填「課名完全相符」的，對不上的留著讓使用者自己重新對應。
+     */
+    function backfillCourseIds() {
+      const courses = getMaritimeCourses();
+      if (!courses.length || !Array.isArray(courseAssignments)) return 0;
+      let filled = 0;
+      courseAssignments.forEach(a => {
+        if (!a) return;
+        if (a.courseId !== undefined && a.courseId !== null && a.courseId !== '') return;
+        const hit = courses.find(c => String(c.name).trim() === String(a.name || '').trim());
+        if (hit) { a.courseId = hit.id; filled++; }
+      });
+      return filled;
+    }
+
+    /**
+     * 依開始時間排序（time 格式為 "09:00-12:30"）
+     * 行事曆原本照陣列順序輸出，同一天的課不照時間排。
+     */
+    function byStartTime(a, b) {
+      const start = x => {
+        const t = String((x && x.time) || '').split('-')[0].trim();
+        return /^\d{1,2}:\d{2}$/.test(t) ? t.padStart(5, '0') : '99:99';
+      };
+      const diff = start(a).localeCompare(start(b));
+      if (diff !== 0) return diff;
+      return String(courseDisplayName(a)).localeCompare(String(courseDisplayName(b)), 'zh-Hant');
+    }
+
+    /** 取某一天的課程，已依時間排序 */
+    function coursesOnDate(dateKey) {
+      return courseAssignments.filter(c => c && c.date === dateKey).sort(byStartTime);
+    }
+
     // 排課後回寫師資的課程紀錄：主講 → 講授課程（teach）、助教 → 助教經驗（ta）。
     // 每筆存成 { name, category, materials }，師資頁再依 category 分成三個區塊顯示。
     function addSubjectToTeacher(teacher, courseName, category, teacherLabel) {
@@ -1585,6 +1665,9 @@
       teachers = loadArray('teachers', typeof normalizeTeacherRecord === 'function' ? normalizeTeacherRecord : undefined);
       courseAssignments = loadArray('courseAssignments', typeof normalizeCourseAssignment === 'function' ? normalizeCourseAssignment : undefined);
       calendarEvents = loadArray('calendarEvents');
+
+      // 舊派課紀錄沒有 courseId，依課名回填，之後課程改名才不會斷鏈
+      backfillCourseIds();
     }
 
     function renderAllCourseViews() {
@@ -1954,7 +2037,7 @@
           const roleColor = isMainTeacher ? 'background:#dbeafe;color:#1e40af;' : 'background:#fef3c7;color:#92400e;';
           return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f9fafb;border-radius:12px;margin-bottom:4px;">
             <div style="flex:1;min-width:0;">
-              <span style="font-size:13px;font-weight:500;color:#1f2937;">${c.name || '未命名課程'}</span>
+              <span style="font-size:13px;font-weight:500;color:#1f2937;">${courseDisplayName(c)}</span>
               <span style="font-size:11px;color:#6b7280;margin-left:8px;">${c.date || ''} ${c.time || ''}</span>
             </div>
             <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap;${roleColor}">${roleLabel}</span>
@@ -2234,16 +2317,16 @@
         if (selectedTeacherId !== null) {
           const teacher = teachers.find(t => t.id === selectedTeacherId);
           titleText = `${dateText} - ${teacher ? teacher.name : '未知師資'} 的課程`;
-          displayCourses = courseAssignments.filter(c => c.date === selectedDate && c.teacherId === selectedTeacherId);
+          displayCourses = courseAssignments.filter(c => c.date === selectedDate && c.teacherId === selectedTeacherId).sort(byStartTime);
         } else {
           titleText = `${dateText} 課程總覽`;
-          displayCourses = courseAssignments.filter(c => c.date === selectedDate);
+          displayCourses = coursesOnDate(selectedDate);
         }
       } else {
         // 情況3：都沒選擇 → 顯示今天的課程
         const todayDate = getLocalDateString(new Date());
         titleText = '今日課程總覽';
-        displayCourses = courseAssignments.filter(c => c.date === todayDate);
+        displayCourses = coursesOnDate(todayDate);
       }
 
       document.getElementById('courseOverviewTitle').textContent = titleText;
@@ -2301,7 +2384,7 @@
                     <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 ${isLocked ? 'border-red-300' : ''}" onclick="viewEvent(${c.id})">
                       <div class="flex justify-between items-start">
                         <div class="flex-1">
-                          <p class="font-medium text-gray-800">${c.name}</p>
+                          <p class="font-medium text-gray-800">${courseDisplayName(c)}</p>
                           <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
                             <span><i class="ph ph-clock"></i> ${c.time}</span>
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
@@ -2359,7 +2442,7 @@
                     <div class="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 ${isLocked ? 'border-red-300' : ''}" onclick="viewEvent(${c.id})">
                       <div class="flex justify-between items-start">
                         <div class="flex-1">
-                          <p class="font-medium text-gray-800">${c.name}</p>
+                          <p class="font-medium text-gray-800">${courseDisplayName(c)}</p>
                           <div class="flex items-center flex-wrap gap-2 text-xs text-gray-600 mt-2">
                             <span><i class="ph ph-clock"></i> ${c.time}</span>
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded border border-blue-200">${c.type}</span>
@@ -2470,7 +2553,7 @@
           const dateKey = getLocalDateString(cellDate);
           const isToday = (dateKey === todayStr);
 
-          const dayEvents = courseAssignments.filter(c => c.date === dateKey);
+          const dayEvents = coursesOnDate(dateKey);   // 依開始時間排序
 
           const isSelectedDate = (dateKey === selectedDate);
 
@@ -2496,7 +2579,7 @@
                   <div class="event-item bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600"
                        onclick="viewEvent(${e.id}); event.stopPropagation();">
                     <div class="font-medium truncate">${teacherName}</div>
-                    <div class="text-[10px]" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3;">${e.time} ${e.name}</div>
+                    <div class="text-[10px]" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3;">${e.time} ${courseDisplayName(e)}</div>
                   </div>
                 `;
               }).join('')}
@@ -2530,7 +2613,7 @@
         const dateKey = getLocalDateString(cellDate);
         const isToday = (dateKey === todayStr);
         const isSelectedDate = (dateKey === selectedDate);
-        const dayEvents = courseAssignments.filter(c => c.date === dateKey);
+        const dayEvents = coursesOnDate(dateKey);   // 依開始時間排序
 
         const cell = document.createElement('div');
         cell.className = `calendar-day p-4 bg-white ${isToday ? 'today-highlight' : ''} ${isSelectedDate ? 'ring-2 ring-pink-500 ring-inset' : ''}`;
@@ -2551,7 +2634,7 @@
                      onclick="viewEvent(${e.id}); event.stopPropagation();">
                   <div class="font-semibold">${teacherName}</div>
                   <div class="text-xs mt-1"><i class="ph ph-clock"></i> ${e.time}</div>
-                  <div class="text-xs" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${e.name}</div>
+                  <div class="text-xs" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${courseDisplayName(e)}</div>
                 </div>
               `;
             }).join('')}
@@ -2574,7 +2657,7 @@
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const dateKey = getLocalDateString(date);
-        const dayEvents = courseAssignments.filter(c => c.date === dateKey);
+        const dayEvents = coursesOnDate(dateKey);   // 依開始時間排序
         const isToday = dateKey === todayStr;
 
         if (dayEvents.length > 0 || isToday) {
@@ -2592,7 +2675,7 @@
                   const teacherName = teacher ? teacher.name : '未知';
                   return `
                     <div class="mt-2 p-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600" onclick="viewEvent(${e.id})">
-                      <div class="font-semibold text-sm" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${teacherName} - ${e.name}</div>
+                      <div class="font-semibold text-sm" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${teacherName} - ${courseDisplayName(e)}</div>
                       <div class="text-xs mt-1"><i class="ph ph-clock"></i> ${e.time} | <i class="ph ph-books"></i> ${e.type}</div>
                     </div>
                   `;
@@ -2624,31 +2707,42 @@
       document.getElementById('addCourseModal').classList.remove('hidden');
     }
 
-    // 載入智慧派課的課程名稱到下拉選單
+    // 載入智慧派課的課程到下拉選單
+    // value 存 courseId（不是課名），課程改名後派課紀錄才不會斷鏈
     function loadMaritimeCoursesToDatalist() {
       try {
-        const maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses')) || [];
+        const courses = getMaritimeCourses();
         const selectElement = document.getElementById('courseName');
-
-        // 清空現有選項（保留第一個「請選擇課程」）
         selectElement.innerHTML = '<option value="">請選擇課程</option>';
 
-        // 取得不重複的課程名稱
-        const uniqueCourseNames = [...new Set(maritimeCourses.map(c => c.name))];
-
-        // 排序課程名稱
-        uniqueCourseNames.sort();
-
-        // 加入到 select
-        uniqueCourseNames.forEach(name => {
-          const option = document.createElement('option');
-          option.value = name;
-          option.textContent = name;
-          selectElement.appendChild(option);
-        });
+        courses
+          .slice()
+          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant'))
+          .forEach(c => {
+            const option = document.createElement('option');
+            option.value = String(c.id);
+            option.textContent = c.name;
+            option.dataset.courseName = c.name;
+            selectElement.appendChild(option);
+          });
       } catch (error) {
         console.warn('無法載入智慧派課課程清單:', error);
       }
+    }
+
+    /** 從課程下拉選單讀出 { courseId, name } */
+    function readCourseSelection(selectId) {
+      const el = document.getElementById(selectId);
+      if (!el) return { courseId: null, name: '' };
+      const opt = el.selectedOptions && el.selectedOptions[0];
+      const value = String(el.value || '');
+      if (!value) return { courseId: null, name: '' };
+
+      const hit = getMaritimeCourses().find(c => String(c.id) === value);
+      if (hit) return { courseId: hit.id, name: hit.name };
+
+      // 舊資料：選項是課名而非 id（課程已從課程庫移除時仍保留原值）
+      return { courseId: null, name: (opt && opt.dataset.courseName) || value };
     }
 
     function closeAddCourseModal() {
@@ -2728,7 +2822,11 @@
             <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">授課教師</div>
             <div class="flex items-center gap-2">
               <span class="text-2xl"><i class="ph ph-chalkboard-teacher"></i></span>
-              <span class="text-lg font-semibold" style="color: var(--apple-gray-dark);">${teacher ? teacher.name : '未知'}</span>
+              ${teacher ? `
+                <a href="teacher-management.html?teacherId=${encodeURIComponent(teacher.id)}"
+                   class="text-lg font-semibold" style="color:#007aff;text-decoration:none;"
+                   title="查看 ${teacher.name} 的師資卡">${teacher.name}</a>`
+                : `<span class="text-lg font-semibold" style="color: var(--apple-gray-dark);">未知</span>`}
             </div>
           </div>
 
@@ -2737,14 +2835,35 @@
             <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">助教</div>
             <div class="flex items-center gap-2">
               <span class="text-2xl"><i class="ph ph-user"></i></span>
-              <span class="text-lg font-semibold" style="color: var(--apple-gray-dark);">${ta.name}</span>
+              <a href="teacher-management.html?teacherId=${encodeURIComponent(ta.id)}"
+                 class="text-lg font-semibold" style="color:#007aff;text-decoration:none;"
+                 title="查看 ${ta.name} 的師資卡">${ta.name}</a>
             </div>
           </div>
           ` : ''}
 
           <div>
             <div class="text-xs font-medium" style="color: var(--apple-gray); margin-bottom: 4px;">課程名稱</div>
-            <div class="text-xl font-semibold" style="color: #1d1d1f;">${course.name}</div>
+            ${(() => {
+              const rc = resolveCourse(course);
+              if (rc.courseId != null) {
+                return `
+                  <div class="text-xl font-semibold" style="color: #1d1d1f;">${rc.name}</div>
+                  <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <a href="maritime-courses.html?courseId=${encodeURIComponent(rc.courseId)}"
+                       style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#0a4a7a;background:#e8f0f8;border-radius:8px;padding:4px 10px;text-decoration:none;">課程詳情</a>
+                    <a href="teaching-materials.html?courseId=${encodeURIComponent(rc.courseId)}"
+                       style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#0a4a7a;background:#e8f0f8;border-radius:8px;padding:4px 10px;text-decoration:none;">教材</a>
+                  </div>`;
+              }
+              // 對不上課程庫：明講，不要讓使用者以為課名是對的
+              return `
+                <div class="text-xl font-semibold" style="color: #1d1d1f;">${rc.name}</div>
+                ${rc.orphan ? `
+                <div style="margin-top:6px;font-size:12px;line-height:1.5;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:6px 10px;">
+                  這個課名在課程庫中已不存在（可能已改名或刪除）。請按「編輯」重新選擇正確的課程。
+                </div>` : ''}`;
+            })()}
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -3066,25 +3185,34 @@
       const editCourseNameSelect = document.getElementById('editCourseName');
       editCourseNameSelect.innerHTML = '<option value="">請選擇課程</option>';
       try {
-        const maritimeCourses = JSON.parse(localStorage.getItem('maritimeCourses')) || [];
-        const uniqueCourseNames = [...new Set(maritimeCourses.map(c => c.name))].sort();
-        uniqueCourseNames.forEach(name => {
-          const option = document.createElement('option');
-          option.value = name;
-          option.textContent = name;
-          editCourseNameSelect.appendChild(option);
-        });
-        // 若當前課程名稱不在清單中，額外加入
-        if (course.name && !uniqueCourseNames.includes(course.name)) {
+        const courses = getMaritimeCourses();
+        courses
+          .slice()
+          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant'))
+          .forEach(c => {
+            const option = document.createElement('option');
+            option.value = String(c.id);
+            option.textContent = c.name;
+            option.dataset.courseName = c.name;
+            editCourseNameSelect.appendChild(option);
+          });
+
+        const resolved = resolveCourse(course);
+        if (resolved.courseId != null) {
+          editCourseNameSelect.value = String(resolved.courseId);
+        } else if (course.name) {
+          // 對不上課程庫（課程已改名或刪除）：保留原值並標示，
+          // 讓使用者可以直接在這裡重新選到正確的課程
           const option = document.createElement('option');
           option.value = course.name;
-          option.textContent = course.name;
-          editCourseNameSelect.appendChild(option);
+          option.textContent = course.name + '（已不在課程庫，請重新選擇）';
+          option.dataset.courseName = course.name;
+          editCourseNameSelect.insertBefore(option, editCourseNameSelect.children[1] || null);
+          editCourseNameSelect.value = course.name;
         }
       } catch (error) {
         console.warn('無法載入課程清單:', error);
       }
-      editCourseNameSelect.value = course.name;
       document.getElementById('editCourseDate').value = course.date;
       document.getElementById('editCourseType').value = course.type;
 
@@ -3181,7 +3309,10 @@
       const ta = taId ? teachers.find(t => t.id === taId) : null;
       const taName = ta ? ta.name : null;
 
-      const newCourseName = document.getElementById('editCourseName').value;
+      // 同時存 courseId 與 name：courseId 供日後解析目前課名，
+      // name 留作課程被刪除時的顯示備援
+      const picked = readCourseSelection('editCourseName');
+      const newCourseName = picked.name;
 
       courseAssignments[courseIndex] = {
         ...oldCourse,
@@ -3189,6 +3320,7 @@
         teacherName: teacherName,
         taId: taId,
         taName: taName,
+        courseId: picked.courseId,
         name: newCourseName,
         date: courseDate,
         time: newTime,
@@ -3247,7 +3379,7 @@
           const endMin = timeToMinutes(end);
 
           if (!(newEndMin <= startMin || newStartMin >= endMin)) {
-            conflicts.push(`- ${c.name} (${c.time})`);
+            conflicts.push(`- ${courseDisplayName(c)} (${c.time})`);
           }
         }
       });
@@ -3290,13 +3422,16 @@
       const ta = taId ? teachers.find(t => t.id === taId) : null;
       const taName = ta ? ta.name : null;
 
+      const pickedCourse = readCourseSelection('courseName');
+
       const courseData = {
         id: Date.now(),
         teacherId: teacherId,
         teacherName: teacherName,
         taId: taId,
         taName: taName,
-        name: document.getElementById('courseName').value,
+        courseId: pickedCourse.courseId,
+        name: pickedCourse.name,
         date: document.getElementById('courseDate').value,
         time: `${document.getElementById('startTime').value}-${document.getElementById('endTime').value}`,
         type: document.getElementById('courseType').value,
@@ -3455,7 +3590,7 @@
           const endMin = timeToMinutes(end);
 
           if (!(newEndMin <= startMin || newStartMin >= endMin)) {
-            conflicts.push(`- ${c.name} (${c.time})`);
+            conflicts.push(`- ${courseDisplayName(c)} (${c.time})`);
           }
         }
       });
@@ -3657,7 +3792,7 @@
       if (!course) return;
 
       const teacher = teachers.find(t => t.id === course.teacherId);
-      const courseText = `課程：${course.name}\n` +
+      const courseText = `課程：${courseDisplayName(course)}\n` +
                         `教師：${teacher ? teacher.name : '未知'}\n` +
                         `日期：${course.date}\n` +
                         `時間：${course.time}\n` +
@@ -3793,7 +3928,7 @@
           const endMin = timeToMinutes(end);
 
           if (!(newEndMin <= startMin || newStartMin >= endMin)) {
-            conflicts.push(`- ${c.name} (${c.time})`);
+            conflicts.push(`- ${courseDisplayName(c)} (${c.time})`);
           }
         }
       });
@@ -3812,7 +3947,7 @@
       if (!course) return;
 
       const teacher = teachers.find(t => t.id === course.teacherId);
-      _shareText = `課程資訊\n課程：${course.name}\n教師：${teacher ? teacher.name : '未知'}\n日期：${course.date}\n時間：${course.time}\n類型：${course.type}`;
+      _shareText = `課程資訊\n課程：${courseDisplayName(course)}\n教師：${teacher ? teacher.name : '未知'}\n日期：${course.date}\n時間：${course.time}\n類型：${course.type}`;
       _shareUrl = window.location.href;
 
       const modal = document.getElementById('shareModal');
@@ -4043,7 +4178,7 @@
       const courseSurveys = surveys.filter(s => s.courseId === courseId);
 
       let message = `📊 課程問卷管理\n\n`;
-      message += `課程：${course.name}\n`;
+      message += `課程：${courseDisplayName(course)}\n`;
       message += `日期：${course.date}\n\n`;
 
       if (courseSurveys.length === 0) {
