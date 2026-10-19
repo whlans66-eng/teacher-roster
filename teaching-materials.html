@@ -805,19 +805,13 @@
 </head>
 <body>
 
-  <!-- Topbar -->
+  <!-- Topbar
+       「返回首頁」與使用者資訊已由共用導覽列（Auth.mountNav）提供，
+       這裡只留頁面標題，避免同一畫面出現兩次帳號資訊。 -->
   <header class="topbar">
-    <a href="index.html" class="back-btn">
-      <i class="ph ph-caret-left"></i> 返回
-    </a>
-    <div class="topbar-sep"></div>
     <span class="topbar-title">教材管理</span>
     <div class="topbar-right">
-      <div class="user-pill">
-        <div class="user-avatar" id="userInitial">—</div>
-        <span id="userName">載入中</span>
-        <span class="role-pill" id="rolePill"></span>
-      </div>
+      <span class="role-pill" id="rolePill"></span>
     </div>
   </header>
 
@@ -890,6 +884,7 @@
     // ── Init ──
     document.addEventListener('DOMContentLoaded', () => {
       if (!initAuth()) return;
+      Auth.mountNav();          // 全站共用主導覽（依角色過濾）
       loadData();
       const p = new URLSearchParams(location.search);
       if (p.get('courseId')) setTimeout(() => selectCourse(p.get('courseId')), 150);
@@ -904,10 +899,7 @@
       isAdmin = role === 'admin';
       isCrew  = role === 'crew';
 
-      const name = Auth.displayName(currentUser);
-      document.getElementById('userName').textContent = name;
-      document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
-
+      // 姓名與頭像由共用導覽列的帳號選單顯示，這裡只標角色
       const pill = document.getElementById('rolePill');
       pill.textContent = Auth.getRoleLabel(role);
       pill.className = 'role-pill role-' + (role || 'guest');

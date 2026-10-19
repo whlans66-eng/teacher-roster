@@ -25,6 +25,16 @@
     'crew-portal.html':        ['admin', 'crew']
   };
 
+  // 主導覽的模組清單。能不能看到由 PAGE_ACCESS 決定，這裡只管顯示。
+  // crew-portal 是船員自己的入口，不列入一般主導覽。
+  const NAV_ITEMS = [
+    { page: 'teacher-management.html', label: '師資管理', icon: 'ph-user-list' },
+    { page: 'course-management.html',  label: '訓練排程', icon: 'ph-calendar' },
+    { page: 'maritime-courses.html',   label: '智慧派課', icon: 'ph-anchor' },
+    { page: 'teaching-materials.html', label: '教材管理', icon: 'ph-books' },
+    { page: 'admin.html',              label: '帳號管理', icon: 'ph-lock-key' }
+  ];
+
   let deniedScreenShown = false;
 
   function currentPage() {
@@ -491,10 +501,9 @@
         <a class="account-menu-item" href="admin.html" role="menuitem">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            <circle cx="12" cy="16" r="1.6"></circle>
           </svg>
           帳號管理
         </a>` : ''}
@@ -535,6 +544,104 @@
     return wrapper;
   }
 
+  // ==================== 共用主導覽列 ====================
+
+  function injectNavStyles() {
+    if (document.getElementById('auth-nav-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'auth-nav-styles';
+    style.textContent = `
+      .app-nav {
+        background: #ffffff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        position: sticky; top: 0; z-index: 50;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      }
+      .app-nav-inner {
+        max-width: 1280px; margin: 0 auto; padding: 0 16px;
+        display: flex; align-items: center; gap: 12px; min-height: 56px;
+      }
+      .app-nav-home {
+        display: inline-flex; align-items: center; gap: 6px;
+        color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500;
+        flex-shrink: 0; padding: 8px 10px; border-radius: 8px;
+      }
+      .app-nav-home:hover { color: #1f2937; background: #f9fafb; }
+      .app-nav-links {
+        display: flex; align-items: center; gap: 4px;
+        flex: 1; justify-content: center; flex-wrap: wrap;
+      }
+      .app-nav-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 16px; border-radius: 8px;
+        font-size: 14px; font-weight: 500; text-decoration: none;
+        color: #6b7280; border: 1px solid transparent; white-space: nowrap;
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+      .app-nav-link:hover { background: #f9fafb; color: #374151; }
+      .app-nav-link.active {
+        background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; font-weight: 600;
+      }
+      .app-nav-right { flex-shrink: 0; display: flex; align-items: center; }
+      @media (max-width: 820px) {
+        .app-nav-links { justify-content: flex-start; }
+        .app-nav-link span { display: none; }
+        .app-nav-link { padding: 8px 10px; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  /**
+   * 掛上全站共用的主導覽列
+   *
+   * 每一頁都顯示首頁有的模組選項，但只列出這個帳號進得去的
+   *（依 PAGE_ACCESS 過濾）—— 原本三個頁面各自寫死三個連結，
+   * 既缺教材與帳號管理，也不分角色。
+   *
+   * @param {HTMLElement|string} target 容器；省略則插在 body 最前面
+   */
+  function mountNav(target) {
+    const authData = getAuthData();
+    if (!authData || isLoginPage()) return null;
+    if (document.querySelector('.app-nav')) return null;   // 避免重複掛載
+
+    injectNavStyles();
+
+    const current = currentPage();
+    const role = normalizeRole(authData.role);
+    const items = NAV_ITEMS.filter(it => canAccess(it.page, role));
+
+    const nav = document.createElement('nav');
+    nav.className = 'app-nav';
+    nav.innerHTML = `
+      <div class="app-nav-inner">
+        <a class="app-nav-home" href="${HOME_PATH}">
+          <i class="ph ph-house" style="font-size:18px"></i><span>首頁</span>
+        </a>
+        <div class="app-nav-links">
+          ${items.map(it => `
+            <a class="app-nav-link${it.page === current ? ' active' : ''}" href="${it.page}">
+              <i class="ph ${it.icon}"></i><span>${escapeHtml(it.label)}</span>
+            </a>`).join('')}
+        </div>
+        <div class="app-nav-right" data-nav-account></div>
+      </div>
+    `;
+
+    const mount = () => {
+      const container = typeof target === 'string' ? document.querySelector(target) : target;
+      if (container) container.appendChild(nav);
+      else document.body.insertBefore(nav, document.body.firstChild);
+      mountAccountMenu(nav.querySelector('[data-nav-account]'));
+    };
+
+    if (document.body) mount();
+    else document.addEventListener('DOMContentLoaded', mount, { once: true });
+    return nav;
+  }
+
   window.Auth = {
     ROLES,
     PAGE_ACCESS,
@@ -551,6 +658,8 @@
     canAccess,
     accessiblePages,
     mountAccountMenu,
+    mountNav,
+    NAV_ITEMS,
     requirePasswordChange,
     escapeHtml
   };

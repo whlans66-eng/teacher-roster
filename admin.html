@@ -249,12 +249,11 @@
 <body>
   <header class="page-header">
     <div class="page-header-inner">
-      <a href="index.html" class="back-link" title="回到首頁"><i class="ph ph-arrow-left"></i></a>
       <div class="page-title">
         帳號管理
         <small>建立帳號、指派角色與重設密碼</small>
       </div>
-      <div class="header-spacer" id="accountMenuSlot"></div>
+      <div class="header-spacer"></div>
     </div>
   </header>
 
@@ -793,7 +792,8 @@
 
     // ── 啟動 ──
     if (authData) {
-      Auth.mountAccountMenu('#accountMenuSlot');
+      // 共用導覽列右側已含帳號選單，這裡不再重複掛一個
+      Auth.mountNav();
       buildRoleOptions();
       updateRoleHint();
       loadUsers();

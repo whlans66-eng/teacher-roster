@@ -386,7 +386,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       if (!authData) return;
 
-      // 右上角帳號入口（姓名、角色、帳號管理、登出）
+      // 首頁本身就是模組入口，這裡只掛右上角帳號選單
       Auth.mountAccountMenu('#accountMenuSlot');
 
       // 只留下這個角色進得去的功能。
@@ -447,7 +447,7 @@
       </a>
 
       <a href="admin.html" class="card" data-page="admin.html">
-        <span class="card-icon"><i class="ph ph-users-three"></i></span>
+        <span class="card-icon"><i class="ph ph-lock-key"></i></span>
         <h2 class="card-title">帳號管理</h2>
         <p class="card-description">帳號、角色與權限設定</p>
       </a>
