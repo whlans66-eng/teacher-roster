@@ -1007,7 +1007,7 @@
 
   <!-- 權限：這頁以前完全沒有載入共用層，自己寫了一個只檢查「有沒有登入」的
        checkAuth()，不看角色也不看 token，所以 js/auth.js 的
-       PAGE_ACCESS['crew-portal.html'] = ['admin','crew'] 是一條沒人讀的死設定，
+       js/auth.js 裡「crew-portal.html 給哪些角色」的設定是一條沒人讀的死設定，
        teacher 與 guest 打網址一樣進得來。 -->
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
@@ -1044,7 +1044,7 @@
      * @returns {boolean} 通過才回 true；呼叫端要據此決定要不要繼續初始化
      */
     function checkAuth() {
-      // 角色由 js/auth.js 的 PAGE_ACCESS 決定，不要在這裡再寫一份
+      // 角色由權限矩陣（帳號管理 → 頁面權限）決定，不要在這裡再寫一份
       currentUser = protectPage();
       if (!currentUser) return false;
       const name = Auth.displayName(currentUser);

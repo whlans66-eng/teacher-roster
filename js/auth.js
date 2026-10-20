@@ -14,30 +14,138 @@
     guest:   { label: '訪客',   color: '#6e6e73' }
   };
 
-  // 每個頁面允許進入的角色。頁面不需要各自硬寫一份，改這裡就好。
-  // 哪個角色能進哪一頁。這是唯一來源——各頁呼叫 protectPage() 時
-  // 不要再自己傳一份陣列，否則改了這裡也不會生效。
-  const PAGE_ACCESS = {
+  // ── 頁面登記與預設權限 ──
+  //
+  // 「哪個角色能進哪一頁」現在是資料，不是程式：真正生效的是後端 pageAccess 表，
+  // 管理者在「帳號管理 → 頁面權限」自己勾，這裡只留兩樣東西——
+  //
+  //   PAGE_REGISTRY：站上有哪些頁、怎麼稱呼、要不要出現在首頁與導覽列。
+  //                  新增頁面在這裡加一筆，後端 PAGE_ACCESS_DEFAULTS 也要加同一個鍵。
+  //   PAGE_DEFAULTS：後端讀不到時的備援值，必須與後端 PAGE_ACCESS_DEFAULTS 一致。
+  //
+  // 各頁呼叫 protectPage() 時不要再自己傳一份陣列，否則矩陣改了也不會生效。
+  const PAGE_REGISTRY = [
+    { page: 'index.html',              label: '首頁',     icon: 'ph-house',                desc: '模組入口，所有登入者的起點',           nav: false },
+    { page: 'teacher-management.html', label: '師資管理', icon: 'ph-user-list',            desc: '師資名單、證照與經歷',                 nav: true  },
+    { page: 'course-management.html',  label: '訓練排程', icon: 'ph-calendar',             desc: '安排課程、行事曆',                     nav: true  },
+    { page: 'maritime-courses.html',   label: '智慧派課', icon: 'ph-anchor',               desc: '海事專業課程管理與分析',               nav: true  },
+    { page: 'teaching-materials.html', label: '教材管理', icon: 'ph-books',                desc: '書籍、影片與數位資源',                 nav: true  },
+    { page: 'crew-portal.html',        label: '船員入口', icon: 'ph-identification-badge', desc: '課表、留言與問卷（船員視角）',         nav: true  },
+    { page: 'admin.html',              label: '帳號管理', icon: 'ph-lock-key',             desc: '帳號、角色、選單與頁面權限',           nav: true  },
+    { page: 'fix-sync-issue.html',     label: '同步修復工具', icon: 'ph-wrench',           desc: '會清空瀏覽器快取的維修工具，沒有入口', nav: false }
+  ];
+
+  const PAGE_DEFAULTS = {
     'index.html':              ['admin', 'teacher', 'crew', 'guest'],
     'admin.html':              ['admin'],
     'teacher-management.html': ['admin', 'teacher'],
     'course-management.html':  ['admin', 'teacher'],
     'maritime-courses.html':   ['admin', 'teacher'],
     'teaching-materials.html': ['admin', 'teacher', 'crew', 'guest'],
-    'crew-portal.html':        ['admin', 'crew'],
-    // 會清空整個 localStorage 的修復工具，只給管理者
+    'crew-portal.html':        ['crew'],
     'fix-sync-issue.html':     ['admin']
   };
 
-  // 主導覽的模組清單。能不能看到由 PAGE_ACCESS 決定，這裡只管顯示。
-  const NAV_ITEMS = [
-    { page: 'teacher-management.html', label: '師資管理', icon: 'ph-user-list' },
-    { page: 'course-management.html',  label: '訓練排程', icon: 'ph-calendar' },
-    { page: 'maritime-courses.html',   label: '智慧派課', icon: 'ph-anchor' },
-    { page: 'teaching-materials.html', label: '教材管理', icon: 'ph-books' },
-    { page: 'crew-portal.html',        label: '船員入口', icon: 'ph-identification-badge' },
-    { page: 'admin.html',              label: '帳號管理', icon: 'ph-lock-key' }
-  ];
+  // 無論矩陣怎麼勾，管理者一定保有這幾頁（後端也擋）。管理畫面用來鎖住勾選框。
+  const PAGE_LOCKED = {
+    'index.html': ['admin'],
+    'admin.html': ['admin']
+  };
+
+  // 主導覽的模組清單，直接從登記表產生；能不能看到由權限矩陣決定
+  const NAV_ITEMS = PAGE_REGISTRY.filter(it => it.nav)
+    .map(it => ({ page: it.page, label: it.label, icon: it.icon }));
+
+  // ── 權限矩陣的快取 ──
+  // 頁面守衛在 <script> 載入當下就要同步判斷，所以矩陣放 localStorage：
+  //   1. 登入時後端隨登入結果一併帶回，寫進快取
+  //   2. 每頁載入後背景向後端重抓一次（有節流），有變就更新並通知畫面
+  //   3. 都拿不到就用 PAGE_DEFAULTS
+  const ACCESS_KEY = 'pageAccessTable';
+  const ACCESS_TS_KEY = 'pageAccessAt';
+  const ACCESS_REFRESH_MS = 60 * 1000;   // 超過一分鐘就背景重抓
+
+  function normalizeAccess(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const out = {};
+    let any = false;
+    Object.keys(PAGE_DEFAULTS).forEach(page => {
+      const src = raw[page];
+      if (!Array.isArray(src)) { out[page] = PAGE_DEFAULTS[page].slice(); return; }
+      any = true;
+      const roles = src.map(r => String(r || '').trim()).filter(r => !!ROLES[r]);
+      (PAGE_LOCKED[page] || []).forEach(r => { if (roles.indexOf(r) < 0) roles.push(r); });
+      out[page] = Object.keys(ROLES).filter(r => roles.indexOf(r) >= 0);
+    });
+    return any ? out : null;
+  }
+
+  function readAccessCache() {
+    try { return normalizeAccess(JSON.parse(localStorage.getItem(ACCESS_KEY) || 'null')); }
+    catch (e) { return null; }
+  }
+
+  function writeAccessCache(table) {
+    try {
+      localStorage.setItem(ACCESS_KEY, JSON.stringify(table));
+      localStorage.setItem(ACCESS_TS_KEY, String(Date.now()));
+    } catch (e) { /* 配額滿或無痕模式，不影響功能 */ }
+  }
+
+  function accessCacheAge() {
+    const ts = Number(localStorage.getItem(ACCESS_TS_KEY) || 0);
+    return ts ? Date.now() - ts : Infinity;
+  }
+
+  let pageAccess = readAccessCache() || normalizeAccess(PAGE_DEFAULTS);
+  let accessSource = readAccessCache() ? 'cache' : 'builtin';
+  let accessLoading = null;
+
+  /**
+   * 換上一份新的矩陣（登入、背景重抓、管理頁存檔後呼叫）
+   * 有變更時發出 auth:pageaccess 事件，首頁卡片與導覽列據此重畫。
+   * @returns {boolean} 內容是否有變
+   */
+  function applyPageAccess(raw, source) {
+    const clean = normalizeAccess(raw);
+    if (!clean) return false;
+    const changed = JSON.stringify(clean) !== JSON.stringify(pageAccess);
+    pageAccess = clean;
+    accessSource = source || 'backend';
+    writeAccessCache(clean);
+    if (changed) {
+      refreshNavLinks();
+      // 目前這一頁剛被收回權限：就地顯示說明，不要等下次重新整理才發現
+      if (!isLoginPage() && getAuthData() && !canAccess()) showAccessDenied(getRole());
+      try { document.dispatchEvent(new CustomEvent('auth:pageaccess', { detail: { access: clean } })); }
+      catch (e) { /* 舊瀏覽器沒有 CustomEvent，略過 */ }
+    }
+    return changed;
+  }
+
+  /**
+   * 向後端要最新的矩陣；失敗就沿用現有的
+   * @param {boolean} force 忽略節流強制重抓
+   */
+  function refreshPageAccess(force) {
+    if (accessLoading) return accessLoading;
+    if (!force && accessSource === 'cache' && accessCacheAge() < ACCESS_REFRESH_MS) {
+      return Promise.resolve(pageAccess);
+    }
+    if (typeof api === 'undefined' || !api || typeof api.listPageAccess !== 'function') {
+      return Promise.resolve(pageAccess);
+    }
+    accessLoading = api.listPageAccess()
+      .then(table => { applyPageAccess(table, 'backend'); return pageAccess; })
+      .catch(() => pageAccess)
+      .then(t => { accessLoading = null; return t; });
+    return accessLoading;
+  }
+
+  /** 目前生效的矩陣（複本，改了不影響內部狀態） */
+  function getPageAccess() {
+    return JSON.parse(JSON.stringify(pageAccess));
+  }
 
   let deniedScreenShown = false;
 
@@ -126,7 +234,7 @@
    * @param {string} role 省略則用目前登入角色
    */
   // 不需要登入就能開的頁（登入畫面本身）。
-  // 除了這些，只要是站上的頁面就一定要在 PAGE_ACCESS 裡登記。
+  // 除了這些，只要是站上的頁面就一定要在 PAGE_REGISTRY / PAGE_DEFAULTS 裡登記。
   const PUBLIC_PAGES = ['login.html', 'crew-login.html'];
 
   function canAccess(page, role) {
@@ -135,9 +243,9 @@
     // 以前這裡是 `if (!allowed) return true;（未列管的頁面不擋）`——
     // 等於任何忘記登記的頁面預設全開。fix-sync-issue.html 就是這樣
     // 變成任何人都打得開，而那頁可以清空整個 localStorage。
-    // 改成沒登記就擋；要開放就去 PAGE_ACCESS 加一行。
-    if (!Object.prototype.hasOwnProperty.call(PAGE_ACCESS, target)) return false;
-    const allowed = PAGE_ACCESS[target];
+    // 改成沒登記就擋；要開放就先在 PAGE_REGISTRY / PAGE_DEFAULTS 登記這一頁。
+    if (!Object.prototype.hasOwnProperty.call(pageAccess, target)) return false;
+    const allowed = pageAccess[target];
     if (!Array.isArray(allowed) || allowed.length === 0) return false;
     return allowed.indexOf(normalizeRole(role || getRole())) >= 0;
   }
@@ -147,7 +255,7 @@
    */
   function accessiblePages(role) {
     const r = normalizeRole(role || getRole());
-    return Object.keys(PAGE_ACCESS).filter(page => PAGE_ACCESS[page].indexOf(r) >= 0);
+    return Object.keys(pageAccess).filter(page => pageAccess[page].indexOf(r) >= 0);
   }
 
   function redirectToLogin(target) {
@@ -252,7 +360,7 @@
 
   /**
    * 頁面守衛
-   * @param {Array<string>|null} allowedRoles 省略時自動採用 PAGE_ACCESS 的設定
+   * @param {Array<string>|null} allowedRoles 省略時自動採用權限矩陣的設定
    * @returns {Object|null} 通過時回傳 authData，否則回傳 null
    */
   function protectPage(allowedRoles = null) {
@@ -271,7 +379,7 @@
 
     const allowed = Array.isArray(allowedRoles) && allowedRoles.length > 0
       ? allowedRoles
-      : PAGE_ACCESS[currentPage()];
+      : pageAccess[currentPage()];
 
     if (Array.isArray(allowed) && allowed.indexOf(normalizeRole(authData.role)) < 0) {
       showAccessDenied(authData.role);
@@ -284,7 +392,10 @@
   function ensureAuthenticated() {
     if (isLoginPage()) return;
     const authData = protectPage();
-    if (authData) requirePasswordChange();
+    if (!authData) return;
+    requirePasswordChange();
+    // 管理者剛改過矩陣的話，這一頁就會拿到新的；必須換密碼時後端會拒絕，靜默略過
+    if (!authData.mustChangePassword) refreshPageAccess(false);
   }
 
   // ==================== 強制更換密碼 ====================
@@ -637,21 +748,32 @@
    * 掛上全站共用的主導覽列
    *
    * 每一頁都顯示首頁有的模組選項，但只列出這個帳號進得去的
-   *（依 PAGE_ACCESS 過濾）—— 原本三個頁面各自寫死三個連結，
+   *（依權限矩陣過濾）—— 原本三個頁面各自寫死三個連結，
    * 既缺教材與帳號管理，也不分角色。
    *
    * @param {HTMLElement|string} target 容器；省略則插在 body 最前面
    */
+  function renderNavLinks(role) {
+    const current = currentPage();
+    return NAV_ITEMS.filter(it => canAccess(it.page, role)).map(it => `
+            <a class="app-nav-link${it.page === current ? ' active' : ''}" href="${it.page}">
+              <i class="ph ${it.icon}"></i><span>${escapeHtml(it.label)}</span>
+            </a>`).join('');
+  }
+
+  /** 權限矩陣更新後，把已掛上的導覽列連結就地換掉（不重掛帳號選單） */
+  function refreshNavLinks() {
+    const links = document.querySelector('.app-nav .app-nav-links');
+    if (!links) return;
+    links.innerHTML = renderNavLinks(getRole());
+  }
+
   function mountNav(target) {
     const authData = getAuthData();
     if (!authData || isLoginPage()) return null;
     if (document.querySelector('.app-nav')) return null;   // 避免重複掛載
 
     injectNavStyles();
-
-    const current = currentPage();
-    const role = normalizeRole(authData.role);
-    const items = NAV_ITEMS.filter(it => canAccess(it.page, role));
 
     const nav = document.createElement('nav');
     nav.className = 'app-nav';
@@ -660,12 +782,7 @@
         <a class="app-nav-home" href="${HOME_PATH}">
           <i class="ph ph-house" style="font-size:18px"></i><span>首頁</span>
         </a>
-        <div class="app-nav-links">
-          ${items.map(it => `
-            <a class="app-nav-link${it.page === current ? ' active' : ''}" href="${it.page}">
-              <i class="ph ${it.icon}"></i><span>${escapeHtml(it.label)}</span>
-            </a>`).join('')}
-        </div>
+        <div class="app-nav-links">${renderNavLinks(normalizeRole(authData.role))}</div>
         <div class="app-nav-right" data-nav-account></div>
       </div>
     `;
@@ -685,7 +802,12 @@
 
   window.Auth = {
     ROLES,
-    PAGE_ACCESS,
+    PAGE_REGISTRY,
+    PAGE_DEFAULTS,
+    PAGE_LOCKED,
+    getPageAccess,
+    applyPageAccess,
+    refreshPageAccess,
     getAuthData,
     clearAuthData,
     ensureAuthenticated,

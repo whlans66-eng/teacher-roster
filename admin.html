@@ -168,6 +168,33 @@
     .opt-note code { background: var(--ui-fill); padding: 1px 5px; border-radius: 5px; font-size: 11px; }
     .opt-dirty { font-size: 12px; color: #b45309; font-weight: 600; margin-left: auto; }
 
+    /* ── 頁面權限矩陣 ── */
+    .acc-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .acc-table th, .acc-table td { padding: 12px 14px; border-bottom: 1px solid var(--ui-line); vertical-align: middle; }
+    .acc-table thead th { font-size: 12px; color: var(--ui-dim); font-weight: 600; text-align: center;
+                          background: #fafafa; position: sticky; top: 0; }
+    .acc-table thead th:first-child { text-align: left; }
+    .acc-table tbody tr:last-child td { border-bottom: 0; }
+    .acc-table tbody tr:hover { background: #fafafa; }
+    .acc-page { display: flex; align-items: center; gap: 10px; }
+    .acc-page i { font-size: 20px; color: #6366f1; width: 24px; text-align: center; }
+    .acc-page-name { font-weight: 600; font-size: 14px; }
+    .acc-page-desc { font-size: 12px; color: var(--ui-dim); margin-top: 2px; }
+    .acc-page-file { font-size: 11px; color: var(--ui-dim); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .acc-cell { text-align: center; width: 110px; }
+    .acc-check { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+                 border-radius: 8px; border: 1px solid var(--ui-line); background: #fff; cursor: pointer; font-family: inherit; }
+    .acc-check.on { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+    .acc-check.on i { font-size: 16px; }
+    .acc-check:not(.on) { color: transparent; }
+    .acc-check:not(.on):hover { color: var(--ui-dim); }
+    .acc-check:disabled { cursor: not-allowed; opacity: .75; }
+    .acc-check.locked { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .acc-role-head { display: inline-flex; align-items: center; gap: 6px; }
+    .acc-role-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .acc-wrap { overflow-x: auto; }
+    @media (max-width: 760px) { .acc-page-desc { display: none; } .acc-cell { width: 64px; } }
+
     .audit-card { margin-top: 20px; }
     .audit-head {
       display: flex; align-items: center; justify-content: space-between;
@@ -315,6 +342,7 @@
     <div class="tabs" role="tablist">
       <button type="button" class="tab-btn active" data-pane="usersPane" role="tab"><i class="ph ph-users"></i> 帳號</button>
       <button type="button" class="tab-btn" data-pane="optionsPane" role="tab"><i class="ph ph-list-checks"></i> 選單管理</button>
+      <button type="button" class="tab-btn" data-pane="accessPane" role="tab"><i class="ph ph-shield-check"></i> 頁面權限</button>
     </div>
 
     <div class="pane" id="usersPane">
@@ -385,6 +413,35 @@
         </div>
       </div>
     </div><!-- /optionsPane -->
+
+    <!-- 頁面權限：哪個角色能進哪一頁。以前寫死在 js/auth.js，改一次要重新部署 -->
+    <div class="pane" id="accessPane" hidden>
+      <div class="card">
+        <div class="opt-head">
+          <div>
+            <h3>頁面權限</h3>
+            <p>勾選後按「儲存」才會生效；首頁卡片、導覽列與各頁的進入守衛都用這一份</p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <button type="button" class="btn btn-plain btn-sm" id="accResetBtn"><i class="ph ph-arrow-counter-clockwise"></i> 還原預設</button>
+          </div>
+        </div>
+        <div class="acc-wrap" style="padding:14px 20px 4px">
+          <table class="acc-table" id="accTable"></table>
+        </div>
+        <div class="opt-note">
+          這裡決定的是<strong>看得到、進得去哪一頁</strong>。每個角色能讀寫哪些資料由後端另行控管，
+          把一頁藏起來不等於資料也藏起來。<br>
+          管理者在<strong>首頁</strong>與<strong>帳號管理</strong>的權限鎖定不能取消，否則會把自己鎖在系統外。<br>
+          已登入的使用者最晚一分鐘內會拿到新的設定，不需要重新登入。
+        </div>
+        <div class="opt-foot">
+          <button type="button" class="btn btn-primary" id="accSaveBtn"><i class="ph ph-check"></i> 儲存</button>
+          <button type="button" class="btn btn-secondary" id="accRevertBtn">放棄變更</button>
+          <span class="opt-dirty" id="accDirty" hidden>尚未儲存</span>
+        </div>
+      </div>
+    </div><!-- /accessPane -->
   </div>
 
   <!-- 新增／編輯帳號 -->
@@ -471,15 +528,21 @@
   <script src="js/options.js"></script>
   <script src="js/auth.js"></script>
   <script>
-    // 只有管理者能進這頁；js/auth.js 會依 PAGE_ACCESS['admin.html'] 擋下其他角色
-    const authData = protectPage();   // 角色以 js/auth.js 的 PAGE_ACCESS 為準
+    // 只有管理者能進這頁；js/auth.js 會依權限矩陣（admin.html 這一列）擋下其他角色
+    const authData = protectPage();   // 角色以 js/auth.js 的權限矩陣為準
 
-    const ROLE_HINTS = {
-      admin:   '可使用所有功能，並管理帳號與權限',
-      teacher: '可使用師資管理、訓練排程、智慧派課與教材',
-      crew:    '僅能使用船員入口與教材瀏覽',
-      guest:   '僅能瀏覽教材，無編輯權限'
-    };
+    /**
+     * 角色說明直接從權限矩陣產生，不再手寫一份——
+     * 以前這段文字寫死，「頁面權限」改了之後它還是講舊的。
+     */
+    function roleHint(role) {
+      const access = Auth.getPageAccess();
+      const pages = Auth.PAGE_REGISTRY
+        .filter(p => p.nav && (access[p.page] || []).indexOf(role) >= 0)
+        .map(p => p.label);
+      if (!pages.length) return '目前沒有開放任何功能頁，只能進首頁';
+      return '可使用：' + pages.join('、');
+    }
 
     let allUsers = [];
     let editingUser = null;   // null = 新增模式
@@ -520,7 +583,7 @@
     }
 
     function updateRoleHint() {
-      $('roleHint').textContent = ROLE_HINTS[$('roleInput').value] || '';
+      $('roleHint').textContent = roleHint($('roleInput').value);
     }
 
     // ── 載入清單 ──
@@ -810,7 +873,11 @@
       user_update: '修改帳號',
       user_delete: '刪除帳號',
       password_change_self: '本人改密碼',
-      password_rehash: '密碼升級'
+      password_rehash: '密碼升級',
+      options_save: '修改選單',
+      options_reset: '還原選單',
+      page_access_save: '修改頁面權限',
+      page_access_reset: '還原頁面權限'
     };
 
     async function loadAudit() {
@@ -1035,6 +1102,137 @@
       }
     }
 
+    // ── 頁面權限矩陣 ──
+    let accDraft = {};        // { page: [roles] } 編輯中
+    let accBaseline = '';
+
+    function accDirty() { return JSON.stringify(accDraft) !== accBaseline; }
+
+    function accLoadDraft() {
+      accDraft = Auth.getPageAccess();
+      accBaseline = JSON.stringify(accDraft);
+      renderAccTable();
+    }
+
+    function accIsLocked(page, role) {
+      return (Auth.PAGE_LOCKED[page] || []).indexOf(role) >= 0;
+    }
+
+    function renderAccTable() {
+      const roles = roleEntries();
+      $('accDirty').hidden = !accDirty();
+      const head = `<thead><tr>
+          <th>頁面</th>
+          ${roles.map(r => `<th class="acc-cell"><span class="acc-role-head">
+              <span class="acc-role-dot" style="background:${escapeAttr(Auth.getRoleColor(r.key))}"></span>${h(r.label)}</span></th>`).join('')}
+        </tr></thead>`;
+      const body = Auth.PAGE_REGISTRY.map(pg => {
+        const allowed = accDraft[pg.page] || [];
+        return `<tr>
+          <td>
+            <div class="acc-page">
+              <i class="ph ${escapeAttr(pg.icon)}"></i>
+              <div>
+                <div class="acc-page-name">${h(pg.label)} <span class="acc-page-file">${h(pg.page)}</span></div>
+                <div class="acc-page-desc">${h(pg.desc)}</div>
+              </div>
+            </div>
+          </td>
+          ${roles.map(r => {
+            const on = allowed.indexOf(r.key) >= 0;
+            const locked = accIsLocked(pg.page, r.key);
+            return `<td class="acc-cell">
+              <button type="button" class="acc-check ${on ? 'on' : ''} ${locked ? 'locked' : ''}"
+                      data-page="${escapeAttr(pg.page)}" data-role="${escapeAttr(r.key)}"
+                      ${locked ? 'disabled title="管理者必須保有這一頁"' : ''}
+                      role="checkbox" aria-checked="${on ? 'true' : 'false'}"
+                      aria-label="${h(r.label)} 可進入 ${h(pg.label)}">
+                <i class="ph ${locked ? 'ph-lock-simple' : 'ph-check-bold'}"></i>
+              </button>
+            </td>`;
+          }).join('')}
+        </tr>`;
+      }).join('');
+      $('accTable').innerHTML = head + '<tbody>' + body + '</tbody>';
+    }
+
+    function initAccessPane() {
+      $('accTable').addEventListener('click', e => {
+        const btn = e.target.closest('button.acc-check'); if (!btn || btn.disabled) return;
+        const page = btn.dataset.page, role = btn.dataset.role;
+        const list = accDraft[page] || (accDraft[page] = []);
+        const i = list.indexOf(role);
+        if (i >= 0) list.splice(i, 1); else list.push(role);
+        // 依角色定義的順序存，和後端回來的順序一致，dirty 判斷才準
+        accDraft[page] = Object.keys(Auth.ROLES).filter(r => list.indexOf(r) >= 0);
+        renderAccTable();
+      });
+      $('accRevertBtn').addEventListener('click', () => {
+        if (accDirty() && !confirm('放棄所有還沒儲存的變更？')) return;
+        accLoadDraft();
+      });
+      $('accSaveBtn').addEventListener('click', savePageAccess);
+      $('accResetBtn').addEventListener('click', resetPageAccess);
+
+      accLoadDraft();
+      Auth.refreshPageAccess(true).then(() => { if (!accDirty()) accLoadDraft(); });
+    }
+
+    function accBusy(on, btn, label) {
+      ['accSaveBtn', 'accResetBtn', 'accRevertBtn'].forEach(id => { $(id).disabled = on; });
+      $('accTable').querySelectorAll('button.acc-check').forEach(b => {
+        if (on) b.dataset.wasDisabled = b.disabled ? '1' : '';
+        b.disabled = on || b.dataset.wasDisabled === '1';
+      });
+      if (!btn) return;
+      if (on) {
+        btn.dataset.html = btn.innerHTML;
+        btn.innerHTML = `<span class="spinner"></span> ${label}`;
+      } else if (btn.dataset.html) {
+        btn.innerHTML = btn.dataset.html;
+        delete btn.dataset.html;
+      }
+    }
+
+    async function savePageAccess() {
+      if (!accDirty()) { showToast('沒有變更'); return; }
+      // 自己這個帳號會不會把自己鎖出去：後端也擋，但先在這裡講清楚
+      const me = Auth.getRole();
+      if ((accDraft['admin.html'] || []).indexOf(me) < 0) {
+        showToast('不能把自己的角色從「帳號管理」拿掉', 'error'); return;
+      }
+      accBusy(true, $('accSaveBtn'), '儲存中…');
+      try {
+        const table = await api.savePageAccess(accDraft);
+        Auth.applyPageAccess(table, 'backend');
+        accLoadDraft();
+        updateRoleHint();
+        showToast('頁面權限已儲存');
+        loadAudit();
+      } catch (error) {
+        showToast(error.message || '儲存失敗', 'error');
+      } finally {
+        accBusy(false, $('accSaveBtn'));
+      }
+    }
+
+    async function resetPageAccess() {
+      if (!confirm('把所有頁面權限還原成系統預設值？')) return;
+      accBusy(true, $('accResetBtn'), '還原中…');
+      try {
+        const table = await api.resetPageAccess();
+        Auth.applyPageAccess(table, 'backend');
+        accLoadDraft();
+        updateRoleHint();
+        showToast('已還原成預設值');
+        loadAudit();
+      } catch (error) {
+        showToast(error.message || '還原失敗', 'error');
+      } finally {
+        accBusy(false, $('accResetBtn'));
+      }
+    }
+
     function closeDeleteModal() {
       $('deleteModal').classList.remove('show');
       deletingUser = null;
@@ -1076,6 +1274,7 @@
       loadAudit();
 
       initOptionsPane();
+      initAccessPane();
 
       $('addUserBtn').addEventListener('click', () => openUserModal(null));
       $('reloadAuditBtn').addEventListener('click', loadAudit);

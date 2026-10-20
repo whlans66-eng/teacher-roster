@@ -366,6 +366,8 @@
 
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <!-- 登入頁本身不需要守衛（auth.js 會略過登入頁），載入它是為了把權限矩陣寫進快取 -->
+  <script src="js/auth.js"></script>
   <script>
     const loginForm = document.getElementById('loginForm');
     const usernameInput = document.getElementById('username');
@@ -422,6 +424,8 @@
         {
           const storage = rememberMe ? localStorage : sessionStorage;
           storage.setItem('authData', JSON.stringify(authData));
+          // 頁面權限矩陣隨登入結果一起來，先寫進快取，首頁一開就能照它畫卡片
+          if (window.Auth && loginResult.pageAccess) Auth.applyPageAccess(loginResult.pageAccess, 'backend');
           sessionStorage.setItem('currentUser', JSON.stringify({
             username: userData.username,
             role: userData.role,
