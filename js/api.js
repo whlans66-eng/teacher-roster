@@ -1,6 +1,21 @@
 // ==================== API 層：與 Google Apps Script 後端通訊 ====================
 
 /**
+ * 把後端的錯誤字串翻成看得懂的話。
+ *
+ * 「Unknown action」只有一個原因：前端已經更新，Apps Script 那邊還是舊的部署，
+ * 根本沒有這個 action 的分支。直接把原文丟給使用者看，沒有人知道那是什麼意思，
+ * 也不知道該找誰——所以這裡講清楚要做什麼。
+ */
+function _explainApiError(error, action) {
+  if (error === 'Unknown action') {
+    return '後端還沒有「' + (action || '這個') + '」這個功能：Apps Script 的部署版本比前端舊，'
+         + '請到 Apps Script → 部署 → 管理部署作業，把網頁應用程式更新成最新版本後再試一次。';
+  }
+  return error || '請求失敗';
+}
+
+/**
  * 設定區
  * 部署完 Google Apps Script 後，將取得的 Web App URL 填入下方
  */
@@ -15,6 +30,19 @@ const API_CONFIG = {
 /**
  * 從 sessionStorage 取得登入後的 Session Token
  */
+/**
+ * 把 File 讀成 base64 dataURL
+ * 上傳走這條是因為 Apps Script 收不到 multipart 的欄位（見 uploadFile 的說明）
+ */
+function _fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('讀取檔案失敗：' + (file && file.name ? file.name : '')));
+    reader.readAsDataURL(file);
+  });
+}
+
 function _getSessionToken() {
   try {
     const authData = sessionStorage.getItem('authData') || localStorage.getItem('authData');
@@ -185,25 +213,28 @@ class TeacherRosterAPI {
    * @param {File|Blob} file - 檔案物件
    * @param {string} fileName - 檔案名稱（可選）
    */
+  /**
+   * 上傳檔案
+   *
+   * 以前這裡用 FormData 送 multipart，token 也放在 body 裡——但 Apps Script
+   * 不會把 multipart 的欄位填進 e.parameter，所以後端收到的 token 是空的，
+   * 在走到上傳分支之前就先回 Unauthorized。師資照片、證照、教材附件、
+   * 課程附件五個上傳點因此一律失敗。
+   *
+   * 改成先在瀏覽器把檔案讀成 base64 dataURL，再走跟其他請求同一條
+   * urlencoded 的路。代價是體積會膨脹約 1/3，所以上限訂在 24MB。
+   *
+   * @param {File} file
+   * @param {string} [fileName] 省略則用檔案本身的名稱
+   */
   async uploadFile(file, fileName = null) {
-    try {
-      const formData = new FormData();
-      formData.append('file', file, fileName || file.name);
-      formData.append('token', this.token);
-      formData.append('action', 'uploadfile');
-
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        body: formData
-      });
-
-      const result = await response.json();
-      if (!result.ok) throw new Error(result.error || '上傳失敗');
-      return result;
-    } catch (error) {
-      console.error('上傳檔案失敗:', error);
-      throw error;
+    const MAX = 24 * 1024 * 1024;   // 與後端的 MAX_UPLOAD_SIZE 一致
+    if (!file) throw new Error('沒有選擇檔案');
+    if (file.size > MAX) {
+      throw new Error(`檔案 ${Math.round(file.size / 1048576)}MB，超過上限 ${Math.round(MAX / 1048576)}MB`);
     }
+    const dataUrl = await _fileToDataUrl(file);
+    return this.uploadDataUrl(dataUrl, fileName || file.name);
   }
 
   /**
@@ -218,9 +249,12 @@ class TeacherRosterAPI {
         dataUrl,
         fileName
       });
+      if (!response || response.ok === false) {
+        throw new Error((response && response.error) || '上傳失敗');
+      }
       return response;
     } catch (error) {
-      console.error('上傳 DataURL 失敗:', error);
+      console.error('上傳失敗:', error);
       throw error;
     }
   }
@@ -302,6 +336,35 @@ class TeacherRosterAPI {
       currentPassword: currentPassword,
       newPassword: newPassword
     });
+    return response.data;
+  }
+
+  // ==================== 船員入口 ====================
+
+  /**
+   * 船員入口一次要的全部資料
+   *
+   * 不用 list 去撈四張表，因為問卷回覆含每個人的作答，不能整張送到前端。
+   * 這支在後端就過濾好，myResponses 只會有「我自己填過哪幾份」。
+   */
+  async crewPortalData() {
+    const response = await this._post({ action: 'crew_portal_data' });
+    return response.data || {};
+  }
+
+  /** 新增一則留言。作者以後端的 session 為準，不採信前端送的名字 */
+  async addComment(courseId, content) {
+    const response = await this._post({ action: 'comment_add', courseId, content });
+    if (!response || response.ok === false) throw new Error((response && response.error) || '留言失敗');
+    return response.data;
+  }
+
+  /** 送出問卷回覆。同一份問卷每人只能填一次，後端會擋 */
+  async submitSurvey(surveyId, answers) {
+    const response = await this._post({
+      action: 'survey_submit', surveyId, answers: JSON.stringify(answers)
+    });
+    if (!response || response.ok === false) throw new Error((response && response.error) || '送出失敗');
     return response.data;
   }
 
@@ -428,7 +491,7 @@ class TeacherRosterAPI {
           _handleSessionExpired();
           throw new Error('Session 已過期，請重新登入');
         }
-        throw new Error(result.error || '請求失敗');
+        throw new Error(_explainApiError(result.error, params && params.action));
       }
 
       return result;
@@ -493,7 +556,7 @@ class TeacherRosterAPI {
           _handleSessionExpired();
           throw new Error('Session 已過期，請重新登入');
         }
-        throw new Error(result.error || '請求失敗');
+        throw new Error(_explainApiError(result.error, data && data.action));
       }
 
       return result;

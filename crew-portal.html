@@ -872,6 +872,9 @@
         <div class="user-avatar" id="userInitial">—</div>
         <span id="userName">載入中...</span>
       </div>
+      <a class="logout-btn" id="backToStaff" href="index.html" style="display:none; text-decoration:none">
+        <i class="ph ph-arrow-u-up-left"></i> 回員工系統
+      </a>
       <button class="logout-btn" onclick="handleLogout()">
         <i class="ph ph-sign-out"></i> 登出
       </button>
@@ -994,7 +997,7 @@
       <div class="survey-form-body" id="surveyFormBody"></div>
       <div class="survey-form-footer">
         <button class="btn-cancel" onclick="closeSurveyForm()">取消</button>
-        <button class="btn-submit" onclick="submitSurvey()">送出回覆</button>
+        <button class="btn-submit" id="surveySubmitBtn" onclick="submitSurvey()">送出回覆</button>
       </div>
     </div>
   </div>
@@ -1050,12 +1053,19 @@
       const name = Auth.displayName(currentUser);
       document.getElementById('userName').textContent = name;
       document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
+
+      // 這一頁沒有員工端的主導覽，管理者進來預覽時要留一條回去的路
+      const back = document.getElementById('backToStaff');
+      if (back && currentUser.role !== 'crew') {
+        back.href = Auth.homeFor(currentUser.role);
+        back.style.display = '';
+      }
       return true;
     }
 
     function handleLogout() {
       if (!confirm('確定要登出嗎？')) return;
-      Auth.logout('crew-login.html');
+      Auth.logout(Auth.loginPageFor(currentUser && currentUser.role));
     }
 
     // ── Tab 切換 ──
@@ -1067,13 +1077,56 @@
     }
 
     // ── 載入所有資料 ──
-    function loadAllData() {
-      allCourses = JSON.parse(localStorage.getItem('maritimeCourses') || '[]');
+    // 這一頁的所有資料。以前每個 render 函式各自去 localStorage 撈，
+    // 結果船員換一台裝置登入就看到一個空的入口——因為那台機器的
+    // localStorage 從來沒有被員工端的同步寫過東西。
+    // 現在一律從後端的 crew_portal_data 來，本機只當離線時的備援。
+    let portalData = { courses: [], assignments: [], comments: [], surveys: [], templates: [], myResponses: [] };
+
+    const CACHE_KEY = 'crewPortalCache';
+
+    function readPortalCache() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        return raw && typeof raw === 'object' ? raw : null;
+      } catch (e) { return null; }
+    }
+
+    function applyPortalData(d) {
+      portalData = {
+        courses:     Array.isArray(d && d.courses) ? d.courses : [],
+        assignments: Array.isArray(d && d.assignments) ? d.assignments : [],
+        comments:    Array.isArray(d && d.comments) ? d.comments : [],
+        surveys:     Array.isArray(d && d.surveys) ? d.surveys : [],
+        templates:   Array.isArray(d && d.templates) ? d.templates : [],
+        myResponses: Array.isArray(d && d.myResponses) ? d.myResponses : []
+      };
+      allCourses = portalData.courses;
       renderCourses(allCourses);
       renderMaterials(allCourses);
       renderCommentCourses(allCourses);
       renderSurveys();
       updateBadges();
+    }
+
+    async function loadAllData() {
+      // 先用快取畫一次，讓畫面不要空著
+      const cached = readPortalCache();
+      if (cached) applyPortalData(cached);
+
+      try {
+        const data = await api.crewPortalData();
+        applyPortalData(data);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+      } catch (err) {
+        console.warn('讀取船員入口資料失敗:', err);
+        if (!cached) {
+          applyPortalData(null);
+          showToast('讀取資料失敗：' + ((err && err.message) || '請稍後再試'), 'error');
+        } else {
+          showToast('目前顯示的是上次載入的資料', 'error');
+        }
+      }
     }
 
     // ── 課程總覽 ──
@@ -1236,14 +1289,14 @@
     }
 
     function getCommentCount(courseId) {
-      const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+      const comments = portalData.comments;
       return comments.filter(c => String(c.courseId) === String(courseId)).length;
     }
 
     function loadComments(courseId) {
-      return JSON.parse(localStorage.getItem('comments') || '[]')
+      return portalData.comments
         .filter(c => String(c.courseId) === String(courseId))
-        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
     }
 
     function renderCommentsHtml(courseId) {
@@ -1274,35 +1327,42 @@
         </div>`;
     }
 
-    function postComment(courseId) {
+    let postingComment = false;
+
+    async function postComment(courseId) {
+      if (postingComment) return;              // 防連點送出兩則
       const input = document.getElementById('newCommentText');
       const content = (input.value || '').trim();
       if (!content) { showToast('請輸入留言內容', 'error'); return; }
 
-      const comments = JSON.parse(localStorage.getItem('comments') || '[]');
-      comments.push({
-        id: Date.now(),
-        courseId: courseId,
-        author: currentUser.displayName || currentUser.username,
-        content: content,
-        timestamp: Date.now()
-      });
-      localStorage.setItem('comments', JSON.stringify(comments));
-
-      // 重新渲染留言區
-      const body = document.getElementById('drawerBody');
-      body.innerHTML = renderCommentsHtml(courseId);
-      showToast('留言已送出', 'success');
-      updateBadges();
+      const btn = document.querySelector('.comment-submit');
+      postingComment = true;
+      if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
+      try {
+        // 作者由後端以 session 認定，前端送什麼名字都不算數
+        const saved = await api.addComment(courseId, content);
+        portalData.comments = portalData.comments.concat([saved]);
+        input.value = '';
+        const body = document.getElementById('drawerBody');
+        if (body) body.innerHTML = renderCommentsHtml(courseId);
+        showToast('留言已送出', 'success');
+        updateBadges();
+      } catch (err) {
+        // 失敗就留著使用者打的字，不要清掉也不要假裝成功
+        showToast('留言失敗：' + ((err && err.message) || '請稍後再試'), 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '送出'; }
+      } finally {
+        postingComment = false;
+      }
     }
 
     // ── 問卷 ──
     function renderSurveys() {
       const container = document.getElementById('surveyList');
-      const surveys = JSON.parse(localStorage.getItem('surveys') || '[]');
-      const templates = JSON.parse(localStorage.getItem('surveyTemplates') || '[]');
-      const responses = JSON.parse(localStorage.getItem('surveyResponses') || '[]');
-      const assignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+      const surveys = portalData.surveys;
+      const templates = portalData.templates;
+      const responses = portalData.myResponses;   // 後端只會回我自己的
+      const assignments = portalData.assignments;
 
       if (surveys.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="ph ph-clipboard-text"></i><p>目前沒有問卷</p></div>`;
@@ -1312,10 +1372,14 @@
 
       let openCount = 0;
       const html = surveys.map(s => {
-        const template = templates.find(t => t.id === s.templateId);
-        const assignment = assignments.find(a => String(a.id) === String(s.courseId));
-        const myResponses = responses.filter(r => r.surveyId === s.id && r.username === currentUser.username);
-        const isDone = myResponses.length > 0;
+        const template = templates.find(t => String(t.id) === String(s.templateId));
+        // 問卷的 courseId 指的是課程，不是某一梯次的派課單號
+        const course = portalData.courses.find(c => String(c.id) === String(s.courseId));
+        const assignment = assignments.find(a => String(a.courseId) === String(s.courseId));
+        // myResponses 後端已經只回「我自己的」了，這裡再比一次 username 只會比錯——
+        // 回傳的欄位裡根本沒有 username，結果就是送出後永遠不會變成「已填寫」。
+        // 試算表的 id 可能是數字也可能是字串，一律轉字串再比。
+        const isDone = responses.some(r => String(r.surveyId) === String(s.id));
         const isOpen = s.status === 'active';
 
         if (isOpen && !isDone) openCount++;
@@ -1337,8 +1401,8 @@
             <div class="survey-card-header">
               <i class="ph ph-clipboard-text" style="font-size:22px;color:var(--brand);flex-shrink:0"></i>
               <div style="flex:1;min-width:0">
-                <div class="survey-name">${escHtml(template ? template.name : s.id)}</div>
-                <div class="survey-course">${assignment ? escHtml(assignment.name) : '課程問卷'} · ${statusEl}</div>
+                <div class="survey-name">${escHtml(s.title || (template && template.title) || ('問卷 ' + s.id))}</div>
+                <div class="survey-course">${escHtml((course && course.name) || (assignment && assignment.name) || '課程問卷')} · ${statusEl}</div>
               </div>
               ${actionEl}
             </div>
@@ -1350,19 +1414,23 @@
     }
 
     function openSurveyForm(surveyId) {
-      const surveys = JSON.parse(localStorage.getItem('surveys') || '[]');
-      const templates = JSON.parse(localStorage.getItem('surveyTemplates') || '[]');
-      const assignments = JSON.parse(localStorage.getItem('courseAssignments') || '[]');
+      const surveys = portalData.surveys;
+      const templates = portalData.templates;
+      const assignments = portalData.assignments;
 
-      const survey = surveys.find(s => s.id === surveyId);
+      // 試算表讀回來的 id 可能是數字，一律轉字串再比
+      const survey = surveys.find(s => String(s.id) === String(surveyId));
       if (!survey) return;
-      const template = templates.find(t => t.id === survey.templateId);
-      const assignment = assignments.find(a => String(a.id) === String(survey.courseId));
+      const template = templates.find(t => String(t.id) === String(survey.templateId));
+      const course = portalData.courses.find(c => String(c.id) === String(survey.courseId));
+      const assignment = assignments.find(a => String(a.courseId) === String(survey.courseId));
 
       activeSurvey = { survey, template };
 
-      document.getElementById('surveyFormTitle').textContent = template ? template.name : '問卷';
-      document.getElementById('surveyFormCourse').textContent = assignment ? assignment.name : '課程問卷';
+      document.getElementById('surveyFormTitle').textContent =
+        survey.title || (template && template.title) || '問卷';
+      document.getElementById('surveyFormCourse').textContent =
+        (course && course.name) || (assignment && assignment.name) || '課程問卷';
 
       const body = document.getElementById('surveyFormBody');
       if (!template || !Array.isArray(template.questions) || template.questions.length === 0) {
@@ -1433,7 +1501,9 @@
       surveyAnswers = {};
     }
 
-    function submitSurvey() {
+    let submittingSurvey = false;
+
+    async function submitSurvey() {
       if (!activeSurvey) return;
       const { survey, template } = activeSurvey;
 
@@ -1449,20 +1519,24 @@
         }
       }
 
-      const responses = JSON.parse(localStorage.getItem('surveyResponses') || '[]');
-      responses.push({
-        id: Date.now(),
-        surveyId: survey.id,
-        username: currentUser.username,
-        displayName: currentUser.displayName || currentUser.username,
-        answers: { ...surveyAnswers },
-        submittedAt: new Date().toISOString()
-      });
-      localStorage.setItem('surveyResponses', JSON.stringify(responses));
-
-      closeSurveyForm();
-      showToast('問卷已送出，感謝您的回覆！', 'success');
-      renderSurveys();
+      const btn = document.getElementById('surveySubmitBtn');
+      if (submittingSurvey) return;
+      submittingSurvey = true;
+      if (btn) { btn.disabled = true; btn.textContent = '送出中…'; }
+      try {
+        const saved = await api.submitSurvey(survey.id, { ...surveyAnswers });
+        portalData.myResponses = portalData.myResponses.concat([saved]);
+        closeSurveyForm();
+        showToast('問卷已送出，感謝您的回覆！', 'success');
+        renderSurveys();
+        updateBadges();
+      } catch (err) {
+        // 失敗就留在表單，作答內容還在
+        showToast('送出失敗：' + ((err && err.message) || '請稍後再試'), 'error');
+      } finally {
+        submittingSurvey = false;
+        if (btn) { btn.disabled = false; btn.textContent = '送出回覆'; }
+      }
     }
 
     // ── 課程抽屜 ──

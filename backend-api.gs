@@ -21,7 +21,9 @@ const ALLOWED_UPLOAD_TYPES = [
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 ];
-const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
+// 檔案是以 base64 dataURL 送上來的，編碼後體積約為原始的 4/3，
+// 而 Apps Script 單次 POST 的承載量有限，所以上限不能照原始檔案大小開到 50MB。
+const MAX_UPLOAD_SIZE = 24 * 1024 * 1024; // 24MB（編碼後約 32MB）
 
 // 系統角色（單一來源；前端 js/auth.js 的 ROLES 必須與此一致）
 const USER_ROLES = ['admin', 'teacher', 'crew', 'guest'];
@@ -54,7 +56,13 @@ const TABLE_READ_ROLES = {
   // 選項清單決定表單怎麼畫，任何登入者都要讀得到；只有管理者能改
   options:           ['admin', 'teacher', 'crew', 'guest'],
   // 頁面權限矩陣走專屬的 page_access_* 動作，不開放泛用讀取
-  pageAccess:        []
+  pageAccess:        [],
+  // 船員入口的資料：船員自己走 crew_portal_data（會過濾成只看得到該看的），
+  // 所以這裡不給 crew——否則他用 list 就能把全船的問卷答案整包撈走。
+  comments:          ['admin', 'teacher'],
+  surveyTemplates:   ['admin', 'teacher'],
+  surveys:           ['admin', 'teacher'],
+  surveyResponses:   ['admin']
 };
 
 function _canReadTable(session, tableName) {
@@ -84,7 +92,14 @@ const TABLE_WRITE_ROLES = {
   userAuditLog:      [],
   options:           [],
   activeSessions:    [],
-  pageAccess:        []
+  pageAccess:        [],
+  // 問卷本體與題目由管理端維護
+  surveyTemplates:   ['admin'],
+  surveys:           ['admin'],
+  // 留言與問卷回覆只能逐筆新增（comment_add / survey_submit），
+  // 不能整表覆寫——否則一個船員存一次就會把別人的留言洗掉
+  comments:          [],
+  surveyResponses:   []
 };
 
 function _canWriteTable(session, tableName) {
@@ -149,6 +164,27 @@ const SHEETS_CONFIG = {
   pageAccess: {
     name: 'pageAccess',
     header: ['page'].concat(USER_ROLES).concat(['updatedBy', 'updatedAt'])
+  },
+
+  // ── 船員入口 ──
+  // 這四張表只能用 comment_add / survey_submit 這類專屬動作「新增」，
+  // 不走泛用的 save／batchsave（見 NEVER_BULK_WRITE），
+  // 否則任何一次整表覆寫都會把別人的留言與問卷答案一次洗掉。
+  comments: {
+    name: 'comments',
+    header: ['id', 'courseId', 'username', 'author', 'content', 'createdAt']
+  },
+  surveyTemplates: {
+    name: 'surveyTemplates',
+    header: ['id', 'title', 'description', 'questions', 'createdBy', 'createdAt']
+  },
+  surveys: {
+    name: 'surveys',
+    header: ['id', 'templateId', 'courseId', 'title', 'status', 'createdBy', 'createdAt']
+  },
+  surveyResponses: {
+    name: 'surveyResponses',
+    header: ['id', 'surveyId', 'username', 'displayName', 'answers', 'submittedAt']
   }
 };
 
@@ -934,14 +970,17 @@ function _writeOptionRows(ctx, options, session) {
  * 必須與此一致（頁面鍵與預設角色都要一樣），否則後端不認得前端送來的頁面。
  */
 const PAGE_ACCESS_DEFAULTS = {
-  'index.html':              ['admin', 'teacher', 'crew', 'guest'],
+  // 船員走自己的一條動線：crew-login → crew-portal，不進員工的模組畫面。
+  // 所以 crew 不在 index.html 與 teaching-materials.html 裡——
+  // 教材在船員入口自己的分頁看，不要同一個人有兩個長得完全不同的教材畫面。
+  'index.html':              ['admin', 'teacher', 'guest'],
   'admin.html':              ['admin'],
   'teacher-management.html': ['admin', 'teacher'],
   'course-management.html':  ['admin', 'teacher'],
   'maritime-courses.html':   ['admin', 'teacher'],
-  'teaching-materials.html': ['admin', 'teacher', 'crew', 'guest'],
-  // 船員入口是給船員看課表、留言、問卷的，管理者有自己的管理畫面
-  'crew-portal.html':        ['crew'],
+  'teaching-materials.html': ['admin', 'teacher', 'guest'],
+  // 管理者保留一把鑰匙，才有辦法預覽船員實際看到的畫面
+  'crew-portal.html':        ['admin', 'crew'],
   // 會清空整個 localStorage 的修復工具，只給管理者
   'fix-sync-issue.html':     ['admin']
 };
@@ -1071,6 +1110,128 @@ function _handlePageAccessAction(action, p, bodyObj, session) {
   return _json({ ok: false, error: 'Unknown action' });
 }
 
+// ==================== 船員入口 ====================
+//
+// 船員入口以前整頁讀 localStorage、從不呼叫後端，所以船員換一台裝置登入
+// 就看到一個空的入口，留言與問卷回覆也只留在他自己那台機器上。
+//
+// 這裡有兩個刻意的設計：
+//
+// 1. 一支 crew_portal_data 把整頁要的東西一次給完，而不是讓前端去 list
+//    四張表。因為問卷回覆含每個人的作答，不能整張表送出去——這支會在
+//    伺服器端只挑「這個人自己填過哪幾份」回去。
+// 2. 留言與問卷回覆是 append-only 的專屬動作，不走泛用的 save。
+//    泛用的 save 是整表覆寫，一個船員存一次就會把別人的留言洗掉。
+
+const CREW_PORTAL_ROLES = ['admin', 'teacher', 'crew'];
+const MAX_COMMENT_LENGTH = 1000;
+
+function _crewReadAll(tableName) {
+  try { return _readTable(tableName); } catch (e) { return []; }
+}
+
+/** 船員入口一次要的全部資料（問卷回覆只回這個人自己的） */
+function _handleCrewPortalData(session) {
+  const me = String((session && session.username) || '').toLowerCase();
+
+  const responses = _crewReadAll('surveyResponses')
+    .filter(r => String(r.username || '').toLowerCase() === me)
+    .map(r => ({ id: r.id, surveyId: r.surveyId, submittedAt: r.submittedAt }));
+
+  return _json({
+    ok: true,
+    data: {
+      courses:     _crewReadAll('maritimeCourses'),
+      assignments: _crewReadAll('courseAssignments'),
+      comments:    _crewReadAll('comments'),
+      surveys:     _crewReadAll('surveys').filter(s => String(s.status || '') !== 'draft'),
+      templates:   _crewReadAll('surveyTemplates'),
+      // 只回「我填過哪幾份、什麼時候填的」，不回任何人的答案內容
+      myResponses: responses
+    }
+  });
+}
+
+function _nextRowId(tableName) {
+  const rows = _crewReadAll(tableName);
+  let max = 0;
+  rows.forEach(r => { const n = parseInt(r.id, 10); if (!isNaN(n) && n > max) max = n; });
+  return String(max + 1);
+}
+
+/** 新增一則留言（append-only） */
+function _handleCommentAdd(p, bodyObj, session) {
+  const courseId = String(p.courseId || (bodyObj && bodyObj.courseId) || '').trim();
+  const contentRaw = String(p.content || (bodyObj && bodyObj.content) || '');
+  const content = contentRaw.trim();
+
+  if (!courseId) return _json({ ok: false, error: '缺少課程' });
+  if (!content) return _json({ ok: false, error: '請輸入留言內容' });
+  if (content.length > MAX_COMMENT_LENGTH) {
+    return _json({ ok: false, error: '留言不能超過 ' + MAX_COMMENT_LENGTH + ' 個字' });
+  }
+
+  const config = SHEETS_CONFIG.comments;
+  const sh = _getOrCreateSheet('comments', config.header);
+  const idx = _headerIndex(sh, config.header);
+  const row = new Array(idx._len).fill('');
+  const set = (k, v) => { if (idx[k] !== undefined) row[idx[k]] = v; };
+  const now = new Date().toISOString();
+  const id = _nextRowId('comments');
+
+  set('id', id);
+  set('courseId', _sanitizeSheetValue(courseId));
+  // 作者一律以 session 為準，不採信前端送來的名字
+  set('username', session.username);
+  set('author', session.full_name || session.username);
+  set('content', _sanitizeSheetValue(content));
+  set('createdAt', now);
+  sh.appendRow(row);
+
+  return _json({ ok: true, data: {
+    id: id, courseId: courseId, username: session.username,
+    author: session.full_name || session.username, content: content, createdAt: now
+  } });
+}
+
+/** 送出一份問卷回覆（append-only，同一份問卷每人只能填一次） */
+function _handleSurveySubmit(p, bodyObj, session) {
+  const surveyId = String(p.surveyId || (bodyObj && bodyObj.surveyId) || '').trim();
+  let answers = p.answers || (bodyObj && bodyObj.answers);
+  if (typeof answers === 'string') { try { answers = JSON.parse(answers); } catch (e) { answers = null; } }
+
+  if (!surveyId) return _json({ ok: false, error: '缺少問卷' });
+  if (!answers || typeof answers !== 'object') return _json({ ok: false, error: '沒有收到作答內容' });
+
+  const survey = _crewReadAll('surveys').find(s => String(s.id) === surveyId);
+  if (!survey) return _json({ ok: false, error: '找不到這份問卷' });
+  if (String(survey.status || '') !== 'active') return _json({ ok: false, error: '這份問卷已經關閉' });
+
+  const me = String(session.username || '').toLowerCase();
+  const already = _crewReadAll('surveyResponses')
+    .some(r => String(r.surveyId) === surveyId && String(r.username || '').toLowerCase() === me);
+  if (already) return _json({ ok: false, error: '您已經填過這份問卷了' });
+
+  const config = SHEETS_CONFIG.surveyResponses;
+  const sh = _getOrCreateSheet('surveyResponses', config.header);
+  const idx = _headerIndex(sh, config.header);
+  const row = new Array(idx._len).fill('');
+  const set = (k, v) => { if (idx[k] !== undefined) row[idx[k]] = v; };
+  const now = new Date().toISOString();
+  const id = _nextRowId('surveyResponses');
+
+  set('id', id);
+  set('surveyId', _sanitizeSheetValue(surveyId));
+  set('username', session.username);
+  set('displayName', session.full_name || session.username);
+  set('answers', JSON.stringify(answers));
+  set('submittedAt', now);
+  sh.appendRow(row);
+
+  _auditLog(session.username, 'survey_submit', surveyId, '');
+  return _json({ ok: true, data: { id: id, surveyId: surveyId, submittedAt: now } });
+}
+
 // ==================== 速率限制 ====================
 
 function _checkRateLimit(username) {
@@ -1096,7 +1257,7 @@ function _clearLoginFailures(username) {
 
 // ==================== 路由處理 ====================
 
-const READ_ACTIONS = ['list', 'listall', 'getversions', 'options_list', 'page_access_list',
+const READ_ACTIONS = ['list', 'listall', 'getversions', 'options_list', 'crew_portal_data', 'page_access_list',
                      'session_register', 'session_heartbeat', 'session_list', 'session_kick',
                      'session_check_kicked'];
 
@@ -1129,6 +1290,11 @@ function _handleReadAction(action, p, session) {
     });
     _writeCachedFingerprints(versions);
     return _json({ ok: true, data: allData, versions: versions });
+  }
+
+  if (action === 'crew_portal_data') {
+    _requireRole(session, CREW_PORTAL_ROLES);
+    return _handleCrewPortalData(session);
   }
 
   // 任何登入者都要讀得到選項，否則表單畫不出下拉選單
@@ -1332,6 +1498,21 @@ function doPost(e) {
       }
     }
 
+    // ===== 船員入口：留言與問卷回覆（append-only）=====
+    if (action === 'comment_add' || action === 'survey_submit') {
+      _requireRole(session, CREW_PORTAL_ROLES);
+      try {
+        return action === 'comment_add'
+          ? _handleCommentAdd(p, bodyObj, session)
+          : _handleSurveySubmit(p, bodyObj, session);
+      } catch (crewErr) {
+        const crewMsg = String(crewErr.message || crewErr);
+        if (crewMsg === 'Unauthorized' || crewMsg === 'Forbidden') throw crewErr;
+        Logger.log('crew action error: ' + crewMsg);
+        return _json({ ok: false, error: crewMsg });
+      }
+    }
+
     // ===== 選單選項維護（僅管理者；options_list 已在上面的讀取類處理掉）=====
     if (action.indexOf('options_') === 0) {
       _requireRole(session, ['admin']);
@@ -1513,8 +1694,17 @@ function doPost(e) {
     // Upload (檔案上傳)
     if (action === 'uploadfile') {
       _requireRole(session, ['admin']);
-      const result = _handleUpload(e, bodyObj);
-      return _json({ ok: true, ...result });
+      try {
+        const result = _handleUpload(p, bodyObj);
+        return _json({ ok: true, ...result });
+      } catch (upErr) {
+        const upMsg = String(upErr.message || upErr);
+        if (upMsg === 'Unauthorized' || upMsg === 'Forbidden') throw upErr;
+        // 上傳失敗的原因（檔案太大、類型不允許）要原樣給使用者看，
+        // 不能被外層那句通用的「伺服器錯誤，請稍後再試」蓋掉
+        Logger.log('upload error: ' + upMsg);
+        return _json({ ok: false, error: upMsg });
+      }
     }
 
     // Ask Gemini（AI 課程顧問）
@@ -1563,30 +1753,34 @@ function doOptions(e) {
 
 // ==================== 核心功能函數 ====================
 
-function _handleUpload(e, bodyObj) {
-  let blob = null;
-  let detectedMime = '';
+/**
+ * 檔案上傳
+ *
+ * 以前這裡有兩條路，兩條都是壞的，所以師資照片、證照、教材附件、課程附件
+ * 五個上傳點在三個頁面上一律失敗：
+ *
+ *   1. multipart：用 Utilities.parseMultipart() 解析——Apps Script 的
+ *      Utilities 服務根本沒有這個方法，呼叫會丟 TypeError，又被空的
+ *      catch(_) {} 吞掉。而且 Apps Script 不會把 multipart 的欄位填進
+ *      e.parameter，所以 doPost 在走到這裡之前就先因為 p.token 是空的
+ *      而丟 Unauthorized。
+ *   2. dataUrl：只讀 bodyObj.dataUrl。但前端的 _post() 送的是
+ *      application/x-www-form-urlencoded，doPost 只有在 content-type 是
+ *      json/text-plain 時才會去解析 bodyObj，所以 bodyObj 永遠是 null，
+ *      資料其實在 e.parameter 裡。結果是「No file found」。
+ *
+ * 現在統一走 dataUrl，而且 e.parameter 與 JSON body 兩邊都讀。
+ *
+ * @param {Object} p        e.parameter
+ * @param {Object} bodyObj  JSON body（content-type 是 json 時才有）
+ */
+function _handleUpload(p, bodyObj) {
+  const dataUrl = (p && p.dataUrl) || (bodyObj && bodyObj.dataUrl) || '';
+  if (!dataUrl) throw new Error('沒有收到檔案內容');
 
-  if (e && e.postData) {
-    const raw = e.postData.contents || e.postData.getDataAsString();
-    const ctype = e.postData.type || 'multipart/form-data';
-    try {
-      const mp = Utilities.parseMultipart(raw, ctype);
-      if (mp && mp.parts && mp.parts.length) {
-        const part = mp.parts.find(p => p.name === 'file' && p.filename) || mp.parts.find(p => p.filename) || mp.parts[0];
-        if (part && part.filename) {
-          detectedMime = part.type || 'application/octet-stream';
-          blob = Utilities.newBlob(part.data, detectedMime, part.filename);
-        }
-      }
-    } catch (_) {}
-  }
-  if (!blob && bodyObj && bodyObj.dataUrl) {
-    const fname = String(bodyObj.fileName || 'upload_' + Date.now());
-    blob = _dataUrlToBlob(bodyObj.dataUrl, fname);
-    detectedMime = blob.getContentType();
-  }
-  if (!blob) throw new Error('No file found');
+  const fname = String((p && p.fileName) || (bodyObj && bodyObj.fileName) || ('upload_' + Date.now()));
+  const blob = _dataUrlToBlob(dataUrl, fname);
+  const detectedMime = blob.getContentType();
 
   // 檔案類型白名單檢查
   if (!ALLOWED_UPLOAD_TYPES.includes(detectedMime)) {
@@ -1594,8 +1788,11 @@ function _handleUpload(e, bodyObj) {
   }
 
   // 檔案大小檢查
-  if (blob.getBytes().length > MAX_UPLOAD_SIZE) {
-    throw new Error('檔案超過大小限制（最大 10MB）');
+  const bytes = blob.getBytes().length;
+  if (bytes > MAX_UPLOAD_SIZE) {
+    // 訊息以前寫死 10MB，跟實際的 MAX_UPLOAD_SIZE 對不上
+    throw new Error('檔案 ' + Math.round(bytes / 1048576) + 'MB，超過上限 ' +
+                    Math.round(MAX_UPLOAD_SIZE / 1048576) + 'MB');
   }
 
   const folder = DriveApp.getFolderById(FOLDER_ID);
@@ -1692,7 +1889,7 @@ const _ARRAY_FIELDS = ['experiences', 'certificates', 'subjects', 'tags', 'keywo
 // 這幾張表永遠不該被「整表覆寫」。
 // userAuditLog 只能由 _auditLog 以系統身分 appendRow；users 只能走 users_*；
 // options 只能走 options_*。多這一道是因為新增 API 時很容易忘記擋。
-const NEVER_BULK_WRITE = ['users', 'userAuditLog', 'options', 'activeSessions'];
+const NEVER_BULK_WRITE = ['users', 'userAuditLog', 'options', 'activeSessions', 'pageAccess', 'comments', 'surveyResponses'];
 
 function _writeTable(tableName, dataArray) {
   if (!Object.prototype.hasOwnProperty.call(SHEETS_CONFIG, tableName)) throw new Error('Unknown table');
