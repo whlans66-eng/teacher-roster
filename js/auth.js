@@ -15,6 +15,8 @@
   };
 
   // 每個頁面允許進入的角色。頁面不需要各自硬寫一份，改這裡就好。
+  // 哪個角色能進哪一頁。這是唯一來源——各頁呼叫 protectPage() 時
+  // 不要再自己傳一份陣列，否則改了這裡也不會生效。
   const PAGE_ACCESS = {
     'index.html':              ['admin', 'teacher', 'crew', 'guest'],
     'admin.html':              ['admin'],
@@ -22,16 +24,18 @@
     'course-management.html':  ['admin', 'teacher'],
     'maritime-courses.html':   ['admin', 'teacher'],
     'teaching-materials.html': ['admin', 'teacher', 'crew', 'guest'],
-    'crew-portal.html':        ['admin', 'crew']
+    'crew-portal.html':        ['admin', 'crew'],
+    // 會清空整個 localStorage 的修復工具，只給管理者
+    'fix-sync-issue.html':     ['admin']
   };
 
   // 主導覽的模組清單。能不能看到由 PAGE_ACCESS 決定，這裡只管顯示。
-  // crew-portal 是船員自己的入口，不列入一般主導覽。
   const NAV_ITEMS = [
     { page: 'teacher-management.html', label: '師資管理', icon: 'ph-user-list' },
     { page: 'course-management.html',  label: '訓練排程', icon: 'ph-calendar' },
     { page: 'maritime-courses.html',   label: '智慧派課', icon: 'ph-anchor' },
     { page: 'teaching-materials.html', label: '教材管理', icon: 'ph-books' },
+    { page: 'crew-portal.html',        label: '船員入口', icon: 'ph-identification-badge' },
     { page: 'admin.html',              label: '帳號管理', icon: 'ph-lock-key' }
   ];
 
@@ -121,10 +125,20 @@
    * @param {string} page 例如 'admin.html'；省略則用目前頁面
    * @param {string} role 省略則用目前登入角色
    */
+  // 不需要登入就能開的頁（登入畫面本身）。
+  // 除了這些，只要是站上的頁面就一定要在 PAGE_ACCESS 裡登記。
+  const PUBLIC_PAGES = ['login.html', 'crew-login.html'];
+
   function canAccess(page, role) {
     const target = page || currentPage();
+    if (PUBLIC_PAGES.indexOf(target) >= 0) return true;
+    // 以前這裡是 `if (!allowed) return true;（未列管的頁面不擋）`——
+    // 等於任何忘記登記的頁面預設全開。fix-sync-issue.html 就是這樣
+    // 變成任何人都打得開，而那頁可以清空整個 localStorage。
+    // 改成沒登記就擋；要開放就去 PAGE_ACCESS 加一行。
+    if (!Object.prototype.hasOwnProperty.call(PAGE_ACCESS, target)) return false;
     const allowed = PAGE_ACCESS[target];
-    if (!allowed) return true; // 未列管的頁面不擋
+    if (!Array.isArray(allowed) || allowed.length === 0) return false;
     return allowed.indexOf(normalizeRole(role || getRole())) >= 0;
   }
 
@@ -136,15 +150,20 @@
     return Object.keys(PAGE_ACCESS).filter(page => PAGE_ACCESS[page].indexOf(r) >= 0);
   }
 
-  function redirectToLogin() {
-    if (currentPage() !== LOGIN_PATH) {
-      window.location.href = LOGIN_PATH;
+  function redirectToLogin(target) {
+    const dest = target || LOGIN_PATH;
+    if (currentPage() !== dest) {
+      window.location.href = dest;
     }
   }
 
-  function logout() {
+  /**
+   * 登出
+   * @param {string} [target] 導回哪個登入頁；船員入口要回 crew-login.html
+   */
+  function logout(target) {
     clearAuthData();
-    redirectToLogin();
+    redirectToLogin(target);
   }
 
   /**

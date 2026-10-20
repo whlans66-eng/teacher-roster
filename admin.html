@@ -472,7 +472,7 @@
   <script src="js/auth.js"></script>
   <script>
     // 只有管理者能進這頁；js/auth.js 會依 PAGE_ACCESS['admin.html'] 擋下其他角色
-    const authData = protectPage(['admin']);
+    const authData = protectPage();   // 角色以 js/auth.js 的 PAGE_ACCESS 為準
 
     const ROLE_HINTS = {
       admin:   '可使用所有功能，並管理帳號與權限',

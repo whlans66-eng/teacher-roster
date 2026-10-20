@@ -56,8 +56,40 @@ const TABLE_READ_ROLES = {
 };
 
 function _canReadTable(session, tableName) {
+  if (!Object.prototype.hasOwnProperty.call(TABLE_READ_ROLES, tableName)) return false;
   const allowed = TABLE_READ_ROLES[tableName];
   if (!allowed) return false;
+  return allowed.indexOf(session && session.role) >= 0;
+}
+
+// 每個資料表允許「寫入」的角色。
+//
+// 以前這裡沒有對照表，寫入是靠 save / batchsave / update 各自兩行黑名單
+//（只擋 users，以及 teacher 不得寫 teachers / maritimeCourses）。
+// 黑名單的問題是「沒列到的一律放行」——所以 teacher 可以用
+//   action=save&table=options        把全站下拉選單整份換掉（繞過只有 admin 能改的 options_save）
+//   action=save&table=userAuditLog   把稽核紀錄清空或偽造
+//   action=save&table=activeSessions 覆寫線上使用者
+// 三條都實測回 ok:true。改成白名單：沒列到的一律拒絕。
+const TABLE_WRITE_ROLES = {
+  teachers:          ['admin'],
+  maritimeCourses:   ['admin'],
+  courseAssignments: ['admin', 'teacher'],
+  teacherLeaves:     ['admin', 'teacher'],
+  // 以下為系統表，一律不得經由泛用的 save / batchsave / update 寫入（連 admin 也不行），
+  // 各自有專屬動作：users_* / options_* / _auditLog 的 appendRow
+  users:             [],
+  userAuditLog:      [],
+  options:           [],
+  activeSessions:    []
+};
+
+function _canWriteTable(session, tableName) {
+  // hasOwnProperty：否則 __proto__ / constructor 會取到 Object.prototype 上的東西
+  if (!Object.prototype.hasOwnProperty.call(SHEETS_CONFIG, tableName)) return false;
+  if (!Object.prototype.hasOwnProperty.call(TABLE_WRITE_ROLES, tableName)) return false;
+  const allowed = TABLE_WRITE_ROLES[tableName];
+  if (!allowed || allowed.length === 0) return false;
   return allowed.indexOf(session && session.role) >= 0;
 }
 
@@ -264,6 +296,12 @@ function _createSession(userData) {
     username: userData.username,
     role: userData.role,
     full_name: userData.full_name,
+    // 必須換密碼的狀態要跟著 session 走。以前只有前端有這個旗標，
+    // 把遮罩的 DOM 刪掉、或直接打 API，就等於繞過了強制換密碼。
+    // 登入時傳進來的是試算表那一列，這個欄位是字串 'TRUE'/'FALSE'；
+    // 改密碼後重發 token 時傳的是物件，可能是布林。兩種都要認得。
+    mustChangePassword: userData.mustChangePassword === true ||
+                        String(userData.mustChangePassword || '').toUpperCase() === 'TRUE',
     createdAt: new Date().toISOString()
   });
   cache.put('sess_' + sessionToken, sessionData, SESSION_TTL);
@@ -939,8 +977,11 @@ function _handleReadAction(action, p, session) {
   }
 
   if (action === 'getversions') {
-    const versions = _readCachedFingerprints(VERSION_TABLES);
-    const missing = VERSION_TABLES.filter(t => !versions[t]);
+    // 指紋含筆數與最後修改時間，等於洩漏「這張表有多少資料、何時被改」，
+    // 所以要跟 list 一樣逐表檢查，不能因為它只是中繼資料就整包送出。
+    const readable = VERSION_TABLES.filter(t => _canReadTable(session, t));
+    const versions = _readCachedFingerprints(readable);
+    const missing = readable.filter(t => !versions[t]);
     const newCache = {};
     missing.forEach(tableName => {
       const fp = _computeFingerprint(_readTable(tableName));
@@ -953,7 +994,7 @@ function _handleReadAction(action, p, session) {
 
   if (action === 'session_register') {
     _cleanupStaleSessions();
-    return _json({ ok: true, ..._registerSession(p) });
+    return _json({ ok: true, ..._registerSession(p, session) });
   }
   if (action === 'session_heartbeat') {
     _cleanupStaleSessions();
@@ -1096,6 +1137,12 @@ function doPost(e) {
     // ===== 其他 POST 請求需要 Session =====
     const session = _requireSession(p.token);
 
+    // ===== 必須換密碼時，除了換密碼本身什麼都不准做 =====
+    // 這一關以前只存在於前端（js/auth.js 的遮罩），後端完全沒檢查。
+    if (session.mustChangePassword && action !== 'account_change_password') {
+      return _json({ ok: false, error: '請先變更密碼後再使用系統', mustChangePassword: true });
+    }
+
     // ===== 讀取類動作改走 POST =====
     // Apps Script 讀不到自訂 HTTP 標頭，token 只能放在網址或請求主體。
     // 放網址會留在瀏覽器歷史與 Apps Script 執行紀錄裡，所以改用 POST body。
@@ -1148,9 +1195,10 @@ function doPost(e) {
       const table = p.table || (bodyObj && bodyObj.table);
       const dataRaw = p.data || (bodyObj && bodyObj.data);
 
-      if (!table || !SHEETS_CONFIG[table]) return _json({ ok: false, error: 'Invalid table' });
-      if (table === 'users') return _json({ ok: false, error: 'Access denied' });
-      if (['teachers', 'maritimeCourses'].includes(table) && session.role === 'teacher') return _json({ ok: false, error: 'Access denied' });
+      if (!table || !Object.prototype.hasOwnProperty.call(SHEETS_CONFIG, table)) {
+        return _json({ ok: false, error: 'Invalid table' });
+      }
+      if (!_canWriteTable(session, table)) return _json({ ok: false, error: 'Access denied' });
 
       // server-side 衝突檢測（優先從 ScriptProperties 快取讀取，省掉 sheet read）
       const savedVersionRaw = p.savedVersion || (bodyObj && bodyObj.savedVersion);
@@ -1214,10 +1262,14 @@ function doPost(e) {
       const results = {};
       const newVersions = {};
 
+      // 被擋下的表要回報給前端。原本是靜默 continue 然後回 ok:true，
+      // 前端收到 ok 就把 hasLocalChanges 清掉——teacher 在師資管理頁改完看到
+      // 「儲存成功」，實際上師資那張表一個字都沒寫進去，連本地暫存也沒了。
+      const denied = [];
+
       for (const [table, dataRaw] of Object.entries(tablesObj)) {
-        if (!SHEETS_CONFIG[table]) continue;
-        if (table === 'users') continue;
-        if (['teachers', 'maritimeCourses'].includes(table) && session.role === 'teacher') continue;
+        if (!Object.prototype.hasOwnProperty.call(SHEETS_CONFIG, table)) { denied.push(table); continue; }
+        if (!_canWriteTable(session, table)) { denied.push(table); continue; }
 
         let data = _asArray(dataRaw);
 
@@ -1248,6 +1300,12 @@ function doPost(e) {
       // 寫完後批次更新 fingerprint 快取（讓下次衝突檢測不需重讀 sheet）
       if (Object.keys(newVersions).length > 0) _writeCachedFingerprints(newVersions);
 
+      if (denied.length > 0) {
+        return _json({
+          ok: true, results, newVersions, denied: denied,
+          message: '以下資料需要管理者權限才能儲存：' + denied.join('、')
+        });
+      }
       return _json({ ok: true, results, newVersions });
     }
 
@@ -1258,10 +1316,10 @@ function doPost(e) {
       const id = p.id || (bodyObj && bodyObj.id);
       const dataRaw = p.data || (bodyObj && bodyObj.data);
 
-      if (!table || !SHEETS_CONFIG[table]) return _json({ ok: false, error: 'Invalid table' });
-      if (table === 'users') return _json({ ok: false, error: 'Access denied' });
-      // teacher 角色無法修改 teachers / maritimeCourses 資料表（唯讀預覽）
-      if (['teachers', 'maritimeCourses'].includes(table) && session.role === 'teacher') return _json({ ok: false, error: 'Access denied' });
+      if (!table || !Object.prototype.hasOwnProperty.call(SHEETS_CONFIG, table)) {
+        return _json({ ok: false, error: 'Invalid table' });
+      }
+      if (!_canWriteTable(session, table)) return _json({ ok: false, error: 'Access denied' });
       if (!id) return _json({ ok: false, error: 'Missing ID' });
 
       const data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
@@ -1448,7 +1506,16 @@ const _ARRAY_FIELDS = ['experiences', 'certificates', 'subjects', 'tags', 'keywo
  *   - 不存在 → 保留原值
  *   - 存在但為空 → 使用者真的要清空，照做
  */
+// 這幾張表永遠不該被「整表覆寫」。
+// userAuditLog 只能由 _auditLog 以系統身分 appendRow；users 只能走 users_*；
+// options 只能走 options_*。多這一道是因為新增 API 時很容易忘記擋。
+const NEVER_BULK_WRITE = ['users', 'userAuditLog', 'options', 'activeSessions'];
+
 function _writeTable(tableName, dataArray) {
+  if (!Object.prototype.hasOwnProperty.call(SHEETS_CONFIG, tableName)) throw new Error('Unknown table');
+  if (NEVER_BULK_WRITE.indexOf(tableName) >= 0) {
+    throw new Error('這張表不接受整表覆寫：' + tableName);
+  }
   const config = SHEETS_CONFIG[tableName];
   if (!config) throw new Error('Unknown table');
 
@@ -1683,10 +1750,28 @@ function _formatDate(date) {
 }
 
 // Session Helpers
-function _registerSession(p){
+/**
+ * 註冊線上使用者
+ *
+ * 以前是把呼叫端送來的 userName / pageUrl / userAgent 原封不動 appendRow——
+ * 任何登入者（含 guest）都能無限追加任意內容到這張表，而且沒經過
+ * _sanitizeSheetValue，等於可以塞公式注入。
+ * 現在身分一律以 session 為準，其餘欄位淨化並截斷。
+ */
+function _registerSession(p, session){
    const sh = _getOrCreateSheet('activeSessions', SHEETS_CONFIG.activeSessions.header);
-   sh.appendRow([p.sessionId || Utilities.getUuid(), p.userName, p.userEmail, p.pageUrl, new Date().toISOString(), p.userAgent, false]);
-   return { sessionId: p.sessionId, message: 'Registered' };
+   const cut = (v, n) => _sanitizeSheetValue(String(v === undefined || v === null ? '' : v)).slice(0, n);
+   const sessionId = cut(p.sessionId, 64) || Utilities.getUuid();
+   sh.appendRow([
+     sessionId,
+     (session && session.username) || '',      // 身分只認 session，不認呼叫端自報的
+     '',                                       // userEmail：session 沒有這個欄位，不採信呼叫端給的
+     cut(p.pageUrl, 200),
+     new Date().toISOString(),
+     cut(p.userAgent, 200),
+     false
+   ]);
+   return { sessionId: sessionId, message: 'Registered' };
 }
 function _updateHeartbeat(p){ return { message: 'Updated' }; }
 function _getActiveSessions(){
@@ -1744,14 +1829,53 @@ function _extractUrls(text) {
  * 阻擋內網／保留位址，避免這支 API 被當成跳板
  */
 function _isFetchableUrl(rawUrl) {
-  var m = /^https?:\/\/([^\/\s:?#]+)/i.exec(rawUrl);
+  // 原本的 host 正規式是 [^\/\s:?#]+，把冒號排除在外，所以 http://[::1]/
+  // 這種 IPv6 字面量、以及帶認證資訊的 http://user@127.0.0.1/ 都會被判成
+  // 「不是內部位址」而放行。這裡改成先取出整個 authority 再自己拆。
+  var m = /^https?:\/\/([^\/\s?#]+)/i.exec(rawUrl);
   if (!m) return { ok: false, reason: '僅支援 http/https 網址' };
 
-  var host = m[1].toLowerCase();
+  var authority = m[1].toLowerCase();
+  // 去掉 user:pass@
+  var at = authority.lastIndexOf('@');
+  if (at >= 0) authority = authority.slice(at + 1);
+
+  var host;
+  if (authority.charAt(0) === '[') {
+    // IPv6 字面量 [::1]:8080
+    var close = authority.indexOf(']');
+    if (close < 0) return { ok: false, reason: '網址格式不正確' };
+    host = authority.slice(1, close);
+    // 任何 IPv6 的 loopback / link-local / unique-local 一律擋，
+    // 包含 ::ffff:127.0.0.1 這種對映 IPv4 的寫法
+    if (host === '::1' || host === '::' ||
+        /^fe[89ab]/.test(host) || /^f[cd]/.test(host) ||
+        host.indexOf('::ffff:') === 0 || host.indexOf('::127.') === 0) {
+      return { ok: false, reason: '不允許存取內部網段位址' };
+    }
+    return { ok: true };
+  }
+
+  host = authority.split(':')[0];
+  if (!host) return { ok: false, reason: '網址格式不正確' };
 
   if (host === 'localhost' || host === '::1' ||
-      /(^|\.)local$/.test(host) || /(^|\.)internal$/.test(host)) {
+      /(^|\.)local$/.test(host) || /(^|\.)internal$/.test(host) ||
+      /(^|\.)localhost$/.test(host)) {
     return { ok: false, reason: '不允許存取內部網域' };
+  }
+
+  // metadata 服務：雲端上最常被打的目標
+  if (host === 'metadata.google.internal' || host === '169.254.169.254') {
+    return { ok: false, reason: '不允許存取中繼資料服務' };
+  }
+
+  // 非點分十進位的寫法（0x7f000001、2130706433、0177.0.0.1）都會解析到 127.0.0.1
+  if (/^(0x[0-9a-f]+|\d+)$/.test(host)) {
+    return { ok: false, reason: '不允許以數字形式指定主機' };
+  }
+  if (/^0[0-7]*\./.test(host)) {
+    return { ok: false, reason: '不允許以八進位形式指定主機' };
   }
 
   var ip = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
@@ -1760,7 +1884,9 @@ function _isFetchableUrl(rawUrl) {
     if (a === 0 || a === 10 || a === 127 ||
         (a === 172 && b >= 16 && b <= 31) ||
         (a === 192 && b === 168) ||
-        (a === 169 && b === 254)) {
+        (a === 169 && b === 254) ||
+        (a === 100 && b >= 64 && b <= 127) ||
+        a >= 224) {
       return { ok: false, reason: '不允許存取私有網段位址' };
     }
   }
