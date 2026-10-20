@@ -21,7 +21,9 @@ const ALLOWED_UPLOAD_TYPES = [
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 ];
-const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
+// 檔案是以 base64 dataURL 送上來的，編碼後體積約為原始的 4/3，
+// 而 Apps Script 單次 POST 的承載量有限，所以上限不能照原始檔案大小開到 50MB。
+const MAX_UPLOAD_SIZE = 24 * 1024 * 1024; // 24MB（編碼後約 32MB）
 
 // 系統角色（單一來源；前端 js/auth.js 的 ROLES 必須與此一致）
 const USER_ROLES = ['admin', 'teacher', 'crew', 'guest'];
@@ -1330,8 +1332,17 @@ function doPost(e) {
     // Upload (檔案上傳)
     if (action === 'uploadfile') {
       _requireRole(session, ['admin']);
-      const result = _handleUpload(e, bodyObj);
-      return _json({ ok: true, ...result });
+      try {
+        const result = _handleUpload(p, bodyObj);
+        return _json({ ok: true, ...result });
+      } catch (upErr) {
+        const upMsg = String(upErr.message || upErr);
+        if (upMsg === 'Unauthorized' || upMsg === 'Forbidden') throw upErr;
+        // 上傳失敗的原因（檔案太大、類型不允許）要原樣給使用者看，
+        // 不能被外層那句通用的「伺服器錯誤，請稍後再試」蓋掉
+        Logger.log('upload error: ' + upMsg);
+        return _json({ ok: false, error: upMsg });
+      }
     }
 
     // Ask Gemini（AI 課程顧問）
@@ -1380,30 +1391,34 @@ function doOptions(e) {
 
 // ==================== 核心功能函數 ====================
 
-function _handleUpload(e, bodyObj) {
-  let blob = null;
-  let detectedMime = '';
+/**
+ * 檔案上傳
+ *
+ * 以前這裡有兩條路，兩條都是壞的，所以師資照片、證照、教材附件、課程附件
+ * 五個上傳點在三個頁面上一律失敗：
+ *
+ *   1. multipart：用 Utilities.parseMultipart() 解析——Apps Script 的
+ *      Utilities 服務根本沒有這個方法，呼叫會丟 TypeError，又被空的
+ *      catch(_) {} 吞掉。而且 Apps Script 不會把 multipart 的欄位填進
+ *      e.parameter，所以 doPost 在走到這裡之前就先因為 p.token 是空的
+ *      而丟 Unauthorized。
+ *   2. dataUrl：只讀 bodyObj.dataUrl。但前端的 _post() 送的是
+ *      application/x-www-form-urlencoded，doPost 只有在 content-type 是
+ *      json/text-plain 時才會去解析 bodyObj，所以 bodyObj 永遠是 null，
+ *      資料其實在 e.parameter 裡。結果是「No file found」。
+ *
+ * 現在統一走 dataUrl，而且 e.parameter 與 JSON body 兩邊都讀。
+ *
+ * @param {Object} p        e.parameter
+ * @param {Object} bodyObj  JSON body（content-type 是 json 時才有）
+ */
+function _handleUpload(p, bodyObj) {
+  const dataUrl = (p && p.dataUrl) || (bodyObj && bodyObj.dataUrl) || '';
+  if (!dataUrl) throw new Error('沒有收到檔案內容');
 
-  if (e && e.postData) {
-    const raw = e.postData.contents || e.postData.getDataAsString();
-    const ctype = e.postData.type || 'multipart/form-data';
-    try {
-      const mp = Utilities.parseMultipart(raw, ctype);
-      if (mp && mp.parts && mp.parts.length) {
-        const part = mp.parts.find(p => p.name === 'file' && p.filename) || mp.parts.find(p => p.filename) || mp.parts[0];
-        if (part && part.filename) {
-          detectedMime = part.type || 'application/octet-stream';
-          blob = Utilities.newBlob(part.data, detectedMime, part.filename);
-        }
-      }
-    } catch (_) {}
-  }
-  if (!blob && bodyObj && bodyObj.dataUrl) {
-    const fname = String(bodyObj.fileName || 'upload_' + Date.now());
-    blob = _dataUrlToBlob(bodyObj.dataUrl, fname);
-    detectedMime = blob.getContentType();
-  }
-  if (!blob) throw new Error('No file found');
+  const fname = String((p && p.fileName) || (bodyObj && bodyObj.fileName) || ('upload_' + Date.now()));
+  const blob = _dataUrlToBlob(dataUrl, fname);
+  const detectedMime = blob.getContentType();
 
   // 檔案類型白名單檢查
   if (!ALLOWED_UPLOAD_TYPES.includes(detectedMime)) {
@@ -1411,8 +1426,11 @@ function _handleUpload(e, bodyObj) {
   }
 
   // 檔案大小檢查
-  if (blob.getBytes().length > MAX_UPLOAD_SIZE) {
-    throw new Error('檔案超過大小限制（最大 10MB）');
+  const bytes = blob.getBytes().length;
+  if (bytes > MAX_UPLOAD_SIZE) {
+    // 訊息以前寫死 10MB，跟實際的 MAX_UPLOAD_SIZE 對不上
+    throw new Error('檔案 ' + Math.round(bytes / 1048576) + 'MB，超過上限 ' +
+                    Math.round(MAX_UPLOAD_SIZE / 1048576) + 'MB');
   }
 
   const folder = DriveApp.getFolderById(FOLDER_ID);

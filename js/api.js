@@ -15,6 +15,19 @@ const API_CONFIG = {
 /**
  * 從 sessionStorage 取得登入後的 Session Token
  */
+/**
+ * 把 File 讀成 base64 dataURL
+ * 上傳走這條是因為 Apps Script 收不到 multipart 的欄位（見 uploadFile 的說明）
+ */
+function _fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('讀取檔案失敗：' + (file && file.name ? file.name : '')));
+    reader.readAsDataURL(file);
+  });
+}
+
 function _getSessionToken() {
   try {
     const authData = sessionStorage.getItem('authData') || localStorage.getItem('authData');
@@ -185,25 +198,28 @@ class TeacherRosterAPI {
    * @param {File|Blob} file - 檔案物件
    * @param {string} fileName - 檔案名稱（可選）
    */
+  /**
+   * 上傳檔案
+   *
+   * 以前這裡用 FormData 送 multipart，token 也放在 body 裡——但 Apps Script
+   * 不會把 multipart 的欄位填進 e.parameter，所以後端收到的 token 是空的，
+   * 在走到上傳分支之前就先回 Unauthorized。師資照片、證照、教材附件、
+   * 課程附件五個上傳點因此一律失敗。
+   *
+   * 改成先在瀏覽器把檔案讀成 base64 dataURL，再走跟其他請求同一條
+   * urlencoded 的路。代價是體積會膨脹約 1/3，所以上限訂在 24MB。
+   *
+   * @param {File} file
+   * @param {string} [fileName] 省略則用檔案本身的名稱
+   */
   async uploadFile(file, fileName = null) {
-    try {
-      const formData = new FormData();
-      formData.append('file', file, fileName || file.name);
-      formData.append('token', this.token);
-      formData.append('action', 'uploadfile');
-
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        body: formData
-      });
-
-      const result = await response.json();
-      if (!result.ok) throw new Error(result.error || '上傳失敗');
-      return result;
-    } catch (error) {
-      console.error('上傳檔案失敗:', error);
-      throw error;
+    const MAX = 24 * 1024 * 1024;   // 與後端的 MAX_UPLOAD_SIZE 一致
+    if (!file) throw new Error('沒有選擇檔案');
+    if (file.size > MAX) {
+      throw new Error(`檔案 ${Math.round(file.size / 1048576)}MB，超過上限 ${Math.round(MAX / 1048576)}MB`);
     }
+    const dataUrl = await _fileToDataUrl(file);
+    return this.uploadDataUrl(dataUrl, fileName || file.name);
   }
 
   /**
@@ -218,9 +234,12 @@ class TeacherRosterAPI {
         dataUrl,
         fileName
       });
+      if (!response || response.ok === false) {
+        throw new Error((response && response.error) || '上傳失敗');
+      }
       return response;
     } catch (error) {
-      console.error('上傳 DataURL 失敗:', error);
+      console.error('上傳失敗:', error);
       throw error;
     }
   }
