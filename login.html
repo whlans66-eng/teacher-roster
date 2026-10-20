@@ -436,7 +436,10 @@
           loginBtn.innerHTML = '登入成功';
           
           setTimeout(() => {
-            window.location.href = 'index.html';
+            // 導到這個角色的起點：員工是 index.html，船員是船員入口。
+            // 以前一律丟 index.html，船員從這頁登入會直接撞無權限畫面。
+            window.location.href = (window.Auth && Auth.homeFor)
+              ? Auth.homeFor(userData.role) : 'index.html';
           }, 500);
         }
       } catch (error) {
@@ -453,10 +456,10 @@
         const authData = localStorage.getItem('authData') || sessionStorage.getItem('authData');
         if (authData) {
             try {
-                const { timestamp } = JSON.parse(authData);
+                const { timestamp, role: savedRole } = JSON.parse(authData);
                 const expiryTime = 6 * 60 * 60 * 1000; // 6 小時，與 GAS SESSION_TTL 一致
                 if (Date.now() - timestamp < expiryTime) {
-                    window.location.href = 'index.html';
+                    window.location.href = (window.Auth && Auth.homeFor) ? Auth.homeFor(savedRole) : 'index.html';
                     return true;
                 } else {
                     localStorage.removeItem('authData');

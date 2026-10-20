@@ -427,7 +427,12 @@
 
         loginBtn.style.background = '#34c759';
         loginBtn.innerHTML = '登入成功';
-        setTimeout(() => { window.location.href = 'crew-portal.html'; }, 500);
+        // 員工若誤從船員登入頁進來，要導到他自己的起點，
+        // 否則會被丟到船員入口再被守衛擋下，看起來就像登入失敗
+        setTimeout(() => {
+          window.location.href = (window.Auth && Auth.homeFor)
+            ? Auth.homeFor(userData.role) : 'crew-portal.html';
+        }, 500);
 
       } catch (error) {
         showError(error.message || '帳號或密碼錯誤');

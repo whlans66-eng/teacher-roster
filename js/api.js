@@ -1,6 +1,21 @@
 // ==================== API 層：與 Google Apps Script 後端通訊 ====================
 
 /**
+ * 把後端的錯誤字串翻成看得懂的話。
+ *
+ * 「Unknown action」只有一個原因：前端已經更新，Apps Script 那邊還是舊的部署，
+ * 根本沒有這個 action 的分支。直接把原文丟給使用者看，沒有人知道那是什麼意思，
+ * 也不知道該找誰——所以這裡講清楚要做什麼。
+ */
+function _explainApiError(error, action) {
+  if (error === 'Unknown action') {
+    return '後端還沒有「' + (action || '這個') + '」這個功能：Apps Script 的部署版本比前端舊，'
+         + '請到 Apps Script → 部署 → 管理部署作業，把網頁應用程式更新成最新版本後再試一次。';
+  }
+  return error || '請求失敗';
+}
+
+/**
  * 設定區
  * 部署完 Google Apps Script 後，將取得的 Web App URL 填入下方
  */
@@ -324,6 +339,35 @@ class TeacherRosterAPI {
     return response.data;
   }
 
+  // ==================== 船員入口 ====================
+
+  /**
+   * 船員入口一次要的全部資料
+   *
+   * 不用 list 去撈四張表，因為問卷回覆含每個人的作答，不能整張送到前端。
+   * 這支在後端就過濾好，myResponses 只會有「我自己填過哪幾份」。
+   */
+  async crewPortalData() {
+    const response = await this._post({ action: 'crew_portal_data' });
+    return response.data || {};
+  }
+
+  /** 新增一則留言。作者以後端的 session 為準，不採信前端送的名字 */
+  async addComment(courseId, content) {
+    const response = await this._post({ action: 'comment_add', courseId, content });
+    if (!response || response.ok === false) throw new Error((response && response.error) || '留言失敗');
+    return response.data;
+  }
+
+  /** 送出問卷回覆。同一份問卷每人只能填一次，後端會擋 */
+  async submitSurvey(surveyId, answers) {
+    const response = await this._post({
+      action: 'survey_submit', surveyId, answers: JSON.stringify(answers)
+    });
+    if (!response || response.ok === false) throw new Error((response && response.error) || '送出失敗');
+    return response.data;
+  }
+
   // ==================== 下拉選單選項 ====================
 
   /**
@@ -447,7 +491,7 @@ class TeacherRosterAPI {
           _handleSessionExpired();
           throw new Error('Session 已過期，請重新登入');
         }
-        throw new Error(result.error || '請求失敗');
+        throw new Error(_explainApiError(result.error, params && params.action));
       }
 
       return result;
@@ -512,7 +556,7 @@ class TeacherRosterAPI {
           _handleSessionExpired();
           throw new Error('Session 已過期，請重新登入');
         }
-        throw new Error(result.error || '請求失敗');
+        throw new Error(_explainApiError(result.error, data && data.action));
       }
 
       return result;

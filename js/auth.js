@@ -3,7 +3,25 @@
 (function() {
   const AUTH_KEY = 'authData';
   const LOGIN_PATH = 'login.html';
+  const CREW_LOGIN_PATH = 'crew-login.html';
   const HOME_PATH = 'index.html';
+
+  // 每個角色的起點。船員走自己的一條動線（crew-login → crew-portal），
+  // 進不了 index.html，所以導覽列的「首頁」、無權限畫面的「回到首頁」、
+  // 登出後要回哪個登入頁，都要看角色，不能一律寫死 index.html。
+  const ROLE_HOME = { crew: 'crew-portal.html' };
+  const ROLE_LOGIN = { crew: CREW_LOGIN_PATH };
+
+  function homeFor(role) {
+    const r = normalizeRole(role);
+    const home = ROLE_HOME[r] || HOME_PATH;
+    // 權限矩陣可能被管理者改過，所以還是要確認他真的進得去
+    return canAccess(home, r) ? home : (accessiblePages(r)[0] || HOME_PATH);
+  }
+
+  function loginPageFor(role) {
+    return ROLE_LOGIN[normalizeRole(role)] || LOGIN_PATH;
+  }
   const SESSION_TIMEOUT = 6 * 60 * 60 * 1000; // 6 小時，與 GAS SESSION_TTL 一致
 
   // 角色定義：必須與 backend-api.gs 的 USER_ROLES 一致
@@ -36,13 +54,14 @@
   ];
 
   const PAGE_DEFAULTS = {
-    'index.html':              ['admin', 'teacher', 'crew', 'guest'],
+    // 船員走自己的動線，不進員工畫面（見後端 PAGE_ACCESS_DEFAULTS 的說明）
+    'index.html':              ['admin', 'teacher', 'guest'],
     'admin.html':              ['admin'],
     'teacher-management.html': ['admin', 'teacher'],
     'course-management.html':  ['admin', 'teacher'],
     'maritime-courses.html':   ['admin', 'teacher'],
-    'teaching-materials.html': ['admin', 'teacher', 'crew', 'guest'],
-    'crew-portal.html':        ['crew'],
+    'teaching-materials.html': ['admin', 'teacher', 'guest'],
+    'crew-portal.html':        ['admin', 'crew'],
     'fix-sync-issue.html':     ['admin']
   };
 
@@ -259,7 +278,8 @@
   }
 
   function redirectToLogin(target) {
-    const dest = target || LOGIN_PATH;
+    const data = getAuthData();
+    const dest = target || loginPageFor(data && data.role);
     if (currentPage() !== dest) {
       window.location.href = dest;
     }
@@ -270,8 +290,10 @@
    * @param {string} [target] 導回哪個登入頁；船員入口要回 crew-login.html
    */
   function logout(target) {
+    // 角色要在清掉之前決定，清完就不知道他原本是誰了
+    const dest = target || loginPageFor(getRole());
     clearAuthData();
-    redirectToLogin(target);
+    redirectToLogin(dest);
   }
 
   /**
@@ -286,7 +308,8 @@
     deniedScreenShown = true;
 
     const label = getRoleLabel(role);
-    const canGoHome = canAccess(HOME_PATH, role);
+    const myHome = homeFor(role);
+    const canGoHome = !!myHome && currentPage() !== myHome;
 
     const overlay = document.createElement('div');
     overlay.className = 'auth-denied';
@@ -302,7 +325,7 @@
         <h2>此功能需要其他權限</h2>
         <p>您目前的身分是「${label}」，沒有開放使用這個頁面。<br>需要存取權請聯絡系統管理者。</p>
         <div class="auth-denied-actions">
-          ${canGoHome ? `<a class="btn btn-primary" href="${HOME_PATH}">回到首頁</a>` : ''}
+          ${canGoHome ? `<a class="btn btn-primary" href="${escapeHtml(myHome)}">回到起始頁</a>` : ''}
           <button type="button" class="btn btn-secondary" data-auth-switch>切換帳號</button>
         </div>
       </div>
@@ -372,16 +395,29 @@
     }
 
     if (Date.now() - authData.timestamp > SESSION_TIMEOUT) {
+      // 先記下角色再清，否則船員逾時後會被丟到員工的登入頁
+      const backTo = loginPageFor(authData.role);
       clearAuthData();
-      redirectToLogin();
+      redirectToLogin(backTo);
       return null;
     }
 
-    const allowed = Array.isArray(allowedRoles) && allowedRoles.length > 0
-      ? allowedRoles
-      : pageAccess[currentPage()];
+    // 沒登記的頁面一律擋下（和 canAccess 同一套判斷）。
+    // 以前這裡是 pageAccess[currentPage()]，undefined 就不檢查——
+    // 等於漏登記一頁就等於全開，和 canAccess 的結論剛好相反。
+    const ok = Array.isArray(allowedRoles) && allowedRoles.length > 0
+      ? allowedRoles.indexOf(normalizeRole(authData.role)) >= 0
+      : canAccess(currentPage(), authData.role);
 
-    if (Array.isArray(allowed) && allowed.indexOf(normalizeRole(authData.role)) < 0) {
+    if (!ok) {
+      // 有專屬動線的角色（船員：crew-login → crew-portal）誤入員工畫面時，
+      // 直接送回他自己的入口；留在員工頁上看一個無權限說明對他沒有意義。
+      // 其他角色維持顯示說明，讓他知道為什麼進不去、該找誰開通。
+      const ownEntry = ROLE_HOME[normalizeRole(authData.role)];
+      if (ownEntry && ownEntry !== currentPage() && canAccess(ownEntry, authData.role)) {
+        window.location.replace(ownEntry);
+        return null;
+      }
       showAccessDenied(authData.role);
       return null;
     }
@@ -779,7 +815,7 @@
     nav.className = 'app-nav';
     nav.innerHTML = `
       <div class="app-nav-inner">
-        <a class="app-nav-home" href="${HOME_PATH}">
+        <a class="app-nav-home" href="${escapeHtml(homeFor(authData.role))}">
           <i class="ph ph-house" style="font-size:18px"></i><span>首頁</span>
         </a>
         <div class="app-nav-links">${renderNavLinks(normalizeRole(authData.role))}</div>
@@ -820,6 +856,8 @@
     displayName,
     canAccess,
     accessiblePages,
+    homeFor,
+    loginPageFor,
     mountAccountMenu,
     mountNav,
     NAV_ITEMS,
