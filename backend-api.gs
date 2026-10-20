@@ -54,7 +54,9 @@ const TABLE_READ_ROLES = {
   users:             [],   // 一律不得經由一般資料 API 讀取
   userAuditLog:      [],
   // 選項清單決定表單怎麼畫，任何登入者都要讀得到；只有管理者能改
-  options:           ['admin', 'teacher', 'crew', 'guest']
+  options:           ['admin', 'teacher', 'crew', 'guest'],
+  // 頁面權限矩陣走專屬的 page_access_* 動作，不開放泛用讀取
+  pageAccess:        []
 };
 
 function _canReadTable(session, tableName) {
@@ -83,7 +85,8 @@ const TABLE_WRITE_ROLES = {
   users:             [],
   userAuditLog:      [],
   options:           [],
-  activeSessions:    []
+  activeSessions:    [],
+  pageAccess:        []
 };
 
 function _canWriteTable(session, tableName) {
@@ -142,6 +145,12 @@ const SHEETS_CONFIG = {
   options: {
     name: 'options',
     header: ['id','listKey','value','label','sublabel','groupName','sortOrder','active','icon','builtin','updatedBy','updatedAt']
+  },
+  // 哪個角色能進哪一頁。一列一頁、一欄一角色，值為 TRUE / FALSE，
+  // 直接打開試算表就看得懂。管理者在「帳號管理 → 頁面權限」維護。
+  pageAccess: {
+    name: 'pageAccess',
+    header: ['page'].concat(USER_ROLES).concat(['updatedBy', 'updatedAt'])
   }
 };
 
@@ -914,6 +923,156 @@ function _writeOptionRows(ctx, options, session) {
   if (rows.length) ctx.sh.getRange(2, 1, rows.length, ctx.idx._len).setValues(rows);
 }
 
+// ==================== 頁面權限矩陣 ====================
+
+/**
+ * 預設值：哪個角色能進哪一頁。
+ *
+ * 以前這份表寫死在前端 js/auth.js 的 PAGE_ACCESS，要改「誰看得到哪一頁」
+ * 只能改程式重新部署。現在它是資料：第一次讀取時用這份種子建立 pageAccess 表，
+ * 之後以表為準，管理者在「帳號管理 → 頁面權限」自己勾。
+ *
+ * 這份清單同時是「站上有哪些頁」的唯一登記處：前端 js/auth.js 的 PAGE_DEFAULTS
+ * 必須與此一致（頁面鍵與預設角色都要一樣），否則後端不認得前端送來的頁面。
+ */
+const PAGE_ACCESS_DEFAULTS = {
+  'index.html':              ['admin', 'teacher', 'crew', 'guest'],
+  'admin.html':              ['admin'],
+  'teacher-management.html': ['admin', 'teacher'],
+  'course-management.html':  ['admin', 'teacher'],
+  'maritime-courses.html':   ['admin', 'teacher'],
+  'teaching-materials.html': ['admin', 'teacher', 'crew', 'guest'],
+  // 船員入口是給船員看課表、留言、問卷的，管理者有自己的管理畫面
+  'crew-portal.html':        ['crew'],
+  // 會清空整個 localStorage 的修復工具，只給管理者
+  'fix-sync-issue.html':     ['admin']
+};
+
+// 無論怎麼勾，管理者一定要保有這幾頁，否則會把自己鎖在系統外面
+const PAGE_ACCESS_LOCKED = {
+  'index.html': ['admin'],
+  'admin.html': ['admin']
+};
+
+function _pageAccessContext() {
+  const header = SHEETS_CONFIG.pageAccess.header;
+  const sh = _getOrCreateSheet('pageAccess', header);
+  return { sh: sh, header: header, idx: _headerIndex(sh, header) };
+}
+
+/** 把矩陣整理成 { page: [roles] }，只留認得的頁面與角色，鎖定的組合一律補回 */
+function _normalizePageAccess(raw) {
+  const out = {};
+  Object.keys(PAGE_ACCESS_DEFAULTS).forEach(page => {
+    const src = raw && Object.prototype.hasOwnProperty.call(raw, page) ? raw[page] : null;
+    let roles = Array.isArray(src)
+      ? src.map(r => String(r || '').trim()).filter(r => USER_ROLES.indexOf(r) >= 0)
+      : PAGE_ACCESS_DEFAULTS[page].slice();
+    (PAGE_ACCESS_LOCKED[page] || []).forEach(r => { if (roles.indexOf(r) < 0) roles.push(r); });
+    // 依 USER_ROLES 的順序輸出，前端比對時才不會因順序不同誤判有變更
+    out[page] = USER_ROLES.filter(r => roles.indexOf(r) >= 0);
+  });
+  return out;
+}
+
+/** 讀出矩陣；表是空的就先寫入預設值 */
+function _readPageAccess() {
+  const ctx = _pageAccessContext();
+  if (ctx.sh.getLastRow() < 2) {
+    _writePageAccessRows(ctx, PAGE_ACCESS_DEFAULTS, null);
+    return _normalizePageAccess(PAGE_ACCESS_DEFAULTS);
+  }
+  const lastRow = ctx.sh.getLastRow();
+  const rows = ctx.sh.getRange(2, 1, lastRow - 1, ctx.idx._len).getValues();
+  const raw = {};
+  rows.forEach(row => {
+    const page = String(row[ctx.idx['page']] || '').trim();
+    if (!page) return;
+    raw[page] = USER_ROLES.filter(r => String(row[ctx.idx[r]] || '').toUpperCase() === 'TRUE');
+  });
+  // 程式新增了頁面但表裡還沒有這一列：補上預設值，讓管理者下次開矩陣就看得到
+  const missing = Object.keys(PAGE_ACCESS_DEFAULTS).filter(p => !Object.prototype.hasOwnProperty.call(raw, p));
+  const normalized = _normalizePageAccess(raw);
+  if (missing.length) _writePageAccessRows(ctx, normalized, null);
+  return normalized;
+}
+
+function _writePageAccessRows(ctx, access, session) {
+  const now = new Date().toISOString();
+  const who = (session && session.username) || 'system';
+  const normalized = _normalizePageAccess(access);
+  const rows = Object.keys(normalized).map(page => {
+    const row = new Array(ctx.idx._len).fill('');
+    const set = (k, v) => { if (ctx.idx[k] !== undefined) row[ctx.idx[k]] = v; };
+    set('page', page);
+    USER_ROLES.forEach(r => set(r, normalized[page].indexOf(r) >= 0 ? 'TRUE' : 'FALSE'));
+    set('updatedBy', who);
+    set('updatedAt', now);
+    return row;
+  });
+  const last = ctx.sh.getLastRow();
+  if (last > 1) ctx.sh.getRange(2, 1, last - 1, ctx.idx._len).clearContent();
+  if (rows.length) ctx.sh.getRange(2, 1, rows.length, ctx.idx._len).setValues(rows);
+}
+
+/** 給稽核紀錄看的差異摘要，例如「crew-portal.html: -admin」 */
+function _describePageAccessDiff(before, after) {
+  const parts = [];
+  Object.keys(after).forEach(page => {
+    const prev = before[page] || [];
+    const next = after[page] || [];
+    const added = next.filter(r => prev.indexOf(r) < 0).map(r => '+' + r);
+    const removed = prev.filter(r => next.indexOf(r) < 0).map(r => '-' + r);
+    if (added.length || removed.length) parts.push(page + ': ' + added.concat(removed).join(' '));
+  });
+  return parts.length ? parts.join('；') : '無變更';
+}
+
+/**
+ * 頁面權限維護（僅管理者；page_access_list 走讀取類，任何登入者可讀）
+ *
+ * page_access_save：一次送整份矩陣 { page: [roles] }。
+ *   不認得的頁面直接拒絕（多半是前後端清單沒對齊），而不是默默忽略。
+ */
+function _handlePageAccessAction(action, p, bodyObj, session) {
+  if (action === 'page_access_save') {
+    let access = p.access || (bodyObj && bodyObj.access);
+    if (typeof access === 'string') { try { access = JSON.parse(access); } catch (e) { access = null; } }
+    if (!access || typeof access !== 'object' || Array.isArray(access)) {
+      return _json({ ok: false, error: '缺少 access' });
+    }
+    const unknown = Object.keys(access).filter(pg => !Object.prototype.hasOwnProperty.call(PAGE_ACCESS_DEFAULTS, pg));
+    if (unknown.length) return _json({ ok: false, error: '不認得的頁面：' + unknown.join(', ') });
+    const missing = Object.keys(PAGE_ACCESS_DEFAULTS).filter(pg => !Object.prototype.hasOwnProperty.call(access, pg));
+    if (missing.length) return _json({ ok: false, error: '缺少頁面：' + missing.join(', ') });
+    for (const page of Object.keys(access)) {
+      if (!Array.isArray(access[page])) return _json({ ok: false, error: page + ' 的角色必須是陣列' });
+      const bad = access[page].filter(r => USER_ROLES.indexOf(String(r)) < 0);
+      if (bad.length) return _json({ ok: false, error: page + ' 有不認得的角色：' + bad.join(', ') });
+      const locked = (PAGE_ACCESS_LOCKED[page] || []).filter(r => access[page].indexOf(r) < 0);
+      if (locked.length) return _json({ ok: false, error: page + ' 不能拿掉 ' + locked.join('、') + '，否則管理者會被鎖在系統外' });
+    }
+
+    const before = _readPageAccess();
+    const ctx = _pageAccessContext();
+    _writePageAccessRows(ctx, access, session);
+    const after = _readPageAccess();
+    _auditLog(session.username, 'page_access_save', 'pageAccess', _describePageAccessDiff(before, after));
+    return _json({ ok: true, data: after });
+  }
+
+  if (action === 'page_access_reset') {
+    const before = _readPageAccess();
+    const ctx = _pageAccessContext();
+    _writePageAccessRows(ctx, PAGE_ACCESS_DEFAULTS, session);
+    const after = _readPageAccess();
+    _auditLog(session.username, 'page_access_reset', 'pageAccess', _describePageAccessDiff(before, after));
+    return _json({ ok: true, data: after });
+  }
+
+  return _json({ ok: false, error: 'Unknown action' });
+}
+
 // ==================== 速率限制 ====================
 
 function _checkRateLimit(username) {
@@ -939,8 +1098,9 @@ function _clearLoginFailures(username) {
 
 // ==================== 路由處理 ====================
 
-const READ_ACTIONS = ['list', 'listall', 'getversions', 'options_list', 'session_register',
-                     'session_heartbeat', 'session_list', 'session_kick', 'session_check_kicked'];
+const READ_ACTIONS = ['list', 'listall', 'getversions', 'options_list', 'page_access_list',
+                     'session_register', 'session_heartbeat', 'session_list', 'session_kick',
+                     'session_check_kicked'];
 
 /**
  * 讀取類動作的共用處理（doGet 與 doPost 都走這裡）
@@ -976,6 +1136,12 @@ function _handleReadAction(action, p, session) {
   // 任何登入者都要讀得到選項，否則表單畫不出下拉選單
   if (action === 'options_list') {
     return _json({ ok: true, data: _readOptions() });
+  }
+
+  // 頁面權限矩陣：首頁卡片、導覽列、各頁守衛都靠它，任何登入者都要讀得到。
+  // 它只說「哪個角色能進哪一頁」，不含任何帳號資料。
+  if (action === 'page_access_list') {
+    return _json({ ok: true, data: _readPageAccess() });
   }
 
   if (action === 'getversions') {
@@ -1129,7 +1295,11 @@ function doPost(e) {
           mustChangePassword: String(user.mustChangePassword || '').toUpperCase() === 'TRUE'
         };
         _auditLog(user.username, 'login', user.username, '');
-        return _json({ ok: true, data: { user: userData, token: sessionToken } });
+        // 一併帶回頁面權限矩陣：登入後第一頁就要靠它畫卡片與導覽列，
+        // 不必等另一次往返（讀取失敗不影響登入，前端會退回內建預設值）
+        let pageAccess = null;
+        try { pageAccess = _readPageAccess(); } catch (paErr) { Logger.log('讀取頁面權限失敗: ' + paErr); }
+        return _json({ ok: true, data: { user: userData, token: sessionToken, pageAccess: pageAccess } });
       } else {
         _recordLoginFailure(username);
         return _json({ ok: false, error: '帳號或密碼錯誤' });
@@ -1174,6 +1344,19 @@ function doPost(e) {
         if (optMsg === 'Unauthorized' || optMsg === 'Forbidden') throw optErr;
         Logger.log('options action error: ' + optMsg);
         return _json({ ok: false, error: optMsg });
+      }
+    }
+
+    // ===== 頁面權限維護（僅管理者；page_access_list 已在上面的讀取類處理掉）=====
+    if (action.indexOf('page_access_') === 0) {
+      _requireRole(session, ['admin']);
+      try {
+        return _handlePageAccessAction(action, p, bodyObj, session);
+      } catch (paErr) {
+        const paMsg = String(paErr.message || paErr);
+        if (paMsg === 'Unauthorized' || paMsg === 'Forbidden') throw paErr;
+        Logger.log('page access action error: ' + paMsg);
+        return _json({ ok: false, error: paMsg });
       }
     }
 

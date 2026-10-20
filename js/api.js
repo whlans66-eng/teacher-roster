@@ -6,7 +6,7 @@
  */
 const API_CONFIG = {
   // 將此 URL 替換為你部署後的 Google Apps Script Web App URL
-  baseUrl: 'https://script.google.com/macros/s/AKfycby8emf99XZKHWiFPqyh9a_rRp5_qNy2vUsoa9xKAZW_Ycs9I1YVPlFkGe8heVCzsSZD0Q/exec',
+  baseUrl: 'https://script.google.com/macros/s/AKfycbwzgaMI_H_443q2rSvJ1Px6xvp2Bk-DwPWEjwQEQKeAybjZf_OR8QepO1Kz0Q3DlMPINg/exec',
   timeout: 30000,  // 30 秒超時
   enableSessions: false, // 是否啟用 Session 追蹤與鎖定功能
   debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
@@ -355,6 +355,33 @@ class TeacherRosterAPI {
   async resetOptions(listKey) {
     const response = await this._post({ action: 'options_reset', listKey: listKey });
     return response.data || [];
+  }
+
+  // ==================== 頁面權限矩陣 ====================
+
+  /**
+   * 讀取「哪個角色能進哪一頁」（任何登入者都能讀）
+   * @returns {Object} { 'admin.html': ['admin'], ... }
+   */
+  async listPageAccess() {
+    const response = await this._post({ action: 'page_access_list' });
+    return response.data || {};
+  }
+
+  /**
+   * 整份覆蓋頁面權限矩陣（僅管理者）
+   * 後端會擋：不認得的頁面或角色、以及把管理者從首頁／帳號管理拿掉。
+   * @param {Object} access { page: [roles] }
+   */
+  async savePageAccess(access) {
+    const response = await this._post({ action: 'page_access_save', access: JSON.stringify(access) });
+    return response.data || {};
+  }
+
+  /** 還原成程式內建的預設矩陣（僅管理者） */
+  async resetPageAccess() {
+    const response = await this._post({ action: 'page_access_reset' });
+    return response.data || {};
   }
 
   /**
