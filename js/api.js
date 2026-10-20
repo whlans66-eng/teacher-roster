@@ -338,6 +338,33 @@ class TeacherRosterAPI {
     return response.data || [];
   }
 
+  // ==================== 頁面權限矩陣 ====================
+
+  /**
+   * 讀取「哪個角色能進哪一頁」（任何登入者都能讀）
+   * @returns {Object} { 'admin.html': ['admin'], ... }
+   */
+  async listPageAccess() {
+    const response = await this._post({ action: 'page_access_list' });
+    return response.data || {};
+  }
+
+  /**
+   * 整份覆蓋頁面權限矩陣（僅管理者）
+   * 後端會擋：不認得的頁面或角色、以及把管理者從首頁／帳號管理拿掉。
+   * @param {Object} access { page: [roles] }
+   */
+  async savePageAccess(access) {
+    const response = await this._post({ action: 'page_access_save', access: JSON.stringify(access) });
+    return response.data || {};
+  }
+
+  /** 還原成程式內建的預設矩陣（僅管理者） */
+  async resetPageAccess() {
+    const response = await this._post({ action: 'page_access_reset' });
+    return response.data || {};
+  }
+
   /**
    * 讀取請求
    *

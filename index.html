@@ -119,6 +119,8 @@
       flex-shrink: 0;
     }
 
+    .card[hidden] { display: none; }
+
     .card {
       background: #ffffff;
       border-radius: 20px;
@@ -391,20 +393,33 @@
 
       // 只留下這個角色進得去的功能。
       // 以前每張卡片都顯示，點下去才被擋、還會被強制登出。
-      document.querySelectorAll('.card[data-page]').forEach(card => {
-        if (!Auth.canAccess(card.dataset.page)) card.remove();
-      });
-
-      const grid = document.getElementById('cardGrid');
-      if (grid && !grid.querySelector('.card')) {
-        grid.innerHTML = `
-          <div style="padding:48px 24px;text-align:center;color:#6e6e73">
-            <p style="font-size:17px;font-weight:600;color:#1d1d1f;margin-bottom:6px">
-              目前沒有開放給您的功能
-            </p>
-            <p style="font-size:15px">請聯絡系統管理者開通權限</p>
-          </div>`;
+      // 用 hidden 而不是 remove：管理者改了頁面權限、背景重抓到新矩陣時，卡片要能再長回來。
+      function applyCardVisibility() {
+        const grid = document.getElementById('cardGrid');
+        let visible = 0;
+        document.querySelectorAll('.card[data-page]').forEach(card => {
+          const ok = Auth.canAccess(card.dataset.page);
+          card.hidden = !ok;
+          if (ok) visible++;
+        });
+        let empty = document.getElementById('cardEmpty');
+        if (!visible && grid && !empty) {
+          empty = document.createElement('div');
+          empty.id = 'cardEmpty';
+          empty.innerHTML = `
+            <div style="padding:48px 24px;text-align:center;color:#6e6e73">
+              <p style="font-size:17px;font-weight:600;color:#1d1d1f;margin-bottom:6px">
+                目前沒有開放給您的功能
+              </p>
+              <p style="font-size:15px">請聯絡系統管理者開通權限</p>
+            </div>`;
+          grid.appendChild(empty);
+        } else if (visible && empty) {
+          empty.remove();
+        }
       }
+      applyCardVisibility();
+      document.addEventListener('auth:pageaccess', applyCardVisibility);
     });
   </script>
 
@@ -446,8 +461,7 @@
         <p class="card-description">書籍、影片與數位資源</p>
       </a>
 
-      <!-- 船員入口：PAGE_ACCESS 開給 admin / crew，但以前首頁與導覽列都沒有入口，
-           crew 登入後其實到不了這一頁，而帳號管理的角色說明卻寫著「僅能使用船員入口」 -->
+      <!-- 船員入口：預設只給 crew；誰看得到由「帳號管理 → 頁面權限」決定 -->
       <a href="crew-portal.html" class="card" data-page="crew-portal.html">
         <span class="card-icon"><i class="ph ph-identification-badge"></i></span>
         <h2 class="card-title">船員入口</h2>

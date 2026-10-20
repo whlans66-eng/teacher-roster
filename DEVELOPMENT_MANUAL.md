@@ -832,8 +832,9 @@ Orphan 的紀錄會在詳情頁明確提示「此課名已不存在」，並可�
 ### 5.4.6 全站共用主導覽（Auth.mountNav）
 
 每一頁都顯示首頁有的模組選項，但**只列出該帳號進得去的**。
-模組清單在 js/auth.js 的 `NAV_ITEMS`，可見性由 `PAGE_ACCESS` 決定——
-新增模組時兩邊都要加。
+模組清單由 js/auth.js 的 `PAGE_REGISTRY`（`nav: true` 的項目）產生，
+可見性由權限矩陣決定（見 5.4.7）。新增模組時在 `PAGE_REGISTRY`、`PAGE_DEFAULTS`
+與後端 `PAGE_ACCESS_DEFAULTS` 各加一筆，三邊的頁面鍵要一樣。
 
 用法：頁面載入後呼叫 `Auth.mountNav()`（省略參數則插在 body 最前面）。
 導覽列右側會自動掛上帳號選單。
@@ -845,7 +846,28 @@ Orphan 的紀錄會在詳情頁明確提示「此課名已不存在」，並可�
 
 `mountNav()` 內建重複掛載防護（偵測到既有 `.app-nav` 就跳過）。
 
-### 5.4.7 Tailwind 改為預先編譯（shared/tailwind.css）
+### 5.4.7 頁面權限矩陣（帳號管理 → 頁面權限）
+
+「哪個角色能進哪一頁」是資料，不是程式。
+
+- **後端**：`pageAccess` 表，一列一頁、一欄一角色（TRUE / FALSE）。
+  第一次讀取時用 `PAGE_ACCESS_DEFAULTS` 建表；程式新增頁面但表裡沒有那一列時，
+  讀取會自動補上預設值。動作：`page_access_list`（任何登入者）、
+  `page_access_save` / `page_access_reset`（僅管理者，寫稽核紀錄）。
+  管理者在 `index.html` 與 `admin.html` 的權限鎖死（`PAGE_ACCESS_LOCKED`），
+  避免把自己鎖在系統外。
+- **前端**：`js/auth.js` 把矩陣放在 localStorage（`pageAccessTable`），
+  頁面守衛 `protectPage()`、`canAccess()`、首頁卡片、導覽列都讀同一份。
+  登入時後端隨登入結果帶回矩陣；每頁載入後背景重抓（一分鐘節流），
+  有變更就發 `auth:pageaccess` 事件，導覽列與首頁卡片就地重畫，
+  目前頁面被收回權限時就地顯示說明。
+- **備援**：後端讀不到時用 `PAGE_DEFAULTS`，必須與後端 `PAGE_ACCESS_DEFAULTS` 一致。
+- **新增頁面**：`PAGE_REGISTRY`（名稱、圖示、要不要進導覽列）、`PAGE_DEFAULTS`、
+  後端 `PAGE_ACCESS_DEFAULTS` 各加一筆。沒登記的頁面一律擋。
+- 注意：矩陣只管「看得到、進得去」。資料的讀寫權限仍由後端
+  `TABLE_READ_ROLES` / `TABLE_WRITE_ROLES` 控管，藏頁面不等於藏資料。
+
+### 5.4.8 Tailwind 改為預先編譯（shared/tailwind.css）
 
 `teacher-management.html` 與 `course-management.html` 用 Tailwind，
 原本是這樣載入的：
@@ -903,7 +925,7 @@ scripts/build-tailwind.sh
 HTML 裡預留一個固定高度的導覽列容器讓 `mountNav()` 填進去，而不是
 `insertBefore`。
 
-### 5.4.8 下拉選單選項交由管理者維護（options）
+### 5.4.9 下拉選單選項交由管理者維護（options）
 
 船員職級清單以前寫死在 `maritime-courses.html` 的**三個地方**（主表單的
 checkbox、編輯 modal 的 checkbox、`getRankDisplayName()` 的查表），課程分類
