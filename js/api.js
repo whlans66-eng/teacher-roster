@@ -28,7 +28,7 @@ const REQUIRED_BACKEND_VERSION = '2026-10-28.2';
  */
 const API_CONFIG = {
   // 將此 URL 替換為你部署後的 Google Apps Script Web App URL
-  baseUrl: 'https://script.google.com/macros/s/AKfycbwzgaMI_H_443q2rSvJ1Px6xvp2Bk-DwPWEjwQEQKeAybjZf_OR8QepO1Kz0Q3DlMPINg/exec',
+  baseUrl: 'https://script.google.com/macros/s/AKfycbzM8oLxilkC3FvwkisZQkBntpsnbJqbMkZtBKTdD7mNBV9dxO3zFpGSdRtIiEka6IHm4w/exec',
   timeout: 30000,  // 30 秒超時
   enableSessions: false, // 是否啟用 Session 追蹤與鎖定功能
   debug: false  // 開啟/關閉調試日誌（生產環境請設為 false）
