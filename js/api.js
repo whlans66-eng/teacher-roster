@@ -16,6 +16,13 @@ function _explainApiError(error, action) {
 }
 
 /**
+ * 這版前端需要的後端版本（對應 backend-api.gs 的 BACKEND_VERSION）。
+ * 後端比這個舊，代表 Apps Script 還沒重新部署：帳號管理頁會直接提示，
+ * 不用等到某個按鈕失敗才發現。改了 backend-api.gs 就把兩邊一起改成當天日期。
+ */
+const REQUIRED_BACKEND_VERSION = '2026-10-28';
+
+/**
  * 設定區
  * 部署完 Google Apps Script 後，將取得的 Web App URL 填入下方
  */
@@ -280,7 +287,8 @@ class TeacherRosterAPI {
       username: user.username,
       password: user.password,
       role: user.role,
-      full_name: user.full_name || ''
+      full_name: user.full_name || '',
+      rank: user.rank || ''
     });
     return response.data;
   }
@@ -295,6 +303,8 @@ class TeacherRosterAPI {
     ['username', 'full_name', 'role', 'password'].forEach(key => {
       if (changes[key]) payload[key] = changes[key];
     });
+    // 職級可以清空，空字串也要送；沒帶這個鍵才代表不動
+    if (changes.rank !== undefined) payload.rank = changes.rank || '';
     const response = await this._post(payload);
     return response.data;
   }
@@ -339,17 +349,60 @@ class TeacherRosterAPI {
     return response.data;
   }
 
-  // ==================== 船員入口 ====================
+  // ==================== 教材頁（管理者、教師、船員共用）====================
 
   /**
-   * 船員入口一次要的全部資料
+   * 教材頁一次要的資料
    *
-   * 不用 list 去撈四張表，因為問卷回覆含每個人的作答，不能整張送到前端。
-   * 這支在後端就過濾好，myResponses 只會有「我自己填過哪幾份」。
+   * 課程依角色篩好；課表、留言、問卷各自要有功能權限才會有資料。
+   * 問卷回覆只回「我自己填過哪幾份」，不含任何人的作答內容。
+   * @param {string} [previewRank] 以船員身分預覽：'__all__' 不分職級、'__none__' 未設定職級、或職級代碼
    */
-  async crewPortalData() {
-    const response = await this._post({ action: 'crew_portal_data' });
+  async learningData(previewRank) {
+    const response = await this._post({ action: 'learning_data', previewRank: previewRank || undefined });
     return response.data || {};
+  }
+
+  /** 舊名稱，等同 learningData() */
+  async crewPortalData(previewRank) { return this.learningData(previewRank); }
+
+  // ── 管理功能（誰能用由功能權限決定，後端會再檢查一次）──
+
+  /** 問卷（含題目、回覆數、作答）與船員設定（含課程、船員帳號），依功能權限各給各的 */
+  async learningManageData() {
+    const response = await this._post({ action: 'learning_manage_data' });
+    return response.data || {};
+  }
+
+  /** 存船員設定：{ courseMode, hiddenCourseIds, notice }，只送要改的欄位也可以 */
+  async saveCrewSettings(settings) {
+    const response = await this._post({ action: 'crew_settings_save', settings: JSON.stringify(settings) });
+    return response.data;
+  }
+
+  /** 新增或修改一份問卷：{ id?, title, description, courseId, status, questions } */
+  async saveCrewSurvey(survey) {
+    const response = await this._post({ action: 'crew_survey_save', survey: JSON.stringify(survey) });
+    return response.data;
+  }
+
+  async deleteCrewSurvey(id) {
+    return this._post({ action: 'crew_survey_delete', id: id });
+  }
+
+  async deleteCrewComment(id) {
+    return this._post({ action: 'crew_comment_delete', id: id });
+  }
+
+  /**
+   * 檢查後端是不是這版前端需要的版本
+   * @returns {Promise<{ok:boolean, current:string, required:string}>}
+   */
+  async checkBackendVersion() {
+    const res = await this.ping();
+    const current = String((res && res.version) || '');
+    // 舊後端沒有 version 欄位，視為落後
+    return { ok: !!current && current >= REQUIRED_BACKEND_VERSION, current: current, required: REQUIRED_BACKEND_VERSION };
   }
 
   /** 新增一則留言。作者以後端的 session 為準，不採信前端送的名字 */
@@ -409,6 +462,23 @@ class TeacherRosterAPI {
    */
   async listPageAccess() {
     const response = await this._post({ action: 'page_access_list' });
+    return response.data || {};
+  }
+
+  /** 頁面權限與功能權限一起讀：{ pages, features }（舊後端沒有 features） */
+  async listAccess() {
+    const response = await this._post({ action: 'page_access_list' });
+    return { pages: response.data || {}, features: response.features || null };
+  }
+
+  /** 整份覆蓋功能權限矩陣（僅管理者）：{ feature: [roles] } */
+  async saveFeatureAccess(access) {
+    const response = await this._post({ action: 'feature_access_save', access: JSON.stringify(access) });
+    return response.data || {};
+  }
+
+  async resetFeatureAccess() {
+    const response = await this._post({ action: 'feature_access_reset' });
     return response.data || {};
   }
 

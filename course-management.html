@@ -4223,50 +4223,10 @@
 
     // ==================== 問卷管理功能 ====================
 
-    function openSurveyManagement(courseId) {
-      const course = courseAssignments.find(c => c.id === courseId);
-      if (!course) return;
-
-      // 載入問卷數據
-      const surveys = JSON.parse(localStorage.getItem('surveys') || '[]');
-      const surveyTemplates = JSON.parse(localStorage.getItem('surveyTemplates') || '[]');
-      const surveyResponses = JSON.parse(localStorage.getItem('surveyResponses') || '[]');
-
-      // 查找此課程的問卷
-      const courseSurveys = surveys.filter(s => s.courseId === courseId);
-
-      let message = `📊 課程問卷管理\n\n`;
-      message += `課程：${courseDisplayName(course)}\n`;
-      message += `日期：${course.date}\n\n`;
-
-      if (courseSurveys.length === 0) {
-        message += `此課程尚未創建問卷。\n\n`;
-        message += `請前往「問卷管理系統」為此課程創建問卷。\n\n`;
-        const goToSurvey = confirm(message + '是否要前往問卷管理系統？');
-        if (goToSurvey) {
-          window.location.href = 'survey-management.html';
-        }
-      } else {
-        message += `已創建 ${courseSurveys.length} 個問卷：\n\n`;
-
-        courseSurveys.forEach((survey, index) => {
-          const template = surveyTemplates.find(t => t.id === survey.templateId);
-          const responses = surveyResponses.filter(r => r.surveyId === survey.id);
-          const statusText = survey.status === 'active' ? '✓ 開放中' : '✗ 已關閉';
-
-          message += `${index + 1}. ${template ? template.name : '未知模板'}\n`;
-          message += `   狀態：${statusText}\n`;
-          message += `   回應數：${responses.length} 份\n`;
-          message += `   連結：${survey.shareUrl}\n\n`;
-        });
-
-        message += `\n請前往「問卷管理系統」查看詳細統計或管理問卷。`;
-
-        const goToSurvey = confirm(message + '\n\n是否要前往問卷管理系統？');
-        if (goToSurvey) {
-          window.location.href = 'survey-management.html';
-        }
-      }
+    // 問卷管理在教材頁的「問卷」分頁（以前這裡連到一個不存在的 survey-management.html，
+    // 讀的還是只存在這台瀏覽器的 localStorage）
+    function openSurveyManagement() {
+      window.location.href = 'teaching-materials.html?tab=surveys';
     }
 
     /**

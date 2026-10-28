@@ -597,6 +597,114 @@
               mask: radial-gradient(circle at center, transparent 55%, #000 57%);
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       課表、問卷、船員設定（tm-*）：沿用本頁的 hm- 版面與 ed- 對話框
+       ══════════════════════════════════════════════════════════════ */
+    .topbar-nav-link.is-on { color: var(--text); }
+    .topbar-nav-link.is-on::after { content: ''; display: block; height: 2px; margin-top: 4px; border-radius: var(--r-pill); background: var(--blue); }
+    .tm-nav-badge {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px;
+      margin-left: 5px; border-radius: var(--r-pill); background: var(--bad); color: #fff; font-size: 11px; font-weight: 700; vertical-align: 1px;
+    }
+    .tm-sub { margin: -6px 0 16px; font-size: 13.5px; line-height: 1.7; color: var(--dim); }
+    .tm-banner {
+      display: flex; gap: 12px; align-items: center; padding: 14px 18px; border-radius: var(--r-card);
+      font-size: 14px; line-height: 1.7; border: 1px solid transparent;
+    }
+    .tm-banner > i { font-size: 20px; flex: 0 0 auto; align-self: flex-start; margin-top: 2px; }
+    .tm-banner-amber { background: #fff8e6; border-color: #fde3a7; color: #7a4b00; }
+    .tm-banner-blue  { background: var(--blue-l); border-color: var(--blue-l2); color: var(--blue-h); }
+    .tm-notice-add {
+      width: 100%; display: flex; align-items: center; gap: 8px; justify-content: center; padding: 12px;
+      border: 1.5px dashed var(--line); border-radius: var(--r-card); background: transparent; color: var(--dim);
+      font-size: 13.5px; font-weight: 600;
+    }
+    .tm-notice-add:hover { border-color: var(--blue); color: var(--blue); }
+    .tm-extras { display: grid; gap: 16px; }
+    .tm-strip { background: var(--surface); border-radius: var(--r-card); padding: 16px 18px; box-shadow: var(--shadow-sm); }
+    .tm-strip-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .tm-strip-head h3 { margin: 0; font-size: 16px; font-weight: 700; }
+    .tm-strip .tm-row { box-shadow: none; padding: 10px 4px; border-radius: 0; border-bottom: 1px solid var(--line-soft); }
+    .tm-strip .tm-row:last-child { border-bottom: 0; }
+    .tm-strip-action { display: flex; align-items: center; gap: 14px; cursor: pointer; outline: none; transition: box-shadow .15s; }
+    .tm-strip-action:hover, .tm-strip-action:focus-visible { box-shadow: var(--shadow-md); }
+    .tm-strip-action > i:first-child { font-size: 26px; color: var(--blue); }
+    .tm-crewtag {
+      display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; padding: 2px 8px; border-radius: var(--r-pill);
+      background: var(--blue-l); color: var(--blue-h); font-size: 11px; font-weight: 700;
+    }
+    .tm-crewtag.off { background: var(--fill); color: var(--dim); }
+
+    .tm-section + .tm-section { margin-top: 40px; }
+    .tm-day { margin-bottom: 22px; }
+    .tm-day-label { font-size: 13px; font-weight: 700; color: var(--dim); margin: 0 0 8px 4px; }
+    .tm-day-label.is-today { color: var(--blue); }
+    .tm-list { display: flex; flex-direction: column; gap: 8px; }
+    .tm-row {
+      display: flex; align-items: center; gap: 16px; padding: 14px 18px; background: var(--surface);
+      border-radius: var(--r-btn); box-shadow: var(--shadow-sm); cursor: pointer; outline: none; transition: box-shadow .15s;
+    }
+    .tm-row:hover, .tm-row:focus-visible { box-shadow: var(--shadow-md); }
+    .tm-row.is-static { cursor: default; }
+    .tm-row.is-static:hover { box-shadow: var(--shadow-sm); }
+    .tm-row.is-cancelled .tm-row-title { text-decoration: line-through; color: var(--dim); }
+    .tm-row.is-off .tm-row-title { color: var(--dim); }
+    .tm-row > .ph-caret-right { color: var(--faint); }
+    .tm-row-time { flex: 0 0 104px; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .tm-row-icon { font-size: 22px; color: var(--blue); flex: 0 0 auto; }
+    .tm-row-main { flex: 1; min-width: 0; }
+    .tm-row-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .tm-row-sub { font-size: 12.5px; color: var(--dim); margin-top: 2px; line-height: 1.6; }
+    .tm-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--r-pill); background: var(--fill); color: var(--dim); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .tm-pill.ok { background: #ecfdf5; color: #047857; }
+    .tm-status { flex: 0 0 auto; padding: 3px 10px; border-radius: var(--r-pill); font-size: 11.5px; font-weight: 700; }
+    .tm-status.draft  { background: var(--fill); color: var(--dim); }
+    .tm-status.active { background: #ecfdf5; color: #047857; }
+    .tm-status.closed { background: var(--bad-bg); color: var(--bad); }
+    .tm-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+    @media (max-width: 640px) {
+      .tm-row { flex-wrap: wrap; }
+      .tm-row-time { flex-basis: 100%; }
+      .tm-actions { flex-basis: 100%; justify-content: flex-start; }
+    }
+
+    .tm-choices { display: flex; flex-direction: column; gap: 6px; }
+    .tm-choice { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--r-btn); background: var(--bg); font-size: 14px; cursor: pointer; }
+    .tm-rating { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tm-rate { width: 42px; height: 42px; border-radius: var(--r-btn); border: 1px solid var(--line); background: var(--surface); font-size: 15px; font-weight: 700; color: var(--text); }
+    .tm-rate.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .tm-bar { display: grid; grid-template-columns: minmax(70px, 160px) 1fr 76px; gap: 10px; align-items: center; font-size: 13px; }
+    .tm-bar .track { height: 8px; border-radius: var(--r-pill); background: var(--fill-2); overflow: hidden; }
+    .tm-bar .track > span { display: block; height: 100%; background: var(--blue); border-radius: var(--r-pill); }
+    .tm-bar .n { text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+    .tm-big { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+    .tm-big span { font-size: 13px; font-weight: 600; color: var(--dim); letter-spacing: 0; }
+    .tm-ans { padding: 8px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; line-height: 1.6; }
+    .tm-ans:last-child { border-bottom: 0; }
+
+    .tm-panel { background: var(--surface); border-radius: var(--r-card); padding: 20px 22px; box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+    .tm-panel h3 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+    .tm-panel .tm-sub { margin: 0 0 12px; }
+    .tm-panel-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .tm-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 12px; }
+    @media (max-width: 640px) { .tm-modes { grid-template-columns: 1fr; } }
+    .tm-mode { text-align: left; padding: 14px 16px; border-radius: var(--r-btn); border: 1.5px solid var(--line); background: var(--surface); }
+    .tm-mode.on { border-color: var(--blue); background: var(--blue-l); }
+    .tm-mode .t { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--text); }
+    .tm-mode .d { margin-top: 4px; font-size: 12.5px; line-height: 1.6; color: var(--dim); }
+    .tm-switch {
+      position: relative; flex: 0 0 auto; width: 46px; height: 28px; padding: 0; border: 0; border-radius: var(--r-pill);
+      background: var(--ui-disabled); transition: background .2s;
+    }
+    .tm-switch::after {
+      content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: var(--r-round);
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s;
+    }
+    .tm-switch[aria-checked="true"] { background: var(--ok); }
+    .tm-switch[aria-checked="true"]::after { transform: translateX(18px); }
+    .tm-cmt-del { margin-left: auto; border: 0; background: transparent; color: var(--faint); padding: 2px 6px; border-radius: var(--r-btn); font-size: 13px; }
+    .tm-cmt-del:hover { color: var(--bad); background: var(--bad-bg); }
+
   </style>
 </head>
 <body>
@@ -605,11 +713,9 @@
        「返回首頁」與使用者資訊已由共用導覽列（Auth.mountNav）提供，
        這裡只留頁面標題，避免同一畫面出現兩次帳號資訊。 -->
   <header class="topbar">
-    <span class="topbar-brand" onclick="goHome()">教材管理</span>
-    <nav class="topbar-nav">
-      <span class="topbar-nav-link" onclick="goHome()">學習路徑</span>
-      <span class="topbar-nav-link" onclick="goHome()">我的學習</span>
-    </nav>
+    <span class="topbar-brand" id="tmBrand" onclick="goHome()">教材管理</span>
+    <!-- 子選單依功能權限產生（帳號管理 → 權限設定 → 教材頁功能） -->
+    <nav class="topbar-nav" id="tmNav"></nav>
     <div class="topbar-right">
       <span class="role-pill" id="rolePill"></span>
     </div>
@@ -623,6 +729,14 @@
 
   <!-- 課程頁（閱讀器） -->
   <div id="lessonView" class="hidden"></div>
+
+  <!-- 我的課表、問卷、船員設定：各自要有對應的功能權限才會出現在子選單 -->
+  <div id="scheduleView" class="hidden"></div>
+  <div id="surveysView" class="hidden"></div>
+  <div id="crewsetView" class="hidden"></div>
+
+  <!-- 問卷填寫／編輯／結果共用的對話框（互動教材編輯器用的是 #edOverlay） -->
+  <div class="ed-overlay" id="tmOverlay"></div>
 
   <!-- AI 助教側欄 -->
   <aside class="ai-panel" id="aiPanel" aria-hidden="true"></aside>
@@ -644,6 +758,8 @@
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
   <script src="js/ui-feedback.js"></script>
+  <!-- 船員職級的顯示名稱跟「選單管理」同一份 -->
+  <script src="js/options.js"></script>
   <script src="js/auth.js"></script>
   <script>
     // ══════════════════════════════════════════════════════════════
@@ -698,7 +814,14 @@
       if (!initAuth()) return;
       Auth.mountNav();          // 全站共用主導覽（依角色過濾）
       const p = new URLSearchParams(location.search);
+      pendingTab = p.get('tab');
+      renderTopNav();
       loadData(p.get('courseId'), p.get('unit'));
+      // 管理者在帳號管理改了功能權限：已開著的頁面最晚一分鐘內就換成新的功能
+      document.addEventListener('auth:features', () => {
+        isAdmin = Auth.can('materials_edit') && !previewRank;
+        rerenderCurrent();
+      });
     });
 
     function initAuth() {
@@ -707,7 +830,8 @@
       if (!currentUser) return false;
 
       const role = Auth.getRole();
-      isAdmin = role === 'admin';
+      // 這頁大家共用，能不能上傳／編輯教材看功能權限，不寫死角色
+      isAdmin = Auth.can('materials_edit');
       isCrew  = role === 'crew';
 
       // 姓名與頭像由共用導覽列的帳號選單顯示，這裡只標角色
@@ -717,10 +841,9 @@
       return true;
     }
 
-    // AI 助教：後端 askgemini 只開放 admin / teacher
+    // AI 助教開給誰由功能權限決定（後端 askgemini 也照同一張表檢查）
     function canUseAi() {
-      const r = Auth.getRole();
-      return r === 'admin' || r === 'teacher';
+      return Auth.can('ai');
     }
 
     // ── Data ──
@@ -733,6 +856,9 @@
 
     // 先用本地快取立即上畫面，再從後端同步（與 maritime-courses.html 相同流程）
     async function loadData(preCourseId = null, preUnit = null) {
+      // 船員看得到哪些課由「船員設定」決定，後端已經篩好；
+      // 不能走員工的同步流程把整份課程表拉下來
+      if (isCrew) return loadCrewData(preCourseId, preUnit);
       allCourses = readCourses();
       restoreView(preCourseId, preUnit);
 
@@ -747,9 +873,77 @@
 
       allCourses = readCourses();
       restoreView(activeCourseId || preCourseId, activeMatIdx != null ? activeMatIdx : preUnit);
+      loadLearning();
+    }
+
+    function crewCacheKey() {
+      return 'crewPortalCache:' + String(currentUser?.username || '').toLowerCase();
+    }
+
+    function applyCrewData(d) {
+      allCourses = Array.isArray(d?.courses) ? d.courses : [];
+      applyLearningData(d);
+    }
+
+    async function loadCrewData(preCourseId, preUnit) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(crewCacheKey()) || 'null');
+        if (cached) applyCrewData(cached);
+      } catch { /* 快取壞了就等後端 */ }
+      restoreView(preCourseId, preUnit);
+      try {
+        const d = await api.learningData();
+        applyCrewData(d);
+        try { localStorage.setItem(crewCacheKey(), JSON.stringify(d)); } catch (_) {}
+      } catch (err) {
+        if (!allCourses.length) showToast('讀取課程失敗：' + (err.message || '請稍後再試'), 'error');
+        return;
+      }
+      restoreView(activeCourseId || preCourseId, activeMatIdx != null ? activeMatIdx : preUnit);
+    }
+
+    // ── 課表、留言、問卷、公告（learning_data，管理者與船員共用同一支）──
+    // 以前這頁的留言只存在各自的瀏覽器：老師在這裡回的話船員看不到，船員留的言老師也看不到。
+    let tmComments = [];
+    let ld = { assignments: [], comments: [], surveys: [], templates: [], myResponses: [],
+               notice: '', viewer: null, crewSettings: null };
+    let previewRank = '';        // 有「船員設定」功能的人以船員身分預覽時，模擬的職級
+    let pendingTab = null;       // 網址帶 ?tab= 進來時要開的分頁
+    const EXTRA_VIEWS = ['schedule', 'surveys', 'crewset'];
+
+    const arr = v => Array.isArray(v) ? v : [];
+
+    function applyLearningData(d) {
+      ld = {
+        assignments: arr(d?.assignments), comments: arr(d?.comments), surveys: arr(d?.surveys),
+        templates: arr(d?.templates), myResponses: arr(d?.myResponses),
+        notice: String(d?.notice || ''), viewer: d?.viewer || null, crewSettings: d?.crewSettings || null
+      };
+      tmComments = ld.comments;
+    }
+
+    async function loadLearning() {
+      try {
+        const d = await api.learningData(previewRank || undefined);
+        applyLearningData(d);
+        // 預覽時課程也換成船員看到的那一份
+        if (previewRank) allCourses = arr(d.courses);
+      } catch (err) {
+        console.warn('讀取課表／留言／問卷失敗:', err);
+        return;
+      }
+      rerenderCurrent();
+    }
+
+    function rerenderCurrent() {
+      renderTopNav();
+      if (view === 'home') renderHome();
+      else if (view === 'module') { const c = activeCourse(); if (c) renderModule(c); }
+      else if (EXTRA_VIEWS.includes(view)) renderExtraView(view);
     }
 
     function restoreView(courseId, unit) {
+      if (!courseId && pendingTab && tabAllowed(pendingTab)) { openTab(pendingTab); return; }
       const course = courseId ? allCourses.find(c => String(c.id) === String(courseId)) : null;
       if (!course) { goHome(); return; }
       const idx = unit == null ? null : Number(unit);
@@ -759,6 +953,8 @@
 
     // 寫入本地快取並同步回後端
     async function persistCourses() {
+      // 預覽時 allCourses 是船員看到的那一份（少了被藏起來的課），存回去會把那些課刪掉
+      if (previewRank) throw new Error('以船員身分預覽中不能修改教材，請先結束預覽');
       // 先留快照：saveTable 失敗時要連 localStorage 一起退回，
       // 否則重新整理後 readCourses() 會把「沒存成功」的資料當成已存在。
       const snapshot = localStorage.getItem('maritimeCourses');
@@ -782,9 +978,10 @@
     // ── 導覽 ──
     function setView(next) {
       view = next;
-      ['home','module','lesson'].forEach(v => {
+      ['home','module','lesson'].concat(EXTRA_VIEWS).forEach(v => {
         document.getElementById(v + 'View').classList.toggle('hidden', v !== next);
       });
+      renderTopNav();
       window.scrollTo({ top: 0 });
     }
 
@@ -794,10 +991,13 @@
       else url.searchParams.delete('courseId');
       if (activeMatIdx != null) url.searchParams.set('unit', activeMatIdx);
       else url.searchParams.delete('unit');
+      if (EXTRA_VIEWS.includes(view)) url.searchParams.set('tab', view);
+      else url.searchParams.delete('tab');
       history.replaceState(null, '', url);
     }
 
     function goHome() {
+      pendingTab = null;
       activeCourseId = null; activeMatIdx = null;
       if (typeof closeAi === "function") closeAi();
       setView('home'); syncUrl(); renderHome();
@@ -1257,6 +1457,7 @@
             <div class="hm-card-meta">
               <i class="ph ${metaIcon}" aria-hidden="true"></i><span>${h(metaText)}</span>
             </div>
+            ${tmCrewTagHtml(course)}
           </div>
         </div>`;
     }
@@ -1327,7 +1528,799 @@
       const act = lastActivity();
       const heroCat = act ? catOf(act.course) : (allCourses.length ? catOf(allCourses[0]) : '01');
 
-      host.innerHTML = hmWelcomeHtml(heroCat) + hmLearningHtml() + hmPathsHtml();
+      host.innerHTML = tmPreviewBarHtml() + tmNoticeHtml() + hmWelcomeHtml(heroCat)
+                     + tmHomeExtrasHtml() + hmLearningHtml() + hmPathsHtml();
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  課表、問卷、船員設定（同一頁，功能依角色不同）
+    //
+    //  這頁是管理者、教師、船員共用的同一頁。差別只在功能，而每個功能開給誰
+    //  在「帳號管理 → 權限設定 → 教材頁功能」設定，後端也照同一張表檢查：
+    //    schedule          我的課表
+    //    comments          留言討論（模組頁）
+    //    comments_moderate 刪除留言
+    //    surveys_fill      填寫問卷
+    //    surveys_manage    問卷管理（建立、開關、看結果）
+    //    crew_settings     船員設定（公告、船員看得到哪些課、以船員身分預覽）
+    //    ai                AI 助教
+    //    materials_edit    上傳與編輯教材
+    // ══════════════════════════════════════════════════════════════
+
+    const SURVEY_STATUS = { draft: '草稿', active: '開放中', closed: '已關閉' };
+    const QTYPES = [
+      { v: 'radio',    t: '單選' },
+      { v: 'checkbox', t: '複選' },
+      { v: 'rating',   t: '評分' },
+      { v: 'text',     t: '文字回答' }
+    ];
+
+    let md = null;               // 管理類資料（問卷含作答、船員設定），用到才載
+    let mdLoading = null;
+    let schedShowPast = false;
+
+    function tabAllowed(v) {
+      if (v === 'schedule') return Auth.can('schedule');
+      if (v === 'surveys')  return Auth.can('surveys_fill') || Auth.can('surveys_manage');
+      if (v === 'crewset')  return Auth.can('crew_settings');
+      return v === 'home';
+    }
+
+    function openTab(v) {
+      if (v === 'home' || !tabAllowed(v)) { goHome(); return; }
+      activeCourseId = null; activeMatIdx = null;
+      if (typeof closeAi === 'function') closeAi();
+      setView(v); syncUrl(); renderExtraView(v);
+    }
+
+    function renderExtraView(v) {
+      if (!tabAllowed(v)) { goHome(); return; }
+      if (v === 'schedule') renderSchedule();
+      if (v === 'surveys')  renderSurveys();
+      if (v === 'crewset')  renderCrewset();
+    }
+
+    function openSurveyCount() {
+      if (!Auth.can('surveys_fill')) return 0;
+      const done = new Set(ld.myResponses.map(r => String(r.surveyId)));
+      return ld.surveys.filter(s => s.status === 'active' && !done.has(String(s.id))).length;
+    }
+
+    // ── 子選單 ──
+    function renderTopNav() {
+      const nav = document.getElementById('tmNav');
+      if (!nav) return;
+      const learnViews = ['home', 'module', 'lesson'];
+      const n = openSurveyCount();
+      const items = [
+        { v: 'home',     t: '學習路徑' },
+        { v: 'schedule', t: '我的課表' },
+        { v: 'surveys',  t: '問卷', badge: n },
+        { v: 'crewset',  t: '船員設定' }
+      ].filter(it => tabAllowed(it.v));
+      nav.innerHTML = items.map(it => {
+        const on = it.v === 'home' ? learnViews.includes(view) : view === it.v;
+        return `<span class="topbar-nav-link${on ? ' is-on' : ''}" role="link" tabindex="0"
+                  onclick="openTab('${it.v}')" onkeydown="if(event.key==='Enter')openTab('${it.v}')">${h(it.t)}${
+                  it.badge ? `<span class="tm-nav-badge">${it.badge}</span>` : ''}</span>`;
+      }).join('');
+      const brand = document.getElementById('tmBrand');
+      if (brand) brand.textContent = Auth.can('materials_edit') ? '教材管理' : '教材學習';
+    }
+
+    // ── 首頁加掛：預覽列、公告、接下來的課、待填問卷 ──
+    function tmPreviewBarHtml() {
+      if (!previewRank) return '';
+      const who = previewRank === '__all__' ? '所有船員（不分職級）'
+        : previewRank === '__none__' ? '尚未設定職級的船員'
+        : Options.fullLabel('crewRank', previewRank) + ' 的船員';
+      return `
+      <div class="hm-wrap" style="padding:20px 20px 0">
+        <div class="tm-banner tm-banner-blue">
+          <i class="ph ph-eye" aria-hidden="true"></i>
+          <div style="flex:1">正在以<strong>${h(who)}</strong>的身分預覽：課程、課表、留言都是他們實際看到的。預覽中不能修改教材。</div>
+          <button type="button" class="btn btn-secondary btn-sm u-pill" onclick="tmStopPreview()">結束預覽</button>
+        </div>
+      </div>`;
+    }
+
+    function tmNoticeHtml() {
+      const canEdit = Auth.can('crew_settings') && !previewRank;
+      if (!ld.notice && !canEdit) return '';
+      if (!ld.notice) {
+        return `
+      <div class="hm-wrap" style="padding:20px 20px 0">
+        <button type="button" class="tm-notice-add" onclick="openTab('crewset')">
+          <i class="ph ph-megaphone-simple" aria-hidden="true"></i>新增一則公告（所有人登入後都會先看到）</button>
+      </div>`;
+      }
+      return `
+      <div class="hm-wrap" style="padding:20px 20px 0">
+        <div class="tm-banner tm-banner-amber">
+          <i class="ph ph-megaphone-simple" aria-hidden="true"></i>
+          <div style="flex:1;white-space:pre-line">${h(ld.notice)}</div>
+          ${canEdit ? `<button type="button" class="btn btn-plain btn-sm" onclick="openTab('crewset')">編輯</button>` : ''}
+        </div>
+      </div>`;
+    }
+
+    function tmHomeExtrasHtml() {
+      const parts = [];
+      if (Auth.can('schedule')) {
+        const next = tmUpcoming().slice(0, 3);
+        if (next.length) {
+          parts.push(`
+          <div class="tm-strip">
+            <div class="tm-strip-head"><h3>接下來的課</h3>
+              <button type="button" class="btn btn-plain btn-sm" onclick="openTab('schedule')">看完整課表</button></div>
+            ${next.map(tmSchedRowHtml).join('')}
+          </div>`);
+        }
+      }
+      const n = openSurveyCount();
+      if (n) {
+        parts.push(`
+          <div class="tm-strip tm-strip-action" role="button" tabindex="0" onclick="openTab('surveys')"
+               onkeydown="if(event.key==='Enter')openTab('surveys')">
+            <i class="ph ph-clipboard-text" aria-hidden="true"></i>
+            <div style="flex:1"><strong>有 ${n} 份問卷等你填寫</strong><div class="tm-sub" style="margin:2px 0 0">花幾分鐘告訴我們課上得怎麼樣</div></div>
+            <i class="ph ph-caret-right" aria-hidden="true"></i>
+          </div>`);
+      }
+      return parts.length ? `<div class="hm-wrap tm-extras" style="padding:36px 20px 0">${parts.join('')}</div>` : '';
+    }
+
+    /** 首頁課程卡上給「船員設定」的人看的標示：這門課船員看不看得到 */
+    function tmCrewTagHtml(course) {
+      const st = ld.crewSettings;
+      if (!st || previewRank || !Auth.can('crew_settings')) return '';
+      if (st.hiddenCourseIds.includes(String(course.id))) {
+        return `<span class="tm-crewtag off"><i class="ph ph-eye-slash"></i>船員看不到</span>`;
+      }
+      const ranks = arr(course.targetRanks);
+      if (st.courseMode === 'rank' && ranks.length) {
+        return `<span class="tm-crewtag"><i class="ph ph-users"></i>限 ${ranks.length} 個職級</span>`;
+      }
+      return '';
+    }
+
+    // ══ 我的課表 ══
+    function todayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function tmSortedSessions() {
+      return ld.assignments.filter(a => a.date)
+        .slice().sort((x, y) => String(x.date).localeCompare(String(y.date)) || String(x.time || '').localeCompare(String(y.time || '')));
+    }
+
+    function tmUpcoming() {
+      const today = todayKey();
+      return tmSortedSessions().filter(a => String(a.date) >= today && !tmCancelled(a));
+    }
+
+    function tmCancelled(a) { return /cancel|取消/i.test(String(a.status || '')); }
+
+    function tmDateLabel(date) {
+      const d = new Date(date + 'T00:00:00');
+      if (Number.isNaN(d.getTime())) return String(date);
+      const wd = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+      return `${d.getMonth() + 1} 月 ${d.getDate()} 日（${wd}）`;
+    }
+
+    function tmSchedRowHtml(s) {
+      const course = allCourses.find(c => String(c.id) === String(s.courseId));
+      const name = (course && course.name) || s.name || '課程';
+      const sub = [String(s.date) === todayKey() ? '今天' : tmDateLabel(s.date),
+                   s.teacherName ? '講師 ' + s.teacherName : '', course && course.method ? course.method : '']
+        .filter(Boolean).join(' · ');
+      const open = course ? ` role="button" tabindex="0" onclick="openModule('${a(String(course.id))}')"
+                              onkeydown="if(event.key==='Enter')openModule('${a(String(course.id))}')"` : '';
+      return `
+        <div class="tm-row${tmCancelled(s) ? ' is-cancelled' : ''}${course ? '' : ' is-static'}"${open}>
+          <div class="tm-row-time">${h(s.time || '時間未定')}</div>
+          <div class="tm-row-main">
+            <div class="tm-row-title">${h(name)}</div>
+            <div class="tm-row-sub">${h(sub)}</div>
+          </div>
+          ${tmCancelled(s) ? '<span class="tm-pill">已取消</span>' : (course ? '<i class="ph ph-caret-right" aria-hidden="true"></i>' : '')}
+        </div>`;
+    }
+
+    function tmToggleSchedPast() { schedShowPast = !schedShowPast; renderSchedule(); }
+
+    function renderSchedule() {
+      const host = document.getElementById('scheduleView');
+      const today = todayKey();
+      const rows = tmSortedSessions().filter(a => schedShowPast || String(a.date) >= today);
+      const byDate = new Map();
+      rows.forEach(a => { if (!byDate.has(a.date)) byDate.set(a.date, []); byDate.get(a.date).push(a); });
+      const intro = isCrew || previewRank
+        ? '開放給你的課程接下來的上課時間；點一下進入課程看教材。'
+        : '所有課程接下來的上課時間；點一下進入課程。';
+      host.innerHTML = `
+      ${tmPreviewBarHtml()}
+      <div class="hm-wrap" style="padding:32px 20px 72px">
+        <div class="hm-sec-head"><h2>我的課表</h2>
+          <button type="button" class="btn btn-secondary btn-sm u-pill" onclick="tmToggleSchedPast()">
+            ${schedShowPast ? '只看接下來的課' : '顯示已結束的課'}</button></div>
+        <p class="tm-sub">${h(intro)}</p>
+        ${byDate.size ? [...byDate.entries()].map(([date, list]) => `
+          <div class="tm-day">
+            <div class="tm-day-label${date === today ? ' is-today' : ''}">${h(tmDateLabel(date))}${date === today ? ' · 今天' : ''}</div>
+            <div class="tm-list">${list.map(tmSchedRowHtml).join('')}</div>
+          </div>`).join('')
+          : `<div class="hm-empty"><i class="ph ph-calendar-blank" aria-hidden="true"></i>${
+              schedShowPast ? '目前沒有任何排定的課。' : '接下來沒有排定的課。'}</div>`}
+      </div>`;
+    }
+
+    // ══ 問卷 ══
+    async function loadManage(force) {
+      if (!Auth.can('surveys_manage') && !Auth.can('crew_settings')) return null;
+      if (md && !force) return md;
+      if (mdLoading) return mdLoading;
+      mdLoading = Promise.all([api.learningManageData(), Options.ready()])
+        .then(([d]) => { md = d; return md; })
+        .catch(err => { showToast('讀取管理資料失敗：' + (err.message || '請稍後再試'), 'error'); return null; })
+        .finally(() => { mdLoading = null; });
+      return mdLoading;
+    }
+
+    function courseName(id) {
+      if (id === '' || id == null) return '全體船員';
+      const c = allCourses.find(x => String(x.id) === String(id)) || arr(md?.courses).find(x => String(x.id) === String(id));
+      return c ? c.name : '課程（已刪除）';
+    }
+
+    function renderSurveys() {
+      const host = document.getElementById('surveysView');
+      const parts = [tmPreviewBarHtml(), `<div class="hm-wrap" style="padding:32px 20px 72px">`];
+      if (Auth.can('surveys_fill')) parts.push(tmFillListHtml());
+      if (Auth.can('surveys_manage') && !previewRank) {
+        parts.push(tmManageListHtml());
+        if (!md) loadManage().then(d => { if (d && view === 'surveys') renderSurveys(); });
+      }
+      parts.push('</div>');
+      host.innerHTML = parts.join('');
+    }
+
+    function tmFillListHtml() {
+      const done = new Map(ld.myResponses.map(r => [String(r.surveyId), r]));
+      const list = ld.surveys.slice().sort((x, y) => (x.status === 'active' ? 0 : 1) - (y.status === 'active' ? 0 : 1));
+      const rows = list.map(s => {
+        const isDone = done.has(String(s.id));
+        const open = s.status === 'active';
+        const tpl = ld.templates.find(t => String(t.id) === String(s.templateId));
+        let action;
+        if (isDone) action = `<span class="tm-pill ok"><i class="ph ph-check"></i> 已填寫</span>`;
+        else if (!open) action = `<span class="tm-pill">已關閉</span>`;
+        else action = `<button type="button" class="btn btn-primary btn-sm u-pill" onclick="tmOpenFill('${a(String(s.id))}')">填寫問卷</button>`;
+        return `
+          <div class="tm-row is-static">
+            <i class="ph ph-clipboard-text tm-row-icon" aria-hidden="true"></i>
+            <div class="tm-row-main">
+              <div class="tm-row-title">${h(s.title || tpl?.title || '問卷')}</div>
+              <div class="tm-row-sub">${h(courseName(s.courseId))}${tpl?.questions?.length ? ' · ' + tpl.questions.length + ' 題' : ''}</div>
+            </div>
+            ${action}
+          </div>`;
+      }).join('');
+      return `
+        <section class="tm-section">
+          <div class="hm-sec-head"><h2>待填問卷</h2></div>
+          ${rows ? `<div class="tm-list">${rows}</div>`
+                 : `<div class="hm-empty"><i class="ph ph-clipboard-text" aria-hidden="true"></i>目前沒有要填的問卷。</div>`}
+        </section>`;
+    }
+
+    function tmManageListHtml() {
+      const head = `
+          <div class="hm-sec-head"><h2>問卷管理</h2>
+            <button type="button" class="btn btn-primary btn-sm u-pill" onclick="tmEditSurvey(null)"><i class="ph ph-plus"></i> 新增問卷</button></div>
+          <p class="tm-sub">開放中的問卷會出現在有「填寫問卷」功能的人的問卷頁；綁了課程的問卷，只有看得到那門課的船員會收到。</p>`;
+      if (!md) return `<section class="tm-section">${head}<div class="hm-empty">讀取中…</div></section>`;
+      const list = arr(md.surveys);
+      if (!list.length) {
+        return `<section class="tm-section">${head}
+          <div class="hm-empty"><i class="ph ph-clipboard-text" aria-hidden="true"></i>還沒有問卷。按「新增問卷」建立第一份，例如課後滿意度調查。</div></section>`;
+      }
+      const total = md.crewCount || 0;
+      return `<section class="tm-section">${head}
+        <div class="tm-list">${list.map(s => `
+          <div class="tm-row is-static">
+            <span class="tm-status ${a(s.status)}">${h(SURVEY_STATUS[s.status] || s.status)}</span>
+            <div class="tm-row-main">
+              <div class="tm-row-title">${h(s.title)}</div>
+              <div class="tm-row-sub">${h(courseName(s.courseId))} · ${s.questions.length} 題 · 已回覆 ${s.responseCount}${total ? ' / ' + total + ' 位船員' : ' 份'}</div>
+            </div>
+            <div class="tm-actions">
+              <button type="button" class="btn btn-plain btn-sm" onclick="tmShowResults('${a(String(s.id))}')" ${s.responseCount ? '' : 'disabled'}>結果</button>
+              <button type="button" class="btn btn-plain btn-sm" onclick="tmEditSurvey('${a(String(s.id))}')">編輯</button>
+              <button type="button" class="btn btn-plain btn-sm" onclick="tmCopySurvey('${a(String(s.id))}')">複製</button>
+              <button type="button" class="btn btn-plain btn-sm" style="color:var(--bad)" onclick="tmDeleteSurvey('${a(String(s.id))}')"
+                      ${s.responseCount ? 'disabled title="已有回覆，不能刪除；不想再收回覆請改成已關閉"' : ''}>刪除</button>
+            </div>
+          </div>`).join('')}</div>
+      </section>`;
+    }
+
+    // ── 對話框 ──
+    function tmModal(html) {
+      const ov = document.getElementById('tmOverlay');
+      ov.innerHTML = `<div class="ed-modal" role="dialog" aria-modal="true">${html}</div>`;
+      ov.classList.add('open');
+      ov.onclick = e => { if (e.target === ov) tmCloseModal(); };
+    }
+    function tmCloseModal() {
+      const ov = document.getElementById('tmOverlay');
+      ov.classList.remove('open');
+      ov.innerHTML = '';
+      tmFill = null; svDraft = null;
+    }
+
+    // ── 填寫 ──
+    let tmFill = null;      // { survey, template, answers }
+    let tmSubmitting = false;
+
+    function tmOpenFill(id) {
+      const s = ld.surveys.find(x => String(x.id) === String(id));
+      if (!s) return;
+      const t = ld.templates.find(x => String(x.id) === String(s.templateId));
+      const qs = arr(t?.questions);
+      tmFill = { survey: s, questions: qs, answers: {} };
+      tmModal(`
+        <div class="ed-head"><div><h2>${h(s.title || t?.title || '問卷')}</h2>
+          <div class="ed-head-sub">${h(courseName(s.courseId))}${t?.description ? ' · ' + h(t.description) : ''}</div></div>
+          <button type="button" class="ed-close" onclick="tmCloseModal()" aria-label="關閉"><i class="ph ph-x"></i></button></div>
+        <div class="ed-body">${qs.length ? qs.map(tmQuestionHtml).join('') : '<div class="ed-empty">這份問卷還沒有題目。</div>'}</div>
+        <div class="ed-foot"><span class="ed-foot-left">標 * 的題目必填；送出後就不能再改。</span>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn btn-secondary" onclick="tmCloseModal()">取消</button>
+            <button type="button" class="btn btn-primary" id="tmFillSubmit" onclick="tmSubmitFill()" ${qs.length ? '' : 'disabled'}>送出</button>
+          </div></div>`);
+    }
+
+    function tmQuestionHtml(q, i) {
+      const label = `<div class="ed-label">${i + 1}. ${h(q.text || q.question || '')}${q.required ? ' <span style="color:var(--bad)">*</span>' : ''}</div>`;
+      const type = String(q.type || 'text');
+      if (type === 'radio' || type === 'checkbox') {
+        return `<div class="ed-field">${label}<div class="tm-choices">${arr(q.options).map((o, k) => `
+          <label class="tm-choice"><input type="${type}" name="tmq${i}" value="${a(o)}" onchange="tmAnswer(${i}, this)"> ${h(o)}</label>`).join('')}</div></div>`;
+      }
+      if (type === 'rating') {
+        const max = q.max || 5;
+        return `<div class="ed-field">${label}<div class="tm-rating">${Array.from({ length: max }, (_, k) => `
+          <button type="button" class="tm-rate" data-q="${i}" data-v="${k + 1}" onclick="tmRate(this)">${k + 1}</button>`).join('')}</div></div>`;
+      }
+      return `<div class="ed-field">${label}<textarea class="input" rows="3" oninput="tmFill.answers[${i}] = this.value" placeholder="請輸入你的回答"></textarea></div>`;
+    }
+
+    function tmAnswer(i, el) {
+      if (!tmFill) return;
+      if (el.type === 'checkbox') {
+        tmFill.answers[i] = [...document.querySelectorAll(`#tmOverlay input[name="tmq${i}"]:checked`)].map(x => x.value);
+      } else {
+        tmFill.answers[i] = el.value;
+      }
+    }
+
+    function tmRate(btn) {
+      const i = Number(btn.dataset.q);
+      btn.parentElement.querySelectorAll('.tm-rate').forEach(b => b.classList.toggle('on', b === btn));
+      tmFill.answers[i] = btn.dataset.v;
+    }
+
+    async function tmSubmitFill() {
+      if (!tmFill || tmSubmitting) return;
+      for (let i = 0; i < tmFill.questions.length; i++) {
+        const v = tmFill.answers[i];
+        if (tmFill.questions[i].required && (v === undefined || v === '' || (Array.isArray(v) && !v.length))) {
+          showToast(`第 ${i + 1} 題是必填`, 'error'); return;
+        }
+      }
+      const btn = document.getElementById('tmFillSubmit');
+      tmSubmitting = true; btn.disabled = true; btn.textContent = '送出中…';
+      try {
+        const saved = await api.submitSurvey(tmFill.survey.id, { ...tmFill.answers });
+        ld.myResponses = ld.myResponses.concat([saved]);
+        tmCloseModal();
+        showToast('問卷已送出，謝謝你的回覆', 'success');
+        renderTopNav(); renderSurveys();
+      } catch (err) {
+        // 失敗就留在表單，作答還在
+        showToast('送出失敗：' + (err.message || '請稍後再試'), 'error');
+        btn.disabled = false; btn.textContent = '送出';
+      } finally {
+        tmSubmitting = false;
+      }
+    }
+
+    // ── 建立／編輯 ──
+    let svDraft = null;
+    let svSaving = false;
+
+    function tmEditSurvey(id) {
+      const src = id ? arr(md?.surveys).find(s => String(s.id) === String(id)) : null;
+      svDraft = src
+        ? JSON.parse(JSON.stringify({ id: src.id, title: src.title, description: src.description, courseId: String(src.courseId ?? ''),
+                                      status: src.status, questions: src.questions, responseCount: src.responseCount }))
+        : { id: '', title: '', description: '', courseId: '', status: 'draft', responseCount: 0,
+            questions: [{ type: 'rating', text: '整體來說，這門課對你有幫助嗎？', max: 5, required: true },
+                        { type: 'text', text: '還有什麼想告訴我們的？', required: false }] };
+      tmRenderEditor();
+    }
+
+    function tmCopySurvey(id) {
+      tmEditSurvey(id);
+      if (!svDraft) return;
+      svDraft.id = ''; svDraft.responseCount = 0; svDraft.status = 'draft';
+      svDraft.title = svDraft.title + '（複本）';
+      tmRenderEditor();
+    }
+
+    function tmRenderEditor() {
+      const d = svDraft;
+      const locked = d.responseCount > 0;
+      const courses = allCourses.slice().sort((x, y) => String(x.name).localeCompare(String(y.name), 'zh-Hant'));
+      tmModal(`
+        <div class="ed-head"><div><h2>${d.id ? '編輯問卷' : '新增問卷'}</h2>
+          <div class="ed-head-sub">${locked ? `已有 ${d.responseCount} 份回覆：題目鎖定，標題、課程與狀態仍可修改` : '存成「開放中」，有填寫問卷功能的人就會看到'}</div></div>
+          <button type="button" class="ed-close" onclick="tmCloseModal()" aria-label="關閉"><i class="ph ph-x"></i></button></div>
+        <div class="ed-body">
+          <div class="ed-row">
+            <div class="ed-field" style="flex:2 1 260px"><label class="ed-label">問卷標題</label>
+              <input class="input" value="${a(d.title)}" oninput="svDraft.title = this.value" placeholder="例如：進出港操船課後問卷"></div>
+            <div class="ed-field"><label class="ed-label">狀態</label>
+              <select class="input" onchange="svDraft.status = this.value">${Object.keys(SURVEY_STATUS).map(k =>
+                `<option value="${k}" ${d.status === k ? 'selected' : ''}>${SURVEY_STATUS[k]}</option>`).join('')}</select></div>
+          </div>
+          <div class="ed-field"><label class="ed-label">發給誰</label>
+            <select class="input" onchange="svDraft.courseId = this.value">
+              <option value="" ${d.courseId === '' ? 'selected' : ''}>全體船員（不綁課程）</option>
+              ${courses.map(c => `<option value="${a(String(c.id))}" ${String(c.id) === d.courseId ? 'selected' : ''}>上過「${h(c.name)}」的船員</option>`).join('')}
+            </select>
+            <div class="ed-hint">綁了課程的問卷，只有看得到那門課的船員會收到。</div></div>
+          <div class="ed-field"><label class="ed-label">說明（選填）</label>
+            <textarea class="input" rows="2" oninput="svDraft.description = this.value" placeholder="填寫前想先告訴對方的話">${h(d.description || '')}</textarea></div>
+          ${locked ? `<div class="tm-banner tm-banner-amber" style="margin:0"><i class="ph ph-lock-simple"></i>
+             <div style="flex:1">答案是用題號存的，有人作答後再改題目，舊答案就會對到錯的題。要調整題目請複製成新問卷。</div>
+             <button type="button" class="btn btn-secondary btn-sm" onclick="tmCopySurvey('${a(String(d.id))}')">複製成新問卷</button></div>` : ''}
+          <div class="ed-blocks">${d.questions.map((q, i) => tmQEditHtml(q, i, locked)).join('')}</div>
+          ${locked ? '' : `<div class="ed-add-row">${QTYPES.map(t =>
+            `<button type="button" class="btn btn-secondary btn-sm" onclick="tmAddQ('${t.v}')"><i class="ph ph-plus"></i> ${t.t}</button>`).join('')}</div>`}
+        </div>
+        <div class="ed-foot"><span class="ed-foot-left">${d.questions.length} 題</span>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn btn-secondary" onclick="tmCloseModal()">取消</button>
+            <button type="button" class="btn btn-primary" id="svSaveBtn" onclick="tmSaveSurvey()">儲存</button>
+          </div></div>`);
+    }
+
+    function tmQEditHtml(q, i, locked) {
+      const dis = locked ? 'disabled' : '';
+      const n = svDraft.questions.length;
+      const typeName = (QTYPES.find(t => t.v === q.type) || QTYPES[3]).t;
+      let extra = '';
+      if (q.type === 'radio' || q.type === 'checkbox') {
+        extra = `<div class="ed-field"><label class="ed-label">選項（一行一個）</label>
+          <textarea class="input" rows="3" ${dis} oninput="tmQOptions(${i}, this.value)">${h(q._optText ?? arr(q.options).join('\n'))}</textarea></div>`;
+      } else if (q.type === 'rating') {
+        extra = `<div class="ed-field" style="max-width:220px"><label class="ed-label">分數範圍</label>
+          <select class="input" ${dis} onchange="svDraft.questions[${i}].max = Number(this.value)">${[3, 4, 5, 6, 7, 8, 9, 10].map(m =>
+            `<option value="${m}" ${(q.max || 5) === m ? 'selected' : ''}>1 到 ${m} 分</option>`).join('')}</select></div>`;
+      }
+      return `
+        <div class="ed-block">
+          <div class="ed-block-head">
+            <span class="ed-block-type">${h(typeName)}</span>
+            <span class="ed-block-name">第 ${i + 1} 題</span>
+            ${locked ? '' : `<div class="ed-block-tools">
+              <button type="button" class="ed-icon-btn" onclick="tmMoveQ(${i}, -1)" ${i === 0 ? 'disabled' : ''} aria-label="上移"><i class="ph ph-arrow-up"></i></button>
+              <button type="button" class="ed-icon-btn" onclick="tmMoveQ(${i}, 1)" ${i === n - 1 ? 'disabled' : ''} aria-label="下移"><i class="ph ph-arrow-down"></i></button>
+              <button type="button" class="ed-icon-btn danger" onclick="tmRemoveQ(${i})" aria-label="刪除這題"><i class="ph ph-trash"></i></button></div>`}
+          </div>
+          <div class="ed-field"><input class="input" ${dis} value="${a(q.text || '')}" placeholder="題目" oninput="svDraft.questions[${i}].text = this.value"></div>
+          ${extra}
+          <label class="tm-choice" style="padding:0"><input type="checkbox" ${dis} ${q.required ? 'checked' : ''}
+            onchange="svDraft.questions[${i}].required = this.checked"> 必填</label>
+        </div>`;
+    }
+
+    function tmQOptions(i, text) {
+      const q = svDraft.questions[i];
+      q._optText = text;
+      q.options = text.split('\n').map(x => x.trim()).filter(Boolean);
+    }
+    function tmAddQ(type) {
+      const q = { type, text: '', required: false };
+      if (type === 'radio' || type === 'checkbox') { q.options = ['選項一', '選項二']; }
+      if (type === 'rating') q.max = 5;
+      svDraft.questions.push(q);
+      tmRenderEditor();
+    }
+    function tmMoveQ(i, dir) {
+      const qs = svDraft.questions, j = i + dir;
+      if (j < 0 || j >= qs.length) return;
+      [qs[i], qs[j]] = [qs[j], qs[i]];
+      tmRenderEditor();
+    }
+    function tmRemoveQ(i) {
+      svDraft.questions.splice(i, 1);
+      tmRenderEditor();
+    }
+
+    async function tmSaveSurvey() {
+      if (!svDraft || svSaving) return;
+      const d = svDraft;
+      if (!String(d.title).trim()) { showToast('請輸入問卷標題', 'error'); return; }
+      if (!d.questions.length) { showToast('問卷至少要有一題', 'error'); return; }
+      const bad = d.questions.findIndex(q => !String(q.text || '').trim()
+        || ((q.type === 'radio' || q.type === 'checkbox') && arr(q.options).length < 2));
+      if (bad >= 0) { showToast(`第 ${bad + 1} 題沒有題目，或選項少於兩個`, 'error'); return; }
+      const btn = document.getElementById('svSaveBtn');
+      svSaving = true; btn.disabled = true; btn.textContent = '儲存中…';
+      try {
+        await api.saveCrewSurvey({
+          id: d.id || undefined, title: d.title, description: d.description, courseId: d.courseId, status: d.status,
+          questions: d.questions.map(q => {
+            const o = { type: q.type, text: q.text, required: !!q.required };
+            if (q.type === 'radio' || q.type === 'checkbox') o.options = arr(q.options);
+            if (q.type === 'rating') o.max = q.max || 5;
+            return o;
+          })
+        });
+        tmCloseModal();
+        showToast('問卷已儲存', 'success');
+        await Promise.all([loadManage(true), loadLearning()]);
+        if (view === 'surveys') renderSurveys();
+      } catch (err) {
+        showToast('儲存失敗：' + (err.message || '請稍後再試'), 'error');
+        btn.disabled = false; btn.textContent = '儲存';
+      } finally {
+        svSaving = false;
+      }
+    }
+
+    async function tmDeleteSurvey(id) {
+      const s = arr(md?.surveys).find(x => String(x.id) === String(id));
+      if (!s || !confirm(`刪除問卷「${s.title}」？刪除後無法復原。`)) return;
+      try {
+        await api.deleteCrewSurvey(id);
+        showToast('問卷已刪除', 'success');
+        await Promise.all([loadManage(true), loadLearning()]);
+        if (view === 'surveys') renderSurveys();
+      } catch (err) {
+        showToast('刪除失敗：' + (err.message || '請稍後再試'), 'error');
+      }
+    }
+
+    // ── 結果 ──
+    function tmResponsesOf(id) {
+      return arr(md?.responses).filter(r => String(r.surveyId) === String(id));
+    }
+
+    function tmShowResults(id) {
+      const s = arr(md?.surveys).find(x => String(x.id) === String(id));
+      if (!s) return;
+      const rs = tmResponsesOf(id);
+      const ans = (r, i) => { const v = r.answers && typeof r.answers === 'object' ? r.answers[i] : undefined; return v; };
+      const bar = (label, n, total) => {
+        const pct = total ? Math.round(n / total * 100) : 0;
+        return `<div class="tm-bar"><span class="t">${h(label)}</span><span class="track"><span style="width:${pct}%"></span></span><span class="n">${n} · ${pct}%</span></div>`;
+      };
+      const blocks = s.questions.map((q, i) => {
+        let body = '';
+        if (q.type === 'radio' || q.type === 'checkbox') {
+          const counts = arr(q.options).map(o => rs.filter(r => {
+            const v = ans(r, i); return Array.isArray(v) ? v.includes(o) : v === o;
+          }).length);
+          body = arr(q.options).map((o, k) => bar(o, counts[k], rs.length)).join('');
+        } else if (q.type === 'rating') {
+          const vals = rs.map(r => Number(ans(r, i))).filter(v => v > 0);
+          const avg = vals.length ? (vals.reduce((x, y) => x + y, 0) / vals.length).toFixed(1) : '—';
+          const max = q.max || 5;
+          body = `<div class="tm-big">${avg}<span> / ${max} 分（${vals.length} 人作答）</span></div>` +
+            Array.from({ length: max }, (_, k) => max - k).map(v => bar(v + ' 分', vals.filter(x => x === v).length, vals.length)).join('');
+        } else {
+          const texts = rs.map(r => ({ r, v: String(ans(r, i) || '').trim() })).filter(x => x.v);
+          body = texts.length ? texts.map(x => `<div class="tm-ans"><div>${h(x.v)}</div>
+              <div class="tm-row-sub">${h(x.r.displayName || x.r.username || '')} · ${h(new Date(x.r.submittedAt).toLocaleString('zh-TW', { hour12: false }))}</div></div>`).join('')
+            : '<div class="tm-row-sub">沒有人寫這一題。</div>';
+        }
+        return `<div class="ed-block"><div class="ed-label">${i + 1}. ${h(q.text)}</div>${body}</div>`;
+      }).join('');
+      tmModal(`
+        <div class="ed-head"><div><h2>${h(s.title)} · 結果</h2>
+          <div class="ed-head-sub">${h(courseName(s.courseId))} · 共 ${rs.length} 份回覆${md.crewCount ? '（船員共 ' + md.crewCount + ' 位）' : ''}</div></div>
+          <button type="button" class="ed-close" onclick="tmCloseModal()" aria-label="關閉"><i class="ph ph-x"></i></button></div>
+        <div class="ed-body">${blocks}</div>
+        <div class="ed-foot"><span class="ed-foot-left">CSV 可以用 Excel 開</span>
+          <button type="button" class="btn btn-secondary" onclick="tmExportCsv('${a(String(s.id))}')"><i class="ph ph-download-simple"></i> 下載 CSV</button></div>`);
+    }
+
+    function tmExportCsv(id) {
+      const s = arr(md?.surveys).find(x => String(x.id) === String(id));
+      if (!s) return;
+      // 開頭是 = + - @ 的儲存格，Excel 會當公式執行；前面加 ' 讓它變回文字
+      const cell = v => {
+        let t = Array.isArray(v) ? v.join('、') : String(v ?? '');
+        if (/^[=+\-@]/.test(t)) t = "'" + t;
+        return '"' + t.replace(/"/g, '""') + '"';
+      };
+      const head = ['填寫人', '帳號', '填寫時間'].concat(s.questions.map((q, i) => `${i + 1}. ${q.text}`));
+      const lines = [head.map(cell).join(',')].concat(tmResponsesOf(id).map(r =>
+        [r.displayName, r.username, r.submittedAt].concat(s.questions.map((_, i) => (r.answers || {})[i])).map(cell).join(',')));
+      const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${s.title}-回覆.csv`;
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }
+
+    // ══ 船員設定：公告、船員看得到哪些課、以船員身分預覽 ══
+    let csDraft = null;          // { courseMode, hiddenCourseIds }
+    let csBaseline = '';
+    let noticeDraft = null;
+    let csSaving = false;
+
+    function csDirty() { return csDraft && JSON.stringify(csDraft) !== csBaseline; }
+
+    function renderCrewset() {
+      const host = document.getElementById('crewsetView');
+      if (!md || !md.settings) {
+        host.innerHTML = `<div class="hm-wrap" style="padding:32px 20px 72px"><div class="hm-empty">讀取中…</div></div>`;
+        loadManage().then(d => { if (d && view === 'crewset') renderCrewset(); });
+        return;
+      }
+      if (!csDraft) {
+        csDraft = { courseMode: md.settings.courseMode, hiddenCourseIds: md.settings.hiddenCourseIds.slice() };
+        csBaseline = JSON.stringify(csDraft);
+      }
+      if (noticeDraft === null) noticeDraft = md.settings.notice || '';
+      const crew = arr(md.crewUsers).filter(u => u.status === 'active');
+      const noRank = crew.filter(u => !u.rank);
+      const courses = arr(md.courses).slice().sort((x, y) => String(x.category).localeCompare(String(y.category)) || String(x.name).localeCompare(String(y.name), 'zh-Hant'));
+      const visibleCount = c => {
+        if (csDraft.hiddenCourseIds.includes(String(c.id))) return 0;
+        const ranks = arr(c.targetRanks);
+        if (csDraft.courseMode !== 'rank' || !ranks.length) return crew.length;
+        return crew.filter(u => ranks.includes(u.rank)).length;
+      };
+      const rankOpts = Options.grouped('crewRank').map(g => `<optgroup label="${a(g.group || '職級')}">${
+        g.items.map(o => `<option value="${a(o.value)}">${h(o.label)}${o.sublabel ? ' ' + h(o.sublabel) : ''}</option>`).join('')}</optgroup>`).join('');
+
+      host.innerHTML = `
+      <div class="hm-wrap" style="padding:32px 20px 72px">
+        <div class="hm-sec-head"><h2>船員設定</h2></div>
+        <p class="tm-sub">船員登入後就是這一頁。這裡決定他們看得到哪些課，以及最上方的公告；他們能用哪些功能（課表、留言、問卷）請到「帳號管理 → 權限設定 → 教材頁功能」。</p>
+
+        <section class="tm-panel">
+          <h3>公告</h3>
+          <p class="tm-sub">顯示在這一頁最上方，所有人登入後都會先看到。留空就不顯示。</p>
+          <textarea class="input" id="csNotice" rows="3" maxlength="500" placeholder="例如：本週五颱風，實體課改為線上進行"
+            oninput="noticeDraft = this.value; document.getElementById('csNoticeCount').textContent = this.value.length">${h(noticeDraft)}</textarea>
+          <div class="tm-panel-foot"><span class="tm-row-sub"><span id="csNoticeCount">${noticeDraft.length}</span> / 500 字</span>
+            <button type="button" class="btn btn-primary btn-sm" id="csNoticeBtn" onclick="tmSaveNotice()">儲存公告</button></div>
+        </section>
+
+        <section class="tm-panel">
+          <h3>船員看得到哪些課</h3>
+          <div class="tm-modes">
+            <button type="button" class="tm-mode${csDraft.courseMode === 'all' ? ' on' : ''}" onclick="tmSetMode('all')">
+              <div class="t"><i class="ph ph-books"></i> 全部課程</div>
+              <div class="d">每位船員都看得到所有課（下面關掉的除外）。</div></button>
+            <button type="button" class="tm-mode${csDraft.courseMode === 'rank' ? ' on' : ''}" onclick="tmSetMode('rank')">
+              <div class="t"><i class="ph ph-users"></i> 依職級</div>
+              <div class="d">只看得到「適用職級」包含自己職級的課。沒有設定適用職級的課，所有船員都看得到。</div></button>
+          </div>
+          ${csDraft.courseMode === 'rank' && noRank.length ? `<div class="tm-banner tm-banner-amber">
+            <i class="ph ph-warning-circle"></i><div>有 ${noRank.length} 位船員還沒設定職級（${h(noRank.slice(0, 5).map(u => u.full_name || u.username).join('、'))}${noRank.length > 5 ? ' 等' : ''}），
+            他們只看得到沒有設定適用職級的課。到「帳號管理」編輯帳號就能設定職級。</div></div>` : ''}
+          <div class="tm-list" style="margin-top:12px">${courses.map(c => {
+            const on = !csDraft.hiddenCourseIds.includes(String(c.id));
+            const ranks = arr(c.targetRanks);
+            return `<div class="tm-row is-static${on ? '' : ' is-off'}">
+              <div class="tm-row-main">
+                <div class="tm-row-title">${h(c.name)}</div>
+                <div class="tm-row-sub">${ranks.length ? '適用：' + h(ranks.map(r => Options.label('crewRank', r)).join('、')) : '不限職級'}
+                  · ${on ? `${visibleCount(c)} 位船員看得到` : '船員看不到'}</div>
+              </div>
+              <button type="button" class="tm-switch" role="switch" aria-checked="${on}" aria-label="${a(c.name)} 開放給船員"
+                onclick="tmToggleCourse('${a(String(c.id))}')"></button>
+            </div>`;
+          }).join('') || '<div class="hm-empty">還沒有課程。</div>'}</div>
+          <div class="tm-panel-foot"><span class="tm-row-sub">${csDirty() ? '<strong style="color:#b45309">尚未儲存</strong>' : '適用職級在「智慧派課」編輯課程時設定'}</span>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="tmRevertCourses()" ${csDirty() ? '' : 'disabled'}>放棄變更</button>
+              <button type="button" class="btn btn-primary btn-sm" id="csSaveBtn" onclick="tmSaveCourses()" ${csDirty() ? '' : 'disabled'}>儲存</button>
+            </div></div>
+        </section>
+
+        <section class="tm-panel">
+          <h3>以船員身分預覽</h3>
+          <p class="tm-sub">用某個職級的船員身分看這一頁，確認上面的設定是你要的結果。預覽中不能修改教材。</p>
+          <div class="tm-panel-foot" style="justify-content:flex-start">
+            <select class="input" id="csPreviewRank" style="max-width:320px">
+              <option value="__all__">所有船員（不分職級）</option>
+              <option value="__none__">尚未設定職級的船員</option>${rankOpts}</select>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="tmStartPreview(document.getElementById('csPreviewRank').value)">
+              <i class="ph ph-eye"></i> 開始預覽</button>
+          </div>
+        </section>
+      </div>`;
+    }
+
+    function tmSetMode(m) { csDraft.courseMode = m; renderCrewset(); }
+    function tmToggleCourse(id) {
+      const i = csDraft.hiddenCourseIds.indexOf(id);
+      if (i >= 0) csDraft.hiddenCourseIds.splice(i, 1); else csDraft.hiddenCourseIds.push(id);
+      renderCrewset();
+    }
+    function tmRevertCourses() { csDraft = null; renderCrewset(); }
+
+    async function tmSaveCourses() {
+      if (csSaving || !csDirty()) return;
+      csSaving = true;
+      const btn = document.getElementById('csSaveBtn'); btn.disabled = true; btn.textContent = '儲存中…';
+      try {
+        const saved = await api.saveCrewSettings({ courseMode: csDraft.courseMode, hiddenCourseIds: csDraft.hiddenCourseIds });
+        md.settings = saved; ld.crewSettings = saved; csDraft = null;
+        showToast('已儲存，船員下次重新整理就會看到', 'success');
+      } catch (err) {
+        showToast('儲存失敗：' + (err.message || '請稍後再試'), 'error');
+      } finally {
+        csSaving = false; renderCrewset();
+      }
+    }
+
+    async function tmSaveNotice() {
+      const btn = document.getElementById('csNoticeBtn');
+      btn.disabled = true; btn.textContent = '儲存中…';
+      try {
+        const saved = await api.saveCrewSettings({ notice: noticeDraft });
+        md.settings = saved; ld.notice = saved.notice; ld.crewSettings = saved; noticeDraft = saved.notice;
+        showToast(saved.notice ? '公告已更新' : '公告已移除', 'success');
+      } catch (err) {
+        showToast('儲存失敗：' + (err.message || '請稍後再試'), 'error');
+      } finally {
+        renderCrewset();
+      }
+    }
+
+    async function tmStartPreview(rank) {
+      previewRank = rank || '__all__';
+      isAdmin = false;        // 預覽中不能編輯教材
+      await loadLearning();
+      goHome();
+    }
+
+    async function tmStopPreview() {
+      previewRank = '';
+      isAdmin = Auth.can('materials_edit');
+      allCourses = isCrew ? allCourses : readCourses();
+      await loadLearning();
+      goHome();
+    }
+
+    // ── 留言刪除（comments_moderate）──
+    async function tmDeleteComment(btn) {
+      const id = btn.dataset.id;
+      const c = tmComments.find(x => String(x.id) === String(id));
+      if (!c || !confirm(`刪除 ${c.author || '這位'} 的留言？刪除後無法復原。`)) return;
+      btn.disabled = true;
+      try {
+        await api.deleteCrewComment(id);
+        tmComments = tmComments.filter(x => String(x.id) !== String(id));
+        ld.comments = tmComments;
+        const course = activeCourse(); if (course) renderModule(course);
+        showToast('留言已刪除', 'success');
+      } catch (err) {
+        btn.disabled = false;
+        showToast('刪除失敗：' + (err.message || '請稍後再試'), 'error');
+      }
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -1658,23 +2651,23 @@
       </div>`;
     }
 
-    // ── 留言討論（課程層級；沿用舊版的 localStorage 'comments' 格式）──
+    // ── 留言討論（課程層級，後端 comments 表）──
     function mdlComments(courseId) {
-      try {
-        const all = JSON.parse(localStorage.getItem('comments') || '[]');
-        return (Array.isArray(all) ? all : [])
-          .filter(c => String(c.courseId) === String(courseId))
-          .sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0));
-      } catch { return []; }
+      return tmComments
+        .filter(c => String(c.courseId) === String(courseId))
+        .sort((x, y) => new Date(x.createdAt || x.timestamp || 0) - new Date(y.createdAt || y.timestamp || 0));
     }
 
     function mdlCommentsHtml(course) {
+      if (!Auth.can('comments')) return '';
+      const canDelete = Auth.can('comments_moderate') && !previewRank;
       const list = mdlComments(course.id);
       const rows = list.length
         ? list.map(c => {
             const init = (c.author || '?').charAt(0).toUpperCase();
-            const time = c.timestamp
-              ? new Date(c.timestamp).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
+            const ts = c.createdAt || c.timestamp;
+            const time = ts
+              ? new Date(ts).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
               : '';
             return `
               <div class="mod-cmt-row">
@@ -1683,6 +2676,8 @@
                   <div class="mod-cmt-meta">
                     <span class="mod-cmt-author">${h(c.author || '匿名')}</span>
                     <span class="mod-cmt-time">${h(time)}</span>
+                    ${canDelete ? `<button type="button" class="tm-cmt-del" data-id="${a(String(c.id))}"
+                       onclick="tmDeleteComment(this)" aria-label="刪除這則留言"><i class="ph ph-trash"></i></button>` : ''}
                   </div>
                   <div class="mod-cmt-text">${nl2br(c.content || '')}</div>
                 </div>
@@ -1703,7 +2698,10 @@
         </div>`;
     }
 
-    function mdlPostComment(el) {
+    let postingComment = false;
+
+    async function mdlPostComment(el) {
+      if (postingComment) return;
       const courseId = el?.dataset?.cid;
       const course = allCourses.find(c => String(c.id) === String(courseId));
       if (!course) return;
@@ -1711,19 +2709,22 @@
       const content = (input?.value || '').trim();
       if (!content) { showToast('請輸入留言內容', 'error'); return; }
 
-      let all;
-      try { all = JSON.parse(localStorage.getItem('comments') || '[]'); } catch { all = []; }
-      if (!Array.isArray(all)) all = [];
-      all.push({
-        id: Date.now(),
-        courseId: course.id,
-        author: Auth.displayName(currentUser) || currentUser.username,
-        content,
-        timestamp: Date.now()
-      });
-      localStorage.setItem('comments', JSON.stringify(all));
-      renderModule(course);
-      showToast('留言已送出', 'success');
+      postingComment = true;
+      el.disabled = true;
+      try {
+        // 作者由後端以登入身分認定
+        const saved = await api.addComment(course.id, content);
+        tmComments = tmComments.concat([saved]);
+        ld.comments = tmComments;
+        renderModule(course);
+        showToast('留言已送出', 'success');
+      } catch (err) {
+        // 失敗就留著打好的字
+        showToast('留言失敗：' + (err.message || '請稍後再試'), 'error');
+        el.disabled = false;
+      } finally {
+        postingComment = false;
+      }
     }
 
     // ── 入口 ──────────────────────────────────────────────────────
