@@ -339,10 +339,13 @@
   </header>
 
   <div class="container">
+    <!-- 後端（Apps Script）比這版前端舊時提醒重新部署，不用等到按鈕失敗才發現 -->
+    <div id="backendVersionBanner"></div>
+
     <div class="tabs" role="tablist">
       <button type="button" class="tab-btn active" data-pane="usersPane" role="tab"><i class="ph ph-users"></i> 帳號</button>
       <button type="button" class="tab-btn" data-pane="optionsPane" role="tab"><i class="ph ph-list-checks"></i> 選單管理</button>
-      <button type="button" class="tab-btn" data-pane="accessPane" role="tab"><i class="ph ph-shield-check"></i> 頁面權限</button>
+      <button type="button" class="tab-btn" data-pane="accessPane" role="tab"><i class="ph ph-shield-check"></i> 權限設定</button>
     </div>
 
     <div class="pane" id="usersPane">
@@ -441,6 +444,33 @@
           <span class="opt-dirty" id="accDirty" hidden>尚未儲存</span>
         </div>
       </div>
+
+      <!-- 教材頁功能：教材頁是員工和船員共用的同一頁，差別只在各角色能用哪些功能 -->
+      <div class="card" style="margin-top:20px">
+        <div class="opt-head">
+          <div>
+            <h3>教材頁功能</h3>
+            <p>教材頁大家共用同一頁，這裡決定各角色在上面能用哪些功能；後端也照這張表檢查</p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <button type="button" class="btn btn-plain btn-sm" id="featResetBtn"><i class="ph ph-arrow-counter-clockwise"></i> 還原預設</button>
+          </div>
+        </div>
+        <div class="acc-wrap" style="padding:14px 20px 4px">
+          <table class="acc-table" id="featTable"></table>
+        </div>
+        <div class="opt-note">
+          灰色鎖頭表示這個角色<strong>一定有</strong>（避免管理者把自己的管理功能關掉）；
+          打叉表示這個功能<strong>不能開給</strong>這個角色：問卷管理、刪除留言、船員設定會看到全船的作答或能動別人的資料，
+          只能開給管理者或教師；上傳與編輯教材要寫入課程資料，只開放管理者。<br>
+          船員看得到哪些課、公告內容、問卷題目，請到<strong>教材管理</strong>頁面上設定。
+        </div>
+        <div class="opt-foot">
+          <button type="button" class="btn btn-primary" id="featSaveBtn"><i class="ph ph-check"></i> 儲存</button>
+          <button type="button" class="btn btn-secondary" id="featRevertBtn">放棄變更</button>
+          <span class="opt-dirty" id="featDirty" hidden>尚未儲存</span>
+        </div>
+      </div>
     </div><!-- /accessPane -->
   </div>
 
@@ -477,6 +507,13 @@
             <label for="roleInput">角色</label>
             <select id="roleInput"></select>
             <div class="hint" id="roleHint"></div>
+            <div class="field-error"></div>
+          </div>
+
+          <div class="field" id="field-rank" hidden>
+            <label for="rankInput">船員職級</label>
+            <select id="rankInput"></select>
+            <div class="hint">教材頁的「船員設定」選了「依職級」時，用這個欄位決定他看得到哪些課</div>
             <div class="field-error"></div>
           </div>
 
@@ -584,6 +621,7 @@
 
     function updateRoleHint() {
       $('roleHint').textContent = roleHint($('roleInput').value);
+      $('field-rank').hidden = $('roleInput').value !== 'crew';
     }
 
     // ── 載入清單 ──
@@ -668,6 +706,9 @@
               <span class="role-pill" style="background:${color}1a;color:${color}">
                 ${h(Auth.getRoleLabel(u.role))}
               </span>
+              ${u.role === 'crew'
+                ? `<div class="meta-line">${u.rank ? h(Options.fullLabel('crewRank', u.rank)) : '<span style="color:#b45309">未設定職級</span>'}</div>`
+                : ''}
             </td>
             <td class="hide-sm">
               <span class="status-pill ${disabled ? 'disabled' : ''}">${disabled ? '已停用' : '啟用中'}</span>
@@ -750,6 +791,7 @@
       $('usernameInput').value = creating ? '' : user.username;
       $('fullNameInput').value = creating ? '' : (user.full_name || '');
       $('roleInput').value = creating ? 'teacher' : user.role;
+      buildRankOptions(creating ? '' : (user.rank || ''));
       $('passwordInput').value = '';
       $('passwordInput').placeholder = creating ? '至少 10 個字元' : '留空表示不修改';
       $('passwordHint').textContent = creating
@@ -759,6 +801,19 @@
 
       $('userModal').classList.add('show');
       setTimeout(() => $(creating ? 'usernameInput' : 'fullNameInput').focus(), 220);
+    }
+
+    // 職級選單跟「選單管理」的船員職級同一份；停用的職級若剛好是這個人的，也要列出來
+    function buildRankOptions(current) {
+      const groups = Options.grouped('crewRank');
+      let html = '<option value="">未設定</option>' + groups.map(g =>
+        `<optgroup label="${h(g.group || '職級')}">${g.items.map(o =>
+          `<option value="${h(o.value)}">${h(o.label)}${o.sublabel ? ' ' + h(o.sublabel) : ''}</option>`).join('')}</optgroup>`).join('');
+      if (current && !Options.isActive('crewRank', current)) {
+        html += `<option value="${h(current)}">${h(Options.fullLabel('crewRank', current))}（已停用）</option>`;
+      }
+      $('rankInput').innerHTML = html;
+      $('rankInput').value = current || '';
     }
 
     function closeUserModal() {
@@ -816,6 +871,8 @@
         role: $('roleInput').value,
         password: $('passwordInput').value
       };
+      // 只有船員帶職級；改成其他角色時不動原本的值
+      if (payload.role === 'crew') payload.rank = $('rankInput').value;
 
       setSubmitting(true);
       try {
@@ -877,6 +934,14 @@
       options_save: '修改選單',
       options_reset: '還原選單',
       page_access_save: '修改頁面權限',
+      crew_settings_save: '修改船員設定',
+      feature_access_save: '修改教材頁功能',
+      feature_access_reset: '還原教材頁功能',
+      crew_survey_create: '新增問卷',
+      crew_survey_update: '修改問卷',
+      crew_survey_delete: '刪除問卷',
+      crew_comment_delete: '刪除留言',
+      survey_submit: '填寫問卷',
       page_access_reset: '還原頁面權限'
     };
 
@@ -1102,6 +1167,22 @@
       }
     }
 
+    async function checkBackend() {
+      try {
+        const v = await api.checkBackendVersion();
+        if (v.ok) return;
+        $('backendVersionBanner').innerHTML = `
+          <div class="backend-banner">
+            <i class="ph ph-warning-circle"></i>
+            <div>
+              <strong>後端程式還沒更新到這一版</strong>（目前 ${h(v.current || '舊版')}，需要 ${h(v.required)}）。
+              部分功能會失敗，例如教材頁的船員設定與問卷。請把 backend-api.gs 貼到 Apps Script，
+              再到「部署 → 管理部署作業 → 編輯 → 版本：新版本 → 部署」。網址不會變。
+            </div>
+          </div>`;
+      } catch (e) { /* 連不到後端時，其他畫面本來就會顯示錯誤 */ }
+    }
+
     // ── 頁面權限矩陣 ──
     let accDraft = {};        // { page: [roles] } 編輯中
     let accBaseline = '';
@@ -1233,6 +1314,107 @@
       }
     }
 
+    // ── 教材頁功能矩陣 ──
+    let featDraft = {};
+    let featBaseline = '';
+
+    function featDirty() { return JSON.stringify(featDraft) !== featBaseline; }
+
+    function featLoadDraft() {
+      featDraft = Auth.getFeatureAccess();
+      featBaseline = JSON.stringify(featDraft);
+      renderFeatTable();
+    }
+
+    function renderFeatTable() {
+      const roles = roleEntries();
+      $('featDirty').hidden = !featDirty();
+      const head = `<thead><tr>
+          <th>功能</th>
+          ${roles.map(r => `<th class="acc-cell"><span class="acc-role-head">
+              <span class="acc-role-dot" style="background:${escapeAttr(Auth.getRoleColor(r.key))}"></span>${h(r.label)}</span></th>`).join('')}
+        </tr></thead>`;
+      const body = Auth.FEATURE_DEFS.map(def => {
+        const allowed = featDraft[def.key] || [];
+        return `<tr>
+          <td>
+            <div class="acc-page-name">${h(def.label)}</div>
+            <div class="acc-page-desc">${h(def.desc)}</div>
+          </td>
+          ${roles.map(r => {
+            const on = allowed.indexOf(r.key) >= 0;
+            const locked = def.locked.indexOf(r.key) >= 0;
+            const banned = def.allowed && def.allowed.indexOf(r.key) < 0;
+            const title = locked ? '這個角色一定有這個功能' : banned ? '這個功能不能開給這個角色' : '';
+            return `<td class="acc-cell">
+              <button type="button" class="acc-check ${on ? 'on' : ''} ${locked ? 'locked' : ''}"
+                      data-feat="${escapeAttr(def.key)}" data-role="${escapeAttr(r.key)}"
+                      ${locked || banned ? `disabled title="${escapeAttr(title)}"` : ''}
+                      role="checkbox" aria-checked="${on ? 'true' : 'false'}"
+                      aria-label="${h(r.label)} 可使用 ${h(def.label)}">
+                <i class="ph ${locked ? 'ph-lock-simple' : banned ? 'ph-x' : 'ph-check-bold'}"
+                   ${banned ? 'style="color:#c7c7cc"' : ''}></i>
+              </button>
+            </td>`;
+          }).join('')}
+        </tr>`;
+      }).join('');
+      $('featTable').innerHTML = head + '<tbody>' + body + '</tbody>';
+    }
+
+    function featBusy(on, btn, label) {
+      ['featSaveBtn', 'featResetBtn', 'featRevertBtn'].forEach(id => { $(id).disabled = on; });
+      if (!btn) return;
+      if (on) { btn.dataset.html = btn.innerHTML; btn.innerHTML = `<span class="spinner"></span> ${label}`; }
+      else if (btn.dataset.html) { btn.innerHTML = btn.dataset.html; delete btn.dataset.html; }
+    }
+
+    function initFeaturePane() {
+      $('featTable').addEventListener('click', e => {
+        const btn = e.target.closest('button.acc-check'); if (!btn || btn.disabled) return;
+        const key = btn.dataset.feat, role = btn.dataset.role;
+        const list = featDraft[key] || [];
+        const i = list.indexOf(role);
+        if (i >= 0) list.splice(i, 1); else list.push(role);
+        featDraft[key] = Object.keys(Auth.ROLES).filter(r => list.indexOf(r) >= 0);
+        renderFeatTable();
+      });
+      $('featRevertBtn').addEventListener('click', () => {
+        if (featDirty() && !confirm('放棄所有還沒儲存的變更？')) return;
+        featLoadDraft();
+      });
+      $('featSaveBtn').addEventListener('click', async () => {
+        if (!featDirty()) { showToast('沒有變更'); return; }
+        featBusy(true, $('featSaveBtn'), '儲存中…');
+        try {
+          Auth.applyFeatureAccess(await api.saveFeatureAccess(featDraft));
+          featLoadDraft();
+          showToast('教材頁功能已儲存');
+          loadAudit();
+        } catch (error) {
+          showToast(error.message || '儲存失敗', 'error');
+        } finally {
+          featBusy(false, $('featSaveBtn'));
+        }
+      });
+      $('featResetBtn').addEventListener('click', async () => {
+        if (!confirm('把教材頁功能還原成系統預設值？')) return;
+        featBusy(true, $('featResetBtn'), '還原中…');
+        try {
+          Auth.applyFeatureAccess(await api.resetFeatureAccess());
+          featLoadDraft();
+          showToast('已還原成預設值');
+          loadAudit();
+        } catch (error) {
+          showToast(error.message || '還原失敗', 'error');
+        } finally {
+          featBusy(false, $('featResetBtn'));
+        }
+      });
+      featLoadDraft();
+      Auth.refreshPageAccess(true).then(() => { if (!featDirty()) featLoadDraft(); });
+    }
+
     function closeDeleteModal() {
       $('deleteModal').classList.remove('show');
       deletingUser = null;
@@ -1275,6 +1457,8 @@
 
       initOptionsPane();
       initAccessPane();
+      initFeaturePane();
+      checkBackend();
 
       $('addUserBtn').addEventListener('click', () => openUserModal(null));
       $('reloadAuditBtn').addEventListener('click', loadAudit);

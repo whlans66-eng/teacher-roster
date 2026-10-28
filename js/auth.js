@@ -6,10 +6,11 @@
   const CREW_LOGIN_PATH = 'crew-login.html';
   const HOME_PATH = 'index.html';
 
-  // 每個角色的起點。船員走自己的一條動線（crew-login → crew-portal），
+  // 每個角色的起點。船員走自己的一條動線（crew-login → 教材頁），
   // 進不了 index.html，所以導覽列的「首頁」、無權限畫面的「回到首頁」、
   // 登出後要回哪個登入頁，都要看角色，不能一律寫死 index.html。
-  const ROLE_HOME = { crew: 'crew-portal.html' };
+  // 教材頁是管理者和船員共用的同一頁，各角色能用哪些功能看 FEATURE_DEFS。
+  const ROLE_HOME = { crew: 'teaching-materials.html' };
   const ROLE_LOGIN = { crew: CREW_LOGIN_PATH };
 
   function homeFor(role) {
@@ -47,8 +48,7 @@
     { page: 'teacher-management.html', label: '師資管理', icon: 'ph-user-list',            desc: '師資名單、證照與經歷',                 nav: true  },
     { page: 'course-management.html',  label: '訓練排程', icon: 'ph-calendar',             desc: '安排課程、行事曆',                     nav: true  },
     { page: 'maritime-courses.html',   label: '智慧派課', icon: 'ph-anchor',               desc: '海事專業課程管理與分析',               nav: true  },
-    { page: 'teaching-materials.html', label: '教材管理', icon: 'ph-books',                desc: '書籍、影片與數位資源',                 nav: true  },
-    { page: 'crew-portal.html',        label: '船員入口', icon: 'ph-identification-badge', desc: '課表、留言與問卷（船員視角）',         nav: true  },
+    { page: 'teaching-materials.html', label: '教材管理', icon: 'ph-books',                desc: '員工與船員共用；各角色能用的功能在下方「教材頁功能」設定', nav: true  },
     { page: 'admin.html',              label: '帳號管理', icon: 'ph-lock-key',             desc: '帳號、角色、選單與頁面權限',           nav: true  },
     { page: 'fix-sync-issue.html',     label: '同步修復工具', icon: 'ph-wrench',           desc: '會清空瀏覽器快取的維修工具，沒有入口', nav: false }
   ];
@@ -60,8 +60,8 @@
     'teacher-management.html': ['admin', 'teacher'],
     'course-management.html':  ['admin', 'teacher'],
     'maritime-courses.html':   ['admin', 'teacher'],
-    'teaching-materials.html': ['admin', 'teacher', 'guest'],
-    'crew-portal.html':        ['admin', 'crew'],
+    // 教材頁員工與船員共用，船員登入後直接到這裡
+    'teaching-materials.html': ['admin', 'teacher', 'crew', 'guest'],
     'fix-sync-issue.html':     ['admin']
   };
 
@@ -151,14 +151,87 @@
     if (!force && accessSource === 'cache' && accessCacheAge() < ACCESS_REFRESH_MS) {
       return Promise.resolve(pageAccess);
     }
-    if (typeof api === 'undefined' || !api || typeof api.listPageAccess !== 'function') {
+    if (typeof api === 'undefined' || !api || typeof api.listAccess !== 'function') {
       return Promise.resolve(pageAccess);
     }
-    accessLoading = api.listPageAccess()
-      .then(table => { applyPageAccess(table, 'backend'); return pageAccess; })
+    // 頁面權限與功能權限一次拿
+    accessLoading = api.listAccess()
+      .then(res => {
+        applyPageAccess(res.pages, 'backend');
+        if (res.features) applyFeatureAccess(res.features);
+        return pageAccess;
+      })
       .catch(() => pageAccess)
       .then(t => { accessLoading = null; return t; });
     return accessLoading;
+  }
+
+  // ── 功能權限 ──
+  // 頁面權限決定進不進得去，這裡決定進去之後能用哪些功能（目前用在教材頁）。
+  // 真正生效的是後端 settings 表的 featureAccess；這份是顯示用的說明與備援預設值，
+  // 鍵、defaults、locked、allowed 必須與 backend-api.gs 的 FEATURE_DEFS 一致。
+  const FEATURE_DEFS = [
+    { key: 'schedule',          label: '我的課表',     desc: '看得到開放給自己的課接下來的上課時間',
+      defaults: ['admin', 'teacher', 'crew'], locked: [], allowed: null },
+    { key: 'comments',          label: '留言討論',     desc: '在課程頁看留言、發表留言',
+      defaults: ['admin', 'teacher', 'crew'], locked: [], allowed: null },
+    { key: 'surveys_fill',      label: '填寫問卷',     desc: '看到開放中的問卷並作答',
+      defaults: ['crew'], locked: [], allowed: null },
+    { key: 'ai',                label: 'AI 助教',      desc: '上課時可以問 AI；會用到 Gemini 額度',
+      defaults: ['admin', 'teacher'], locked: [], allowed: null },
+    { key: 'comments_moderate', label: '刪除留言',     desc: '可以刪除任何人的留言',
+      defaults: ['admin'], locked: ['admin'], allowed: ['admin', 'teacher'] },
+    { key: 'surveys_manage',    label: '問卷管理',     desc: '建立問卷、開放或關閉、看所有人的作答結果',
+      defaults: ['admin'], locked: ['admin'], allowed: ['admin', 'teacher'] },
+    { key: 'crew_settings',     label: '船員設定',     desc: '公告、船員看得到哪些課（全部或依職級）',
+      defaults: ['admin'], locked: ['admin'], allowed: ['admin', 'teacher'] },
+    { key: 'materials_edit',    label: '上傳與編輯教材', desc: '上傳檔案、建立互動課程；要寫入課程資料，只開放管理者',
+      defaults: ['admin'], locked: ['admin'], allowed: ['admin'] }
+  ];
+  const FEATURE_KEY = 'featureAccessTable';
+
+  function normalizeFeatures(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const out = {};
+    FEATURE_DEFS.forEach(def => {
+      let roles = Array.isArray(raw[def.key]) ? raw[def.key].map(r => String(r || '').trim()) : def.defaults.slice();
+      roles = roles.filter(r => !!ROLES[r] && (!def.allowed || def.allowed.indexOf(r) >= 0));
+      def.locked.forEach(r => { if (roles.indexOf(r) < 0) roles.push(r); });
+      out[def.key] = Object.keys(ROLES).filter(r => roles.indexOf(r) >= 0);
+    });
+    return out;
+  }
+
+  function readFeatureCache() {
+    try { return normalizeFeatures(JSON.parse(localStorage.getItem(FEATURE_KEY) || 'null')); }
+    catch (e) { return null; }
+  }
+
+  let featureAccess = readFeatureCache() || normalizeFeatures({});
+
+  /** 換上一份新的功能矩陣；有變更時發出 auth:features 事件，畫面據此重畫 */
+  function applyFeatureAccess(raw) {
+    const clean = normalizeFeatures(raw);
+    if (!clean) return false;
+    const changed = JSON.stringify(clean) !== JSON.stringify(featureAccess);
+    featureAccess = clean;
+    try { localStorage.setItem(FEATURE_KEY, JSON.stringify(clean)); } catch (e) { /* 無痕模式 */ }
+    if (changed) {
+      try { document.dispatchEvent(new CustomEvent('auth:features', { detail: { access: clean } })); }
+      catch (e) { /* 舊瀏覽器 */ }
+    }
+    return changed;
+  }
+
+  /** 目前登入的人（或指定角色）能不能用某個功能 */
+  function can(feature, role) {
+    const allowed = featureAccess[feature];
+    if (!Array.isArray(allowed)) return false;
+    return allowed.indexOf(normalizeRole(role || getRole())) >= 0;
+  }
+
+  function getFeatureAccess() {
+    return JSON.parse(JSON.stringify(featureAccess));
   }
 
   /** 目前生效的矩陣（複本，改了不影響內部狀態） */
@@ -287,7 +360,7 @@
 
   /**
    * 登出
-   * @param {string} [target] 導回哪個登入頁；船員入口要回 crew-login.html
+   * @param {string} [target] 導回哪個登入頁；船員要回 crew-login.html
    */
   function logout(target) {
     // 角色要在清掉之前決定，清完就不知道他原本是誰了
@@ -410,7 +483,7 @@
       : canAccess(currentPage(), authData.role);
 
     if (!ok) {
-      // 有專屬動線的角色（船員：crew-login → crew-portal）誤入員工畫面時，
+      // 有專屬動線的角色（船員：crew-login → 教材頁）誤入員工畫面時，
       // 直接送回他自己的入口；留在員工頁上看一個無權限說明對他沒有意義。
       // 其他角色維持顯示說明，讓他知道為什麼進不去、該找誰開通。
       const ownEntry = ROLE_HOME[normalizeRole(authData.role)];
@@ -791,10 +864,14 @@
    */
   function renderNavLinks(role) {
     const current = currentPage();
-    return NAV_ITEMS.filter(it => canAccess(it.page, role)).map(it => `
+    return NAV_ITEMS.filter(it => canAccess(it.page, role)).map(it => {
+      // 教材頁大家共用；不能上傳編輯教材的人看到的是「教材學習」，不是「教材管理」
+      const label = it.page === 'teaching-materials.html' && !can('materials_edit', role) ? '教材學習' : it.label;
+      return `
             <a class="app-nav-link${it.page === current ? ' active' : ''}" href="${it.page}">
-              <i class="ph ${it.icon}"></i><span>${escapeHtml(it.label)}</span>
-            </a>`).join('');
+              <i class="ph ${it.icon}"></i><span>${escapeHtml(label)}</span>
+            </a>`;
+    }).join('');
   }
 
   /** 權限矩陣更新後，把已掛上的導覽列連結就地換掉（不重掛帳號選單） */
@@ -844,6 +921,10 @@
     getPageAccess,
     applyPageAccess,
     refreshPageAccess,
+    FEATURE_DEFS,
+    can,
+    getFeatureAccess,
+    applyFeatureAccess,
     getAuthData,
     clearAuthData,
     ensureAuthenticated,

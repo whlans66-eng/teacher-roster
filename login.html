@@ -426,6 +426,7 @@
           storage.setItem('authData', JSON.stringify(authData));
           // 頁面權限矩陣隨登入結果一起來，先寫進快取，首頁一開就能照它畫卡片
           if (window.Auth && loginResult.pageAccess) Auth.applyPageAccess(loginResult.pageAccess, 'backend');
+          if (window.Auth && loginResult.featureAccess) Auth.applyFeatureAccess(loginResult.featureAccess);
           sessionStorage.setItem('currentUser', JSON.stringify({
             username: userData.username,
             role: userData.role,
@@ -436,7 +437,7 @@
           loginBtn.innerHTML = '登入成功';
           
           setTimeout(() => {
-            // 導到這個角色的起點：員工是 index.html，船員是船員入口。
+            // 導到這個角色的起點：員工是 index.html，船員是教材頁。
             // 以前一律丟 index.html，船員從這頁登入會直接撞無權限畫面。
             window.location.href = (window.Auth && Auth.homeFor)
               ? Auth.homeFor(userData.role) : 'index.html';

@@ -846,7 +846,7 @@ Orphan 的紀錄會在詳情頁明確提示「此課名已不存在」，並可�
 
 `mountNav()` 內建重複掛載防護（偵測到既有 `.app-nav` 就跳過）。
 
-### 5.4.7 頁面權限矩陣（帳號管理 → 頁面權限）
+### 5.4.7 頁面權限矩陣（帳號管理 → 權限設定）
 
 「哪個角色能進哪一頁」是資料，不是程式。
 
@@ -866,6 +866,65 @@ Orphan 的紀錄會在詳情頁明確提示「此課名已不存在」，並可�
   後端 `PAGE_ACCESS_DEFAULTS` 各加一筆。沒登記的頁面一律擋。
 - 注意：矩陣只管「看得到、進得去」。資料的讀寫權限仍由後端
   `TABLE_READ_ROLES` / `TABLE_WRITE_ROLES` 控管，藏頁面不等於藏資料。
+
+### 5.4.7.1 教材頁：員工與船員共用同一頁，功能依角色不同
+
+船員以前有自己的 `crew-portal.html`，版面跟員工畫面完全不同，而且看到什麼全寫死。
+現在船員登入後就到 `teaching-materials.html`，跟管理者用同一頁；差別只在功能。
+`crew-portal.html` 只剩轉址，留給舊書籤與萬海園地 SSO 的舊網址。
+
+**功能權限（featureAccess）**
+
+| 鍵 | 功能 | 預設 | 限制 |
+|---|---|---|---|
+| `schedule` | 我的課表 | 管理者、教師、船員 | |
+| `comments` | 留言討論（看與發表） | 管理者、教師、船員 | |
+| `surveys_fill` | 填寫問卷 | 船員 | |
+| `ai` | AI 助教 | 管理者、教師 | 會用到 Gemini 額度 |
+| `comments_moderate` | 刪除留言 | 管理者（鎖定） | 只能開給管理者、教師 |
+| `surveys_manage` | 問卷管理 | 管理者（鎖定） | 只能開給管理者、教師 |
+| `crew_settings` | 船員設定 | 管理者（鎖定） | 只能開給管理者、教師 |
+| `materials_edit` | 上傳與編輯教材 | 管理者（鎖定） | 只開放管理者 |
+
+- 存在後端 `settings` 表的 `featureAccess`；定義在 `FEATURE_DEFS`（後端）與
+  `Auth.FEATURE_DEFS`（前端），兩邊的鍵、預設、locked、allowed 必須一致。
+- 前端用 `Auth.can('key')` 判斷；登入時隨登入結果帶回、之後跟頁面權限一起背景重抓，
+  有變更發 `auth:features` 事件，教材頁就地重畫。
+- **後端每個動作都照同一張表檢查**（`_requireFeature`）：`comment_add`、`survey_submit`、
+  `crew_comment_delete`、`crew_survey_save/delete`、`crew_settings_save`、`askgemini`。
+  管理類功能的 allowed 限制在後端也擋，不能只靠畫面上的灰色格子。
+
+**資料**
+
+- `learning_data`：教材頁一次要的東西。課程對船員依「船員設定」篩過，其他角色看全部；
+  課表、留言、問卷各自要有功能權限才給。問卷回覆只回「我填過哪幾份」。
+  帶 `previewRank` 可以船員身分預覽（`__all__`、`__none__` 或職級代碼）。
+  舊名稱 `crew_portal_data` 仍可用。
+- `learning_manage_data`：問卷（含題目、回覆數、作答）給 `surveys_manage`，
+  船員設定（含課程清單、船員帳號）給 `crew_settings`。
+- 船員不再能用泛用 `list` 讀 `maritimeCourses` / `courseAssignments`，
+  否則畫面上藏起來的課他照樣撈得到。派課只回課表需要的欄位，備註不出去。
+
+**船員設定（settings 表的 crewPortal）**
+
+- `courseMode`：`all` 全部課程，或 `rank` 依職級——課程的「適用職級」（智慧派課設定）
+  要包含船員帳號的職級（帳號管理設定）；沒設定適用職級的課所有船員都看得到。
+- `hiddenCourseIds`：不論哪種模式都不給船員看的課。
+- `notice`：教材頁最上方的公告，500 字以內。
+- 預覽中 `persistCourses()` 直接拒絕：那時 `allCourses` 是篩過的那一份，存回去會刪掉被藏的課。
+
+**問卷**
+
+- 題目存在 `surveyTemplates`、問卷本體在 `surveys`，兩張都只能走 `crew_survey_*`，
+  不接受整表覆寫（`NEVER_BULK_WRITE`）。
+- 答案以題號存，所以**有人作答後題目不能改**，只能改標題、課程、狀態；
+  要改題目請複製成新問卷。有回覆的問卷不能刪除，改成「已關閉」。
+- 綁課程的問卷只有看得到那門課的船員收到；不綁課程的發給全體船員。
+
+**部署**：這次改了 `backend-api.gs`，要到 Apps Script「部署 → 管理部署作業 → 編輯 →
+版本：新版本 → 部署」。後端版本號是 `BACKEND_VERSION`，前端需要的版本是 `js/api.js` 的
+`REQUIRED_BACKEND_VERSION`；後端比較舊時，帳號管理頁最上方會出現提醒。
+以後改 `backend-api.gs` 請把兩邊的日期一起更新。
 
 ### 5.4.8 Tailwind 改為預先編譯（shared/tailwind.css）
 

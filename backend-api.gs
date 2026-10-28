@@ -25,6 +25,11 @@ const ALLOWED_UPLOAD_TYPES = [
 // 而 Apps Script 單次 POST 的承載量有限，所以上限不能照原始檔案大小開到 50MB。
 const MAX_UPLOAD_SIZE = 24 * 1024 * 1024; // 24MB（編碼後約 32MB）
 
+// 後端版本。前端 js/api.js 的 REQUIRED_BACKEND_VERSION 比這個新時，
+// 帳號管理頁會提示「Apps Script 要重新部署」，不用等到某個按鈕壞掉才發現。
+// 每次修改這個檔案並重新部署時，把日期改成當天。
+const BACKEND_VERSION = '2026-10-28';
+
 // 系統角色（單一來源；前端 js/auth.js 的 ROLES 必須與此一致）
 const USER_ROLES = ['admin', 'teacher', 'crew', 'guest'];
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]{3,32}$/;
@@ -47,8 +52,10 @@ const WEAK_PASSWORDS = [
 // 前端隱藏按鈕不算權限控管 —— 後端不擋，任何登入者都能直接打 API 撈走整份資料。
 const TABLE_READ_ROLES = {
   teachers:          ['admin', 'teacher'],
-  courseAssignments: ['admin', 'teacher', 'crew'],
-  maritimeCourses:   ['admin', 'teacher', 'crew', 'guest'],
+  // 船員不走泛用 list：他看得到哪些課由「船員設定」決定，只能經 learning_data
+  // 拿到篩選後的結果。留著 crew 的話，畫面上藏起來的課他用 list 一樣撈得到。
+  courseAssignments: ['admin', 'teacher'],
+  maritimeCourses:   ['admin', 'teacher', 'guest'],
   teacherLeaves:     ['admin', 'teacher'],
   activeSessions:    ['admin'],
   users:             [],   // 一律不得經由一般資料 API 讀取
@@ -57,12 +64,14 @@ const TABLE_READ_ROLES = {
   options:           ['admin', 'teacher', 'crew', 'guest'],
   // 頁面權限矩陣走專屬的 page_access_* 動作，不開放泛用讀取
   pageAccess:        [],
-  // 船員入口的資料：船員自己走 crew_portal_data（會過濾成只看得到該看的），
+  // 留言與問卷：船員走 learning_data（會過濾成只看得到該看的），
   // 所以這裡不給 crew——否則他用 list 就能把全船的問卷答案整包撈走。
   comments:          ['admin', 'teacher'],
   surveyTemplates:   ['admin', 'teacher'],
   surveys:           ['admin', 'teacher'],
-  surveyResponses:   ['admin']
+  surveyResponses:   ['admin'],
+  // 系統設定走 crew_admin_data / crew_settings_save
+  settings:          []
 };
 
 function _canReadTable(session, tableName) {
@@ -93,9 +102,11 @@ const TABLE_WRITE_ROLES = {
   options:           [],
   activeSessions:    [],
   pageAccess:        [],
-  // 問卷本體與題目由管理端維護
-  surveyTemplates:   ['admin'],
-  surveys:           ['admin'],
+  // 問卷本體與題目只能走 crew_survey_save / crew_survey_delete：
+  // 那裡會檢查題目格式，並擋下「已經有人作答還改題目」這種會讓答案對錯題的修改
+  surveyTemplates:   [],
+  surveys:           [],
+  settings:          [],
   // 留言與問卷回覆只能逐筆新增（comment_add / survey_submit），
   // 不能整表覆寫——否則一個船員存一次就會把別人的留言洗掉
   comments:          [],
@@ -124,7 +135,8 @@ const SHEETS_CONFIG = {
       'lastLoginAt',
       'createdAt',
       'updatedBy',
-      'updatedAt'
+      'updatedAt',
+      'rank'                // 船員職級（options 的 crewRank 代碼）；船員設定「依職級」開放課程靠它
     ]
   },
   userAuditLog: {
@@ -166,7 +178,7 @@ const SHEETS_CONFIG = {
     header: ['page'].concat(USER_ROLES).concat(['updatedBy', 'updatedAt'])
   },
 
-  // ── 船員入口 ──
+  // ── 教材頁：留言、問卷、設定 ──
   // 這四張表只能用 comment_add / survey_submit 這類專屬動作「新增」，
   // 不走泛用的 save／batchsave（見 NEVER_BULK_WRITE），
   // 否則任何一次整表覆寫都會把別人的留言與問卷答案一次洗掉。
@@ -185,6 +197,12 @@ const SHEETS_CONFIG = {
   surveyResponses: {
     name: 'surveyResponses',
     header: ['id', 'surveyId', 'username', 'displayName', 'answers', 'submittedAt']
+  },
+
+  // 系統設定：一列一個設定，value 存 JSON。管理者在畫面上改，不用改程式重新部署。
+  settings: {
+    name: 'settings',
+    header: ['key', 'value', 'updatedBy', 'updatedAt']
   }
 };
 
@@ -449,6 +467,7 @@ function _publicUser(u) {
     full_name: String(u.full_name || '').trim(),
     role: String(u.role || '').trim(),
     status: String(u.status || 'active').trim().toLowerCase() === 'disabled' ? 'disabled' : 'active',
+    rank: String(u.rank || '').trim(),
     mustChangePassword: String(u.mustChangePassword || '').toUpperCase() === 'TRUE',
     lastLoginAt: String(u.lastLoginAt || ''),
     passwordUpdatedAt: String(u.passwordUpdatedAt || '')
@@ -474,6 +493,15 @@ function _countOtherActiveAdmins(users, excludeId) {
 function _normalizeUserRole(role) {
   const r = String(role || '').trim();
   return USER_ROLES.indexOf(r) >= 0 ? r : null;
+}
+
+/** 職級必須是選單管理裡 crewRank 清單的代碼（停用的也算，舊帳號才不會存不回去）；空字串代表未設定 */
+function _assertValidRank(raw) {
+  const rank = String(raw || '').trim();
+  if (!rank) return '';
+  const known = _readOptions().some(o => o.listKey === 'crewRank' && o.value === rank);
+  if (!known) throw new Error('不認得的職級：' + rank);
+  return rank;
 }
 
 function _assertValidUsername(username, users, excludeId) {
@@ -518,6 +546,7 @@ function _handleUsersAction(action, p, bodyObj, session) {
     const password = _assertPasswordPolicy(pick('password'), username);
     const role = _normalizeUserRole(pick('role'));
     if (!role) throw new Error('無效的角色');
+    const rank = _assertValidRank(pick('rank'));
 
     const salt = _generateSalt();
     const id = _nextUserId(users);
@@ -540,10 +569,11 @@ function _handleUsersAction(action, p, bodyObj, session) {
     set('createdAt', now);
     set('updatedBy', _sanitizeSheetValue(String(session.username || '')));
     set('updatedAt', now);
+    set('rank', rank);
     ctx.sheet.appendRow(row);
 
-    _auditLog(session.username, 'user_create', username, '角色=' + role);
-    return _json({ ok: true, data: { id: id, username: username, full_name: fullName, role: role, status: 'active', mustChangePassword: true } });
+    _auditLog(session.username, 'user_create', username, '角色=' + role + (rank ? '，職級=' + rank : ''));
+    return _json({ ok: true, data: { id: id, username: username, full_name: fullName, role: role, rank: rank, status: 'active', mustChangePassword: true } });
   }
 
   if (action === 'users_update') {
@@ -575,6 +605,16 @@ function _handleUsersAction(action, p, bodyObj, session) {
       }
       updates.role = role;
       changed.push('角色→' + role);
+    }
+
+    // 職級可以清空，所以要分辨「沒送」與「送了空字串」
+    const hasRank = p.rank !== undefined || (bodyObj && bodyObj.rank !== undefined);
+    if (hasRank) {
+      const rank = _assertValidRank(pick('rank'));
+      if (rank !== String(target.rank || '').trim()) {
+        updates.rank = rank;
+        changed.push('職級→' + (rank || '未設定'));
+      }
     }
 
     const rawStatus = String(pick('status') || '').trim().toLowerCase();
@@ -970,20 +1010,103 @@ function _writeOptionRows(ctx, options, session) {
  * 必須與此一致（頁面鍵與預設角色都要一樣），否則後端不認得前端送來的頁面。
  */
 const PAGE_ACCESS_DEFAULTS = {
-  // 船員走自己的一條動線：crew-login → crew-portal，不進員工的模組畫面。
-  // 所以 crew 不在 index.html 與 teaching-materials.html 裡——
-  // 教材在船員入口自己的分頁看，不要同一個人有兩個長得完全不同的教材畫面。
+  // 船員不進員工的模組首頁：crew-login 登入後直接到教材頁。
+  // 教材頁是管理者、教師、船員共用的同一頁，各角色能用哪些功能看下面的 FEATURE_DEFS。
   'index.html':              ['admin', 'teacher', 'guest'],
   'admin.html':              ['admin'],
   'teacher-management.html': ['admin', 'teacher'],
   'course-management.html':  ['admin', 'teacher'],
   'maritime-courses.html':   ['admin', 'teacher'],
-  'teaching-materials.html': ['admin', 'teacher', 'guest'],
-  // 管理者保留一把鑰匙，才有辦法預覽船員實際看到的畫面
-  'crew-portal.html':        ['admin', 'crew'],
+  'teaching-materials.html': ['admin', 'teacher', 'crew', 'guest'],
   // 會清空整個 localStorage 的修復工具，只給管理者
   'fix-sync-issue.html':     ['admin']
 };
+
+// ==================== 功能權限矩陣 ====================
+//
+// 頁面權限決定「進不進得去」，這裡決定「進去之後能用哪些功能」。
+// 教材頁是管理者和船員共用的同一頁，差別只在功能，所以功能也要能在畫面上設定，
+// 而且每一項都在後端檢查——前端藏按鈕不算數。
+//
+//   defaults：預設開給哪些角色
+//   locked：  這些角色一定有，不能取消（避免管理者把自己的管理功能關掉）
+//   allowed： 只能開給這些角色（省略＝四種角色都可以）。管理類功能會看到全船的
+//             問卷答案或能刪別人留言，所以只能開給管理者或教師；
+//             上傳與編輯教材要寫入課程資料，後端只開放管理者
+//
+// 前端 js/auth.js 的 FEATURE_DEFS 必須與此一致（鍵、預設值、locked、allowed）。
+const FEATURE_DEFS = {
+  schedule:          { defaults: ['admin', 'teacher', 'crew'], locked: [],        allowed: null },
+  comments:          { defaults: ['admin', 'teacher', 'crew'], locked: [],        allowed: null },
+  surveys_fill:      { defaults: ['crew'],                     locked: [],        allowed: null },
+  ai:                { defaults: ['admin', 'teacher'],         locked: [],        allowed: null },
+  comments_moderate: { defaults: ['admin'],                    locked: ['admin'], allowed: ['admin', 'teacher'] },
+  surveys_manage:    { defaults: ['admin'],                    locked: ['admin'], allowed: ['admin', 'teacher'] },
+  crew_settings:     { defaults: ['admin'],                    locked: ['admin'], allowed: ['admin', 'teacher'] },
+  materials_edit:    { defaults: ['admin'],                    locked: ['admin'], allowed: ['admin'] }
+};
+
+function _normalizeFeatureAccess(raw) {
+  const src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const out = {};
+  Object.keys(FEATURE_DEFS).forEach(key => {
+    const def = FEATURE_DEFS[key];
+    let roles = Array.isArray(src[key]) ? src[key].map(r => String(r || '').trim()) : def.defaults.slice();
+    roles = roles.filter(r => USER_ROLES.indexOf(r) >= 0 && (!def.allowed || def.allowed.indexOf(r) >= 0));
+    def.locked.forEach(r => { if (roles.indexOf(r) < 0) roles.push(r); });
+    out[key] = USER_ROLES.filter(r => roles.indexOf(r) >= 0);
+  });
+  return out;
+}
+
+function _readFeatureAccess() {
+  return _normalizeFeatureAccess(_readSetting('featureAccess'));
+}
+
+function _hasFeature(session, key) {
+  if (!session || !Object.prototype.hasOwnProperty.call(FEATURE_DEFS, key)) return false;
+  return (_readFeatureAccess()[key] || []).indexOf(session.role) >= 0;
+}
+
+function _requireFeature(session, key) {
+  if (!_hasFeature(session, key)) throw new Error('Forbidden');
+}
+
+function _handleFeatureAccessAction(action, p, bodyObj, session) {
+  const before = _readFeatureAccess();
+  let next;
+  if (action === 'feature_access_reset') {
+    next = _normalizeFeatureAccess(null);
+  } else if (action === 'feature_access_save') {
+    let access = p.access || (bodyObj && bodyObj.access);
+    if (typeof access === 'string') { try { access = JSON.parse(access); } catch (e) { access = null; } }
+    if (!access || typeof access !== 'object' || Array.isArray(access)) return _json({ ok: false, error: '缺少 access' });
+    const unknown = Object.keys(access).filter(k => !Object.prototype.hasOwnProperty.call(FEATURE_DEFS, k));
+    if (unknown.length) return _json({ ok: false, error: '不認得的功能：' + unknown.join(', ') });
+    for (const key of Object.keys(access)) {
+      if (!Array.isArray(access[key])) return _json({ ok: false, error: key + ' 的角色必須是陣列' });
+      const def = FEATURE_DEFS[key];
+      const bad = access[key].filter(r => USER_ROLES.indexOf(String(r)) < 0);
+      if (bad.length) return _json({ ok: false, error: key + ' 有不認得的角色：' + bad.join(', ') });
+      const notAllowed = def.allowed ? access[key].filter(r => def.allowed.indexOf(String(r)) < 0) : [];
+      if (notAllowed.length) return _json({ ok: false, error: key + ' 不能開給：' + notAllowed.join('、') });
+      const lockedMissing = def.locked.filter(r => access[key].indexOf(r) < 0);
+      if (lockedMissing.length) return _json({ ok: false, error: key + ' 不能拿掉 ' + lockedMissing.join('、') });
+    }
+    next = _normalizeFeatureAccess(Object.assign({}, before, access));
+  } else {
+    return _json({ ok: false, error: 'Unknown action' });
+  }
+  _writeSetting('featureAccess', next, session);
+  const diff = [];
+  Object.keys(next).forEach(k => {
+    const add = next[k].filter(r => before[k].indexOf(r) < 0).map(r => '+' + r);
+    const del = before[k].filter(r => next[k].indexOf(r) < 0).map(r => '-' + r);
+    if (add.length || del.length) diff.push(k + ': ' + add.concat(del).join(' '));
+  });
+  _auditLog(session.username, action, 'featureAccess', diff.length ? diff.join('；') : '無變更');
+  return _json({ ok: true, data: next });
+}
 
 // 無論怎麼勾，管理者一定要保有這幾頁，否則會把自己鎖在系統外面
 const PAGE_ACCESS_LOCKED = {
@@ -1052,7 +1175,7 @@ function _writePageAccessRows(ctx, access, session) {
   if (rows.length) ctx.sh.getRange(2, 1, rows.length, ctx.idx._len).setValues(rows);
 }
 
-/** 給稽核紀錄看的差異摘要，例如「crew-portal.html: -admin」 */
+/** 給稽核紀錄看的差異摘要，例如「admin.html: +teacher」 */
 function _describePageAccessDiff(before, after) {
   const parts = [];
   Object.keys(after).forEach(page => {
@@ -1110,9 +1233,9 @@ function _handlePageAccessAction(action, p, bodyObj, session) {
   return _json({ ok: false, error: 'Unknown action' });
 }
 
-// ==================== 船員入口 ====================
+// ==================== 教材頁：課表、留言、問卷、船員設定 ====================
 //
-// 船員入口以前整頁讀 localStorage、從不呼叫後端，所以船員換一台裝置登入
+// 船員的頁面以前整頁讀 localStorage、從不呼叫後端，所以船員換一台裝置登入
 // 就看到一個空的入口，留言與問卷回覆也只留在他自己那台機器上。
 //
 // 這裡有兩個刻意的設計：
@@ -1123,33 +1246,413 @@ function _handlePageAccessAction(action, p, bodyObj, session) {
 // 2. 留言與問卷回覆是 append-only 的專屬動作，不走泛用的 save。
 //    泛用的 save 是整表覆寫，一個船員存一次就會把別人的留言洗掉。
 
-const CREW_PORTAL_ROLES = ['admin', 'teacher', 'crew'];
 const MAX_COMMENT_LENGTH = 1000;
 
 function _crewReadAll(tableName) {
   try { return _readTable(tableName); } catch (e) { return []; }
 }
 
-/** 船員入口一次要的全部資料（問卷回覆只回這個人自己的） */
-function _handleCrewPortalData(session) {
-  const me = String((session && session.username) || '').toLowerCase();
+// ── 船員設定 ──
+//
+// 船員看得到什麼以前全寫死在 crew-portal.html：每個船員看到全部課程、全部派課、
+// 全部留言。現在是一份設定，有「船員設定」功能的人在教材頁改，
+// 存在 settings 表的 crewPortal 這一列。篩選一律在後端做，前端藏起來不算數。
 
-  const responses = _crewReadAll('surveyResponses')
-    .filter(r => String(r.username || '').toLowerCase() === me)
-    .map(r => ({ id: r.id, surveyId: r.surveyId, submittedAt: r.submittedAt }));
+const CREW_NOTICE_MAX = 500;
+const CREW_PORTAL_DEFAULTS = {
+  courseMode: 'all',        // all：全部課程 / rank：依課程的「適用職級」對應船員帳號的職級
+  hiddenCourseIds: [],      // 不論哪種模式，這些課船員一律看不到
+  notice: ''                // 教材頁最上方的公告，空字串就不顯示
+};
 
-  return _json({
-    ok: true,
-    data: {
-      courses:     _crewReadAll('maritimeCourses'),
-      assignments: _crewReadAll('courseAssignments'),
-      comments:    _crewReadAll('comments'),
-      surveys:     _crewReadAll('surveys').filter(s => String(s.status || '') !== 'draft'),
-      templates:   _crewReadAll('surveyTemplates'),
-      // 只回「我填過哪幾份、什麼時候填的」，不回任何人的答案內容
-      myResponses: responses
-    }
+function _normalizeCrewPortalSettings(raw) {
+  const src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const hidden = Array.isArray(src.hiddenCourseIds) ? src.hiddenCourseIds : [];
+  return {
+    courseMode: src.courseMode === 'rank' ? 'rank' : 'all',
+    hiddenCourseIds: hidden.map(id => String(id).trim()).filter((id, i, arr) => id && arr.indexOf(id) === i),
+    notice: String(src.notice || '').trim().slice(0, CREW_NOTICE_MAX)
+  };
+}
+
+function _settingsContext() { return _tableContext('settings'); }
+
+function _readSetting(key) {
+  const ctx = _settingsContext();
+  const rowNum = _findRowByKey(ctx, 'key', key);
+  if (rowNum < 0) return null;
+  const raw = ctx.sh.getRange(rowNum, ctx.idx['value'] + 1).getValue();
+  try { return JSON.parse(String(raw || 'null')); } catch (e) { return null; }
+}
+
+function _writeSetting(key, value, session) {
+  const ctx = _settingsContext();
+  const rowNum = _findRowByKey(ctx, 'key', key);
+  _writeRowObject(ctx, rowNum, {
+    key: key,
+    value: JSON.stringify(value),
+    updatedBy: (session && session.username) || 'system',
+    updatedAt: new Date().toISOString()
   });
+}
+
+function _readCrewPortalSettings() {
+  return _normalizeCrewPortalSettings(_readSetting('crewPortal'));
+}
+
+// ── 表格逐列讀寫（給不能整表覆寫的表用）──
+
+function _tableContext(tableName) {
+  const header = SHEETS_CONFIG[tableName].header;
+  const sh = _getOrCreateSheet(tableName, header);
+  return { sh: sh, header: header, idx: _headerIndex(sh, header) };
+}
+
+/** 找出某欄等於 value 的那一列（試算表列號，從 2 起算）；找不到回 -1 */
+function _findRowByKey(ctx, column, value) {
+  const lastRow = ctx.sh.getLastRow();
+  if (lastRow < 2 || ctx.idx[column] === undefined) return -1;
+  const col = ctx.sh.getRange(2, ctx.idx[column] + 1, lastRow - 1, 1).getValues();
+  const target = String(value);
+  for (let i = 0; i < col.length; i++) {
+    if (String(col[i][0]) === target) return i + 2;
+  }
+  return -1;
+}
+
+/**
+ * 寫一列：rowNum < 0 就新增，否則只覆蓋 obj 裡有的欄位，其他欄位保留原值
+ * （與 _writeTable 同一個原則：沒送的欄位不清空）
+ */
+function _writeRowObject(ctx, rowNum, obj) {
+  const row = rowNum > 0
+    ? ctx.sh.getRange(rowNum, 1, 1, ctx.idx._len).getValues()[0]
+    : new Array(ctx.idx._len).fill('');
+  Object.keys(obj).forEach(k => {
+    if (ctx.idx[k] === undefined) return;
+    const v = obj[k];
+    row[ctx.idx[k]] = (v !== null && typeof v === 'object') ? JSON.stringify(v) : _sanitizeSheetValue(v === undefined || v === null ? '' : v);
+  });
+  if (rowNum > 0) ctx.sh.getRange(rowNum, 1, 1, ctx.idx._len).setValues([row]);
+  else ctx.sh.appendRow(row);
+}
+
+// ── 誰在看、看得到哪些課 ──
+
+function _userRank(username) {
+  const me = String(username || '').trim().toLowerCase();
+  if (!me) return '';
+  const ctx = _usersContext();
+  const u = _readUsersRaw(ctx).filter(x => String(x.username || '').trim().toLowerCase() === me)[0];
+  return u ? String(u.rank || '').trim() : '';
+}
+
+function _crewCourseVisible(course, settings, viewer) {
+  const id = String(course && course.id);
+  if (settings.hiddenCourseIds.indexOf(id) >= 0) return false;
+  if (settings.courseMode !== 'rank' || viewer.ignoreRank) return true;
+  const targets = _asArray(course.targetRanks).map(r => String(r));
+  // 沒指定適用職級的課＝不限職級，所有船員都看得到
+  if (!targets.length) return true;
+  return !!viewer.rank && targets.indexOf(viewer.rank) >= 0;
+}
+
+/** 這個船員看得到的課程與派課（派課只回課表需要的欄位，備註等內部資訊不出去） */
+function _crewVisibleCourses(settings, viewer) {
+  const courses = _crewReadAll('maritimeCourses').filter(c => _crewCourseVisible(c, settings, viewer));
+  const ids = {};
+  const names = {};
+  courses.forEach(c => { ids[String(c.id)] = true; names[String(c.name || '').trim()] = String(c.id); });
+  const assignments = _crewReadAll('courseAssignments')
+    .map(a => {
+      // 舊的派課沒有 courseId，只能用課名對回去
+      const cid = a.courseId !== '' && a.courseId !== undefined && a.courseId !== null
+        ? String(a.courseId) : (names[String(a.name || '').trim()] || '');
+      return { a: a, cid: cid };
+    })
+    .filter(x => x.cid && ids[x.cid])
+    .map(x => ({
+      id: x.a.id, courseId: x.cid, name: x.a.name, date: x.a.date, time: x.a.time,
+      type: x.a.type, status: x.a.status, teacherName: x.a.teacherName
+    }));
+  return { courses: courses, assignments: assignments, ids: ids };
+}
+
+function _crewSurveyVisible(survey, visibleIds) {
+  if (String(survey.status || '') === 'draft') return false;
+  const cid = String(survey.courseId === undefined || survey.courseId === null ? '' : survey.courseId).trim();
+  // 沒綁課程的問卷是全體船員都要填的（例如整體滿意度）
+  return !cid || !!visibleIds[cid];
+}
+
+/**
+ * 教材頁一次要的資料（管理者、教師、船員共用同一支）
+ *
+ * - 課程：船員依「船員設定」篩過；其他角色看全部，除非帶 previewRank 以船員身分預覽
+ * - 課表、留言、問卷：各自要有對應的功能權限才給，沒有就回空陣列
+ * - 問卷回覆只回「我自己填過哪幾份」，不回任何人的答案內容
+ */
+function _handleLearningData(session, p) {
+  const settings = _readCrewPortalSettings();
+  const features = _readFeatureAccess();
+  const can = key => (features[key] || []).indexOf(session.role) >= 0;
+  const viewer = _learningViewer(session, p);
+  const me = String((session && session.username) || '').toLowerCase();
+  const visible = viewer.filter
+    ? _crewVisibleCourses(settings, viewer)
+    : _allCoursesView();
+
+  const comments = can('comments')
+    ? _crewReadAll('comments').filter(c => visible.ids[String(c.courseId)])
+    : [];
+
+  let surveys = [];
+  let templates = [];
+  let myResponses = [];
+  if (can('surveys_fill')) {
+    surveys = _crewReadAll('surveys').filter(s => _crewSurveyVisible(s, visible.ids));
+    const tplIds = {};
+    surveys.forEach(s => { tplIds[String(s.templateId)] = true; });
+    templates = _crewReadAll('surveyTemplates').filter(t => tplIds[String(t.id)]);
+    myResponses = _crewReadAll('surveyResponses')
+      .filter(r => String(r.username || '').toLowerCase() === me)
+      .map(r => ({ id: r.id, surveyId: r.surveyId, submittedAt: r.submittedAt }));
+  }
+
+  const data = {
+    courses:     visible.courses,
+    assignments: can('schedule') ? visible.assignments : [],
+    comments:    comments,
+    surveys:     surveys,
+    templates:   templates,
+    myResponses: myResponses,
+    notice:      settings.notice,
+    viewer:      { role: session.role, rank: viewer.rank, preview: viewer.preview, filtered: viewer.filter }
+  };
+  // 有「船員設定」功能的人才需要知道目前的開放方式（畫面上的船員可見標示用）
+  if (can('crew_settings')) {
+    data.crewSettings = settings;
+  }
+  return _json({ ok: true, data: data });
+}
+
+/** 誰在看：船員一律篩選；其他角色帶 previewRank 才以船員身分預覽 */
+function _learningViewer(session, p) {
+  if (session.role === 'crew') {
+    return { filter: true, preview: false, rank: _userRank(session.username), ignoreRank: false };
+  }
+  const pr = String((p && p.previewRank) || '').trim();
+  if (!pr) return { filter: false, preview: false, rank: '', ignoreRank: true };
+  if (pr === '__all__') return { filter: true, preview: true, rank: '', ignoreRank: true };
+  return { filter: true, preview: true, rank: pr === '__none__' ? '' : pr, ignoreRank: false };
+}
+
+function _allCoursesView() {
+  return _crewVisibleCourses({ courseMode: 'all', hiddenCourseIds: [] }, { ignoreRank: true });
+}
+
+/** 船員能不能對這門課留言／填這份問卷：跟畫面一樣依設定判斷，不能只靠前端藏按鈕 */
+function _crewCanSeeCourse(session, courseId) {
+  if (session.role !== 'crew') return true;
+  const settings = _readCrewPortalSettings();
+  const visible = _crewVisibleCourses(settings, _learningViewer(session, null));
+  return !!visible.ids[String(courseId)];
+}
+
+// ── 管理端：船員設定、問卷、留言（誰能用看功能權限）──
+
+const SURVEY_QUESTION_TYPES = ['radio', 'checkbox', 'rating', 'text'];
+const SURVEY_STATUSES = ['draft', 'active', 'closed'];
+
+/**
+ * 管理類資料：問卷（含題目、回覆數、作答內容）與船員設定（含課程清單、船員帳號）
+ * 依功能權限各給各的，兩個都沒有就拒絕
+ */
+function _handleLearningManageData(session) {
+  const canSurveys = _hasFeature(session, 'surveys_manage');
+  const canSettings = _hasFeature(session, 'crew_settings');
+  if (!canSurveys && !canSettings) throw new Error('Forbidden');
+  const surveys = _crewReadAll('surveys');
+  const templates = _crewReadAll('surveyTemplates');
+  const responses = _crewReadAll('surveyResponses');
+  const tplById = {};
+  templates.forEach(t => { tplById[String(t.id)] = t; });
+  const countBy = {};
+  responses.forEach(r => { const k = String(r.surveyId); countBy[k] = (countBy[k] || 0) + 1; });
+
+  const users = _readUsersRaw(_usersContext())
+    .filter(u => String(u.role || '').trim() === 'crew')
+    .map(u => ({
+      username: String(u.username || '').trim(),
+      full_name: String(u.full_name || '').trim(),
+      rank: String(u.rank || '').trim(),
+      status: _isDisabled(u) ? 'disabled' : 'active'
+    }));
+
+  const data = {};
+  if (canSettings) {
+    data.settings = _readCrewPortalSettings();
+    data.courses = _crewReadAll('maritimeCourses').map(c => ({
+      id: c.id, name: c.name, category: c.category, targetRanks: _asArray(c.targetRanks)
+    }));
+    data.crewUsers = users;
+  }
+  if (canSurveys) {
+    data.surveys = surveys.map(s => {
+      const t = tplById[String(s.templateId)] || {};
+      return {
+        id: s.id, templateId: s.templateId, courseId: s.courseId, status: s.status || 'draft',
+        title: s.title || t.title || '', description: t.description || '',
+        questions: _asArray(t.questions), createdBy: s.createdBy, createdAt: s.createdAt,
+        responseCount: countBy[String(s.id)] || 0
+      };
+    });
+    data.responses = responses;
+    data.crewCount = users.filter(u => u.status === 'active').length;
+  }
+  return _json({ ok: true, data: data });
+}
+
+function _handleCrewSettingsSave(p, bodyObj, session) {
+  let raw = p.settings || (bodyObj && bodyObj.settings);
+  if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch (e) { raw = null; } }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return _json({ ok: false, error: '缺少設定內容' });
+  if (raw.courseMode !== undefined && raw.courseMode !== 'all' && raw.courseMode !== 'rank') {
+    return _json({ ok: false, error: '不認得的課程開放方式：' + raw.courseMode });
+  }
+  if (String(raw.notice || '').length > CREW_NOTICE_MAX) {
+    return _json({ ok: false, error: '公告不能超過 ' + CREW_NOTICE_MAX + ' 個字' });
+  }
+  const before = _readCrewPortalSettings();
+  // 只改有送來的欄位：公告與課程開放方式分開存的時候，不要互相蓋掉
+  const next = _normalizeCrewPortalSettings(Object.assign({}, before, raw));
+  _writeSetting('crewPortal', next, session);
+
+  const diff = [];
+  if (before.courseMode !== next.courseMode) diff.push('課程開放=' + next.courseMode);
+  if (before.hiddenCourseIds.join(',') !== next.hiddenCourseIds.join(',')) diff.push('隱藏課程 ' + next.hiddenCourseIds.length + ' 門');
+  if (before.notice !== next.notice) diff.push('公告');
+  _auditLog(session.username, 'crew_settings_save', 'crewPortal', diff.length ? diff.join('、') : '無變更');
+  return _json({ ok: true, data: next });
+}
+
+/** 整理並檢查題目；有問題直接丟錯誤訊息給管理者看 */
+function _normalizeQuestions(raw) {
+  if (!Array.isArray(raw) || !raw.length) throw new Error('問卷至少要有一題');
+  return raw.map((q, i) => {
+    const n = i + 1;
+    const type = String((q && q.type) || 'text').toLowerCase();
+    if (SURVEY_QUESTION_TYPES.indexOf(type) < 0) throw new Error('第 ' + n + ' 題的題型不認得：' + type);
+    const text = String((q && (q.text || q.question)) || '').trim();
+    if (!text) throw new Error('第 ' + n + ' 題沒有題目文字');
+    const out = { type: type, text: text, required: !!(q && (q.required === true || String(q.required).toUpperCase() === 'TRUE')) };
+    if (type === 'radio' || type === 'checkbox') {
+      const opts = (Array.isArray(q.options) ? q.options : []).map(o => String(o || '').trim()).filter(Boolean);
+      if (opts.length < 2) throw new Error('第 ' + n + ' 題（選擇題）至少要有兩個選項');
+      if (opts.some((o, k) => opts.indexOf(o) !== k)) throw new Error('第 ' + n + ' 題有重複的選項');
+      out.options = opts;
+    }
+    if (type === 'rating') {
+      const max = parseInt(q.max, 10) || 5;
+      if (max < 3 || max > 10) throw new Error('第 ' + n + ' 題的評分級距要在 3 到 10 之間');
+      out.max = max;
+    }
+    return out;
+  });
+}
+
+function _handleCrewSurveySave(p, bodyObj, session) {
+  let raw = p.survey || (bodyObj && bodyObj.survey);
+  if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch (e) { raw = null; } }
+  if (!raw || typeof raw !== 'object') return _json({ ok: false, error: '缺少問卷內容' });
+
+  const title = String(raw.title || '').trim();
+  if (!title) return _json({ ok: false, error: '請輸入問卷標題' });
+  const status = SURVEY_STATUSES.indexOf(String(raw.status || 'draft')) >= 0 ? String(raw.status || 'draft') : null;
+  if (!status) return _json({ ok: false, error: '不認得的狀態：' + raw.status });
+  const courseId = String(raw.courseId === undefined || raw.courseId === null ? '' : raw.courseId).trim();
+  if (courseId && !_crewReadAll('maritimeCourses').some(c => String(c.id) === courseId)) {
+    return _json({ ok: false, error: '找不到指定的課程' });
+  }
+  const questions = _normalizeQuestions(raw.questions);
+  const description = String(raw.description || '').trim().slice(0, 1000);
+  const now = new Date().toISOString();
+
+  const sCtx = _tableContext('surveys');
+  const tCtx = _tableContext('surveyTemplates');
+  const id = String(raw.id || '').trim();
+
+  if (!id) {
+    const templateId = _nextRowId('surveyTemplates');
+    _writeRowObject(tCtx, -1, { id: templateId, title: title, description: description, questions: questions,
+                                createdBy: session.username, createdAt: now });
+    const newId = _nextRowId('surveys');
+    _writeRowObject(sCtx, -1, { id: newId, templateId: templateId, courseId: courseId, title: title,
+                                status: status, createdBy: session.username, createdAt: now });
+    _auditLog(session.username, 'crew_survey_create', newId, title);
+    return _json({ ok: true, data: { id: newId } });
+  }
+
+  const sRow = _findRowByKey(sCtx, 'id', id);
+  if (sRow < 0) return _json({ ok: false, error: '找不到這份問卷' });
+  const existing = _crewReadAll('surveys').filter(s => String(s.id) === id)[0];
+  const templateId = String(existing.templateId || '');
+  const oldTpl = _crewReadAll('surveyTemplates').filter(t => String(t.id) === templateId)[0];
+  const answered = _crewReadAll('surveyResponses').filter(r => String(r.surveyId) === id).length;
+
+  // 有人作答之後題目就不能動：答案是用題號存的，改了題目舊答案就對到錯的題
+  if (answered && oldTpl && JSON.stringify(_asArray(oldTpl.questions)) !== JSON.stringify(questions)) {
+    return _json({ ok: false, error: '已經有 ' + answered + ' 份回覆，題目不能再改。要調整題目請「複製成新問卷」。' });
+  }
+
+  // 範本被別份問卷共用時，另開一份，免得改到別人的題目
+  const shared = _crewReadAll('surveys').some(s => String(s.id) !== id && String(s.templateId) === templateId);
+  let tplId = templateId;
+  if (!oldTpl || shared) {
+    tplId = _nextRowId('surveyTemplates');
+    _writeRowObject(tCtx, -1, { id: tplId, title: title, description: description, questions: questions,
+                                createdBy: session.username, createdAt: now });
+  } else {
+    _writeRowObject(tCtx, _findRowByKey(tCtx, 'id', templateId), { title: title, description: description, questions: questions });
+  }
+  _writeRowObject(sCtx, sRow, { templateId: tplId, courseId: courseId, title: title, status: status });
+  _auditLog(session.username, 'crew_survey_update', id, title + '（' + status + '）');
+  return _json({ ok: true, data: { id: id } });
+}
+
+function _handleCrewSurveyDelete(p, bodyObj, session) {
+  const id = String(p.id || (bodyObj && bodyObj.id) || '').trim();
+  const sCtx = _tableContext('surveys');
+  const sRow = _findRowByKey(sCtx, 'id', id);
+  if (!id || sRow < 0) return _json({ ok: false, error: '找不到這份問卷' });
+  const answered = _crewReadAll('surveyResponses').filter(r => String(r.surveyId) === id).length;
+  if (answered) {
+    return _json({ ok: false, error: '已經有 ' + answered + ' 份回覆，不能刪除。不想再收回覆請改成「已關閉」。' });
+  }
+  const survey = _crewReadAll('surveys').filter(s => String(s.id) === id)[0];
+  sCtx.sh.deleteRow(sRow);
+  // 沒有其他問卷用這份題目，就一起刪掉
+  const tplId = String(survey.templateId || '');
+  if (tplId && !_crewReadAll('surveys').some(s => String(s.templateId) === tplId)) {
+    const tCtx = _tableContext('surveyTemplates');
+    const tRow = _findRowByKey(tCtx, 'id', tplId);
+    if (tRow > 0) tCtx.sh.deleteRow(tRow);
+  }
+  _auditLog(session.username, 'crew_survey_delete', id, String(survey.title || ''));
+  return _json({ ok: true });
+}
+
+function _handleCrewCommentDelete(p, bodyObj, session) {
+  const id = String(p.id || (bodyObj && bodyObj.id) || '').trim();
+  const ctx = _tableContext('comments');
+  const row = _findRowByKey(ctx, 'id', id);
+  if (!id || row < 0) return _json({ ok: false, error: '找不到這則留言' });
+  const c = _crewReadAll('comments').filter(x => String(x.id) === id)[0] || {};
+  ctx.sh.deleteRow(row);
+  // 刪掉就找不回來，稽核紀錄留下是誰寫的、寫了什麼開頭
+  _auditLog(session.username, 'crew_comment_delete', String(c.author || c.username || ''),
+            '課程 ' + String(c.courseId || '') + '：' + String(c.content || '').slice(0, 60));
+  return _json({ ok: true });
 }
 
 function _nextRowId(tableName) {
@@ -1167,6 +1670,8 @@ function _handleCommentAdd(p, bodyObj, session) {
 
   if (!courseId) return _json({ ok: false, error: '缺少課程' });
   if (!content) return _json({ ok: false, error: '請輸入留言內容' });
+  if (!_hasFeature(session, 'comments')) return _json({ ok: false, error: '留言討論目前沒有開放給您' });
+  if (!_crewCanSeeCourse(session, courseId)) return _json({ ok: false, error: '這門課目前沒有開放給您' });
   if (content.length > MAX_COMMENT_LENGTH) {
     return _json({ ok: false, error: '留言不能超過 ' + MAX_COMMENT_LENGTH + ' 個字' });
   }
@@ -1206,6 +1711,11 @@ function _handleSurveySubmit(p, bodyObj, session) {
   const survey = _crewReadAll('surveys').find(s => String(s.id) === surveyId);
   if (!survey) return _json({ ok: false, error: '找不到這份問卷' });
   if (String(survey.status || '') !== 'active') return _json({ ok: false, error: '這份問卷已經關閉' });
+  if (!_hasFeature(session, 'surveys_fill')) return _json({ ok: false, error: '填寫問卷目前沒有開放給您' });
+  if (session.role === 'crew') {
+    const visible = _crewVisibleCourses(_readCrewPortalSettings(), _learningViewer(session, null));
+    if (!_crewSurveyVisible(survey, visible.ids)) return _json({ ok: false, error: '這份問卷目前沒有開放給您' });
+  }
 
   const me = String(session.username || '').toLowerCase();
   const already = _crewReadAll('surveyResponses')
@@ -1257,7 +1767,8 @@ function _clearLoginFailures(username) {
 
 // ==================== 路由處理 ====================
 
-const READ_ACTIONS = ['list', 'listall', 'getversions', 'options_list', 'crew_portal_data', 'page_access_list',
+const READ_ACTIONS = ['list', 'listall', 'getversions', 'options_list', 'learning_data', 'crew_portal_data',
+                     'learning_manage_data', 'page_access_list',
                      'session_register', 'session_heartbeat', 'session_list', 'session_kick',
                      'session_check_kicked'];
 
@@ -1292,9 +1803,13 @@ function _handleReadAction(action, p, session) {
     return _json({ ok: true, data: allData, versions: versions });
   }
 
-  if (action === 'crew_portal_data') {
-    _requireRole(session, CREW_PORTAL_ROLES);
-    return _handleCrewPortalData(session);
+  // crew_portal_data 是舊名稱，保留給還沒更新的頁面
+  if (action === 'learning_data' || action === 'crew_portal_data') {
+    return _handleLearningData(session, p);
+  }
+
+  if (action === 'learning_manage_data') {
+    return _handleLearningManageData(session);
   }
 
   // 任何登入者都要讀得到選項，否則表單畫不出下拉選單
@@ -1305,7 +1820,7 @@ function _handleReadAction(action, p, session) {
   // 頁面權限矩陣：首頁卡片、導覽列、各頁守衛都靠它，任何登入者都要讀得到。
   // 它只說「哪個角色能進哪一頁」，不含任何帳號資料。
   if (action === 'page_access_list') {
-    return _json({ ok: true, data: _readPageAccess() });
+    return _json({ ok: true, data: _readPageAccess(), features: _readFeatureAccess() });
   }
 
   if (action === 'getversions') {
@@ -1355,7 +1870,7 @@ function doGet(e) {
 
     // Ping 不需要認證
     if (action === 'ping') {
-      return _json({ ok: true, timestamp: new Date().toISOString(), server: 'Google Apps Script' });
+      return _json({ ok: true, timestamp: new Date().toISOString(), server: 'Google Apps Script', version: BACKEND_VERSION });
     }
 
     // 其他 GET 請求需要 Session 認證
@@ -1462,8 +1977,10 @@ function doPost(e) {
         // 一併帶回頁面權限矩陣：登入後第一頁就要靠它畫卡片與導覽列，
         // 不必等另一次往返（讀取失敗不影響登入，前端會退回內建預設值）
         let pageAccess = null;
+        let featureAccess = null;
         try { pageAccess = _readPageAccess(); } catch (paErr) { Logger.log('讀取頁面權限失敗: ' + paErr); }
-        return _json({ ok: true, data: { user: userData, token: sessionToken, pageAccess: pageAccess } });
+        try { featureAccess = _readFeatureAccess(); } catch (faErr) { Logger.log('讀取功能權限失敗: ' + faErr); }
+        return _json({ ok: true, data: { user: userData, token: sessionToken, pageAccess: pageAccess, featureAccess: featureAccess } });
       } else {
         _recordLoginFailure(username);
         return _json({ ok: false, error: '帳號或密碼錯誤' });
@@ -1498,9 +2015,8 @@ function doPost(e) {
       }
     }
 
-    // ===== 船員入口：留言與問卷回覆（append-only）=====
+    // ===== 教材頁：留言與問卷回覆（append-only，功能權限在處理函式裡檢查）=====
     if (action === 'comment_add' || action === 'survey_submit') {
-      _requireRole(session, CREW_PORTAL_ROLES);
       try {
         return action === 'comment_add'
           ? _handleCommentAdd(p, bodyObj, session)
@@ -1510,6 +2026,25 @@ function doPost(e) {
         if (crewMsg === 'Unauthorized' || crewMsg === 'Forbidden') throw crewErr;
         Logger.log('crew action error: ' + crewMsg);
         return _json({ ok: false, error: crewMsg });
+      }
+    }
+
+    // ===== 教材頁的管理功能：誰能用看功能權限矩陣，不寫死角色 =====
+    const LEARNING_MANAGE_ACTIONS = {
+      crew_settings_save:  { fn: _handleCrewSettingsSave,  feature: 'crew_settings' },
+      crew_survey_save:    { fn: _handleCrewSurveySave,    feature: 'surveys_manage' },
+      crew_survey_delete:  { fn: _handleCrewSurveyDelete,  feature: 'surveys_manage' },
+      crew_comment_delete: { fn: _handleCrewCommentDelete, feature: 'comments_moderate' }
+    };
+    if (Object.prototype.hasOwnProperty.call(LEARNING_MANAGE_ACTIONS, action)) {
+      _requireFeature(session, LEARNING_MANAGE_ACTIONS[action].feature);
+      try {
+        return LEARNING_MANAGE_ACTIONS[action].fn(p, bodyObj, session);
+      } catch (caErr) {
+        const caMsg = String(caErr.message || caErr);
+        if (caMsg === 'Unauthorized' || caMsg === 'Forbidden') throw caErr;
+        Logger.log('crew admin action error: ' + caMsg);
+        return _json({ ok: false, error: caMsg });
       }
     }
 
@@ -1523,6 +2058,18 @@ function doPost(e) {
         if (optMsg === 'Unauthorized' || optMsg === 'Forbidden') throw optErr;
         Logger.log('options action error: ' + optMsg);
         return _json({ ok: false, error: optMsg });
+      }
+    }
+
+    // ===== 功能權限維護（僅管理者）=====
+    if (action === 'feature_access_save' || action === 'feature_access_reset') {
+      _requireRole(session, ['admin']);
+      try {
+        return _handleFeatureAccessAction(action, p, bodyObj, session);
+      } catch (faErr) {
+        const faMsg = String(faErr.message || faErr);
+        if (faMsg === 'Unauthorized' || faMsg === 'Forbidden') throw faErr;
+        return _json({ ok: false, error: faMsg });
       }
     }
 
@@ -1709,7 +2256,8 @@ function doPost(e) {
 
     // Ask Gemini（AI 課程顧問）
     if (action === 'askgemini') {
-      _requireRole(session, ['admin', 'teacher']);
+      // AI 助教開給誰由功能權限決定（會用到 Gemini 的額度，預設只開給管理者與教師）
+      _requireFeature(session, 'ai');
       const userMessage = p.userMessage || (bodyObj && bodyObj.userMessage) || '';
       const systemContext = p.systemContext || (bodyObj && bodyObj.systemContext) || '';
       const historyRaw = p.conversationHistory || (bodyObj && bodyObj.conversationHistory) || '[]';
@@ -1889,7 +2437,8 @@ const _ARRAY_FIELDS = ['experiences', 'certificates', 'subjects', 'tags', 'keywo
 // 這幾張表永遠不該被「整表覆寫」。
 // userAuditLog 只能由 _auditLog 以系統身分 appendRow；users 只能走 users_*；
 // options 只能走 options_*。多這一道是因為新增 API 時很容易忘記擋。
-const NEVER_BULK_WRITE = ['users', 'userAuditLog', 'options', 'activeSessions', 'pageAccess', 'comments', 'surveyResponses'];
+const NEVER_BULK_WRITE = ['users', 'userAuditLog', 'options', 'activeSessions', 'pageAccess', 'comments', 'surveyResponses',
+                          'surveys', 'surveyTemplates', 'settings'];
 
 function _writeTable(tableName, dataArray) {
   if (!Object.prototype.hasOwnProperty.call(SHEETS_CONFIG, tableName)) throw new Error('Unknown table');
