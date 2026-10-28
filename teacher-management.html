@@ -318,6 +318,8 @@
   <!-- API 層：與後端通訊 -->
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <!-- 系統名稱、時數目標、分享訊息、AI 提問等在「帳號管理 → 系統設定」改 -->
+  <script src="js/site.js"></script>
   <script src="js/options.js"></script>
 
   <!-- Tailwind：預先編好的靜態 CSS（scripts/build-tailwind.sh 產生）
@@ -449,91 +451,22 @@
           <h1 class="text-4xl font-bold text-gray-900 mb-2" style="letter-spacing:-0.02em">師資統計分析</h1>
           <p class="text-gray-600">深度分析師資陣容結構與分布</p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-medium">總師資數量</p>
-                <p id="totalCount" class="text-3xl font-bold text-gray-900">0</p>
-              </div><div class="text-4xl opacity-60"><i class="ph ph-users"></i></div>
-            </div>
-          </div>
-          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-medium">內部師資</p>
-                <p id="internalCount" class="text-3xl font-bold text-gray-900">0</p>
-                <p id="internalPercent" class="text-gray-500 text-xs">0%</p>
-              </div><div class="text-4xl opacity-60"><i class="ph ph-user-circle"></i></div>
-            </div>
-          </div>
-          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-medium">外部師資</p>
-                <p id="externalCount" class="text-3xl font-bold text-gray-900">0</p>
-                <p id="externalPercent" class="text-gray-500 text-xs">0%</p>
-              </div><div class="text-4xl opacity-60"><i class="ph ph-graduation-cap"></i></div>
-            </div>
-          </div>
-          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-medium">海上/陸地</p>
-                <p class="text-lg font-bold text-gray-900"><span id="onboardCount">0</span>/<span id="onshoreCount">0</span></p>
-                <p id="locationRatio" class="text-gray-500 text-xs">比例 0:0</p>
-              </div><div class="text-4xl opacity-60"><i class="ph ph-boat"></i></div>
-            </div>
-          </div>
-        </div>
+        <!-- 以下各區依「選單管理」的師資類別與工作狀態產生（renderStatisticsView）。
+             以前固定只有內部／外部 × 在船／在岸，新增的類別不會出現在統計裡 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="statTopCards"></div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div class="bg-white bg-opacity-70 rounded-xl p-6 shadow-sm">
             <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2"><i class="ph ph-chart-pie"></i></span>師資類型分析</h3>
-            <div class="space-y-4">
-              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div class="flex items-center space-x-3"><div class="w-4 h-4 rounded-full" style="background-color:#007aff"></div><span class="font-medium text-gray-700">內部師資</span></div>
-                <div class="text-right"><div class="font-bold text-gray-900" id="internalCountDetail">0 位</div><div class="text-sm text-gray-500" id="internalPercentDetail">0%</div></div>
-              </div>
-              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-                <div class="flex items-center space-x-3"><div class="w-4 h-4 rounded-full" style="background-color:#5856d6"></div><span class="font-medium text-gray-700">外部師資</span></div>
-                <div class="text-right"><div class="font-bold text-gray-900" id="externalCountDetail">0 位</div><div class="text-sm text-gray-500" id="externalPercentDetail">0%</div></div>
-              </div>
-            </div>
+            <div class="space-y-4" id="statTypeList"></div>
           </div>
           <div class="bg-white bg-opacity-70 rounded-xl p-6 shadow-sm">
             <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2"><i class="ph ph-map-pin"></i></span>工作狀態分析</h3>
-            <div class="space-y-4">
-              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
-                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-orange-500 rounded-full"></div><span class="font-medium text-gray-700">海上工作</span></div>
-                <div class="text-right"><div class="font-bold text-orange-600" id="onboardCountDetail">0 位</div><div class="text-sm text-gray-500" id="onboardPercentDetail">0%</div></div>
-              </div>
-              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
-                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-green-500 rounded-full"></div><span class="font-medium text-gray-700">陸地工作</span></div>
-                <div class="text-right"><div class="font-bold text-green-600" id="onshoreCountDetail">0 位</div><div class="text-sm text-gray-500" id="onshorePercentDetail">0%</div></div>
-              </div>
-              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
-                <div class="flex items-center space-x-3"><div class="w-4 h-4 bg-gray-400 rounded-full"></div><span class="font-medium text-gray-700">已退休</span></div>
-                <div class="text-right"><div class="font-bold text-gray-500" id="retiredCountDetail">0 位</div><div class="text-sm text-gray-500" id="retiredPercentDetail">0%</div></div>
-              </div>
-            </div>
+            <div class="space-y-4" id="statLocationList"></div>
           </div>
         </div>
         <div class="bg-white bg-opacity-70 rounded-xl p-6 mb-8 shadow-sm">
           <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2"><i class="ph ph-arrows-clockwise"></i></span>交叉分析</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
-              <div class="text-2xl font-bold text-orange-600" id="internalOnboard">0</div><div class="text-sm text-gray-600">內部海上師資</div>
-            </div>
-            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
-              <div class="text-2xl font-bold text-green-600" id="internalOnshore">0</div><div class="text-sm text-gray-600">內部陸地師資</div>
-            </div>
-            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
-              <div class="text-2xl font-bold text-orange-600" id="externalOnboard">0</div><div class="text-sm text-gray-600">外部海上師資</div>
-            </div>
-            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
-              <div class="text-2xl font-bold text-green-600" id="externalOnshore">0</div><div class="text-sm text-gray-600">外部陸地師資</div>
-            </div>
-          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="statCrossCards"></div>
         </div>
         <div class="bg-white bg-opacity-70 rounded-xl p-6 shadow-sm">
           <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><span class="mr-2"><i class="ph ph-books"></i></span>課程統計分析</h3>
@@ -597,7 +530,9 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-600 mb-1">原因（選填）</label>
-              <input type="text" id="leaveReason" placeholder="例：事假、病假、公假…" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
+              <!-- 建議清單來自「選單管理 → 請假原因」，也可以自己打字 -->
+              <input type="text" id="leaveReason" list="leaveReasonList" placeholder="選一個或自己填" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-transparent text-sm">
+              <datalist id="leaveReasonList"></datalist>
             </div>
           </div>
           <button onclick="addLeaveRecord()" class="btn btn-primary btn-sm">
@@ -1017,47 +952,17 @@
 
               <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-3">師資類型 *</label>
-                <div class="flex space-x-4">
-                  <label class="flex items-center cursor-pointer">
-                    <input type="radio" name="teacherType" value="internal" id="typeInternal" class="sr-only">
-                    <div class="teacher-type-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-blue-400 hover:bg-blue-50">
-                      <div class="text-2xl"><i class="ph ph-user-circle"></i></div>
-                      <div><div class="font-medium text-gray-800">內部師資</div><div class="text-sm text-gray-500">公司內部教師</div></div>
-                    </div>
-                  </label>
-                  <label class="flex items-center cursor-pointer">
-                    <input type="radio" name="teacherType" value="external" id="typeExternal" class="sr-only">
-                    <div class="teacher-type-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-purple-400 hover:bg-purple-50">
-                      <div class="text-2xl"><i class="ph ph-graduation-cap"></i></div>
-                      <div><div class="font-medium text-gray-800">外部師資</div><div class="text-sm text-gray-500">外聘專業教師</div></div>
-                    </div>
-                  </label>
-                </div>
+                <!-- 選項依「帳號管理 → 選單管理 → 師資類別」產生 -->
+                <div class="flex flex-wrap gap-4" id="teacherTypeOptions"></div>
               </div>
 
               <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-3">工作狀態 *</label>
-                <div class="flex flex-wrap gap-4">
-                  <label class="flex items-center cursor-pointer">
-                    <input type="radio" name="workLocation" value="onboard" id="locationOnboard" class="sr-only">
-                    <div class="location-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-orange-400 hover:bg-orange-50">
-                      <div class="text-2xl"><i class="ph ph-boat"></i></div><div><div class="font-medium text-gray-800">在船</div><div class="text-sm text-gray-500">海上工作</div></div>
-                    </div>
-                  </label>
-                  <label class="flex items-center cursor-pointer">
-                    <input type="radio" name="workLocation" value="onshore" id="locationOnshore" class="sr-only">
-                    <div class="location-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-green-400 hover:bg-green-50">
-                      <div class="text-2xl"><i class="ph ph-building"></i></div><div><div class="font-medium text-gray-800">在岸</div><div class="text-sm text-gray-500">陸地工作</div></div>
-                    </div>
-                  </label>
-                  <label class="flex items-center cursor-pointer">
-                    <input type="radio" name="workLocation" value="retired" id="locationRetired" class="sr-only">
-                    <div class="location-option flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-gray-400 hover:bg-gray-100">
-                      <div class="text-2xl text-gray-500"><i class="ph ph-armchair"></i></div><div><div class="font-medium text-gray-800">退休</div><div class="text-sm text-gray-500">不對外顯示</div></div>
-                    </div>
+                <!-- 選項依「帳號管理 → 選單管理 → 工作狀態」產生 -->
+                <div class="flex flex-wrap gap-4" id="workLocationOptions"></div>
                   </label>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">選擇「退休」後，此師資不會出現在呈現模式，但資料保留可供日後追溯。</p>
+                <p class="text-xs text-gray-500 mt-2">代碼為 retired 的狀態（預設是「退休」）不會出現在呈現模式，但資料保留可供日後追溯。</p>
               </div>
 
               <!-- 職級：以前後端有這個欄位、字卡也在顯示，卻沒有任何地方可以輸入。
@@ -1570,8 +1475,10 @@
         id: t?.id ?? Date.now(),
         name: toStr(t?.name),
         email: toStr(t?.email),
-        teacherType: (t?.teacherType === 'external' ? 'external' : 'internal'),
-        workLocation: (['onboard','onshore','retired'].includes(t?.workLocation) ? t.workLocation : 'onshore'),
+        // 不再把清單沒列的值改寫成 internal／onshore：管理者在選單管理新增的類別，
+        // 以前存一次就被悄悄換掉
+        teacherType: toStr(t?.teacherType) || 'internal',
+        workLocation: toStr(t?.workLocation) || 'onshore',
         photo: toStr(t?.photo), // URL（Drive）
         experiences: arrStr(t?.experiences),
         certificates: Array.isArray(t?.certificates)
@@ -1606,12 +1513,61 @@
       return ` <span class="rank-tag">${escapeHtml(Options.label('crewRank', teacher.rank))}</span>`;
     }
 
-    const WORK_STATUS = {
-      onboard: { label:'在船', text:'海上工作', icon:'ph-boat',     textClass:'text-orange-600', badgeClass:'bg-orange-500' },
-      onshore: { label:'在岸', text:'陸地工作', icon:'ph-building', textClass:'text-green-600',  badgeClass:'bg-green-600' },
-      retired: { label:'退休', text:'已退休',   icon:'ph-armchair', tag:'[Ret]',  textClass:'text-gray-500',   badgeClass:'bg-gray-500' }
+    // 名稱、說明、圖示來自「選單管理 → 工作狀態」；顏色依代碼（內建三個），其他的依順序配色
+    const WORK_STATUS_STYLE = {
+      onboard: { textClass:'text-orange-600', badgeClass:'bg-orange-500', dot:'#f97316' },
+      onshore: { textClass:'text-green-600',  badgeClass:'bg-green-600',  dot:'#22c55e' },
+      retired: { textClass:'text-gray-500',   badgeClass:'bg-gray-500',   dot:'#9ca3af', tag:'[Ret]' }
     };
-    const workStatus = t => WORK_STATUS[t?.workLocation] || WORK_STATUS.onshore;
+    const EXTRA_STYLES = [
+      { textClass:'text-blue-600',   badgeClass:'bg-blue-500',   dot:'#3b82f6' },
+      { textClass:'text-purple-600', badgeClass:'bg-purple-500', dot:'#a855f7' },
+      { textClass:'text-teal-600',   badgeClass:'bg-teal-500',   dot:'#14b8a6' },
+      { textClass:'text-pink-600',   badgeClass:'bg-pink-500',   dot:'#ec4899' }
+    ];
+    function workStatus(t) {
+      const v = (t && t.workLocation) || 'onshore';
+      const hit = Options.all('workLocation').find(o => o.value === v);
+      const st = WORK_STATUS_STYLE[v] || Options.color('workLocation', v, EXTRA_STYLES, EXTRA_STYLES[0]);
+      return { label: hit ? hit.label : v, text: (hit && hit.sublabel) || (hit ? hit.label : v),
+               icon: Options.icon('workLocation', v, 'ph-map-pin'), tag: st.tag,
+               textClass: st.textClass, badgeClass: st.badgeClass, dot: st.dot };
+    }
+    // 師資類別、人員類別的顯示名稱與圖示
+    const typeLabel   = v => Options.label('teacherType', v || 'internal');
+    const typeTitle   = v => { const o = Options.all('teacherType').find(x => x.value === (v || 'internal')); return (o && o.sublabel) || typeLabel(v); };
+    const typeIcon    = v => Options.icon('teacherType', v || 'internal', 'ph-user');
+    const personLabel = v => Options.label('personnelType', v || 'existing');
+    const personIcon  = v => Options.icon('personnelType', v || 'existing', 'ph-user');
+
+    /**
+     * 師資表單的兩組單選（師資類別、工作狀態）依選單管理產生。
+     * 目前這位師資的值若已停用或不在清單裡，也畫出來並選好，存檔才不會被換掉。
+     */
+    function fillLeaveReasons() {
+      const dl = document.getElementById('leaveReasonList');
+      if (dl) dl.innerHTML = Options.list('leaveReason').map(o => `<option value="${escapeAttr(o.label)}">${escapeHtml(o.sublabel || '')}</option>`).join('');
+    }
+
+    function renderTeacherRadios(typeValue, locationValue) {
+      const build = (containerId, name, key, cls, current) => {
+        const items = Options.list(key).slice();
+        if (current && !items.some(o => o.value === current)) {
+          items.push({ value: current, label: Options.label(key, current), sublabel: Options.has(key, current) ? '（已停用）' : '（不在清單裡）', icon: '' });
+        }
+        document.getElementById(containerId).innerHTML = items.map(o => `
+          <label class="flex items-center cursor-pointer">
+            <input type="radio" name="${name}" value="${escapeAttr(o.value)}" class="sr-only" ${o.value === current ? 'checked' : ''}>
+            <div class="${cls} flex items-center space-x-3 px-6 py-4 border-2 border-gray-300 rounded-lg transition-all hover:border-blue-400 hover:bg-blue-50${o.value === current ? ' selected ' + escapeAttr(o.value) : ''}"
+                 data-value="${escapeAttr(o.value)}">
+              <div class="text-2xl"><i class="ph ${escapeAttr(o.icon || Options.icon(key, o.value, 'ph-circle'))}"></i></div>
+              <div><div class="font-medium text-gray-800">${escapeHtml(o.label)}</div><div class="text-sm text-gray-500">${escapeHtml(o.sublabel || '')}</div></div>
+            </div>
+          </label>`).join('');
+      };
+      build('teacherTypeOptions', 'teacherType', 'teacherType', 'teacher-type-option', typeValue || '');
+      build('workLocationOptions', 'workLocation', 'workLocation', 'location-option', locationValue || '');
+    }
     const isRetired = t => t?.workLocation === 'retired';
     // 呈現模式對外展示，退休師資不列入；編輯模式維持全部可見
     const visibleTeachers = list => (list || []).filter(t => currentMode === 'edit' || !isRetired(t));
@@ -1732,9 +1688,16 @@
       // 下拉選單的選項（職級等）。先用內建預設值畫，拿到後端最新清單再重畫一次，
       // 這樣管理員改過的名稱會反映出來，而且後端掛掉時畫面照樣能用。
       renderRankSelect();
+      renderTeacherRadios('', '');
+      fillLeaveReasons();
       Options.ready().then(() => {
         renderRankSelect();
+        // 表單開著的話保住目前的選擇
+        renderTeacherRadios(document.querySelector('input[name="teacherType"]:checked')?.value || '',
+                            document.querySelector('input[name="workLocation"]:checked')?.value || '');
+        fillLeaveReasons();
         if (typeof renderTeacherGrid === 'function') renderTeacherGrid();
+        if (!document.getElementById('executiveView').classList.contains('hidden')) renderStatisticsView();
       });
 
       // 唯讀模式：teacher 帳號只能預覽，不能修改
@@ -1817,13 +1780,10 @@
     /* ---------- 互動 ---------- */
     function setupLocationSelection() {
       document.addEventListener('change', function(e) {
-        if (e.target.name === 'workLocation') {
-          document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
-          e.target.closest('label').querySelector('.location-option').classList.add('selected', e.target.value);
-        }
-        if (e.target.name === 'teacherType') {
-          document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
-          e.target.closest('label').querySelector('.teacher-type-option').classList.add('selected', e.target.value);
+        if (e.target.name === 'workLocation' || e.target.name === 'teacherType') {
+          const cls = e.target.name === 'workLocation' ? '.location-option' : '.teacher-type-option';
+          document.querySelectorAll(cls).forEach(o => o.classList.remove('selected', o.dataset.value));
+          e.target.closest('label').querySelector(cls).classList.add('selected', e.target.value);
         }
       });
     }
@@ -1926,20 +1886,12 @@
           card.innerHTML = `
             <div class="p-4 text-center relative">
               <div class="absolute top-2 left-2 flex flex-col space-y-1">
-                ${teacher.teacherCategory==='new' ? `
-                  <div class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                    <span><i class="ph ph-user-plus"></i></span><span>新進</span>
-                  </div>` : `
-                  <div class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                    <span><i class="ph ph-check-circle"></i></span><span>現有</span>
-                  </div>`}
-                ${teacher.teacherType==='internal' ? `
-                  <div class="bg-blue-400 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                    <span><i class="ph ph-user-circle"></i></span><span>內部</span>
-                  </div>` : `
-                  <div class="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                    <span><i class="ph ph-graduation-cap"></i></span><span>外部</span>
-                  </div>`}
+                <div class="${teacher.teacherCategory==='new' ? 'bg-green-500' : 'bg-blue-500'} text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                  <span><i class="ph ${escapeAttr(personIcon(teacher.teacherCategory))}"></i></span><span>${escapeHtml(personLabel(teacher.teacherCategory))}</span>
+                </div>
+                <div class="${teacher.teacherType==='internal' ? 'bg-blue-400' : 'bg-purple-500'} text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                  <span><i class="ph ${escapeAttr(typeIcon(teacher.teacherType))}"></i></span><span>${escapeHtml(typeLabel(teacher.teacherType))}</span>
+                </div>
                 <div class="${workStatus(teacher).badgeClass} text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                   <span><i class="ph ${workStatus(teacher).icon}"></i></span><span>${workStatus(teacher).label}</span>
                 </div>
@@ -1960,8 +1912,9 @@
           const isInternal = teacher.teacherType === 'internal';
           const bgGradient = isInternal ? 'from-blue-50 to-indigo-50' : 'from-purple-50 to-pink-50';
           const titleColor = isInternal ? 'text-blue-800' : 'text-purple-800';
-          const categoryTitle = isInternal ? '公司內部講師' : '外聘專業講師';
-          const categoryIcon = isInternal ? 'ph-user-circle' : 'ph-graduation-cap';
+          // 對外展示的標題用選單管理「師資類別」的副標（沒有副標就用名稱）
+          const categoryTitle = escapeHtml(typeTitle(teacher.teacherType));
+          const categoryIcon = escapeAttr(typeIcon(teacher.teacherType));
           const categoryBadgeColor = isInternal ? 'bg-blue-500' : 'bg-purple-500';
           card.className = 'teacher-card-wrapper bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer';
           card.dataset.teacherId = teacher.id;
@@ -1979,7 +1932,7 @@
               <div class="absolute top-3 left-3 flex flex-col space-y-1">
                 ${teacher.teacherCategory==='new' ? `
                   <div class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                    <span><i class="ph ph-user-plus"></i></span><span>新進</span>
+                    <span><i class="ph ${escapeAttr(personIcon('new'))}"></i></span><span>${escapeHtml(personLabel('new'))}</span>
                   </div>` : ''}
               </div>
               <div class="absolute top-3 right-3">
@@ -2051,8 +2004,7 @@
       document.getElementById('certificateList').innerHTML = '';
       SUBJECT_CATEGORY_KEYS.forEach(k => document.getElementById(SUBJECT_CATEGORIES[k].listId).innerHTML = '');
       document.getElementById('tagList').innerHTML = '';
-      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
-      document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
+      renderTeacherRadios('', '');
       renderRankSelect('');
       addExperience(); addCertificate(); addSubject(); addTag();
     }
@@ -2065,15 +2017,7 @@
       document.getElementById('deleteBtn').classList.remove('hidden');
       document.getElementById('teacherName').value = teacher.name;
       document.getElementById('teacherEmail').value = teacher.email || '';
-      const teacherType = teacher.teacherType || 'internal';
-      document.getElementById(teacherType==='internal'?'typeInternal':'typeExternal').checked = true;
-      const workLocation = ['onboard','onshore','retired'].includes(teacher.workLocation) ? teacher.workLocation : 'onshore';
-      document.getElementById({onboard:'locationOnboard', onshore:'locationOnshore', retired:'locationRetired'}[workLocation]).checked = true;
-
-      document.querySelectorAll('.teacher-type-option').forEach(o=>o.classList.remove('selected','internal','external'));
-      document.querySelector(`input[value="${teacherType}"]`).closest('label').querySelector('.teacher-type-option').classList.add('selected',teacherType);
-      document.querySelectorAll('.location-option').forEach(o=>o.classList.remove('selected','onboard','onshore','retired'));
-      document.querySelector(`input[value="${workLocation}"]`).closest('label').querySelector('.location-option').classList.add('selected',workLocation);
+      renderTeacherRadios(teacher.teacherType || 'internal', teacher.workLocation || 'onshore');
       renderRankSelect(teacher.rank || '');
 
       const photoBox = document.getElementById('photoPreview');
@@ -2251,11 +2195,13 @@
     // 資料來源是「訓練排程」實際派給這位老師的課，再對應到課程分類，
     // 不是靠固定標籤 —— 會議要的就是這個聯動：排課紀錄自動帶出授課經驗。
 
-    const RADAR_CATEGORY_SHORT = {
-      '01': '船舶操縱', '02': '領導統御', '03': '事故應變',
-      '04': '設備操作', '05': '法規合規', '06': '貨物裝卸',
-      '07': '經驗交流', '08': '職級轉換', '09': '其他'
-    };
+    // 雷達圖的軸＝選單管理裡啟用中的課程分類，軸名用分類的短名稱。
+    // 以前寫死 9 個代碼，管理者新增的分類永遠算不進來。
+    const RADAR_CATEGORY_SHORT = new Proxy({}, {
+      get: (_, k) => typeof k === 'string' ? Options.short('courseCategory', k) : undefined,
+      ownKeys: () => Options.list('courseCategory').map(o => o.value),
+      getOwnPropertyDescriptor: () => ({ enumerable: true, configurable: true })
+    });
 
     /**
      * 統計一位老師各分類的授課課程數
@@ -2471,7 +2417,7 @@
       const isInternal = teacher.teacherType==='internal';
       const bgGradient = isInternal?'from-blue-50 to-indigo-50':'from-purple-50 to-pink-50';
       const titleColor = isInternal?'text-blue-800':'text-purple-800';
-      const categoryTitle = isInternal?'公司內部講師':'外聘專業講師';
+      const categoryTitle = escapeHtml(typeTitle(teacher.teacherType));
       const categoryIcon = isInternal ? 'ph-user-circle' : 'ph-graduation-cap';
       const categoryBadgeColor = isInternal?'bg-blue-500':'bg-purple-500';
 
@@ -2496,7 +2442,7 @@
                 ${teacher.rank ? `<div class="flex items-center justify-center md:justify-start space-x-2">
                   <span class="text-indigo-600"><i class="ph ph-identification-badge"></i></span>
                   <span class="text-indigo-600 font-bold">${escapeHtml(Options.fullLabel('crewRank', teacher.rank))}</span>
-                  ${teacher.teacherCategory==='new' ? '<span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs ml-2">新進</span>' : ''}
+                  ${teacher.teacherCategory==='new' ? `<span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs ml-2">${escapeHtml(personLabel('new'))}</span>` : ''}
                 </div>` : ''}
                 <div class="flex items-center justify-center md:justify-start space-x-2">
                   <span class="${workStatus(teacher).textClass}"><i class="ph ${workStatus(teacher).icon}"></i></span>
@@ -3088,14 +3034,13 @@
           // Email
           if(String(t.email||'').toLowerCase().includes(kw)) return true;
 
-          // 師資類型（支援中英文）
-          if(t.teacherType === 'internal' && ('internal'.includes(kw) || '內部'.includes(kw) || '內部師資'.includes(kw))) return true;
-          if(t.teacherType === 'external' && ('external'.includes(kw) || '外部'.includes(kw) || '外部師資'.includes(kw))) return true;
-
-          // 工作狀態（支援中英文）
-          if(t.workLocation === 'onboard' && ('onboard'.includes(kw) || '在船'.includes(kw) || '海上'.includes(kw))) return true;
-          if(t.workLocation === 'onshore' && ('onshore'.includes(kw) || '在岸'.includes(kw) || '陸地'.includes(kw))) return true;
-          if(t.workLocation === 'retired' && ('retired'.includes(kw) || '退休'.includes(kw))) return true;
+          // 師資類別、工作狀態：代碼、名稱、副標都搜得到（名稱來自選單管理，改名後新名稱也搜得到）
+          const optHit = (key, v) => {
+            const o = Options.all(key).find(x => x.value === String(v || ''));
+            return [String(v || ''), o && o.label, o && o.sublabel].some(x => x && String(x).toLowerCase().includes(kw));
+          };
+          if(optHit('teacherType', t.teacherType)) return true;
+          if(optHit('workLocation', t.workLocation)) return true;
 
           // 工作經歷
           if((t.experiences||[]).some(x => String(x).toLowerCase().includes(kw))) return true;
@@ -3302,50 +3247,56 @@
 
     function renderStatisticsView(){
       const total = teachers.length;
-      const internal = teachers.filter(t=>t.teacherType==='internal').length;
-      const external = teachers.filter(t=>t.teacherType==='external').length;
-      const onboard = teachers.filter(t=>t.workLocation==='onboard').length;
-      const onshore = teachers.filter(t=>t.workLocation==='onshore').length;
-      const retired = teachers.filter(isRetired).length;
-      const internalOnboard = teachers.filter(t=>t.teacherType==='internal' && t.workLocation==='onboard').length;
-      const internalOnshore = teachers.filter(t=>t.teacherType==='internal' && t.workLocation==='onshore').length;
-      const externalOnboard = teachers.filter(t=>t.teacherType==='external' && t.workLocation==='onboard').length;
-      const externalOnshore = teachers.filter(t=>t.teacherType==='external' && t.workLocation==='onshore').length;
+      const pct = n => total>0 ? ((n/total)*100).toFixed(1) : 0;
+      // 依選單管理的順序；選單裡沒有、但資料裡有的值也列出來，各項加起來才會等於總數
+      const valuesOf = (key, field, fallback) => {
+        const vals = Options.list(key).map(o => o.value);
+        teachers.forEach(t => { const v = t[field] || fallback; if (!vals.includes(v)) vals.push(v); });
+        return vals;
+      };
+      const types = valuesOf('teacherType', 'teacherType', 'internal');
+      const locs = valuesOf('workLocation', 'workLocation', 'onshore');
+      const countBy = (field, v, fallback) => teachers.filter(t => (t[field] || fallback) === v).length;
+      const TYPE_COLORS = ['#007aff', '#5856d6', '#34c759', '#ff9500', '#ff2d55', '#5ac8fa'];
+      const typeColor = v => Options.color('teacherType', v, TYPE_COLORS, '#8e8e93');
       const allSubjects = teachers.flatMap(t=>(t.subjects||[]).map(s => typeof s==='string' ? s : (s.name||'')).filter(Boolean));
       const uniqueSubjects = [...new Set(allSubjects)];
       const avg = total>0 ? (allSubjects.length/total).toFixed(1) : 0;
 
-      document.getElementById('totalCount').textContent = total;
-      document.getElementById('internalCount').textContent = internal;
-      document.getElementById('externalCount').textContent = external;
-      document.getElementById('onboardCount').textContent = onboard;
-      document.getElementById('onshoreCount').textContent = onshore;
+      const card = (title, value, sub, icon) => `
+          <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-600 text-sm font-medium">${escapeHtml(title)}</p>
+                <p class="text-3xl font-bold text-gray-900">${value}</p>
+                ${sub ? `<p class="text-gray-500 text-xs">${escapeHtml(sub)}</p>` : ''}
+              </div><div class="text-4xl opacity-60"><i class="ph ${escapeAttr(icon)}"></i></div>
+            </div>
+          </div>`;
+      const activeLocs = locs.filter(v => v !== 'retired');
+      document.getElementById('statTopCards').innerHTML =
+        card('總師資數量', total, '', 'ph-users') +
+        types.slice(0, 2).map(v => card(typeLabel(v), countBy('teacherType', v, 'internal'), `${pct(countBy('teacherType', v, 'internal'))}%`, typeIcon(v))).join('') +
+        card(activeLocs.slice(0, 3).map(v => workStatus({ workLocation: v }).label).join('/'),
+             activeLocs.slice(0, 3).map(v => countBy('workLocation', v, 'onshore')).join('/'), '', 'ph-boat');
 
-      const ip = total>0 ? ((internal/total)*100).toFixed(1) : 0;
-      const ep = total>0 ? ((external/total)*100).toFixed(1) : 0;
-      const obp = total>0 ? ((onboard/total)*100).toFixed(1) : 0;
-      const osp = total>0 ? ((onshore/total)*100).toFixed(1) : 0;
-      const rtp = total>0 ? ((retired/total)*100).toFixed(1) : 0;
-
-      document.getElementById('internalPercent').textContent = `${ip}%`;
-      document.getElementById('externalPercent').textContent = `${ep}%`;
-      document.getElementById('locationRatio').textContent = `比例 ${onboard}:${onshore}`;
-
-      document.getElementById('internalCountDetail').textContent = `${internal} 位`;
-      document.getElementById('internalPercentDetail').textContent = `${ip}%`;
-      document.getElementById('externalCountDetail').textContent = `${external} 位`;
-      document.getElementById('externalPercentDetail').textContent = `${ep}%`;
-      document.getElementById('onboardCountDetail').textContent = `${onboard} 位`;
-      document.getElementById('onboardPercentDetail').textContent = `${obp}%`;
-      document.getElementById('onshoreCountDetail').textContent = `${onshore} 位`;
-      document.getElementById('onshorePercentDetail').textContent = `${osp}%`;
-      document.getElementById('retiredCountDetail').textContent = `${retired} 位`;
-      document.getElementById('retiredPercentDetail').textContent = `${rtp}%`;
-
-      document.getElementById('internalOnboard').textContent = internalOnboard;
-      document.getElementById('internalOnshore').textContent = internalOnshore;
-      document.getElementById('externalOnboard').textContent = externalOnboard;
-      document.getElementById('externalOnshore').textContent = externalOnshore;
+      const row = (color, label, n, extraClass) => `
+              <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <div class="flex items-center space-x-3"><div class="w-4 h-4 rounded-full" style="background-color:${escapeAttr(color)}"></div><span class="font-medium text-gray-700">${escapeHtml(label)}</span></div>
+                <div class="text-right"><div class="font-bold ${extraClass || 'text-gray-900'}">${n} 位</div><div class="text-sm text-gray-500">${pct(n)}%</div></div>
+              </div>`;
+      document.getElementById('statTypeList').innerHTML =
+        types.map(v => row(typeColor(v), typeLabel(v), countBy('teacherType', v, 'internal'))).join('');
+      document.getElementById('statLocationList').innerHTML =
+        locs.map(v => { const st = workStatus({ workLocation: v }); return row(st.dot, st.text, countBy('workLocation', v, 'onshore'), st.textClass); }).join('');
+      document.getElementById('statCrossCards').innerHTML = types.flatMap(tv => activeLocs.map(lv => {
+        const st = workStatus({ workLocation: lv });
+        const n = teachers.filter(t => (t.teacherType || 'internal') === tv && (t.workLocation || 'onshore') === lv).length;
+        return `
+            <div class="bg-white rounded-lg p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold ${st.textClass}">${n}</div><div class="text-sm text-gray-600">${escapeHtml(typeLabel(tv))} · ${escapeHtml(st.label)}</div>
+            </div>`;
+      })).join('');
 
       document.getElementById('totalSubjects').textContent = allSubjects.length;
       document.getElementById('avgSubjectsPerTeacher').textContent = avg;
@@ -3375,7 +3326,7 @@
         idx:i+1,
         name:t.name||'',
         email:t.email||'',
-        teacherType:t.teacherType==='internal'?'內部師資':'外部師資',
+        teacherType:typeLabel(t.teacherType),
         workLocation:workStatus(t).text,
         experiences:(t.experiences||[]).join('；') || '無',
         certificates:(t.certificates||[]).map(c=> typeof c==='string'? c : (c?.name||'')).filter(Boolean).join('；') || '無',

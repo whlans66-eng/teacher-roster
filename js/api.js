@@ -20,7 +20,7 @@ function _explainApiError(error, action) {
  * 後端比這個舊，代表 Apps Script 還沒重新部署：帳號管理頁會直接提示，
  * 不用等到某個按鈕失敗才發現。改了 backend-api.gs 就把兩邊一起改成當天日期。
  */
-const REQUIRED_BACKEND_VERSION = '2026-10-28';
+const REQUIRED_BACKEND_VERSION = '2026-10-28.2';
 
 /**
  * 設定區
@@ -465,6 +465,26 @@ class TeacherRosterAPI {
     return response.data || {};
   }
 
+  // ==================== 系統設定（文字與數字）====================
+
+  /** 登入前就能讀的那幾項：系統名稱、版權、聯絡窗口、忘記密碼連結 */
+  async sitePublic() {
+    const response = await this._get({ action: 'site_public' });
+    return response.data || {};
+  }
+
+  /** 全部的系統設定（登入者都能讀，沒有機密） */
+  async siteSettings() {
+    const response = await this._post({ action: 'site_settings_list' });
+    return response.data || {};
+  }
+
+  /** 存系統設定（僅管理者）；可以只送要改的鍵 */
+  async saveSiteSettings(settings) {
+    const response = await this._post({ action: 'site_settings_save', settings: JSON.stringify(settings) });
+    return response.data || {};
+  }
+
   /** 頁面權限與功能權限一起讀：{ pages, features }（舊後端沒有 features） */
   async listAccess() {
     const response = await this._post({ action: 'page_access_list' });
@@ -507,7 +527,8 @@ class TeacherRosterAPI {
    * ping 不需要 token，維持 GET 以便做連線檢查。
    */
   async _get(params) {
-    if (params && params.action !== 'ping') {
+    // 不需要登入的兩個動作走 GET：連線檢查，以及登入頁要的公開系統設定
+    if (params && params.action !== 'ping' && params.action !== 'site_public') {
       return this._post(params);
     }
     const url = new URL(this.baseUrl);
@@ -1797,13 +1818,30 @@ class AIChatManager {
     const courses = loadArrayFromStorage('maritimeCourses');
     const teachers = loadArrayFromStorage('teachers', normalizeTeacherRecord);
 
+    // 分類、授課方式、人員類別、職級一律從「選單管理」來（js/options.js）。
+    // 以前寫死在提示詞裡，還寫錯：有一個不存在的「10 資料分析」、職級寫成中文而不是代碼
+    //（「大管輪」「電機員」根本不在清單裡），AI 建的課程依職級篩選時就永遠對不上。
+    const O = (typeof Options !== 'undefined' && Options) ? Options : null;
+    const lbl = (key, v) => O ? O.label(key, v) : String(v);
+    const listOf = key => O ? O.list(key) : [];
+    const sysName = (typeof Site !== 'undefined' && Site) ? Site.get('systemName') : '萬海智慧航安訓練管理系統';
+
     const coursesSummary = courses.map(c => {
       const keywords = Array.isArray(c.keywords) ? c.keywords.join('、') : '';
       const targets = [];
-      if (Array.isArray(c.targetCategories)) targets.push(...c.targetCategories.map(t => t === 'existing' ? '現有船員' : '新進船員'));
-      if (Array.isArray(c.targetRanks)) targets.push(...c.targetRanks);
-      return `- ${c.name}（分類: ${c.category}, 方式: ${c.method || '未設定'}, 關鍵字: ${keywords}, 適用: ${targets.join('、') || '全員'}）`;
+      if (Array.isArray(c.targetCategories)) targets.push(...c.targetCategories.map(t => lbl('personnelType', t)));
+      if (Array.isArray(c.targetRanks)) targets.push(...c.targetRanks.map(r => lbl('crewRank', r)));
+      return `- ${c.name}（分類: ${lbl('courseCategory', c.category)}, 方式: ${c.method || '未設定'}, 關鍵字: ${keywords}, 適用: ${targets.join('、') || '全員'}）`;
     }).join('\n');
+
+    const fmt = (key, withLabel) => listOf(key).map(o => withLabel ? `"${o.value}"=${o.label}${o.sublabel ? '（' + o.sublabel + '）' : ''}` : `"${o.value}"`).join('、');
+    const catRule = O ? `- category 必須是以下代碼之一：${fmt('courseCategory', true)}`
+                      : '- category 必須是 "01"~"09" 其中一個';
+    const methodRule = O ? `- method 必須是 ${fmt('teachingMethod', false)} 其中一個` : '- method 必須是 "實體課程"、"線上課程" 或 "混合課程"';
+    const personRule = O ? `- targetCategories 只能包含：${fmt('personnelType', true)}` : '- targetCategories 只能包含 "existing" 或 "new"';
+    const rankRule = O ? `- targetRanks 只能填職級代碼（左邊引號內的值，不要填中文）：${fmt('crewRank', true)}`
+                       : '- targetRanks 只能填職級代碼，例如 "C/O"、"2/O"';
+    const rankExample = O ? listOf('crewRank').slice(1, 3).map(o => `"${o.value}"`).join(',') || '"C/O"' : '"C/O","2/O"';
 
     const teachersSummary = teachers.slice(0, 20).map(t =>
       `- ${t.name}（類別: ${t.teacherType || '未設定'}, 職等: ${t.rank || '未設定'}, 專長: ${(Array.isArray(t.subjects) ? t.subjects.join('、') : '') || '未設定'}）`
@@ -1820,7 +1858,7 @@ class AIChatManager {
       memoriesBlock = `\n\n【關於這位使用者的記憶】\n以下是你從過去對話中記住的重要資訊，請善用這些資訊提供更個人化的回答：\n${memList}\n`;
     }
 
-    this._cachedContext = `你是「萬海智慧航安訓練管理系統」的 AI 課程顧問。請用繁體中文回答，語氣專業但親切。
+    this._cachedContext = `你是「${sysName}」的 AI 課程顧問。請用繁體中文回答，語氣專業但親切。
 你具有「長期記憶」能力，能記住使用者告訴你的重要資訊。
 
 【重要限制】
@@ -1838,16 +1876,16 @@ class AIChatManager {
 
 【AI 操作指令】
 當使用者明確要求「新增課程」、「幫我建立一門課」、「新增一堂課」時，請在回覆末尾附上以下 JSON 指令（格式必須完全正確）：
-[WHAI_ACTION]{"type":"CREATE_COURSE","data":{"name":"課程名稱","category":"01","method":"實體課程","duration":60,"description":"課程描述","keywords":["關鍵字1"],"targetCategories":["existing"],"targetRanks":["大副","二副"]}}[/WHAI_ACTION]
+[WHAI_ACTION]{"type":"CREATE_COURSE","data":{"name":"課程名稱","category":"01","method":"實體課程","duration":60,"description":"課程描述","keywords":["關鍵字1"],"targetCategories":["existing"],"targetRanks":[${rankExample}]}}[/WHAI_ACTION]
 
 當使用者要求「修改課程」、「更新課程資料」、「反映意見」、「調整教學方式」時，請在回覆末尾附上：
 [WHAI_ACTION]{"type":"UPDATE_COURSE","data":{"name":"現有課程名稱（必填）","changes":{"description":"新描述","keywords":["新關鍵字"],"method":"線上課程"}}}[/WHAI_ACTION]
 
 指令格式規則：
-- category 必須是 "01"~"10" 其中一個（01=船舶操縱、02=領導統御、03=事故分析、04=設備操作、05=法規知識、06=貨物裝卸、07=經驗交流、08=職級轉換、09=其他、10=資料分析）
-- method 必須是 "實體課程"、"線上課程" 或 "混合課程"
-- targetCategories 只能包含 "existing"（現有船員）或 "new"（新進船員）
-- targetRanks 可填：船長、大副、二副、三副、輪機長、大管輪、二管輪、三管輪、電機員等
+${catRule}
+${methodRule}
+${personRule}
+${rankRule}
 - 只在使用者明確要求操作時才附上指令，一般問答不要加
 ${memoriesBlock}
 以下是目前系統中的課程資料（共 ${courses.length} 門課程）：${emptyCourseWarning}

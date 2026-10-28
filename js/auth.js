@@ -396,7 +396,8 @@
           </svg>
         </div>
         <h2>此功能需要其他權限</h2>
-        <p>您目前的身分是「${label}」，沒有開放使用這個頁面。<br>需要存取權請聯絡系統管理者。</p>
+        <p>您目前的身分是「${label}」，沒有開放使用這個頁面。<br>需要存取權請聯絡系統管理者${
+          window.Site ? escapeHtml(Site.contactSuffix()) : ''}。</p>
         <div class="auth-denied-actions">
           ${canGoHome ? `<a class="btn btn-primary" href="${escapeHtml(myHome)}">回到起始頁</a>` : ''}
           <button type="button" class="btn btn-secondary" data-auth-switch>切換帳號</button>

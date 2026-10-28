@@ -63,19 +63,43 @@
     ['workLocation', 'onshore', '在岸', '陸地工作', '', 20, true, 'ph-building'],
     ['workLocation', 'retired', '退休', '已退休',   '', 30, true, 'ph-armchair'],
 
-    ['courseCategory', '01', '01 船舶操縱與航行實務訓練',   '', '', 10, true, ''],
-    ['courseCategory', '02', '02 領導統御與檢查應對管理',   '', '', 20, true, ''],
-    ['courseCategory', '03', '03 事故案例分析與應變處置訓練', '', '', 30, true, ''],
-    ['courseCategory', '04', '04 船舶設備操作與技術知能訓練', '', '', 40, true, ''],
-    ['courseCategory', '05', '05 國際法規與環境合規知識',   '', '', 50, true, ''],
-    ['courseCategory', '06', '06 船舶貨物裝卸作業實務',     '', '', 60, true, ''],
-    ['courseCategory', '07', '07 船員經驗交流與職能回饋',   '', '', 70, true, ''],
-    ['courseCategory', '08', '08 職級轉換與壓力調適',       '', '', 80, true, ''],
-    ['courseCategory', '09', '09 其他',                     '', '', 90, true, ''],
+    // 課程分類的副標＝短名稱（圖表、匯出、雷達圖用），圖示用在學習路徑與課程卡
+    ['courseCategory', '01', '01 船舶操縱與航行實務訓練',   '船舶操縱', '', 10, true, 'ph-anchor'],
+    ['courseCategory', '02', '02 領導統御與檢查應對管理',   '領導統御', '', 20, true, 'ph-users-three'],
+    ['courseCategory', '03', '03 事故案例分析與應變處置訓練', '事故應變', '', 30, true, 'ph-warning-circle'],
+    ['courseCategory', '04', '04 船舶設備操作與技術知能訓練', '設備操作', '', 40, true, 'ph-gear'],
+    ['courseCategory', '05', '05 國際法規與環境合規知識',   '法規知識', '', 50, true, 'ph-scales'],
+    ['courseCategory', '06', '06 船舶貨物裝卸作業實務',     '貨物裝卸', '', 60, true, 'ph-package'],
+    ['courseCategory', '07', '07 船員經驗交流與職能回饋',   '經驗交流', '', 70, true, 'ph-chat-circle-dots'],
+    ['courseCategory', '08', '08 職級轉換與壓力調適',       '職級轉換', '', 80, true, 'ph-arrow-u-up-left'],
+    ['courseCategory', '09', '09 其他',                     '其他',     '', 90, true, 'ph-dots-three'],
 
     ['teachingMethod', '實體課程', '實體課程', '面對面課堂教學，互動性強',   '', 10, true, 'ph-chalkboard-teacher'],
     ['teachingMethod', '線上課程', '線上課程', '遠距線上授課，時間彈性',     '', 20, true, 'ph-monitor-play'],
-    ['teachingMethod', '混合課程', '混合課程', '結合實體與線上的混合式教學', '', 30, true, 'ph-shuffle']
+    ['teachingMethod', '混合課程', '混合課程', '結合實體與線上的混合式教學', '', 30, true, 'ph-shuffle'],
+
+    // 課程類型：顏色依清單順序自動配，預設順序就是原本的藍、黃、紫、綠、紅
+    ['courseType', '正課',   '正課',   '', '', 10, true, ''],
+    ['courseType', '補課',   '補課',   '', '', 20, true, ''],
+    ['courseType', '實驗課', '實驗課', '', '', 30, true, ''],
+    ['courseType', '實作課', '實作課', '', '', 40, true, ''],
+    ['courseType', '專題',   '專題',   '', '', 50, true, ''],
+
+    ['courseLanguage', 'zh', '中文', 'Mandarin Chinese', '', 10, true, ''],
+    ['courseLanguage', 'en', '英文', 'English',          '', 20, true, ''],
+
+    ['leaveReason', '事假', '事假', '', '', 10, true, ''],
+    ['leaveReason', '病假', '病假', '', '', 20, true, ''],
+    ['leaveReason', '公假', '公假', '', '', 30, true, ''],
+    ['leaveReason', '特休', '特休', '', '', 40, true, ''],
+    ['leaveReason', '上船', '上船', '在船期間無法授課', '', 50, true, ''],
+
+    // 備註標籤：副標放關鍵字（用、分隔），備註裡出現任一個就自動貼上這個標籤
+    ['noteTag', 'important',  '重要', '重要、必須、注意、務必、切記、關鍵、緊急', '', 10, true, 'ph-warning-circle'],
+    ['noteTag', 'exam',       '考試', '考試、測驗、評量、期中、期末、小考、大考', '', 20, true, 'ph-file-text'],
+    ['noteTag', 'experiment', '實作', '實驗、實習、實作、實務、操作、練習',       '', 30, true, 'ph-flask'],
+    ['noteTag', 'project',    '作業', '專題、報告、作業、習題、繳交、截止',       '', 40, true, 'ph-presentation-chart'],
+    ['noteTag', 'meeting',    '會議', '會議、討論、說明、講解、演講、座談',       '', 50, true, 'ph-users-three']
   ];
 
   const LIST_LABELS = {
@@ -84,7 +108,11 @@
     teacherType: '師資類別',
     workLocation: '工作狀態',
     courseCategory: '課程分類',
-    teachingMethod: '授課方式'
+    teachingMethod: '授課方式',
+    courseType: '課程類型',
+    courseLanguage: '授課語言',
+    leaveReason: '請假原因',
+    noteTag: '備註標籤'
   };
 
   function fromRow(r, i) {
@@ -118,8 +146,19 @@
     return out.length ? out : null;
   }
 
+  /**
+   * 後端（或快取）少了整份清單時，那份用內建預設值補上。
+   * 後端比前端舊、還沒部署新清單時，畫面才不會出現空的下拉選單。
+   */
+  function withBuiltinLists(rows) {
+    if (!rows) return rows;
+    const have = new Set(rows.map(o => o.listKey));
+    const extra = builtinCatalog().filter(o => !have.has(o.listKey));
+    return extra.length ? rows.concat(extra) : rows;
+  }
+
   function readCache() {
-    try { return normalize(JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')); }
+    try { return withBuiltinLists(normalize(JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'))); }
     catch (e) { return null; }
   }
 
@@ -164,7 +203,7 @@
       }
       loading = api.listOptions()
         .then(rows => {
-          const clean = normalize(rows);
+          const clean = withBuiltinLists(normalize(rows));
           if (clean) { catalog = clean; source = 'backend'; writeCache(clean); }
           return catalog;
         })
@@ -175,7 +214,7 @@
 
     /** 直接換掉目前這份（管理頁存檔後呼叫，免得要重新整理） */
     apply(rows) {
-      const clean = normalize(rows);
+      const clean = withBuiltinLists(normalize(rows));
       if (clean) { catalog = clean; source = 'backend'; writeCache(clean); }
       return catalog;
     },
@@ -231,6 +270,63 @@
         groups[index[g]].items.push(o);
       });
       return groups;
+    },
+
+    /** 某份清單所有的代碼（含停用），驗證資料用：不在裡面的值才是真的不認得 */
+    values(key) { return byList(key).map(o => o.value); },
+
+    /** 這個代碼在清單裡嗎（停用的也算） */
+    has(key, value) {
+      return catalog.some(o => o.listKey === key && o.value === String(value));
+    },
+
+    /**
+     * 不含代碼前綴的名稱。課程分類的顯示名稱是「01 船舶操縱…」，
+     * 有些地方前面已經另外印了代碼，要的是後半段。
+     */
+    name(key, value) {
+      const label = this.label(key, value);
+      const v = String(value === undefined || value === null ? '' : value);
+      return v && label.indexOf(v) === 0 ? label.slice(v.length).trim() || label : label;
+    },
+
+    /**
+     * 短名稱：圖表、匯出、雷達圖用。課程分類的副標就是短名稱；
+     * 沒填副標（舊試算表）就用內建的短名稱，再沒有就用完整名稱
+     */
+    short(key, value) {
+      const v = String(value === undefined || value === null ? '' : value);
+      const hit = catalog.find(o => o.listKey === key && o.value === v);
+      if (key === 'courseCategory') {
+        if (hit && hit.sublabel) return hit.sublabel;
+        const builtin = DEFAULTS.find(d => d[0] === key && d[1] === v);
+        if (builtin && builtin[3] && (!hit || hit.label === builtin[2])) return builtin[3];
+      }
+      return this.name(key, value);
+    },
+
+    /** 圖示：清單裡有填就用；沒填（舊試算表）用內建的；都沒有用 fallback */
+    icon(key, value, fallback) {
+      const v = String(value === undefined || value === null ? '' : value);
+      const hit = catalog.find(o => o.listKey === key && o.value === v);
+      if (hit && hit.icon) return hit.icon;
+      const builtin = DEFAULTS.find(d => d[0] === key && d[1] === v);
+      return (builtin && builtin[7]) || fallback || 'ph-circle';
+    },
+
+    /**
+     * 第幾個（依清單順序，含停用），給「依順序配色」用；不認得回 -1。
+     * 顏色不另外存，管理者調整順序顏色就跟著換。
+     */
+    index(key, value) {
+      return byList(key).findIndex(o => o.value === String(value));
+    },
+
+    /** 依順序配色：palette 由各頁自己給（Tailwind class 或色碼），不認得的值給 fallback */
+    color(key, value, palette, fallback) {
+      const i = this.index(key, value);
+      if (i < 0 || !palette || !palette.length) return fallback;
+      return palette[i % palette.length];
     },
 
     /** 內建預設值，給管理頁的「還原」與測試用 */

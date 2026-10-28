@@ -195,6 +195,25 @@
     .acc-wrap { overflow-x: auto; }
     @media (max-width: 760px) { .acc-page-desc { display: none; } .acc-cell { width: 64px; } }
 
+    /* ── 系統設定 ── */
+    .site-group + .site-group { margin-top: 20px; }
+    .site-fields { padding: 6px 20px 18px; display: grid; gap: 16px; }
+    .site-field label.t { display: block; font-size: 13.5px; font-weight: 700; margin-bottom: 6px; }
+    .site-field .h { font-size: 12px; color: var(--ui-text-secondary); margin-top: 5px; line-height: 1.6; }
+    .site-field input[type=text], .site-field input[type=number], .site-field textarea, .site-field select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--ui-border); border-radius: 10px;
+      font-family: inherit; font-size: 14px; color: var(--ui-text); background: #fff; outline: none;
+    }
+    .site-field textarea { min-height: 76px; resize: vertical; line-height: 1.6; }
+    .site-field input:focus, .site-field textarea:focus, .site-field select:focus { border-color: var(--ui-primary); box-shadow: 0 0 0 3px rgba(0,122,255,.12); }
+    .site-field .num { display: flex; align-items: center; gap: 8px; }
+    .site-field .num input[type=number] { width: 140px; flex: 0 0 auto; }
+    .site-field .num span { white-space: nowrap; color: var(--ui-text-secondary); font-size: 13px; }
+    .site-field .meta { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .site-reset { border: 0; background: transparent; color: var(--ui-primary); font-size: 12px; cursor: pointer; font-family: inherit; padding: 0; }
+    .site-reset[hidden] { display: none; }
+    .site-field.changed label.t::after { content: '已修改'; margin-left: 8px; font-size: 11px; font-weight: 700; color: #b45309; }
+
     .audit-card { margin-top: 20px; }
     .audit-head {
       display: flex; align-items: center; justify-content: space-between;
@@ -346,6 +365,7 @@
       <button type="button" class="tab-btn active" data-pane="usersPane" role="tab"><i class="ph ph-users"></i> 帳號</button>
       <button type="button" class="tab-btn" data-pane="optionsPane" role="tab"><i class="ph ph-list-checks"></i> 選單管理</button>
       <button type="button" class="tab-btn" data-pane="accessPane" role="tab"><i class="ph ph-shield-check"></i> 權限設定</button>
+      <button type="button" class="tab-btn" data-pane="sitePane" role="tab"><i class="ph ph-sliders-horizontal"></i> 系統設定</button>
     </div>
 
     <div class="pane" id="usersPane">
@@ -472,6 +492,23 @@
         </div>
       </div>
     </div><!-- /accessPane -->
+
+    <!-- 系統設定：系統名稱、登入頁、教材頁歡迎詞、授課時數目標、分享訊息、衝堂規則、AI 提問。
+         欄位由 js/site.js 的 SITE_DEFS 產生，新增設定只要在那裡加一行 -->
+    <div class="pane" id="sitePane" hidden>
+      <div id="siteGroups"></div>
+      <div class="card" style="margin-top:20px">
+        <div class="opt-note" style="padding-top:16px">
+          刻意<strong>不</strong>放在這裡的：密碼規則、登入鎖定、登入有效時間、可上傳的檔案類型、試算表與雲端資料夾的位置、AI 的安全規則。
+          這些從網頁就能改的話，一個被盜用的管理者帳號就能讓整個系統變弱，所以留在程式裡，要改請找系統開發者。
+        </div>
+        <div class="opt-foot">
+          <button type="button" class="btn btn-primary" id="siteSaveBtn"><i class="ph ph-check"></i> 儲存</button>
+          <button type="button" class="btn btn-secondary" id="siteRevertBtn">放棄變更</button>
+          <span class="opt-dirty" id="siteDirty" hidden>尚未儲存</span>
+        </div>
+      </div>
+    </div><!-- /sitePane -->
   </div>
 
   <!-- 新增／編輯帳號 -->
@@ -563,6 +600,7 @@
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
   <script src="js/options.js"></script>
+  <script src="js/site.js"></script>
   <script src="js/auth.js"></script>
   <script>
     // 只有管理者能進這頁；js/auth.js 會依權限矩陣（admin.html 這一列）擋下其他角色
@@ -936,6 +974,7 @@
       page_access_save: '修改頁面權限',
       crew_settings_save: '修改船員設定',
       feature_access_save: '修改教材頁功能',
+      site_settings_save: '修改系統設定',
       feature_access_reset: '還原教材頁功能',
       crew_survey_create: '新增問卷',
       crew_survey_update: '修改問卷',
@@ -991,12 +1030,18 @@
     // 客戶每要改一次就得改程式再重新部署。現在清單是資料，這裡是維護它的地方。
 
     const OPT_LISTS = [
-      { key: 'crewRank',       name: '船員職級', desc: '課程的適用對象、師資的職級、以及新增課程時講師選單的排序都用這一份。順序就是職級高低。' },
-      { key: 'personnelType',  name: '人員類別', desc: '課程適用對象的「現有／新進」。' },
-      { key: 'teacherType',    name: '師資類別', desc: '師資卡上的「內部／外部」。' },
-      { key: 'workLocation',   name: '工作狀態', desc: '師資的在船／在岸／退休。「退休」的師資不會出現在呈現模式，這個行為綁在代碼 retired 上。' },
-      { key: 'courseCategory', name: '課程分類', desc: '智慧派課與教材管理的九大分類，兩邊用的是同一份。' },
-      { key: 'teachingMethod', name: '授課方式', desc: '實體／線上／混合。' }
+      { key: 'crewRank',       name: '船員職級', desc: '課程的適用對象、師資與船員帳號的職級、新增課程時講師選單的排序都用這一份。順序就是職級高低。' },
+      { key: 'personnelType',  name: '人員類別', desc: '課程適用對象與師資卡上的人員類別。' },
+      { key: 'teacherType',    name: '師資類別', desc: '師資表單的選項、師資卡標籤與統計頁都用這一份。代碼 internal 代表「內部」，其餘都算外部。' },
+      { key: 'workLocation',   name: '工作狀態', desc: '師資表單的選項與統計頁。代碼 retired 的師資不會出現在呈現模式，這個行為綁在代碼上。' },
+      { key: 'courseCategory', name: '課程分類', sublabelName: '短名稱',
+        desc: '智慧派課、教材頁的學習路徑、師資雷達圖、匯出報表都用這一份。短名稱用在圖表與匯出，圖示用在學習路徑。' },
+      { key: 'teachingMethod', name: '授課方式', sublabelName: '說明', desc: '課程的授課方式；說明會顯示在課程詳細頁。' },
+      { key: 'courseType',     name: '課程類型', desc: '訓練排程新增／編輯課程時的「課程類型」。行事曆顏色依清單順序自動配。' },
+      { key: 'courseLanguage', name: '授課語言', sublabelName: '英文名稱', desc: '智慧派課的授課語言。' },
+      { key: 'leaveReason',    name: '請假原因', sublabelName: '說明', desc: '師資請假的原因選單；選不到的可以選「其他」自己填。' },
+      { key: 'noteTag',        name: '備註標籤', sublabelName: '關鍵字（用、分隔）',
+        desc: '訓練排程的備註裡出現任一個關鍵字，就自動貼上這個標籤。' }
     ];
 
     let optCurrent = OPT_LISTS[0].key;
@@ -1034,7 +1079,7 @@
 
       const hasGroups = optDraft.some(o => o.groupName) || optCurrent === 'crewRank';
       const head = `<div class="opt-colhead">
-          <span></span><span>代碼</span><span>顯示名稱</span><span>副標</span>
+          <span></span><span>代碼</span><span>顯示名稱</span><span>${escapeHtml((meta && meta.sublabelName) || '副標')}</span>
           <span>${hasGroups ? '分組' : ''}</span><span>圖示</span><span></span>
         </div>`;
 
@@ -1047,7 +1092,7 @@
           <input data-f="value" value="${escapeAttr(o.value)}" ${o.isNew ? '' : 'readonly'}
                  title="${o.isNew ? '新項目可以自訂代碼，存檔後就不能改了' : '代碼是存進資料裡的鍵，不能改'}">
           <input data-f="label" value="${escapeAttr(o.label)}" placeholder="顯示名稱">
-          <input data-f="sublabel" value="${escapeAttr(o.sublabel)}" placeholder="副標（選填）">
+          <input data-f="sublabel" value="${escapeAttr(o.sublabel)}" placeholder="${escapeAttr(((meta && meta.sublabelName) || '副標') + '（選填）')}">
           <input data-f="groupName" value="${escapeAttr(o.groupName)}" placeholder="${hasGroups ? '例如 甲板部門' : '（不分組）'}">
           <div style="display:flex; gap:6px; align-items:center">
             <span class="opt-icon"><i class="ph ${escapeAttr(o.icon || 'ph-circle-dashed')}"></i></span>
@@ -1415,6 +1460,105 @@
       Auth.refreshPageAccess(true).then(() => { if (!featDirty()) featLoadDraft(); });
     }
 
+    // ── 系統設定 ──
+    let siteDraft = {};
+    let siteBaseline = '';
+
+    function siteDirty() { return JSON.stringify(siteDraft) !== siteBaseline; }
+
+    function siteLoadDraft() {
+      siteDraft = Site.all();
+      siteBaseline = JSON.stringify(siteDraft);
+      renderSiteForm();
+    }
+
+    function siteFieldHtml(d) {
+      const v = siteDraft[d.key];
+      const isDefault = JSON.stringify(v) === JSON.stringify(d.def);
+      let input;
+      if (d.type === 'longtext') {
+        input = `<textarea data-key="${escapeAttr(d.key)}" maxlength="${d.max}">${h(v)}</textarea>`;
+      } else if (d.type === 'list') {
+        input = `<textarea data-key="${escapeAttr(d.key)}" rows="${Math.max(3, (v || []).length + 1)}">${h((v || []).join('\n'))}</textarea>`;
+      } else if (d.type === 'number') {
+        input = `<div class="num"><input type="number" data-key="${escapeAttr(d.key)}" min="${d.min}" max="${d.max}" value="${escapeAttr(v)}">
+                 <span>${h(d.unit || '')}</span></div>`;
+      } else if (d.type === 'enum') {
+        input = `<select data-key="${escapeAttr(d.key)}">${d.values.map(x =>
+          `<option value="${escapeAttr(x)}" ${x === v ? 'selected' : ''}>${h((d.valueLabels || {})[x] || x)}</option>`).join('')}</select>`;
+      } else {
+        input = `<input type="text" data-key="${escapeAttr(d.key)}" maxlength="${d.max}" value="${escapeAttr(v)}"
+                  ${d.type === 'url' ? 'placeholder="https://… 或 mailto:…"' : ''}>`;
+      }
+      const limits = d.type === 'number' ? `${d.min} 到 ${d.max}` : d.type === 'list' ? `最多 ${d.maxItems} 項` : (d.max ? `最多 ${d.max} 字` : '');
+      return `<div class="site-field${isDefault ? '' : ' changed'}">
+        <label class="t">${h(d.label)}</label>
+        ${input}
+        <div class="meta"><div class="h">${h(d.help || '')}${d.help && limits ? '　' : ''}${h(limits)}</div>
+          <button type="button" class="site-reset" data-reset="${escapeAttr(d.key)}" ${isDefault ? 'hidden' : ''}>恢復預設值</button></div>
+      </div>`;
+    }
+
+    function renderSiteForm() {
+      $('siteDirty').hidden = !siteDirty();
+      $('siteGroups').innerHTML = Site.GROUPS.map(g => `
+        <div class="card site-group">
+          <div class="opt-head"><div><h3>${h(g.name)}</h3><p>${h(g.desc)}</p></div></div>
+          <div class="site-fields">${Site.DEFS.filter(d => d.group === g.key).map(siteFieldHtml).join('')}</div>
+        </div>`).join('');
+    }
+
+    function siteReadInput(el) {
+      const d = Site.DEFS.find(x => x.key === el.dataset.key);
+      if (!d) return;
+      if (d.type === 'number') siteDraft[d.key] = el.value === '' ? '' : Number(el.value);
+      else if (d.type === 'list') siteDraft[d.key] = el.value.split('\n').map(x => x.trim()).filter(Boolean);
+      else siteDraft[d.key] = el.value;
+      $('siteDirty').hidden = !siteDirty();
+      const box = el.closest('.site-field');
+      const isDefault = JSON.stringify(siteDraft[d.key]) === JSON.stringify(d.def);
+      box.classList.toggle('changed', !isDefault);
+      box.querySelector('.site-reset').hidden = isDefault;
+    }
+
+    function initSitePane() {
+      $('siteGroups').addEventListener('input', e => { if (e.target.dataset.key) siteReadInput(e.target); });
+      $('siteGroups').addEventListener('change', e => { if (e.target.dataset.key) siteReadInput(e.target); });
+      $('siteGroups').addEventListener('click', e => {
+        const b = e.target.closest('[data-reset]'); if (!b) return;
+        const d = Site.DEFS.find(x => x.key === b.dataset.reset);
+        siteDraft[d.key] = Array.isArray(d.def) ? d.def.slice() : d.def;
+        renderSiteForm();
+      });
+      $('siteRevertBtn').addEventListener('click', () => {
+        if (siteDirty() && !confirm('放棄所有還沒儲存的變更？')) return;
+        siteLoadDraft();
+      });
+      $('siteSaveBtn').addEventListener('click', async () => {
+        if (!siteDirty()) { showToast('沒有變更'); return; }
+        const t = Number(siteDraft.teachingHoursTarget), w = Number(siteDraft.teachingHoursWarn);
+        if (w > t) { showToast('「接近目標的提醒」不能大於「授課時數目標」', 'error'); return; }
+        const btn = $('siteSaveBtn');
+        btn.disabled = true; const html = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span> 儲存中…';
+        try {
+          // 只送改過的鍵，別人剛改的其他設定不會被這份舊畫面蓋掉
+          const base = JSON.parse(siteBaseline);
+          const changed = {};
+          Object.keys(siteDraft).forEach(k => { if (JSON.stringify(siteDraft[k]) !== JSON.stringify(base[k])) changed[k] = siteDraft[k]; });
+          Site.apply(await api.saveSiteSettings(changed));
+          siteLoadDraft();
+          showToast('系統設定已儲存');
+          loadAudit();
+        } catch (error) {
+          showToast(error.message || '儲存失敗', 'error');
+        } finally {
+          btn.disabled = false; btn.innerHTML = html;
+        }
+      });
+      siteLoadDraft();
+      Site.ready(true).then(() => { if (!siteDirty()) siteLoadDraft(); });
+    }
+
     function closeDeleteModal() {
       $('deleteModal').classList.remove('show');
       deletingUser = null;
@@ -1458,6 +1602,7 @@
       initOptionsPane();
       initAccessPane();
       initFeaturePane();
+      initSitePane();
       checkBackend();
 
       $('addUserBtn').addEventListener('click', () => openUserModal(null));

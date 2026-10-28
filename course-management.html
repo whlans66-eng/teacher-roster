@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>派課管理系統</title>
+  <title>訓練排程 | WHL MARITRAIN</title>
 
   <!-- 預連接到資源服務器 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -795,6 +795,8 @@
   <!-- API 層：與後端通訊 -->
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <!-- 系統名稱、時數目標、分享訊息、AI 提問等在「帳號管理 → 系統設定」改 -->
+  <script src="js/site.js"></script>
   <script src="js/options.js"></script>
 
   <!-- Tailwind：預先編好的靜態 CSS（scripts/build-tailwind.sh 產生）
@@ -1007,7 +1009,7 @@
                  style="background:#f0f9f0; color:#15803d;">
               <i class="ph ph-confetti" style="font-size:16px; color:#0ca30c;"></i>
               <p class="text-sm">
-                恭喜！本月有 <span id="targetAchievedCount" class="font-semibold"></span> 位師資已達標 12 小時
+                恭喜！有 <span id="targetAchievedCount" class="font-semibold"></span> 位師資已達標 <span id="targetHoursText">12</span> 小時
               </p>
             </div>
           </div>
@@ -1086,13 +1088,10 @@
           </div>
           <div>
             <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程類型</label>
-            <select id="courseType" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            <select id="courseType" data-options="courseType" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
               <option value="正課">正課</option>
-              <option value="補課">補課</option>
-              <option value="實驗課">實驗課</option>
-              <option value="實作課">實作課</option>
-              <option value="專題">專題</option>
             </select>
+            <!-- 選項依「帳號管理 → 選單管理 → 課程類型」產生 -->
           </div>
         </div>
 
@@ -1265,13 +1264,10 @@
           </div>
           <div>
             <label class="block font-medium text-gray-700 mb-2" style="font-size: 14px;">課程類型</label>
-            <select id="editCourseType" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            <select id="editCourseType" data-options="courseType" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" style="font-size: 15px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
               <option value="正課">正課</option>
-              <option value="補課">補課</option>
-              <option value="實驗課">實驗課</option>
-              <option value="實作課">實作課</option>
-              <option value="專題">專題</option>
             </select>
+            <!-- 選項依「帳號管理 → 選單管理 → 課程類型」產生 -->
           </div>
         </div>
 
@@ -1866,7 +1862,8 @@
       if (!date) return new Set();
       // 重新從 localStorage 取得最新請假資料
       try { teacherLeaves = JSON.parse(localStorage.getItem('teacherLeaves') || '[]'); } catch(e) {}
-      return new Set(teacherLeaves.filter(l => l.date === date).map(l => l.teacherId));
+      // 請假可以是一段日期（date～endDate）。以前只比第一天，連續請假的第二天起還排得進去
+      return new Set(teacherLeaves.filter(l => l.date && date >= l.date && date <= (l.endDate || l.date)).map(l => l.teacherId));
     }
 
     /**
@@ -2039,17 +2036,23 @@
         return { teacher, hours, courses };
       });
 
-      // 排序：已達標(>=12小時)排在前面，按時數降序
+      // 目標與提醒時數在「帳號管理 → 系統設定」改
+      const TARGET = Number(Site.get('teachingHoursTarget')) || 12;
+      const WARN = Number(Site.get('teachingHoursWarn'));
+      const targetText = document.getElementById('targetHoursText');
+      if (targetText) targetText.textContent = TARGET;
+
+      // 排序：已達標的排在前面，按時數降序
       teachersWithHours.sort((a, b) => {
-        const aAchieved = a.hours >= 12;
-        const bAchieved = b.hours >= 12;
+        const aAchieved = a.hours >= TARGET;
+        const bAchieved = b.hours >= TARGET;
         if (aAchieved && !bAchieved) return -1;
         if (!aAchieved && bAchieved) return 1;
         return b.hours - a.hours; // 同等級內按時數降序
       });
 
       // 計算達標人數並更新提醒
-      const achievedCount = teachersWithHours.filter(t => t.hours >= 12).length;
+      const achievedCount = teachersWithHours.filter(t => t.hours >= TARGET).length;
       const alertElement = document.getElementById('targetAchievedAlert');
       if (achievedCount > 0) {
         document.getElementById('targetAchievedCount').textContent = achievedCount;
@@ -2077,7 +2080,7 @@
       // 渲染師資列表
       listContainer.innerHTML = displayTeachers.map(item => {
         const { teacher, hours, courses } = item;
-        const percentage = Math.min((hours / 12) * 100, 100);
+        const percentage = Math.min((hours / TARGET) * 100, 100);
 
         // 門檻與判定完全沿用原本的：>=12 已達標、>=8 接近達標、其餘未達標。
         // 只改配色與樣式——原本是飽和色塊（bg-green-500 的粗條 + 白字藥丸），
@@ -2088,13 +2091,13 @@
         let barColor   = '#d03b3b';   // critical
         let trackColor = '#fbeaea';
         let statusInk  = 'text-red-700';
-        if (hours >= 12) {
+        if (hours >= TARGET) {
           statusText = '已達標';
           statusIcon = 'ph-check-circle';
           barColor   = '#0ca30c';     // good
           trackColor = '#e8f7e8';
           statusInk  = 'text-green-700';
-        } else if (hours >= 8) {
+        } else if (WARN > 0 && hours >= WARN) {
           statusText = '接近達標';
           statusIcon = 'ph-warning-circle';
           barColor   = '#fab219';     // warning
@@ -2150,7 +2153,7 @@
               </p>
 
               <div class="rounded-full overflow-hidden mt-2.5" style="height:6px; background:${trackColor}; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);"
-                   title="已累計 ${hoursValue} 小時，目標 12 小時">
+                   title="已累計 ${hoursValue} 小時，目標 ${TARGET} 小時">
                 <div class="rounded-full transition-all duration-500" style="width:${percentage}%; height:6px; background:${barColor};"></div>
               </div>
             </div>
@@ -2846,8 +2849,10 @@
       // 載入社交資料
       const courseComments = loadArray('comments').filter(c => c.courseId === courseId);
       const activityLogs = loadArray('activityLog').filter(a => a.courseId === courseId);
-      const currentUserId = 'user_1'; // 模擬當前用戶 ID
-      const currentUserName = '管理員'; // 模擬當前用戶名稱
+      // 留言與動態記錄掛真正登入的人（以前寫死成「管理員」，誰留言都算管理員）
+      const _me = Auth.getAuthData() || {};
+      const currentUserId = _me.username || 'unknown';
+      const currentUserName = Auth.displayName(_me);
 
       // 取得助教資訊
       const ta = course.taId ? teachers.find(t => t.id === course.taId) : null;
@@ -2942,7 +2947,7 @@
                   // 判斷標籤類型並給予對應顏色
                   let tagClass = 'tag-default';
                   let tagIcon = 'ph-tag';
-                  for (const [key, rule] of Object.entries(TAG_RULES)) {
+                  for (const [key, rule] of Object.entries(tagRules())) {
                     if (rule.keywords.includes(tag)) {
                       tagClass = rule.class;
                       tagIcon = rule.icon;
@@ -3232,7 +3237,7 @@
         console.warn('無法載入課程清單:', error);
       }
       document.getElementById('editCourseDate').value = course.date;
-      document.getElementById('editCourseType').value = course.type;
+      setSelectValue('editCourseType', course.type);
 
       const [startTime, endTime] = course.time.split('-');
       document.getElementById('editStartTime').value = startTime;
@@ -3245,7 +3250,7 @@
         // 從現有標籤恢復
         currentTags = course.tags.map(tagText => {
           // 檢查標籤類型
-          for (const [key, rule] of Object.entries(TAG_RULES)) {
+          for (const [key, rule] of Object.entries(tagRules())) {
             if (rule.keywords.includes(tagText)) {
               return {
                 text: tagText,
@@ -3310,11 +3315,7 @@
         newTime
       );
 
-      if (conflicts.length > 0) {
-        if (!confirm(`⚠️ 衝堂警告！\n\n${conflicts.join('\n')}\n\n是否仍要繼續？`)) {
-          return;
-        }
-      }
+      if (!allowDespiteConflict(conflicts, '儲存')) return;
 
       // 更新課程資料（包含自動生成的標籤）
       // 取得老師資訊
@@ -3474,11 +3475,7 @@
 
       // 衝堂檢查
       const conflicts = checkConflict(courseData);
-      if (conflicts.length > 0) {
-        if (!confirm(`⚠️ 衝堂警告！\n\n${conflicts.join('\n')}\n\n是否仍要繼續？`)) {
-          return;
-        }
-      }
+      if (!allowDespiteConflict(conflicts, '新增')) return;
 
       courseAssignments.push(courseData);
 
@@ -3597,8 +3594,9 @@
       await new Promise(r => setTimeout(r, 50));
       try {
         const wb = XLSX.utils.book_new();
-        const startDate = document.getElementById('startDate')?.value || '';
-        const endDate = document.getElementById('endDate')?.value || '';
+        // 以前讀的是不存在的 #startDate／#endDate，檔名永遠是「課程匯出__.xlsx」
+        const startDate = document.getElementById('dateRangeStart')?.value || '';
+        const endDate = document.getElementById('dateRangeEnd')?.value || '';
         const sheetName = '課程資料';
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
@@ -3647,47 +3645,77 @@
       return conflicts;
     }
 
+    // 課程類型的顏色依「選單管理 → 課程類型」的順序配，預設順序就是原本的藍、黃、紫、綠、紅。
+    // 只能用 shared/tailwind.css 裡有編譯進去的顏色
+    const COURSE_TYPE_COLORS = ['bg-blue-500', 'bg-yellow-500', 'bg-purple-500', 'bg-green-500', 'bg-red-500',
+                                'bg-indigo-500', 'bg-teal-500', 'bg-orange-500', 'bg-pink-500', 'bg-amber-500'];
     function getCourseTypeColor(type) {
-      const colors = {
-        '正課': 'bg-blue-500',
-        '補課': 'bg-yellow-500',
-        '實驗課': 'bg-purple-500',
-        '實作課': 'bg-green-500',
-        '專題': 'bg-red-500'
-      };
-      return colors[type] || 'bg-gray-500';
+      return Options.color('courseType', type, COURSE_TYPE_COLORS, 'bg-gray-500');
+    }
+
+    /** 把標了 data-options 的下拉選單依選單管理填好；目前的值不在清單裡也補上，存檔才不會被換掉 */
+    function fillOptionSelects() {
+      document.querySelectorAll('select[data-options]').forEach(sel => {
+        const key = sel.dataset.options;
+        const current = sel.value;
+        const items = Options.list(key).slice();
+        if (current && !items.some(o => o.value === current)) items.push({ value: current, label: Options.label(key, current) });
+        sel.innerHTML = items.map(o => `<option value="${escapeAttr(o.value)}">${escapeHtml(o.label)}</option>`).join('');
+        if (current) sel.value = current;
+      });
+    }
+
+    function setSelectValue(id, value) {
+      const sel = document.getElementById(id);
+      const v = value == null ? '' : String(value);
+      if (v && !Array.from(sel.options).some(o => o.value === v)) {
+        sel.insertAdjacentHTML('beforeend', `<option value="${escapeAttr(v)}">${escapeHtml(Options.label(sel.dataset.options || '', v))}</option>`);
+      }
+      sel.value = v;
+    }
+
+    /**
+     * 衝堂時要不要讓使用者照樣排：看「帳號管理 → 系統設定 → 同一位講師衝堂時」
+     * @returns {boolean} true＝可以繼續
+     */
+    function allowDespiteConflict(conflicts, action) {
+      if (!conflicts || !conflicts.length) return true;
+      if (Site.get('conflictPolicy') === 'block') {
+        alert(`⚠️ 衝堂，無法${action}\n\n${conflicts.join('\n')}\n\n系統設定為衝堂時直接擋下；請換時間或換講師。`);
+        return false;
+      }
+      return confirm(`⚠️ 衝堂警告！\n\n${conflicts.join('\n')}\n\n是否仍要繼續${action}？`);
+    }
+
+    /** 分享／複製課程的訊息：範本在「帳號管理 → 系統設定」改 */
+    function courseShareText(course) {
+      const teacher = teachers.find(t => t.id === course.teacherId);
+      const ta = course.taId ? teachers.find(t => t.id === course.taId) : null;
+      return Site.fill(Site.get('shareTemplate'), {
+        課程: courseDisplayName(course), 教師: teacher ? teacher.name : '未知', 助教: ta ? ta.name : '',
+        日期: course.date, 時間: course.time, 類型: Options.label('courseType', course.type), 備註: course.note || ''
+      });
     }
 
     // ==================== 自動標籤生成系統 ====================
 
     // 標籤關鍵字規則
-    const TAG_RULES = {
-      important: {
-        keywords: ['重要', '必須', '注意', '務必', '切記', '關鍵', '緊急'],
-        class: 'tag-important',
-        icon: 'ph-warning-circle'
-      },
-      exam: {
-        keywords: ['考試', '測驗', '評量', '期中', '期末', '小考', '大考'],
-        class: 'tag-exam',
-        icon: 'ph-file-text'
-      },
-      experiment: {
-        keywords: ['實驗', '實習', '實作', '實務', '操作', '練習'],
-        class: 'tag-experiment',
-        icon: 'ph-flask'
-      },
-      project: {
-        keywords: ['專題', '報告', '作業', '習題', '繳交', '截止'],
-        class: 'tag-project',
-        icon: 'ph-presentation-chart'
-      },
-      meeting: {
-        keywords: ['會議', '討論', '說明', '講解', '演講', '座談'],
-        class: 'tag-meeting',
-        icon: 'ph-users-three'
-      }
-    };
+    // 備註自動標籤：規則來自「帳號管理 → 選單管理 → 備註標籤」（顯示名稱＋關鍵字＋圖示）。
+    // 以前寫死成學校用語（期中、期末、作業），而且改不了。
+    // 內建的五組有自己的顏色樣式（tag-important 等），新增的組用預設樣式。
+    const BUILTIN_TAG_CLASSES = ['important', 'exam', 'experiment', 'project', 'meeting'];
+    function tagRules() {
+      const out = {};
+      Options.list('noteTag').forEach(o => {
+        out[o.value] = {
+          label: o.label,
+          keywords: String(o.sublabel || '').split(/[、,，\s]+/).map(x => x.trim()).filter(Boolean),
+          class: BUILTIN_TAG_CLASSES.includes(o.value) ? 'tag-' + o.value : 'tag-default',
+          icon: o.icon || 'ph-tag'
+        };
+      });
+      return out;
+    }
 
     let currentTags = [];
 
@@ -3706,7 +3734,7 @@
       const detectedTags = [];
 
       // 檢查每個規則
-      Object.entries(TAG_RULES).forEach(([key, rule]) => {
+      Object.entries(tagRules()).forEach(([key, rule]) => {
         rule.keywords.forEach(keyword => {
           if (noteText.includes(keyword)) {
             // 避免重複
@@ -3840,13 +3868,7 @@
       const course = courseAssignments.find(c => c.id === editingCourseId);
       if (!course) return;
 
-      const teacher = teachers.find(t => t.id === course.teacherId);
-      const courseText = `課程：${courseDisplayName(course)}\n` +
-                        `教師：${teacher ? teacher.name : '未知'}\n` +
-                        `日期：${course.date}\n` +
-                        `時間：${course.time}\n` +
-                        `類型：${course.type}\n` +
-                        `${course.note ? '備註：' + course.note : ''}`;
+      const courseText = courseShareText(course);
 
       try {
         // 使用現代 Clipboard API
@@ -3915,12 +3937,7 @@
         originalCourse.time
       );
 
-      if (conflicts.length > 0) {
-        const continueAnyway = confirm(
-          `⚠️ 衝堂警告！\n\n${conflicts.join('\n')}\n\n是否仍要繼續複製？`
-        );
-        if (!continueAnyway) return;
-      }
+      if (!allowDespiteConflict(conflicts, '複製')) return;
 
       // 建立新課程（複製所有資訊，僅改日期）
       const newCourseId = Date.now();
@@ -3996,8 +4013,7 @@
       const course = courseAssignments.find(c => c.id === editingCourseId);
       if (!course) return;
 
-      const teacher = teachers.find(t => t.id === course.teacherId);
-      _shareText = `課程資訊\n課程：${courseDisplayName(course)}\n教師：${teacher ? teacher.name : '未知'}\n日期：${course.date}\n時間：${course.time}\n類型：${course.type}`;
+      _shareText = courseShareText(course);
       _shareUrl = window.location.href;
 
       const modal = document.getElementById('shareModal');
@@ -4010,7 +4026,7 @@
     }
 
     function shareViaOutlook() {
-      const subject = encodeURIComponent('課程資訊分享');
+      const subject = encodeURIComponent(Site.get('shareSubject') || '課程資訊分享');
       const body = encodeURIComponent(_shareText + '\n\n連結：' + _shareUrl);
       window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
       closeShareModal();
@@ -4272,10 +4288,16 @@
     // ==================== 啟動應用 ====================
     window.addEventListener('DOMContentLoaded', () => {
       init();
+      fillOptionSelects();
       // 職級清單拿到後重畫講師選單，管理員改過的職級與排序才會反映出來。
       // 先用內建預設值畫，所以後端掛掉時選單照樣有東西。
       Options.ready().then(() => {
+        fillOptionSelects();
         if (typeof loadTeachers === 'function') loadTeachers();
+      });
+      // 時數目標等系統設定拿到最新的之後，重算一次時數分析
+      document.addEventListener('site:changed', () => {
+        if (typeof renderTeacherHoursAnalysis === 'function') renderTeacherHoursAnalysis();
       });
     });
   </script>
