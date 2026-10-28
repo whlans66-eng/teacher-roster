@@ -1289,6 +1289,8 @@
 
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <!-- 系統名稱、時數目標、分享訊息、AI 提問等在「帳號管理 → 系統設定」改 -->
+  <script src="js/site.js"></script>
   <script src="js/options.js"></script>
 </head>
 <body>
@@ -1308,7 +1310,7 @@
 
     <div class="page-title" style="margin-bottom: 40px;">
       <h1>智慧派課</h1>
-      <p>Intellegent Course Assignment System</p>
+      <p>Intelligent Course Assignment System</p>
     </div>
 
     <div class="segmented-control" style="max-width: 520px;">
@@ -1340,17 +1342,9 @@
         </div>
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
           <input type="text" id="maritimeSearchInput" placeholder="輸入課程名稱或關鍵字..." class="ios-input" oninput="displayMaritimeCourses()">
-          <select id="maritimeCategoryFilter" class="ios-input" onchange="displayMaritimeCourses()">
+          <!-- 選項由 fillOptionSelects() 依「選單管理 → 課程分類」產生 -->
+          <select id="maritimeCategoryFilter" class="ios-input" onchange="displayMaritimeCourses()" data-options="courseCategory" data-all="1">
             <option value="">所有分類</option>
-            <option value="01">01 船舶操縱與航行實務訓練</option>
-            <option value="02">02 領導統御與檢查應對管理</option>
-            <option value="03">03 事故案例分析與應變處置訓練</option>
-            <option value="04">04 船舶設備操作與技術知能訓練</option>
-            <option value="05">05 國際法規與環境合規知識</option>
-            <option value="06">06 船舶貨物裝卸作業實務</option>
-            <option value="07">07 船員經驗交流與職能回饋</option>
-            <option value="08">08 職級轉換與壓力調適</option>
-            <option value="09">09 其他</option>
           </select>
         </div>
       </div>
@@ -1450,10 +1444,8 @@
         <!-- 底部區域：快捷按鈕 + 輸入框 -->
         <div class="ai-chat-bottom">
           <div class="ai-quick-actions">
-            <button class="ai-quick-btn" onclick="sendAIQuickMessage('推薦大副適合的課程')"><i class="ph ph-user"></i> 推薦大副課程</button>
-            <button class="ai-quick-btn" onclick="sendAIQuickMessage('新進船員需要上哪些課？')"><i class="ph ph-users-three"></i> 新進船員課程</button>
-            <button class="ai-quick-btn" onclick="sendAIQuickMessage('領導統御相關的課程有哪些？')"><i class="ph ph-book-open"></i> 領導統御</button>
-            <button class="ai-quick-btn" onclick="sendAIQuickMessage('請分析目前課程分佈是否均衡')"><i class="ph ph-chart-pie"></i> 課程分佈分析</button>
+            <!-- 快速提問按鈕在「帳號管理 → 系統設定 → 智慧派課 AI 快速提問」改 -->
+            <span id="aiQuickPrompts" style="display:contents"></span>
             <button class="ai-quick-btn" onclick="openFeedbackMode()" style="background:rgba(255,149,0,0.18); color:#ff9500; border-color:rgba(255,149,0,0.35);"><i class="ph ph-chat-dots"></i> 反映課程意見</button>
             <button class="ai-quick-btn" onclick="sendAIQuickMessage('幫我新增一門課程')" style="background:rgba(52,199,89,0.18); color:#248a3d; border-color:rgba(52,199,89,0.35);"><i class="ph ph-plus-circle"></i> 新增課程</button>
           </div>
@@ -1471,7 +1463,7 @@
           </div>
           <div class="ai-chat-disclaimer">
             <span class="ai-chat-disclaimer-dot"></span>
-            智慧派課 AI 顧問由大型語言模型驅動，建議您對重要排程進行二次確認。
+            <span data-site="aiDisclaimer">智慧派課 AI 顧問由大型語言模型驅動，建議您對重要排程進行二次確認。</span>
             <span class="ai-chat-disclaimer-dot"></span>
           </div>
         </div>
@@ -1491,26 +1483,13 @@
             </div>
             <div>
               <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 6px;">分類</label>
-              <select id="maritimeCourseCategory" required class="ios-input">
+              <select id="maritimeCourseCategory" required class="ios-input" data-options="courseCategory">
                 <option value="">選擇分類</option>
-                <option value="01">01 船舶操縱與航行實務訓練</option>
-                <option value="02">02 領導統御與檢查應對管理</option>
-                <option value="03">03 事故案例分析與應變處置訓練</option>
-                <option value="04">04 船舶設備操作與技術知能訓練</option>
-                <option value="05">05 國際法規與環境合規知識</option>
-                <option value="06">06 船舶貨物裝卸作業實務</option>
-                <option value="07">07 船員經驗交流與職能回饋</option>
-                <option value="08">08 職級轉換與壓力調適</option>
-                <option value="09">09 其他</option>
               </select>
             </div>
             <div>
               <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 6px;">授課方式</label>
-              <select id="maritimeCourseMethod" required class="ios-input">
-                <option value="實體課程">實體課程</option>
-                <option value="線上課程">線上課程</option>
-                <option value="混合課程">混合課程</option>
-              </select>
+              <select id="maritimeCourseMethod" required class="ios-input" data-options="teachingMethod"></select>
             </div>
             <div>
               <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 6px;">課程時數（分鐘）</label>
@@ -1525,13 +1504,8 @@
           <div style="display: grid; grid-template-columns: auto 1fr; gap: 16px; margin-bottom: 16px; align-items: end;">
             <div>
               <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); margin-left: 4px; display: block; margin-bottom: 6px;">授課語言</label>
-              <div style="display: flex; gap: 6px;">
-                <button type="button" id="langBtnZhAdd" onclick="setMaritimeLang('zh')" class="lang-btn lang-btn-active">
-                  <i class="ph ph-chat-circle-text"></i> 中文
-                </button>
-                <button type="button" id="langBtnEnAdd" onclick="setMaritimeLang('en')" class="lang-btn">
-                  <i class="ph ph-globe"></i> 英文
-                </button>
+              <!-- 語言按鈕依「選單管理 → 授課語言」產生 -->
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="langGroupAdd">
               </div>
               <input type="hidden" id="maritimeCourseLang" value="zh">
             </div>
@@ -1636,25 +1610,12 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
           <div>
             <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">分類</label>
-            <select id="maritimeCourseCategoryModal" required class="ios-input">
-              <option value="01">01 船舶操縱與航行實務訓練</option>
-              <option value="02">02 領導統御與檢查應對管理</option>
-              <option value="03">03 事故案例分析與應變處置訓練</option>
-              <option value="04">04 船舶設備操作與技術知能訓練</option>
-              <option value="05">05 國際法規與環境合規知識</option>
-              <option value="06">06 船舶貨物裝卸作業實務</option>
-              <option value="07">07 船員經驗交流與職能回饋</option>
-              <option value="08">08 職級轉換與壓力調適</option>
-              <option value="09">09 其他</option>
+            <select id="maritimeCourseCategoryModal" required class="ios-input" data-options="courseCategory">
             </select>
           </div>
           <div>
             <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">授課方式</label>
-            <select id="maritimeCourseMethodModal" required class="ios-input">
-              <option value="實體課程">實體課程</option>
-              <option value="線上課程">線上課程</option>
-              <option value="混合課程">混合課程</option>
-            </select>
+            <select id="maritimeCourseMethodModal" required class="ios-input" data-options="teachingMethod"></select>
           </div>
           <div>
             <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">課程時數（分鐘）</label>
@@ -1670,13 +1631,7 @@
         <div style="display: grid; grid-template-columns: auto 1fr; gap: 16px; margin-bottom: 16px; align-items: end;">
           <div>
             <label style="font-size: 12px; font-weight: 600; color: var(--apple-gray); display: block; margin-bottom: 6px;">授課語言</label>
-            <div style="display: flex; gap: 6px;">
-              <button type="button" id="langBtnZh" onclick="setMaritimeLangModal('zh')" class="lang-btn lang-btn-active">
-                <i class="ph ph-chat-circle-text"></i> 中文
-              </button>
-              <button type="button" id="langBtnEn" onclick="setMaritimeLangModal('en')" class="lang-btn">
-                <i class="ph ph-globe"></i> 英文
-              </button>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="langGroupModal">
             </div>
             <input type="hidden" id="maritimeCourseLangModal" value="zh">
           </div>
@@ -1732,17 +1687,42 @@
     let maritimeCourses = [];
     let editingMaritimeCourseId = null;
 
-    const maritimeCategoryNames = {
-      '01': '船舶操縱與航行實務訓練',
-      '02': '領導統御與檢查應對管理',
-      '03': '事故案例分析與應變處置訓練',
-      '04': '船舶設備操作與技術知能訓練',
-      '05': '國際法規與環境合規知識',
-      '06': '船舶貨物裝卸作業實務',
-      '07': '船員經驗交流與職能回饋',
-      '08': '職級轉換與壓力調適',
-      '09': '其他'
-    };
+    // ── 顯示名稱、圖示、顏色：一律來自「帳號管理 → 選單管理」（js/options.js）──
+    // 這頁以前有十幾份寫死的對照表（分類名稱、短名稱、圖示、統計顏色、授課方式樣式、
+    // 語言、人員類別），彼此還對不上——圖示有兩種、還有一個清單裡根本沒有的「10 資料分析」。
+    // 管理者在選單管理改了名稱或新增分類，這頁現在會跟著變。
+    const maritimeCategoryNames = new Proxy({}, {
+      get: (_, code) => (typeof code === 'string' && code) ? Options.name('courseCategory', code) : undefined
+    });
+    const catShort = code => code ? Options.short('courseCategory', code) : '';
+    // 顏色不另外存：依選單裡的順序配色，管理者調整順序顏色就跟著換
+    const CAT_PALETTE = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#f97316', '#84cc16', '#ec4899', '#0ea5e9', '#a855f7', '#14b8a6'];
+    const catColor = code => Options.color('courseCategory', code, CAT_PALETTE, '#9ca3af');
+    const catIconName = code => Options.icon('courseCategory', code, 'ph-folder');
+    const METHOD_STYLES = [
+      { color: '#3b82f6', bgColor: '#eff6ff', borderColor: '#dbeafe', badge: 'badge-blue' },
+      { color: '#10b981', bgColor: '#ecfdf5', borderColor: '#d1fae5', badge: 'badge-green' },
+      { color: '#f59e0b', bgColor: '#fffbeb', borderColor: '#fef3c7', badge: 'badge-orange' }
+    ];
+    function methodStyle(method) {
+      const st = Options.color('teachingMethod', method, METHOD_STYLES, METHOD_STYLES[0]);
+      return Object.assign({ icon: Options.icon('teachingMethod', method, 'ph-question') }, st);
+    }
+    const rankNames = list => (Array.isArray(list) ? list : []).map(r => Options.label('crewRank', r));
+    const personnelName = v => Options.label('personnelType', v);
+    const langName = v => Options.label('courseLanguage', v || 'zh');
+
+    /** AI 可能回職級代碼（C/O）或中文（大副）：一律換成選單管理的代碼，對不上的丟掉 */
+    function aiMapRanks(list) {
+      const all = Options.all('crewRank');
+      const out = [];
+      (Array.isArray(list) ? list : []).forEach(r => {
+        const t = String(r || '').trim();
+        const hit = all.find(o => o.value === t) || all.find(o => o.label === t || o.sublabel === t);
+        if (hit && !out.includes(hit.value)) out.push(hit.value);
+      });
+      return out;
+    }
 
     // 切換頁面
     function switchMaritimeTab(tab) {
@@ -1847,9 +1827,16 @@
       // 先用內建預設值畫出來，再向後端要最新的清單並重畫（勾選狀態會保住）
       renderTargetPickers();
       renderModalTargetPickers();
+      fillOptionSelects();
+      renderLangButtons('langGroupAdd', 'maritimeCourseLang', 'setMaritimeLang');
+      renderLangButtons('langGroupModal', 'maritimeCourseLangModal', 'setMaritimeLangModal');
       Options.ready().then(() => {
         renderTargetPickers();
         renderModalTargetPickers();
+        fillOptionSelects();
+        renderLangButtons('langGroupAdd', 'maritimeCourseLang', 'setMaritimeLang');
+        renderLangButtons('langGroupModal', 'maritimeCourseLangModal', 'setMaritimeLangModal');
+        if (typeof displayMaritimeCourses === 'function') displayMaritimeCourses();
       });
 
       // 表單事件
@@ -2055,9 +2042,7 @@
       }
 
       html += filteredCourses.map((c, index) => {
-        let badgeColor = 'badge-blue';
-        if (c.method === '線上課程') badgeColor = 'badge-green';
-        if (c.method === '混合課程') badgeColor = 'badge-orange';
+        const badgeColor = methodStyle(c.method).badge;
 
         const scoreHtml = (smartMatchEnabled && c.matchScore !== undefined && c.matchScore > 0)
           ? `<span style="background:linear-gradient(135deg, #7c3aed, #6d28d9); color:white; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;">匹配 ${c.matchScore}%</span>`
@@ -2452,7 +2437,7 @@
           <div>
             <div style="font-weight:600; font-size:15px; margin-bottom:2px;">${c.name}</div>
             <div style="font-size:12px; color:#86868b;">
-              <span class="lang-badge ${c.lang === 'en' ? 'lang-badge-en' : 'lang-badge-zh'}">${c.lang === 'en' ? 'EN' : '中'}</span>${maritimeCategoryNames[c.category] || c.category}
+              <span class="lang-badge ${(c.lang || 'zh') === 'zh' ? 'lang-badge-zh' : 'lang-badge-en'}">${(c.lang || 'zh') === 'zh' ? '中' : escapeHtml(String(c.lang).toUpperCase().slice(0, 2))}</span>${maritimeCategoryNames[c.category] || c.category}
             </div>
           </div>
           ${_isReadOnly ? '' : `<button onclick="editMaritimeCourse(${c.id})" class="secondary-btn" style="padding:6px 16px; font-size:13px;">編輯</button>`}
@@ -2500,21 +2485,9 @@
       const categoryName = maritimeCategoryNames[course.category] || course.category;
       const keywordCount = (course.keywords || []).length;
 
-      // 授課方式圖標和顏色
-      const methodConfig = {
-        '實體課程': { icon: 'ph-buildings', color: '#3b82f6', bgColor: '#eff6ff', borderColor: '#dbeafe' },
-        '線上課程': { icon: 'ph-laptop', color: '#10b981', bgColor: '#ecfdf5', borderColor: '#d1fae5' },
-        '混合課程': { icon: 'ph-arrows-clockwise', color: '#10b981', bgColor: '#ecfdf5', borderColor: '#d1fae5' }
-      };
-      const method = methodConfig[course.method] || methodConfig['實體課程'];
-
-      // 分類圖標
-      const categoryIcons = {
-        '01': 'ph-anchor', '02': 'ph-users-three', '03': 'ph-warning-circle',
-        '04': 'ph-gear', '05': 'ph-globe', '06': 'ph-package',
-        '07': 'ph-chat-circle-dots', '08': 'ph-arrow-u-up-left', '09': 'ph-dots-three'
-      };
-      const catIcon = categoryIcons[course.category] || 'ph-folder';
+      // 授課方式的圖示與顏色、分類圖示：來自選單管理
+      const method = methodStyle(course.method);
+      const catIcon = catIconName(course.category);
 
       const content = document.getElementById('courseDetailContent');
       content.innerHTML = `
@@ -2535,7 +2508,7 @@
                 </span>
                 <span class="header-badge header-badge-indigo">
                   <i class="ph ph-globe"></i>
-                  ${course.category} ${categoryName}
+                  ${escapeHtml(Options.label('courseCategory', course.category) || categoryName || '')}
                 </span>
               </div>
 
@@ -2667,9 +2640,9 @@
                       <div class="target-section-label">人員類別</div>
                       <div class="target-badges">
                         ${course.targetCategories.map(cat => `
-                          <span class="target-badge ${cat === 'existing' ? 'target-badge-blue' : 'target-badge-green'}">
-                            <i class="ph ${cat === 'existing' ? 'ph-check-circle' : 'ph-user-plus'}"></i>
-                            ${cat === 'existing' ? '現有船員' : '新進船員'}
+                          <span class="target-badge ${cat === 'new' ? 'target-badge-green' : 'target-badge-blue'}">
+                            <i class="ph ${escapeAttr(Options.icon('personnelType', cat, 'ph-user'))}"></i>
+                            ${escapeHtml(personnelName(cat))}
                           </span>
                         `).join('')}
                       </div>
@@ -2783,11 +2756,11 @@
                 </h3>
                 <div class="sidebar-info-box sidebar-info-box-blue">
                   <div class="sidebar-info-icon sidebar-info-icon-blue">
-                    <i class="ph ${course.lang === 'en' ? 'ph-globe' : 'ph-chat-circle-text'}"></i>
+                    <i class="ph ${(course.lang || 'zh') === 'zh' ? 'ph-chat-circle-text' : 'ph-globe'}"></i>
                   </div>
                   <div class="sidebar-info-text">
-                    <span class="sidebar-info-main">${course.lang === 'en' ? '英文' : '中文'}</span>
-                    <span class="sidebar-info-sub">${course.lang === 'en' ? 'English' : 'Mandarin Chinese'}</span>
+                    <span class="sidebar-info-main">${escapeHtml(langName(course.lang))}</span>
+                    <span class="sidebar-info-sub">${escapeHtml((Options.all('courseLanguage').find(o => o.value === (course.lang || 'zh')) || {}).sublabel || '')}</span>
                   </div>
                 </div>
               </div>
@@ -2864,40 +2837,11 @@
       });
     }
 
-    // 取得分類圖示
-    function getCategoryIcon(category) {
-      const icons = {
-        '01': '<i class="ph ph-anchor"></i>',
-        '02': '<i class="ph ph-users-three"></i>',
-        '03': '<i class="ph ph-warning-circle"></i>',
-        '04': '<i class="ph ph-gear"></i>',
-        '05': '<i class="ph ph-scales"></i>',
-        '06': '<i class="ph ph-package"></i>',
-        '07': '<i class="ph ph-chat-circle-dots"></i>',
-        '08': '<i class="ph ph-arrow-u-up-left"></i>',
-        '09': '<i class="ph ph-dots-three"></i>'
-      };
-      return icons[category] || '<i class="ph ph-folder"></i>';
-    }
-
-    // 取得授課方式背景色
-    function getMethodBackground(method) {
-      const backgrounds = {
-        '實體課程': 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-        '線上課程': 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-        '混合課程': 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)'
-      };
-      return backgrounds[method] || 'linear-gradient(135deg, #f5f5f7 0%, #e5e5ea 100%)';
-    }
-
     // 取得授課方式說明
     function getMethodDescription(method) {
-      const descriptions = {
-        '實體課程': '面對面課堂教學，互動性強',
-        '線上課程': '遠距線上授課，時間彈性',
-        '混合課程': '結合實體與線上的混合式教學'
-      };
-      return descriptions[method] || '授課方式待定';
+      // 說明就是選單管理裡授課方式的「說明」欄
+      const hit = Options.all('teachingMethod').find(o => o.value === String(method || ''));
+      return (hit && hit.sublabel) || '授課方式待定';
     }
 
     // ── 適用對象的選項渲染 ──
@@ -3061,8 +3005,8 @@
       if (!c) return;
 
       document.getElementById('maritimeCourseNameModal').value = c.name;
-      document.getElementById('maritimeCourseCategoryModal').value = c.category;
-      document.getElementById('maritimeCourseMethodModal').value = c.method;
+      setSelectValue('maritimeCourseCategoryModal', c.category);
+      setSelectValue('maritimeCourseMethodModal', c.method);
       document.getElementById('maritimeCourseDurationModal').value = c.duration || '';
       document.getElementById('maritimeCourseDescriptionModal').value = c.description;
       setMaritimeLangModal(c.lang || 'zh');
@@ -3095,16 +3039,60 @@
       editingMaritimeCourseId = null;
     }
 
+    // 語言按鈕：依「選單管理 → 授課語言」產生。課程目前的語言若已停用，也要畫出來，不然存檔會被換掉
+    function renderLangButtons(groupId, inputId, setter) {
+      const box = document.getElementById(groupId);
+      if (!box) return;
+      const current = document.getElementById(inputId).value || 'zh';
+      const items = Options.list('courseLanguage').slice();
+      if (current && !items.some(o => o.value === current) && Options.has('courseLanguage', current)) {
+        items.push(Options.all('courseLanguage').find(o => o.value === current));
+      }
+      box.innerHTML = items.map(o => `
+        <button type="button" class="lang-btn${o.value === current ? ' lang-btn-active' : ''}" data-lang="${escapeAttr(o.value)}"
+                onclick="${setter}('${escapeAttr(o.value)}')">
+          <i class="ph ${escapeAttr(o.icon || (o.value === 'zh' ? 'ph-chat-circle-text' : 'ph-globe'))}"></i> ${escapeHtml(o.label)}
+        </button>`).join('');
+    }
+
     function setMaritimeLang(lang) {
       document.getElementById('maritimeCourseLang').value = lang;
-      document.getElementById('langBtnZhAdd').classList.toggle('lang-btn-active', lang === 'zh');
-      document.getElementById('langBtnEnAdd').classList.toggle('lang-btn-active', lang === 'en');
+      renderLangButtons('langGroupAdd', 'maritimeCourseLang', 'setMaritimeLang');
     }
 
     function setMaritimeLangModal(lang) {
       document.getElementById('maritimeCourseLangModal').value = lang;
-      document.getElementById('langBtnZh').classList.toggle('lang-btn-active', lang === 'zh');
-      document.getElementById('langBtnEn').classList.toggle('lang-btn-active', lang === 'en');
+      renderLangButtons('langGroupModal', 'maritimeCourseLangModal', 'setMaritimeLangModal');
+    }
+
+    /**
+     * 把標了 data-options 的下拉選單依「選單管理」填好。
+     * 第一個選項如果是空值（「所有分類」「選擇分類」）就保留；
+     * 目前選到的值若已停用或不在清單裡，也補一個選項，存檔才不會被悄悄換掉。
+     */
+    function fillOptionSelects() {
+      document.querySelectorAll('select[data-options]').forEach(sel => {
+        const key = sel.dataset.options;
+        const current = sel.value;
+        const keepFirst = sel.options.length && sel.options[0].value === '' ? sel.options[0].outerHTML : '';
+        const items = Options.list(key).slice();
+        if (current && !items.some(o => o.value === current)) {
+          items.push({ value: current, label: Options.label(key, current) + (Options.has(key, current) ? '（已停用）' : '') });
+        }
+        sel.innerHTML = keepFirst + items.map(o =>
+          `<option value="${escapeAttr(o.value)}">${escapeHtml(o.label)}</option>`).join('');
+        if (current) sel.value = current;
+      });
+    }
+
+    /** 設定某個下拉選單的值；值不在清單裡就先補上再選，避免顯示成空白 */
+    function setSelectValue(id, value) {
+      const sel = document.getElementById(id);
+      const v = value == null ? '' : String(value);
+      if (v && !Array.from(sel.options).some(o => o.value === v)) {
+        sel.insertAdjacentHTML('beforeend', `<option value="${escapeAttr(v)}">${escapeHtml(Options.label(sel.dataset.options || '', v))}</option>`);
+      }
+      sel.value = v;
     }
 
     // ── 教材檔案上傳功能 ─────────────────────────────────
@@ -3340,24 +3328,19 @@
       // 從真實的 maritimeCourses 計算統計
       const totalCourses = maritimeCourses.length;
 
-      // 定義分類名稱和顏色
-      const categoryNames = {
-        '01': { name: '船舶操縱與航行實務訓練', color: '#4f46e5' },
-        '02': { name: '領導統御與檢查應對管理', color: '#06b6d4' },
-        '03': { name: '事故案例分析與應變處置訓練', color: '#10b981' },
-        '04': { name: '船舶設備操作與技術知能訓練', color: '#f59e0b' },
-        '05': { name: '國際法規與環境合規知識', color: '#ef4444' },
-        '06': { name: '船舶貨物裝卸作業實務', color: '#8b5cf6' },
-        '07': { name: '船員經驗交流與職能回饋', color: '#f97316' },
-        '08': { name: '職級轉換與壓力調適', color: '#84cc16' },
-        '09': { name: '其他', color: '#ec4899' }
-      };
+      // 分類名稱與顏色：依選單管理（以前這裡只認寫死的 9 個代碼，新增的分類算進總數卻不會顯示）
+      const categoryNames = {};
+      Options.all('courseCategory').forEach(o => {
+        categoryNames[o.value] = { name: Options.name('courseCategory', o.value), color: catColor(o.value) };
+      });
 
       // 統計每個分類的課程數量
       const categoryCounts = {};
       maritimeCourses.forEach(course => {
         const cat = course.category || '09';
         categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+        // 選單裡沒有的代碼也要算進去，不然各分類加起來不會等於總數
+        if (!categoryNames[cat]) categoryNames[cat] = { name: cat, color: '#9ca3af' };
       });
 
       // 建立完整的 categories 物件
@@ -3370,12 +3353,12 @@
       });
 
       // 找出最熱門的分類
-      let popularCategory = '09其他';
+      let popularCategory = '—';
       let maxCount = 0;
       Object.entries(categories).forEach(([code, cat]) => {
         if (cat.count > maxCount) {
           maxCount = cat.count;
-          popularCategory = code + cat.name;
+          popularCategory = Options.label('courseCategory', code) || cat.name;
         }
       });
 
@@ -3425,7 +3408,7 @@
         const percentage = totalCourses > 0 ? (cat.count / totalCourses) * 100 : 0;
         return `
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-            <div style="font-size:12px; width:140px; color: #1d1d1f;">${code} ${cat.name}</div>
+            <div style="font-size:12px; width:140px; color: #1d1d1f;">${escapeHtml(Options.label('courseCategory', code) || cat.name)}</div>
             <div style="flex:1; background:#e5e5ea; height:8px; border-radius:4px; overflow: hidden;">
               <div style="width:${percentage}%; background:${cat.color}; height:100%; border-radius:4px; transition: width 0.3s;"></div>
             </div>
@@ -3440,12 +3423,15 @@
       let currentAngle = 0;
       const pieChart = document.getElementById('maritimePieChart');
 
-      activeCategories.forEach((code, index) => {
+      // 圓餅圖直接在這裡組 conic-gradient。以前 CSS 寫死 9 個顏色、用代碼當角度變數的編號，
+      // 中間有空分類時顏色就錯位，第 10 個分類根本畫不出來
+      const stops = activeCategories.map(code => {
         const cat = categories[code];
-        const percentage = totalCourses > 0 ? (cat.count / totalCourses) * 360 : 0;
-        currentAngle += percentage;
-        pieChart.style.setProperty(`--angle${parseInt(code)}`, `${currentAngle}deg`);
+        const start = currentAngle;
+        currentAngle += totalCourses > 0 ? (cat.count / totalCourses) * 360 : 0;
+        return `${cat.color} ${start}deg ${currentAngle}deg`;
       });
+      pieChart.style.background = stops.length ? `conic-gradient(from 0deg, ${stops.join(', ')})` : '#e5e5ea';
 
       // 圓餅圖圖例
       const legend = document.getElementById('maritimeChartLegend');
@@ -3462,8 +3448,9 @@
       }).join('');
 
       // 授課方式統計
-      const methodColors = { 實體課程: '#3b82f6', 線上課程: '#10b981', 混合課程: '#f59e0b', 未設定: '#6b7280' };
-      const methodIcons = { 實體課程: '<i class="ph ph-buildings"></i>', 線上課程: '<i class="ph ph-laptop"></i>', 混合課程: '<i class="ph ph-arrows-clockwise"></i>', 未設定: '<i class="ph ph-question"></i>' };
+      // 授課方式的顏色依選單順序、圖示用選單裡的圖示
+      const methodColors = new Proxy({}, { get: (_, m) => m === '未設定' ? '#6b7280' : methodStyle(m).color });
+      const methodIcons = new Proxy({}, { get: (_, m) => `<i class="ph ${m === '未設定' ? 'ph-question' : methodStyle(m).icon}"></i>` });
 
       document.getElementById('maritimeMethodStats').innerHTML = Object.entries(methods).map(([method, data]) => {
         const angle = totalCourses > 0 ? (data.count / totalCourses) * 360 : 0;
@@ -4018,6 +4005,23 @@
       }, 1000);
     }
 
+    /** 快速提問按鈕：「按鈕文字｜送出的問題」，在帳號管理 → 系統設定改 */
+    function renderAIQuickPrompts() {
+      const box = document.getElementById('aiQuickPrompts');
+      if (!box) return;
+      box.innerHTML = (Site.get('aiQuickPrompts') || []).map((item, i) => {
+        const p = Site.splitPrompt(item);
+        return `<button class="ai-quick-btn" data-q="${i}"><i class="ph ph-chat-circle"></i> ${escapeHtml(p.label)}</button>`;
+      }).join('');
+      box.querySelectorAll('[data-q]').forEach(btn => {
+        btn.addEventListener('click', () => sendAIQuickMessage(Site.splitPrompt(Site.get('aiQuickPrompts')[Number(btn.dataset.q)]).prompt));
+      });
+    }
+    document.addEventListener('DOMContentLoaded', renderAIQuickPrompts);
+    document.addEventListener('site:changed', renderAIQuickPrompts);
+    // 選單（分類名稱、授課方式）在別處改了：重畫清單
+    document.addEventListener('site:changed', () => { if (typeof displayMaritimeCourses === 'function') displayMaritimeCourses(); });
+
     function sendAIQuickMessage(text) {
       if (_aiCooldownTimer) {
         showMaritimeMessage('AI 冷卻中，請稍候…', 'info');
@@ -4053,18 +4057,17 @@
       if (action.type === 'CREATE_COURSE') {
         title.textContent = '新增課程確認';
         const d = action.data;
-        const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
         body.innerHTML = `
           <div style="display:grid;gap:8px;">
             <div><span style="font-weight:600;color:#86868b;font-size:12px;">課程名稱</span><div style="font-size:15px;font-weight:700;color:#1d1d1f;margin-top:2px;">${d.name || '（未設定）'}</div></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-              <div><span style="font-weight:600;color:#86868b;font-size:12px;">分類</span><div style="margin-top:2px;">${catMap[d.category] || d.category || '未設定'}</div></div>
+              <div><span style="font-weight:600;color:#86868b;font-size:12px;">分類</span><div style="margin-top:2px;">${escapeHtml(Options.label('courseCategory', d.category) || '未設定')}</div></div>
               <div><span style="font-weight:600;color:#86868b;font-size:12px;">授課方式</span><div style="margin-top:2px;">${d.method || '未設定'}</div></div>
               <div><span style="font-weight:600;color:#86868b;font-size:12px;">時數（分鐘）</span><div style="margin-top:2px;">${d.duration || 0}</div></div>
             </div>
             <div><span style="font-weight:600;color:#86868b;font-size:12px;">課程描述</span><div style="margin-top:2px;font-size:13px;">${d.description || '（無）'}</div></div>
             <div><span style="font-weight:600;color:#86868b;font-size:12px;">關鍵字</span><div style="margin-top:4px;">${(d.keywords||[]).map(k=>`<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:6px;font-size:12px;margin-right:4px;">${k}</span>`).join('') || '（無）'}</div></div>
-            <div><span style="font-weight:600;color:#86868b;font-size:12px;">適用對象</span><div style="margin-top:2px;font-size:13px;">${(d.targetRanks||[]).join('、') || '全員'}</div></div>
+            <div><span style="font-weight:600;color:#86868b;font-size:12px;">適用對象</span><div style="margin-top:2px;font-size:13px;">${escapeHtml(rankNames(aiMapRanks(d.targetRanks)).join('、')) || '全員'}</div></div>
           </div>`;
       } else if (action.type === 'UPDATE_COURSE') {
         title.textContent = '修改課程確認';
@@ -4103,17 +4106,21 @@
           if (!courseName) { alert('課程名稱不能為空'); btn.disabled = false; btn.innerHTML = '<i class="ph ph-check-circle"></i> 確認執行'; return; }
           const duplicate = maritimeCourses.find(c => c.name.trim() === courseName);
           if (duplicate) { alert(`課程「${courseName}」已存在，無法重複新增。`); closeAIActionModal(); return; }
+          // AI 給的分類、授課方式、職級要對回選單管理的代碼。以前直接存，
+          // AI 寫「大副」而不是 C/O，船員依職級篩課程時就永遠對不上
+          const firstCat = (Options.list('courseCategory')[0] || {}).value || '09';
+          const firstMethod = (Options.list('teachingMethod')[0] || {}).value || '實體課程';
           const course = {
             id: Date.now(),
             name: courseName,
-            category: d.category || '09',
-            method: d.method || '實體課程',
+            category: Options.has('courseCategory', d.category) ? String(d.category) : firstCat,
+            method: Options.has('teachingMethod', d.method) ? String(d.method) : firstMethod,
             duration: parseInt(d.duration) || 0,
             description: d.description || '',
             keywords: Array.isArray(d.keywords) ? d.keywords : [],
-            targetCategories: Array.isArray(d.targetCategories) ? d.targetCategories : [],
-            targetRanks: Array.isArray(d.targetRanks) ? d.targetRanks : [],
-            lang: 'zh', link: ''
+            targetCategories: (Array.isArray(d.targetCategories) ? d.targetCategories : []).filter(v => Options.has('personnelType', v)),
+            targetRanks: aiMapRanks(d.targetRanks),
+            lang: Options.has('courseLanguage', d.lang) ? String(d.lang) : 'zh', link: ''
           };
           maritimeCourses.push(course);
           await saveMaritimeCourses();
@@ -4280,23 +4287,22 @@
 
     function maritimeExportFileName(ext, fileTag) {
       const today = new Date().toLocaleDateString('zh-TW').replace(/\//g, '-');
-      return `萬海訓練課程${fileTag ? '_' + fileTag : ''}_${today}.${ext}`;
+      return `${Site.get('systemName')}_課程${fileTag ? '_' + fileTag : ''}_${today}.${ext}`.replace(/[\\/:*?"<>|]/g, '');
     }
 
     function exportToExcel() {
       if (typeof XLSX === 'undefined') { showMaritimeMessage('Excel 匯出模組載入中，請稍後再試', 'info'); return; }
       const scope = getMaritimeExportScope();
       if (scope.courses.length === 0) { showMaritimeMessage('目前沒有可匯出的課程', 'info'); return; }
-      const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
       const rows = scope.courses.map(c => ({
         '課程名稱': c.name || '',
-        '分類': (catMap[c.category] || c.category || ''),
+        '分類': catShort(c.category),
         '授課方式': c.method || '',
         '時數(分鐘)': c.duration || 0,
-        '語言': c.lang || 'zh',
+        '語言': langName(c.lang),
         '關鍵字': Array.isArray(c.keywords) ? c.keywords.join('、') : '',
-        '適用職等': Array.isArray(c.targetRanks) ? c.targetRanks.join('、') : '',
-        '適用類別': Array.isArray(c.targetCategories) ? c.targetCategories.map(t=>t==='existing'?'現有船員':'新進船員').join('、') : '',
+        '適用職等': rankNames(c.targetRanks).join('、'),
+        '適用類別': (Array.isArray(c.targetCategories) ? c.targetCategories : []).map(personnelName).join('、'),
         '課程描述': c.description || '',
         '課程連結': c.link || ''
       }));
@@ -4312,13 +4318,13 @@
     function exportToPDF() {
       const scope = getMaritimeExportScope();
       if (scope.courses.length === 0) { showMaritimeMessage('目前沒有可匯出的課程', 'info'); return; }
-      const catMap = {'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+
       const printArea = document.getElementById('pdfPrintArea');
       const today = new Date().toLocaleDateString('zh-TW');
       printArea.innerHTML = `
         <div style="font-family:-apple-system,sans-serif;color:#1d1d1f;max-width:900px;margin:0 auto;">
           <div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #007aff;">
-            <h1 style="font-size:22px;font-weight:700;margin:0 0 4px;">萬海智慧航安訓練管理系統</h1>
+            <h1 style="font-size:22px;font-weight:700;margin:0 0 4px;">${escapeHtml(Site.get('systemName'))}</h1>
             <h2 style="font-size:16px;font-weight:500;color:#6b7280;margin:0;">課程清單・${escapeHtml(scope.label)}（共 ${scope.courses.length} 門）　列印日期：${today}</h2>
           </div>
           <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -4336,11 +4342,11 @@
               ${scope.courses.map((c,i)=>`
                 <tr style="background:${i%2===0?'#fff':'#f9fafb'};">
                   <td style="padding:8px;border:1px solid #e5e7eb;font-weight:600;">${c.name||''}</td>
-                  <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;">${catMap[c.category]||c.category||''}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;">${escapeHtml(catShort(c.category))}</td>
                   <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;font-size:11px;">${c.method||''}</td>
                   <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;">${c.duration||0}分</td>
                   <td style="padding:8px;border:1px solid #e5e7eb;font-size:11px;">${Array.isArray(c.keywords)?c.keywords.join('、'):''}</td>
-                  <td style="padding:8px;border:1px solid #e5e7eb;font-size:11px;">${Array.isArray(c.targetRanks)?c.targetRanks.join('、'):'全員'}</td>
+                  <td style="padding:8px;border:1px solid #e5e7eb;font-size:11px;">${escapeHtml(rankNames(c.targetRanks).join('、')) || '全員'}</td>
                 </tr>`).join('')}
             </tbody>
           </table>
@@ -4356,15 +4362,15 @@
       if (typeof PptxGenJS === 'undefined') { showMaritimeMessage('PPT 匯出模組載入中，請稍後再試', 'info'); return; }
       const scope = getMaritimeExportScope();
       if (scope.courses.length === 0) { showMaritimeMessage('目前沒有可匯出的課程', 'info'); return; }
-      const catMap ={'01':'船舶操縱','02':'領導統御','03':'事故分析','04':'設備操作','05':'法規知識','06':'貨物裝卸','07':'經驗交流','08':'職級轉換','09':'其他','10':'資料分析'};
+
       const pptx = new PptxGenJS();
       pptx.layout = 'LAYOUT_WIDE';
-      pptx.author = '萬海智慧航安訓練管理系統';
+      pptx.author = Site.get('systemName');
 
       // 封面頁
       const cover = pptx.addSlide();
       cover.background = { color: '0051d5' };
-      cover.addText('萬海智慧航安訓練管理系統', { x:0.5, y:2.5, w:'90%', fontSize:32, bold:true, color:'FFFFFF', align:'center' });
+      cover.addText(Site.get('systemName'), { x:0.5, y:2.5, w:'90%', fontSize:32, bold:true, color:'FFFFFF', align:'center' });
       cover.addText(`課程資料總覽・${scope.label}`, { x:0.5, y:3.4, w:'90%', fontSize:20, color:'BFD7FF', align:'center' });
       cover.addText(`共 ${scope.courses.length} 門課程　${new Date().toLocaleDateString('zh-TW')}`, { x:0.5, y:4.2, w:'90%', fontSize:14, color:'93C5FD', align:'center' });
 
@@ -4383,9 +4389,9 @@
           const y = 0.7 + row * 1.55;
           slide.addShape(pptx.ShapeType.rect, { x, y, w:5.9, h:1.45, fill:{color:'FFFFFF'}, line:{color:'E5E7EB',width:0.5}, rectRadius:0.12 });
           slide.addText(c.name || '未命名', { x:x+0.15, y:y+0.08, w:5.6, fontSize:11, bold:true, color:'1D1D1F' });
-          slide.addText(`${catMap[c.category]||c.category||''}  ·  ${c.method||''}  ·  ${c.duration||0} 分鐘`, { x:x+0.15, y:y+0.38, w:5.6, fontSize:9, color:'6B7280' });
+          slide.addText(`${catShort(c.category)}  ·  ${c.method||''}  ·  ${c.duration||0} 分鐘`, { x:x+0.15, y:y+0.38, w:5.6, fontSize:9, color:'6B7280' });
           slide.addText(Array.isArray(c.keywords) && c.keywords.length ? '🏷 ' + c.keywords.slice(0,4).join('、') : '', { x:x+0.15, y:y+0.62, w:5.6, fontSize:9, color:'1D4ED8' });
-          slide.addText(Array.isArray(c.targetRanks) && c.targetRanks.length ? '👤 ' + c.targetRanks.slice(0,4).join('、') : '適用全員', { x:x+0.15, y:y+0.88, w:5.6, fontSize:9, color:'374151' });
+          slide.addText(Array.isArray(c.targetRanks) && c.targetRanks.length ? '👤 ' + rankNames(c.targetRanks).slice(0,4).join('、') : '適用全員', { x:x+0.15, y:y+0.88, w:5.6, fontSize:9, color:'374151' });
         });
       }
 

@@ -28,7 +28,7 @@ const MAX_UPLOAD_SIZE = 24 * 1024 * 1024; // 24MB（編碼後約 32MB）
 // 後端版本。前端 js/api.js 的 REQUIRED_BACKEND_VERSION 比這個新時，
 // 帳號管理頁會提示「Apps Script 要重新部署」，不用等到某個按鈕壞掉才發現。
 // 每次修改這個檔案並重新部署時，把日期改成當天。
-const BACKEND_VERSION = '2026-10-28';
+const BACKEND_VERSION = '2026-10-28.2';
 
 // 系統角色（單一來源；前端 js/auth.js 的 ROLES 必須與此一致）
 const USER_ROLES = ['admin', 'teacher', 'crew', 'guest'];
@@ -769,7 +769,12 @@ const OPTION_LISTS = {
   teacherType:    { label: '師資類別',   grouped: false },
   workLocation:   { label: '工作狀態',   grouped: false },
   courseCategory: { label: '課程分類',   grouped: false },
-  teachingMethod: { label: '授課方式',   grouped: false }
+  teachingMethod: { label: '授課方式',   grouped: false },
+  // 以下四份以前寫死在頁面裡（課程類型三份、標籤規則一份、請假原因只是 placeholder）
+  courseType:     { label: '課程類型',   grouped: false },
+  courseLanguage: { label: '授課語言',   grouped: false },
+  leaveReason:    { label: '請假原因',   grouped: false },
+  noteTag:        { label: '備註標籤',   grouped: false }
 };
 
 // 種子資料。sortOrder 對職級來說同時也是「階層順序」——
@@ -809,19 +814,43 @@ const OPTION_DEFAULTS = [
   ['workLocation', 'onshore', '在岸', '陸地工作', '', 20, true, 'ph-building'],
   ['workLocation', 'retired', '退休', '已退休',   '', 30, true, 'ph-armchair'],
 
-  ['courseCategory', '01', '01 船舶操縱與航行實務訓練',   '', '', 10, true, ''],
-  ['courseCategory', '02', '02 領導統御與檢查應對管理',   '', '', 20, true, ''],
-  ['courseCategory', '03', '03 事故案例分析與應變處置訓練', '', '', 30, true, ''],
-  ['courseCategory', '04', '04 船舶設備操作與技術知能訓練', '', '', 40, true, ''],
-  ['courseCategory', '05', '05 國際法規與環境合規知識',   '', '', 50, true, ''],
-  ['courseCategory', '06', '06 船舶貨物裝卸作業實務',     '', '', 60, true, ''],
-  ['courseCategory', '07', '07 船員經驗交流與職能回饋',   '', '', 70, true, ''],
-  ['courseCategory', '08', '08 職級轉換與壓力調適',       '', '', 80, true, ''],
-  ['courseCategory', '09', '09 其他',                     '', '', 90, true, ''],
+  // 課程分類的副標＝短名稱（圖表、匯出、雷達圖用），圖示用在學習路徑與課程卡
+  ['courseCategory', '01', '01 船舶操縱與航行實務訓練',   '船舶操縱', '', 10, true, 'ph-anchor'],
+  ['courseCategory', '02', '02 領導統御與檢查應對管理',   '領導統御', '', 20, true, 'ph-users-three'],
+  ['courseCategory', '03', '03 事故案例分析與應變處置訓練', '事故應變', '', 30, true, 'ph-warning-circle'],
+  ['courseCategory', '04', '04 船舶設備操作與技術知能訓練', '設備操作', '', 40, true, 'ph-gear'],
+  ['courseCategory', '05', '05 國際法規與環境合規知識',   '法規知識', '', 50, true, 'ph-scales'],
+  ['courseCategory', '06', '06 船舶貨物裝卸作業實務',     '貨物裝卸', '', 60, true, 'ph-package'],
+  ['courseCategory', '07', '07 船員經驗交流與職能回饋',   '經驗交流', '', 70, true, 'ph-chat-circle-dots'],
+  ['courseCategory', '08', '08 職級轉換與壓力調適',       '職級轉換', '', 80, true, 'ph-arrow-u-up-left'],
+  ['courseCategory', '09', '09 其他',                     '其他',     '', 90, true, 'ph-dots-three'],
 
   ['teachingMethod', '實體課程', '實體課程', '面對面課堂教學，互動性強',   '', 10, true, 'ph-chalkboard-teacher'],
   ['teachingMethod', '線上課程', '線上課程', '遠距線上授課，時間彈性',     '', 20, true, 'ph-monitor-play'],
-  ['teachingMethod', '混合課程', '混合課程', '結合實體與線上的混合式教學', '', 30, true, 'ph-shuffle']
+  ['teachingMethod', '混合課程', '混合課程', '結合實體與線上的混合式教學', '', 30, true, 'ph-shuffle'],
+
+  // 課程類型：顏色依清單順序自動配，預設順序就是原本的藍、黃、紫、綠、紅
+  ['courseType', '正課',   '正課',   '', '', 10, true, ''],
+  ['courseType', '補課',   '補課',   '', '', 20, true, ''],
+  ['courseType', '實驗課', '實驗課', '', '', 30, true, ''],
+  ['courseType', '實作課', '實作課', '', '', 40, true, ''],
+  ['courseType', '專題',   '專題',   '', '', 50, true, ''],
+
+  ['courseLanguage', 'zh', '中文', 'Mandarin Chinese', '', 10, true, ''],
+  ['courseLanguage', 'en', '英文', 'English',          '', 20, true, ''],
+
+  ['leaveReason', '事假', '事假', '', '', 10, true, ''],
+  ['leaveReason', '病假', '病假', '', '', 20, true, ''],
+  ['leaveReason', '公假', '公假', '', '', 30, true, ''],
+  ['leaveReason', '特休', '特休', '', '', 40, true, ''],
+  ['leaveReason', '上船', '上船', '在船期間無法授課', '', 50, true, ''],
+
+  // 備註標籤：副標放關鍵字（用、分隔），備註裡出現任一個就自動貼上這個標籤
+  ['noteTag', 'important',  '重要', '重要、必須、注意、務必、切記、關鍵、緊急', '', 10, true, 'ph-warning-circle'],
+  ['noteTag', 'exam',       '考試', '考試、測驗、評量、期中、期末、小考、大考', '', 20, true, 'ph-file-text'],
+  ['noteTag', 'experiment', '實作', '實驗、實習、實作、實務、操作、練習',       '', 30, true, 'ph-flask'],
+  ['noteTag', 'project',    '作業', '專題、報告、作業、習題、繳交、截止',       '', 40, true, 'ph-presentation-chart'],
+  ['noteTag', 'meeting',    '會議', '會議、討論、說明、講解、演講、座談',       '', 50, true, 'ph-users-three']
 ];
 
 function _optionsContext() {
@@ -856,6 +885,23 @@ function _readOptions() {
     });
   }
   out.sort((a, b) => a.listKey.localeCompare(b.listKey) || a.sortOrder - b.sortOrder);
+
+  // 程式新增了一份清單、但試算表是更早建的：把那份清單的預設值補進去，
+  // 不然新清單在畫面上會是空的（_seedOptions 只在整張表是空的時候跑）
+  const have = {};
+  out.forEach(o => { have[o.listKey] = true; });
+  const missing = Object.keys(OPTION_LISTS).filter(k => !have[k]);
+  if (missing.length) {
+    let nextId = parseInt(_nextOptionId(out), 10);
+    const added = OPTION_DEFAULTS.filter(d => missing.indexOf(d[0]) >= 0).map(d => ({
+      id: String(nextId++), listKey: d[0], value: d[1], label: d[2], sublabel: d[3],
+      groupName: d[4], sortOrder: d[5], active: d[6], icon: d[7] || '', builtin: true
+    }));
+    const all = out.concat(added);
+    _writeOptionRows(ctx, all, null);
+    all.sort((a, b) => a.listKey.localeCompare(b.listKey) || a.sortOrder - b.sortOrder);
+    return all;
+  }
   return out;
 }
 
@@ -1021,6 +1067,117 @@ const PAGE_ACCESS_DEFAULTS = {
   // 會清空整個 localStorage 的修復工具，只給管理者
   'fix-sync-issue.html':     ['admin']
 };
+
+// ==================== 系統設定（文字與數字）====================
+//
+// 以前系統名稱、登入頁文字、教材頁歡迎詞、授課時數目標、分享訊息、衝堂規則、
+// AI 快速提問都寫死在各頁，改一個字就要改程式重新部署，而且同一件事各頁寫法不一樣
+// （系統名稱就有三種寫法）。現在是一份設定，管理者在「帳號管理 → 系統設定」改。
+//
+// 刻意不放進來的：密碼規則、登入鎖定、Session 長度、上傳檔案類型、試算表與雲端資料夾 ID、
+// AI 的安全規則。這些從網頁改的話，一個被盜用的管理者帳號就能讓整個系統變弱。
+//
+//   pub：登入前就要讀得到（登入頁要顯示系統名稱），由 site_public 提供
+//   前端 js/site.js 的 SITE_DEFS 必須與此一致（鍵、預設值、型別、上下限）
+const SITE_DEFS = {
+  systemName:          { type: 'text',     def: '萬海智慧航安訓練管理系統', max: 40, required: true, pub: true },
+  systemShortName:     { type: 'text',     def: 'WHL MARITRAIN', max: 30, required: true, pub: true },
+  copyrightHolder:     { type: 'text',     def: 'Wan Hai Lines Ltd.', max: 60, pub: true },
+  supportContact:      { type: 'text',     def: '', max: 100, pub: true },
+  forgotPasswordUrl:   { type: 'url',      def: '', max: 300, pub: true },
+  welcomeTitle:        { type: 'text',     def: '歡迎回來，繼續累積', max: 40 },
+  welcomeHighlight:    { type: 'text',     def: '海上的實力', max: 20 },
+  welcomeBody:         { type: 'longtext', def: '船會換、航線會換，真正跟著你一輩子的是基本功。這裡彙整公司各類船員訓練教材，從船舶操縱、法規合規到職級轉換，一步一步把岸上的準備變成船上的即戰力。', max: 300 },
+  videoCompletePct:    { type: 'number',   def: 92, min: 50, max: 100 },
+  teachingHoursTarget: { type: 'number',   def: 12, min: 1, max: 200 },
+  teachingHoursWarn:   { type: 'number',   def: 8, min: 0, max: 200 },
+  conflictPolicy:      { type: 'enum',     def: 'warn', values: ['warn', 'block'] },
+  shareSubject:        { type: 'text',     def: '課程資訊分享', max: 60 },
+  shareTemplate:       { type: 'longtext', def: '課程資訊\n課程：{課程}\n教師：{教師}\n日期：{日期}\n時間：{時間}\n類型：{類型}\n備註：{備註}', max: 1000 },
+  aiDisclaimer:        { type: 'text',     def: '智慧派課 AI 顧問由大型語言模型驅動，建議您對重要排程進行二次確認。', max: 200 },
+  aiQuickPrompts:      { type: 'list',     def: ['推薦大副課程｜推薦大副適合的課程', '新進船員課程｜新進船員需要上哪些課？',
+                                                 '領導統御｜領導統御相關的課程有哪些？', '課程分佈分析｜請分析目前課程分佈是否均衡'],
+                         maxItems: 8, max: 80 },
+  aiLessonPrompts:     { type: 'list',     def: ['這個單元的重點是什麼？', '可以用更簡單的方式解釋一次嗎？', '實際在船上會怎麼用到？'],
+                         maxItems: 8, max: 80 }
+};
+
+/** 整理一份設定：不認得的鍵丟掉，型別不對或超出範圍的用預設值（讀取用，不報錯） */
+function _normalizeSite(raw) {
+  const src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const out = {};
+  Object.keys(SITE_DEFS).forEach(k => {
+    const d = SITE_DEFS[k];
+    const v = Object.prototype.hasOwnProperty.call(src, k) ? src[k] : d.def;
+    out[k] = _coerceSiteValue(k, v, false);
+  });
+  if (out.teachingHoursWarn > out.teachingHoursTarget) out.teachingHoursWarn = out.teachingHoursTarget;
+  return out;
+}
+
+/**
+ * 檢查／轉換一個值。strict 時不合法就丟錯誤（存檔用），否則退回預設值（讀取用）
+ */
+function _coerceSiteValue(key, v, strict) {
+  const d = SITE_DEFS[key];
+  const bad = msg => { if (strict) throw new Error(msg); return Array.isArray(d.def) ? d.def.slice() : d.def; };
+  if (d.type === 'number') {
+    const n = Number(v);
+    if (!isFinite(n) || n < d.min || n > d.max) return bad(key + ' 要是 ' + d.min + ' 到 ' + d.max + ' 之間的數字');
+    return Math.round(n * 10) / 10;
+  }
+  if (d.type === 'enum') {
+    return d.values.indexOf(String(v)) >= 0 ? String(v) : bad(key + ' 不認得的值：' + v);
+  }
+  if (d.type === 'list') {
+    let list = v;
+    if (typeof list === 'string') list = list.split('\n');
+    if (!Array.isArray(list)) return bad(key + ' 格式不對');
+    list = list.map(x => String(x == null ? '' : x).trim()).filter(Boolean);
+    if (list.length > d.maxItems) return bad(key + ' 最多 ' + d.maxItems + ' 項');
+    if (list.some(x => x.length > d.max)) return bad(key + ' 每一項不能超過 ' + d.max + ' 個字');
+    return list;
+  }
+  const str = String(v == null ? '' : v).replace(/\r\n/g, '\n').trim();
+  if (str.length > d.max) return bad(key + ' 不能超過 ' + d.max + ' 個字');
+  if (d.required && !str) return bad(key + ' 不能空白');
+  if (d.type === 'url' && str && !/^(https:\/\/|mailto:)/i.test(str)) {
+    // 只收 https 與 mailto：這個連結會放在登入頁，不能讓人塞 javascript: 或 http 釣魚頁
+    return bad('連結必須以 https:// 或 mailto: 開頭');
+  }
+  return str;
+}
+
+function _readSite() {
+  return _normalizeSite(_readSetting('site'));
+}
+
+/** 登入前就要用的那幾項（系統名稱、版權、聯絡窗口、忘記密碼連結） */
+function _publicSite() {
+  const all = _readSite();
+  const out = {};
+  Object.keys(SITE_DEFS).forEach(k => { if (SITE_DEFS[k].pub) out[k] = all[k]; });
+  return out;
+}
+
+function _handleSiteSettingsSave(p, bodyObj, session) {
+  let raw = p.settings || (bodyObj && bodyObj.settings);
+  if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch (e) { raw = null; } }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return _json({ ok: false, error: '缺少設定內容' });
+  const unknown = Object.keys(raw).filter(k => !Object.prototype.hasOwnProperty.call(SITE_DEFS, k));
+  if (unknown.length) return _json({ ok: false, error: '不認得的設定：' + unknown.join(', ') });
+
+  const before = _readSite();
+  const next = Object.assign({}, before);
+  Object.keys(raw).forEach(k => { next[k] = _coerceSiteValue(k, raw[k], true); });
+  if (next.teachingHoursWarn > next.teachingHoursTarget) {
+    return _json({ ok: false, error: '提醒時數不能大於目標時數' });
+  }
+  _writeSetting('site', next, session);
+  const changed = Object.keys(next).filter(k => JSON.stringify(next[k]) !== JSON.stringify(before[k]));
+  _auditLog(session.username, 'site_settings_save', 'site', changed.length ? changed.join('、') : '無變更');
+  return _json({ ok: true, data: next });
+}
 
 // ==================== 功能權限矩陣 ====================
 //
@@ -1749,7 +1906,7 @@ function _checkRateLimit(username) {
   const key = 'login_fail_' + String(username).toLowerCase();
   const attempts = parseInt(cache.get(key) || '0', 10);
   if (attempts >= MAX_LOGIN_ATTEMPTS) {
-    throw new Error('登入嘗試過多，帳號已暫時鎖定，請 15 分鐘後再試');
+    throw new Error('登入嘗試過多，帳號已暫時鎖定，請 ' + Math.round(LOGIN_LOCKOUT_SECONDS / 60) + ' 分鐘後再試');
   }
 }
 
@@ -1768,7 +1925,7 @@ function _clearLoginFailures(username) {
 // ==================== 路由處理 ====================
 
 const READ_ACTIONS = ['list', 'listall', 'getversions', 'options_list', 'learning_data', 'crew_portal_data',
-                     'learning_manage_data', 'page_access_list',
+                     'learning_manage_data', 'page_access_list', 'site_settings_list',
                      'session_register', 'session_heartbeat', 'session_list', 'session_kick',
                      'session_check_kicked'];
 
@@ -1823,6 +1980,11 @@ function _handleReadAction(action, p, session) {
     return _json({ ok: true, data: _readPageAccess(), features: _readFeatureAccess() });
   }
 
+  // 系統設定全部都不是機密（名稱、文字、時數目標），登入者都讀得到
+  if (action === 'site_settings_list') {
+    return _json({ ok: true, data: _readSite() });
+  }
+
   if (action === 'getversions') {
     // 指紋含筆數與最後修改時間，等於洩漏「這張表有多少資料、何時被改」，
     // 所以要跟 list 一樣逐表檢查，不能因為它只是中繼資料就整包送出。
@@ -1871,6 +2033,11 @@ function doGet(e) {
     // Ping 不需要認證
     if (action === 'ping') {
       return _json({ ok: true, timestamp: new Date().toISOString(), server: 'Google Apps Script', version: BACKEND_VERSION });
+    }
+
+    // 登入頁要的系統名稱、版權、聯絡窗口、忘記密碼連結：不需要登入，只回公開的那幾項
+    if (action === 'site_public') {
+      return _json({ ok: true, data: _publicSite() });
     }
 
     // 其他 GET 請求需要 Session 認證
@@ -2058,6 +2225,18 @@ function doPost(e) {
         if (optMsg === 'Unauthorized' || optMsg === 'Forbidden') throw optErr;
         Logger.log('options action error: ' + optMsg);
         return _json({ ok: false, error: optMsg });
+      }
+    }
+
+    // ===== 系統設定（僅管理者）=====
+    if (action === 'site_settings_save') {
+      _requireRole(session, ['admin']);
+      try {
+        return _handleSiteSettingsSave(p, bodyObj, session);
+      } catch (ssErr) {
+        const ssMsg = String(ssErr.message || ssErr);
+        if (ssMsg === 'Unauthorized' || ssMsg === 'Forbidden') throw ssErr;
+        return _json({ ok: false, error: ssMsg });
       }
     }
 

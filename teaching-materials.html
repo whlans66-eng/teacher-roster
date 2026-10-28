@@ -757,6 +757,8 @@
 
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <!-- 系統名稱、時數目標、分享訊息、AI 提問等在「帳號管理 → 系統設定」改 -->
+  <script src="js/site.js"></script>
   <script src="js/ui-feedback.js"></script>
   <!-- 船員職級的顯示名稱跟「選單管理」同一份 -->
   <script src="js/options.js"></script>
@@ -776,32 +778,17 @@
     let activeCourseId = null;    // string
     let activeMatIdx = null;      // number
 
-    // 課程分類：與智慧派課（maritime-courses.html）的 maritimeCategoryNames 一致
-    const CAT_NAME = {
-      '01': '船舶操縱與航行實務訓練',
-      '02': '領導統御與檢查應對管理',
-      '03': '事故案例分析與應變處置訓練',
-      '04': '船舶設備操作與技術知能訓練',
-      '05': '國際法規與環境合規知識',
-      '06': '船舶貨物裝卸作業實務',
-      '07': '船員經驗交流與職能回饋',
-      '08': '職級轉換與壓力調適',
-      '09': '其他'
+    // 課程分類：跟「帳號管理 → 選單管理 → 課程分類」同一份。
+    // 以前這裡另外寫死一份名稱、圖示、順序，管理者改了分類這頁不會跟著變，
+    // 新增的分類還會被硬塞進「其他」。
+    const catName  = code => code ? Options.name('courseCategory', code) : '未分類';
+    const catOrder = () => Options.all('courseCategory').map(o => o.value);
+    const catOf = c => {
+      const v = String(c?.category ?? '').trim();
+      if (v) return v;                                   // 不認得的代碼自成一組，管理者一看就知道要補分類
+      return Options.has('courseCategory', '09') ? '09' : '';
     };
-    const CAT_ICON = {
-      '01': 'ph-anchor', '02': 'ph-users-three', '03': 'ph-warning-circle',
-      '04': 'ph-gear',   '05': 'ph-scales',      '06': 'ph-package',
-      '07': 'ph-chat-circle-dots', '08': 'ph-arrow-u-up-left', '09': 'ph-dots-three'
-    };
-    const CAT_COLOR = {
-      '01': '#0a4a7a', '02': '#0d6e8c', '03': '#1a7a5e',
-      '04': '#8a6d1f', '05': '#9a3b32', '06': '#5b4a9a',
-      '07': '#a1561f', '08': '#4a7a1f', '09': '#6e6e73'
-    };
-    const CAT_ORDER = ['01','02','03','04','05','06','07','08','09'];
-
-    const catOf   = c => CAT_NAME[c?.category] ? c.category : '09';
-    const catIcon = code => `<i class="ph ${CAT_ICON[code] || 'ph-folder'}"></i>`;
+    const catIcon = code => `<i class="ph ${Options.icon('courseCategory', code, 'ph-folder')}"></i>`;
     const catGrad = () => 'var(--muted-2)';   // 封面佔位：原型的暖米色，不用分類漸層
 
     // ── 跳脫 ──
@@ -818,6 +805,9 @@
       renderTopNav();
       loadData(p.get('courseId'), p.get('unit'));
       // 管理者在帳號管理改了功能權限：已開著的頁面最晚一分鐘內就換成新的功能
+      // 系統設定（歡迎詞、AI 建議問題）或選單（課程分類）在別處改了：就地重畫
+      document.addEventListener('site:changed', () => rerenderCurrent());
+      Options.ready().then(() => rerenderCurrent());
       document.addEventListener('auth:features', () => {
         isAdmin = Auth.can('materials_edit') && !previewRank;
         rerenderCurrent();
@@ -1143,7 +1133,9 @@
         for (const file of list) {
           n++;
           if (!UPLOAD_TYPES.includes(file.type)) { showToast(`不支援格式：${file.name}`, 'error'); continue; }
-          if (file.size > 50 * 1024 * 1024)      { showToast(`檔案過大：${file.name}`, 'error'); continue; }
+          // 實際上限是 24 MB（Apps Script 一次收得下的大小，後端與 js/api.js 也是這個數字）；
+          // 以前這裡寫 50 MB，24～50 MB 的檔案會先過關、上傳時才失敗
+          if (file.size > 24 * 1024 * 1024)      { showToast(`檔案過大（上限 24 MB）：${file.name}`, 'error'); continue; }
 
           if (window.UIFeedback && UIFeedback.showBusy) {
             UIFeedback.showBusy(`上傳教材中…（${n}/${list.length}）`, file.name);
@@ -1359,8 +1351,8 @@
           <span class="hm-hero-icon" aria-hidden="true">${catIcon(heroCat)}</span>
         </div>
         <div class="hm-welcome">
-          <h1>歡迎回來，繼續累積<em>海上的實力</em></h1>
-          <p>船會換、航線會換，真正跟著你一輩子的是基本功。這裡彙整公司九大類船員訓練教材，從船舶操縱、法規合規到職級轉換，一步一步把岸上的準備變成船上的即戰力。</p>
+          <h1>${h(Site.get('welcomeTitle'))}${Site.get('welcomeHighlight') ? `<em>${h(Site.get('welcomeHighlight'))}</em>` : ''}</h1>
+          ${Site.get('welcomeBody') ? `<p>${h(Site.get('welcomeBody'))}</p>` : ''}
           <div class="hm-welcome-stats">
             <span><i class="ph ph-books" aria-hidden="true"></i>${courseCount} 門課程</span>
             <span><i class="ph ph-file-text" aria-hidden="true"></i>${stats.total} 份教材</span>
@@ -1462,7 +1454,7 @@
         </div>`;
     }
 
-    // ── 區塊：學習路徑（依分類分組，CAT_ORDER 排序） ───────────────
+    // ── 區塊：學習路徑（依分類分組，依選單管理的順序） ───────────────
     function hmPathsHtml() {
       const groups = new Map();
       allCourses.forEach(c => {
@@ -1471,8 +1463,8 @@
         groups.get(code).push(c);
       });
 
-      const codes = CAT_ORDER.filter(code => groups.has(code));
-      // 保險：萬一出現 CAT_ORDER 沒列到的分類碼，也不要整組消失
+      const codes = catOrder().filter(code => groups.has(code));
+      // 選單管理裡沒有的分類碼（例如被刪掉的）也不要整組消失，排在最後
       groups.forEach((_, code) => { if (!codes.includes(code)) codes.push(code); });
 
       if (!codes.length) {
@@ -1501,7 +1493,7 @@
           <div class="hm-path-head">
             <div class="hm-path-cover" style="background:${a(catGrad(code))}">${catIcon(code)}</div>
             <div class="hm-path-text">
-              <h3>${h(CAT_NAME[code] || '其他')}</h3>
+              <h3>${h(catName(code))}</h3>
               <p>共 ${list.length} 門課程 · ${st.total} 份教材${st.total ? `，已完成 ${st.done} 份` : '，尚未上傳教材'}。</p>
             </div>
             <div class="hm-path-pct">${hmRing(st.pct)}${st.pct}% 完成</div>
@@ -2429,7 +2421,7 @@
         .forEach(k => { if (!rest.includes(k.trim())) rest.push(k.trim()); });
 
       return `<div class="mod-chips">
-            <span class="mod-chip primary">${h(CAT_NAME[cat] || '其他')}</span>
+            <span class="mod-chip primary">${h(catName(cat))}</span>
             ${rest.map(t => `<span class="mod-chip">${h(t)}</span>`).join('')}
           </div>`;
     }
@@ -2525,7 +2517,7 @@
                 data-cid="${cid}" onclick="mdlNewInteractive(this)">
                 <i class="ph ph-plus-circle" aria-hidden="true"></i>新增互動單元
               </button>
-              <div class="mdl-admin-hint">支援 PDF／Word／PPT／影片／圖片，單檔 50 MB 以內</div>
+              <div class="mdl-admin-hint">支援 PDF／Word／PPT／影片／圖片，單檔 24 MB 以內</div>
             </div>` : '';
 
       return `
@@ -2826,7 +2818,7 @@
       <div class="les-bar">
         <div class="les-bar-left">
           <span class="les-brand" role="link" tabindex="0"
-            onclick="goHome()" onkeydown="lsKey(event, this)">教材管理</span>
+            onclick="goHome()" onkeydown="lsKey(event, this)">${Auth.can('materials_edit') ? '教材管理' : '教材學習'}</span>
           <span class="les-sep" aria-hidden="true"></span>
           <nav class="les-crumb" aria-label="麵包屑">
             <span class="les-crumb-link" role="link" tabindex="0"
@@ -2947,7 +2939,8 @@
 
       const pct = Math.round(el.currentTime / el.duration * 100);
       const data = { viewed: true, pos: Math.floor(el.currentTime), pct };
-      if (pct >= 92) data.completed = true;
+      // 看到幾 % 算完成：帳號管理 → 系統設定
+      if (pct >= (Number(Site.get('videoCompletePct')) || 92)) data.completed = true;
       saveProgress(c.id, m.fileName, data);
     }
 
@@ -4304,11 +4297,8 @@
     let aiCdTimer = null;
     let aiSessionReady = false;   // aiChat 是全站單例，第一次開面板要切新對話，免得帶到其他頁的上下文
 
-    const AI_SUGGESTIONS = [
-      '這個單元的重點是什麼？',
-      '可以用更簡單的方式解釋一次嗎？',
-      '實際在船上會怎麼用到？'
-    ];
+    // 建議問題在「帳號管理 → 系統設定 → 教材頁 AI 建議問題」改
+    const aiSuggestions = () => Site.get('aiLessonPrompts') || [];
 
     // ── 權限 ──────────────────────────────────────────────────────
     // core.js 已有 canUseAi()；這裡做一層容錯，單獨載入本檔時直接問 Auth
@@ -4316,7 +4306,7 @@
       if (typeof canUseAi === 'function') return !!canUseAi();
       try {
         const r = (typeof Auth !== 'undefined' && Auth.getRole) ? Auth.getRole() : '';
-        return r === 'admin' || r === 'teacher';
+        return !!(Auth.can && Auth.can('ai'));
       } catch { return false; }
     }
 
@@ -4400,7 +4390,7 @@
     }
 
     function aiAskSuggestion(i) {
-      const q = AI_SUGGESTIONS[i];
+      const q = aiSuggestions()[i];
       if (q) sendAiMessage(q);
     }
 
@@ -4411,7 +4401,7 @@
     // ── 開關 ──────────────────────────────────────────────────────
     function toggleAi() {
       if (!aiAllowed()) {
-        showToast('AI 助教僅開放教師與管理員使用', 'error');
+        showToast('你目前沒有使用 AI 助教的權限', 'error');
         return;
       }
       aiOpen ? closeAi() : openAi();
@@ -4419,7 +4409,7 @@
 
     function openAi() {
       if (!aiAllowed()) {
-        showToast('AI 助教僅開放教師與管理員使用', 'error');
+        showToast('你目前沒有使用 AI 助教的權限', 'error');
         return;
       }
       // aiChat 建構時會自動還原最近一個 session（js/api.js switchSession），
@@ -4476,7 +4466,7 @@
       const emptyHtml = aiMsgs.length ? '' : `
         <div class="ai-empty">可以問這個單元的內容，<br>或先從下面的問題開始。</div>
         <div class="ai-sugg">
-          ${AI_SUGGESTIONS.map((q, i) => `
+          ${aiSuggestions().map((q, i) => `
             <button type="button" class="ai-sugg-btn" onclick="aiAskSuggestion(${i})">${h(q)}</button>`).join('')}
         </div>`;
 
@@ -4539,7 +4529,7 @@
     // ── 送出 ──────────────────────────────────────────────────────
     async function sendAiMessage(text) {
       if (!aiAllowed()) {
-        showToast('AI 助教僅開放教師與管理員使用', 'error');
+        showToast('你目前沒有使用 AI 助教的權限', 'error');
         return;
       }
       const box = document.getElementById('aiInput');

@@ -380,6 +380,7 @@
   <!-- Authentication -->
   <script src="js/security.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/site.js"></script>
   <script src="js/auth.js"></script>
   <script>
     // 首頁開放給所有已登入的角色；各張卡片再依角色過濾
@@ -411,7 +412,7 @@
               <p style="font-size:17px;font-weight:600;color:#1d1d1f;margin-bottom:6px">
                 目前沒有開放給您的功能
               </p>
-              <p style="font-size:15px">請聯絡系統管理者開通權限</p>
+              <p style="font-size:15px">請聯絡系統管理者開通權限${window.Site ? Auth.escapeHtml(Site.contactSuffix()) : ''}</p>
             </div>`;
           grid.appendChild(empty);
         } else if (visible && empty) {
@@ -428,8 +429,9 @@
 
     <div class="content-wrapper">
       <div class="header">
-        <h1>萬海智慧航安訓練管理系統</h1>
-        <p style="font-size: 18px; color: #86868b; margin-top: 8px; font-weight: 500;">WHL MARITRAIN</p>
+        <!-- 名稱在「帳號管理 → 系統設定」改 -->
+        <h1 data-site="systemName">萬海智慧航安訓練管理系統</h1>
+        <p style="font-size: 18px; color: #86868b; margin-top: 8px; font-weight: 500;" data-site="systemShortName">WHL MARITRAIN</p>
       </div>
     </div>
 
@@ -474,7 +476,7 @@
 
     <div class="content-wrapper">
       <div class="footer">
-        <p>&copy; 2025 萬海智慧航安訓練管理系統 (WHL MARITRAIN)</p>
+        <p data-site-copyright>&copy; Wan Hai Lines Ltd.</p>
       </div>
     </div>
   </div>
