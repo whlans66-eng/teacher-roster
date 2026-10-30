@@ -20,7 +20,7 @@ function _explainApiError(error, action) {
  * 後端比這個舊，代表 Apps Script 還沒重新部署：帳號管理頁會直接提示，
  * 不用等到某個按鈕失敗才發現。改了 backend-api.gs 就把兩邊一起改成當天日期。
  */
-const REQUIRED_BACKEND_VERSION = '2026-10-28.2';
+const REQUIRED_BACKEND_VERSION = '2026-10-30';
 
 /**
  * 設定區

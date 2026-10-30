@@ -28,7 +28,7 @@ const MAX_UPLOAD_SIZE = 24 * 1024 * 1024; // 24MB（編碼後約 32MB）
 // 後端版本。前端 js/api.js 的 REQUIRED_BACKEND_VERSION 比這個新時，
 // 帳號管理頁會提示「Apps Script 要重新部署」，不用等到某個按鈕壞掉才發現。
 // 每次修改這個檔案並重新部署時，把日期改成當天。
-const BACKEND_VERSION = '2026-10-28.2';
+const BACKEND_VERSION = '2026-10-30';
 
 // 系統角色（單一來源；前端 js/auth.js 的 ROLES 必須與此一致）
 const USER_ROLES = ['admin', 'teacher', 'crew', 'guest'];
@@ -859,6 +859,22 @@ function _optionsContext() {
   return { sh: sh, header: header, idx: _headerIndex(sh, header) };
 }
 
+/**
+ * 選項代碼的標準寫法。Google 試算表會把「01」這種文字存成數字 1，
+ * 課程分類讀回來要補成兩位數，否則對不上課程資料裡的「01」（課程資料讀取時本來就有補）。
+ */
+function _canonicalOptionValue(listKey, value) {
+  const v = String(value === undefined || value === null ? '' : value).trim();
+  if (listKey === 'courseCategory' && /^\d+$/.test(v)) return v.length < 2 ? ('0' + v) : v;
+  return v;
+}
+
+/** 代碼欄設成純文字，「01」寫進去才不會被試算表改成 1 */
+function _protectOptionValueColumn(ctx, rowCount) {
+  if (ctx.idx['value'] === undefined || rowCount < 1) return;
+  ctx.sh.getRange(2, ctx.idx['value'] + 1, rowCount, 1).setNumberFormat('@');
+}
+
 /** 讀出所有選項；第一次呼叫會自動寫入種子資料 */
 function _readOptions() {
   const ctx = _optionsContext();
@@ -874,7 +890,7 @@ function _readOptions() {
     out.push({
       id:        String(get('id')),
       listKey:   String(get('listKey')),
-      value:     String(get('value')),
+      value:     _canonicalOptionValue(String(get('listKey')), get('value')),
       label:     String(get('label')),
       sublabel:  String(get('sublabel')),
       groupName: String(get('groupName')),
@@ -925,6 +941,7 @@ function _seedOptions(ctx) {
     return row;
   });
   if (rows.length) {
+    _protectOptionValueColumn(ctx, rows.length);
     ctx.sh.getRange(2, 1, rows.length, ctx.idx._len).setValues(rows);
   }
 }
@@ -963,7 +980,7 @@ function _handleOptionsAction(action, p, bodyObj, session) {
     const seen = {};
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
-      const value = String(it.value || '').trim();
+      const value = _canonicalOptionValue(listKey, it.value);
       const label = String(it.label || '').trim();
       if (!value) return _json({ ok: false, error: '第 ' + (i + 1) + ' 項缺少代碼（value）' });
       if (!label) return _json({ ok: false, error: '「' + value + '」缺少顯示名稱' });
@@ -984,7 +1001,7 @@ function _handleOptionsAction(action, p, bodyObj, session) {
       return {
         id:        prev ? prev.id : String(nextId++),
         listKey:   listKey,
-        value:     String(it.value).trim(),
+        value:     _canonicalOptionValue(listKey, it.value),
         label:     String(it.label).trim(),
         sublabel:  String(it.sublabel || '').trim(),
         groupName: String(it.groupName || '').trim(),
@@ -1040,6 +1057,7 @@ function _writeOptionRows(ctx, options, session) {
   });
   const last = ctx.sh.getLastRow();
   if (last > 1) ctx.sh.getRange(2, 1, last - 1, ctx.idx._len).clearContent();
+  _protectOptionValueColumn(ctx, rows.length);
   if (rows.length) ctx.sh.getRange(2, 1, rows.length, ctx.idx._len).setValues(rows);
 }
 

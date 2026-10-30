@@ -947,6 +947,9 @@ Orphan 的紀錄會在詳情頁明確提示「此課名已不存在」，並可�
 - 新增清單：後端 `OPTION_LISTS` + `OPTION_DEFAULTS`、`js/options.js` 的 `DEFAULTS` + `LIST_LABELS`、
   `admin.html` 的 `OPT_LISTS` 各加一筆。舊試算表沒有這份清單時，`_readOptions()` 會自動補進預設值，
   前端也會用內建預設值頂著。
+- **試算表會把看起來像數字的文字改成數字**（「01」→ 1）。課程分類代碼因此一律補成兩位數
+  （後端 `_canonicalOptionValue`、前端 `Options` 內部），選項表的代碼欄寫入前設成純文字。
+  新增以數字為代碼的清單時要注意同一件事；比對代碼一律用 `Options.has/label/...`，不要自己用 `===` 比。
 - 不認得的值**保留、不改寫**：師資表單、下拉選單遇到清單裡沒有的值，會多畫一個選項並選好。
   （以前師資的 normalize 會把新增的類別改寫成 internal／onshore，存一次就弄丟。）
 

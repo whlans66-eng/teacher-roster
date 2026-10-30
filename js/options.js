@@ -115,6 +115,18 @@
     noteTag: '備註標籤'
   };
 
+  /**
+   * Google 試算表會把看起來像數字的文字存成數字：課程分類的「01」寫進去，讀回來是 1。
+   * 課程資料讀取時本來就會補回兩位數，選項清單以前沒補，結果「1」對不上課程的「01」——
+   * 師資雷達圖整張對不起來、課程卡的分類顯示成代碼，都是這個原因。
+   * 所以課程分類的代碼一律補成兩位數，讀清單、查名稱都經過這裡。
+   */
+  function canonicalValue(listKey, value) {
+    const v = String(value === undefined || value === null ? '' : value).trim();
+    if (listKey === 'courseCategory' && /^\d+$/.test(v)) return v.padStart(2, '0');
+    return v;
+  }
+
   function fromRow(r, i) {
     return {
       id: 'default-' + i,
@@ -134,7 +146,7 @@
       .map(o => ({
         id: String(o.id === undefined ? '' : o.id),
         listKey: String(o.listKey),
-        value: String(o.value),
+        value: canonicalValue(String(o.listKey), o.value),
         label: String(o.label || o.value),
         sublabel: String(o.sublabel || ''),
         groupName: String(o.groupName || ''),
@@ -227,7 +239,7 @@
 
     /** 顯示名稱。停用的也查得到，舊資料才不會變成看不懂的代碼 */
     label(key, value) {
-      const v = String(value === undefined || value === null ? '' : value);
+      const v = canonicalValue(key, value);
       if (!v) return '';
       const hit = catalog.find(o => o.listKey === key && o.value === v);
       return hit ? hit.label : v;
@@ -235,7 +247,7 @@
 
     /** 連同副標的完整顯示，例如「C/O 大副」 */
     fullLabel(key, value) {
-      const v = String(value === undefined || value === null ? '' : value);
+      const v = canonicalValue(key, value);
       if (!v) return '';
       const hit = catalog.find(o => o.listKey === key && o.value === v);
       if (!hit) return v;
@@ -244,7 +256,7 @@
 
     /** 這個代碼還在不在啟用清單裡 */
     isActive(key, value) {
-      const hit = catalog.find(o => o.listKey === key && o.value === String(value));
+      const hit = catalog.find(o => o.listKey === key && o.value === canonicalValue(key, value));
       return !!(hit && hit.active);
     },
 
@@ -255,7 +267,7 @@
      * 才不會因為沒填職級就被擠到看不見的地方——它們仍在清單裡，只是在後面。
      */
     order(key, value) {
-      const hit = catalog.find(o => o.listKey === key && o.value === String(value));
+      const hit = catalog.find(o => o.listKey === key && o.value === canonicalValue(key, value));
       return hit ? hit.sortOrder : Number.MAX_SAFE_INTEGER;
     },
 
@@ -277,7 +289,7 @@
 
     /** 這個代碼在清單裡嗎（停用的也算） */
     has(key, value) {
-      return catalog.some(o => o.listKey === key && o.value === String(value));
+      return catalog.some(o => o.listKey === key && o.value === canonicalValue(key, value));
     },
 
     /**
@@ -286,7 +298,7 @@
      */
     name(key, value) {
       const label = this.label(key, value);
-      const v = String(value === undefined || value === null ? '' : value);
+      const v = canonicalValue(key, value);
       return v && label.indexOf(v) === 0 ? label.slice(v.length).trim() || label : label;
     },
 
@@ -295,7 +307,7 @@
      * 沒填副標（舊試算表）就用內建的短名稱，再沒有就用完整名稱
      */
     short(key, value) {
-      const v = String(value === undefined || value === null ? '' : value);
+      const v = canonicalValue(key, value);
       const hit = catalog.find(o => o.listKey === key && o.value === v);
       if (key === 'courseCategory') {
         if (hit && hit.sublabel) return hit.sublabel;
@@ -307,7 +319,7 @@
 
     /** 圖示：清單裡有填就用；沒填（舊試算表）用內建的；都沒有用 fallback */
     icon(key, value, fallback) {
-      const v = String(value === undefined || value === null ? '' : value);
+      const v = canonicalValue(key, value);
       const hit = catalog.find(o => o.listKey === key && o.value === v);
       if (hit && hit.icon) return hit.icon;
       const builtin = DEFAULTS.find(d => d[0] === key && d[1] === v);
@@ -319,7 +331,8 @@
      * 顏色不另外存，管理者調整順序顏色就跟著換。
      */
     index(key, value) {
-      return byList(key).findIndex(o => o.value === String(value));
+      const v = canonicalValue(key, value);
+      return byList(key).findIndex(o => o.value === v);
     },
 
     /** 依順序配色：palette 由各頁自己給（Tailwind class 或色碼），不認得的值給 fallback */
@@ -328,6 +341,9 @@
       if (i < 0 || !palette || !palette.length) return fallback;
       return palette[i % palette.length];
     },
+
+    /** 代碼的標準寫法（課程分類補成兩位數），頁面比對課程分類時用 */
+    canonical: canonicalValue,
 
     /** 內建預設值，給管理頁的「還原」與測試用 */
     defaults(key) {
