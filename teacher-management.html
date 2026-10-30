@@ -2195,82 +2195,124 @@
     // 資料來源是「訓練排程」實際派給這位老師的課，再對應到課程分類，
     // 不是靠固定標籤 —— 會議要的就是這個聯動：排課紀錄自動帶出授課經驗。
 
-    // 雷達圖的軸＝選單管理裡啟用中的課程分類，軸名用分類的短名稱。
-    // 以前寫死 9 個代碼，管理者新增的分類永遠算不進來。
-    const RADAR_CATEGORY_SHORT = new Proxy({}, {
-      get: (_, k) => typeof k === 'string' ? Options.short('courseCategory', k) : undefined,
-      ownKeys: () => Options.list('courseCategory').map(o => o.value),
-      getOwnPropertyDescriptor: () => ({ enumerable: true, configurable: true })
-    });
+    // ── 雷達圖要怎麼算：「帳號管理 → 系統設定 → 師資雷達圖」──
+    //   軸：課程分類／授課方式／課程類型，名稱與順序來自選單管理的同名清單
+    //   算什麼：門數（同一門課算一次）／場次／時數
+    //   助教紀錄：算不算進去
+    const RADAR_DIM_LABEL = { courseCategory: '課程分類', teachingMethod: '授課方式', courseType: '課程類型' };
+    const RADAR_UNIT = { courses: '門', sessions: '場', hours: '小時' };
+
+    // 課名比對時忽略全形／半形與空白：「（線上）」和「(線上)」、多一個空格都算同一門課
+    const radarNormName = s => String(s || '').normalize('NFKC').replace(/\s+/g, '').toLowerCase();
+
+    // 「09:00-12:00」「09:00~12:00」「0900-1200」都認得；認不得就算 0 小時
+    function radarHours(time) {
+      const m = String(time || '').match(/(\d{1,2}):?(\d{2})\s*[-~～–]\s*(\d{1,2}):?(\d{2})/);
+      if (!m) return 0;
+      const mins = (Number(m[3]) * 60 + Number(m[4])) - (Number(m[1]) * 60 + Number(m[2]));
+      return mins > 0 ? mins / 60 : 0;
+    }
 
     /**
-     * 統計一位老師各分類的授課課程數
+     * 統計一位老師在雷達圖各軸的數值
      *
-     * 兩個來源合併去重（以課名為準）：
-     *   1. 訓練排程實際派給他的課（courseAssignments.teacherId）
-     *   2. 師資卡上登錄的「講授課程」（subjects 中 category === 'teach'）
+     * 來源：
+     *   1. 訓練排程派給他的課（主講；設定成算助教的話也含助教）
+     *   2. 師資卡登錄的課程（只有「門數」會用到；講授，或設定成算助教時也含助教經驗）
      *
-     * 分類只能靠課名對應到課程庫 —— subjects.category 存的是角色
-     * （講授／助教／影片協作），不是 01-09 的課程分類。
-     * 對不上的課名會單獨計數並在畫面上提示，通常是課程改名後沒同步。
-     *
-     * @returns {{counts, courseCount, sessionCount, unmatched, unmatchedNames, assistCount}}
+     * 對應課程庫：派課有 courseId 就直接用 id 找，沒有才用課名找（忽略全形半形與空白）。
+     * 找不到的課、找到了但分類／授課方式不在選單裡的課，分開列出來，管理者才知道要修哪裡。
      */
     function computeTeacherTeachingStats(teacher) {
+      const dim = Site.get('radarDimension') || 'courseCategory';
+      const measure = Site.get('radarMeasure') || 'courses';
+      const withAssist = Site.get('radarIncludeAssist') === 'yes';
+      const axes = Options.list(dim).map(o => o.value);
       const counts = {};
-      Object.keys(RADAR_CATEGORY_SHORT).forEach(k => { counts[k] = 0; });
+      axes.forEach(k => { counts[k] = 0; });
 
-      const assignments = (typeof courseAssignments !== 'undefined' && Array.isArray(courseAssignments))
-        ? courseAssignments : [];
-      const courses = (typeof maritimeCourses !== 'undefined' && Array.isArray(maritimeCourses))
-        ? maritimeCourses : [];
-
-      const byName = {};
-      courses.forEach(c => {
-        if (c && c.name) byName[String(c.name).trim()] = c;
+      const assignments = (typeof courseAssignments !== 'undefined' && Array.isArray(courseAssignments)) ? courseAssignments : [];
+      const library = (typeof maritimeCourses !== 'undefined' && Array.isArray(maritimeCourses)) ? maritimeCourses : [];
+      const byId = {}, byName = {};
+      library.forEach(c => {
+        if (!c) return;
+        if (c.id !== undefined && c.id !== null && c.id !== '') byId[String(c.id)] = c;
+        if (c.name) byName[radarNormName(c.name)] = c;
       });
+      const findCourse = (name, courseId) =>
+        (courseId !== undefined && courseId !== null && courseId !== '' && byId[String(courseId)]) || byName[radarNormName(name)] || null;
 
-      const taughtNames = new Set();
+      // 這門課（或這一場）落在哪一軸
+      const axisOf = (course, session) => {
+        if (dim === 'courseType') return session ? String(session.type || '') : '';
+        if (!course) return '';
+        if (dim === 'courseCategory') return Options.canonical('courseCategory', course.category);
+        return String(course[dim === 'teachingMethod' ? 'method' : dim] || '');
+      };
+
+      const notFound = new Set();      // 課程庫找不到這個課名
+      const noAxis = new Map();        // 找到了，但分類／方式不在選單裡（或沒填）
+      const seen = new Set();          // 門數：同一門課只算一次
+      const distinct = new Set();      // 摘要上的「共幾門課程」，不論算的是門數、場次還是時數
       let sessionCount = 0, assistCount = 0;
 
-      // 來源 1：訓練排程
+      const add = (axis, amount, name) => {
+        if (counts[axis] !== undefined) { counts[axis] += amount; return true; }
+        noAxis.set(name, axis);
+        return false;
+      };
+
       assignments.forEach(a => {
         if (!a) return;
         const isMain = String(a.teacherId) === String(teacher.id);
-        const isAssist = a.taId && String(a.taId) === String(teacher.id);
-        if (isMain) {
-          sessionCount++;
-          const nm = String(a.name || '').trim();
-          if (nm) taughtNames.add(nm);
-        } else if (isAssist) {
-          assistCount++;
+        const isAssist = !isMain && a.taId && String(a.taId) === String(teacher.id);
+        if (!isMain && !isAssist) return;
+        if (isAssist) assistCount++;
+        if (isAssist && !withAssist) return;
+        sessionCount++;
+        const name = String(a.name || '').trim();
+        const course = findCourse(name, a.courseId);
+        if (!course && dim !== 'courseType') { if (name) notFound.add(name); return; }
+        const axis = axisOf(course, a);
+        if (counts[axis] !== undefined) distinct.add(course ? 'c:' + course.id : 'n:' + radarNormName(name));
+        if (measure === 'courses') {
+          const key = course ? 'c:' + course.id : 'n:' + radarNormName(name);
+          if (seen.has(key)) return;
+          if (add(axis, 1, name)) seen.add(key);
+        } else {
+          add(axis, measure === 'hours' ? radarHours(a.time) : 1, name);
         }
       });
 
-      // 來源 2：師資卡登錄的講授課程
-      (teacher.subjects || []).forEach(sub => {
-        if (!sub) return;
-        const role = typeof sub === 'object' ? sub.category : 'teach';
-        if (role && role !== 'teach') return;
-        const nm = String((typeof sub === 'object' ? sub.name : sub) || '').trim();
-        if (nm) taughtNames.add(nm);
-      });
+      // 師資卡登錄的課程只有門數會用到（沒有場次、沒有時數，也沒有課程類型）
+      if (measure === 'courses' && dim !== 'courseType') {
+        (teacher.subjects || []).forEach(sub => {
+          if (!sub) return;
+          const role = typeof sub === 'object' ? (sub.category || 'teach') : 'teach';
+          if (role !== 'teach' && !(withAssist && role === 'ta')) return;
+          const name = String((typeof sub === 'object' ? sub.name : sub) || '').trim();
+          if (!name) return;
+          const course = findCourse(name, typeof sub === 'object' ? sub.courseId : '');
+          if (!course) { notFound.add(name); return; }
+          const key = 'c:' + course.id;
+          if (seen.has(key)) return;
+          if (add(axisOf(course, null), 1, name)) { seen.add(key); distinct.add(key); }
+        });
+      }
 
-      const unmatchedNames = [];
-      taughtNames.forEach(nm => {
-        const course = byName[nm];
-        const cat = course && course.category ? String(course.category).padStart(2, '0') : '';
-        if (counts[cat] !== undefined) counts[cat]++;
-        else unmatchedNames.push(nm);
-      });
-
+      const labelOf = k => dim === 'courseCategory' ? Options.short('courseCategory', k) : Options.label(dim, k);
       return {
-        counts: counts,
-        courseCount: taughtNames.size,
+        dim, measure, withAssist, axes, counts, labelOf,
+        unit: RADAR_UNIT[measure] || '門',
+        dimLabel: RADAR_DIM_LABEL[dim] || dim,
+        courseCount: distinct.size,
         sessionCount: sessionCount,
-        unmatched: unmatchedNames.length,
-        unmatchedNames: unmatchedNames,
-        assistCount: assistCount
+        assistCount: assistCount,
+        notFound: [...notFound],
+        noAxis: [...noAxis.entries()].map(([name, value]) => ({ name, value })),
+        // 舊欄位名稱（其他地方若有用到）
+        unmatched: notFound.size + noAxis.size,
+        unmatchedNames: [...notFound].concat([...noAxis.keys()])
       };
     }
 
@@ -2279,30 +2321,47 @@
      */
     function renderTeacherRadar(teacher) {
       const stats = computeTeacherTeachingStats(teacher);
-      const keys = Object.keys(RADAR_CATEGORY_SHORT);
+      const keys = stats.axes;
       const n = keys.length;
+      const fmt = v => stats.measure === 'hours' ? (Math.round(v * 10) / 10) : v;
+      const how = `依${stats.dimLabel}統計${stats.measure === 'courses' ? '課程門數' : stats.measure === 'sessions' ? '排課場次' : '上課時數'}` +
+                  `${stats.withAssist ? '（含助教）' : ''}（可在「帳號管理 → 系統設定」調整）`;
+
+      // 對不上的原因分兩種：課程庫找不到這門課、或這門課的分類／方式不在選單管理裡
+      const problemsHtml = (compact) => {
+        const parts = [];
+        if (stats.notFound.length) {
+          parts.push(`<p class="text-amber-800 font-medium mb-1">課程庫找不到這些課名（${stats.notFound.length}）：</p>` +
+            stats.notFound.slice(0, compact ? 3 : 5).map(x => `<p class="text-amber-700">· ${escapeHtml(x)}</p>`).join('') +
+            (stats.notFound.length > (compact ? 3 : 5) ? `<p class="text-amber-700">…另有 ${stats.notFound.length - (compact ? 3 : 5)} 筆</p>` : '') +
+            `<p class="text-amber-800 mt-1">多半是課程改名，或排程時打的名稱跟課程庫不同。在訓練排程直接選課程庫的課就不會有這個問題。</p>`);
+        }
+        if (stats.noAxis.length) {
+          parts.push(`<p class="text-amber-800 font-medium mb-1 ${parts.length ? 'mt-2' : ''}">找到課程，但${escapeHtml(stats.dimLabel)}不在選單管理裡（${stats.noAxis.length}）：</p>` +
+            stats.noAxis.slice(0, compact ? 3 : 5).map(x => `<p class="text-amber-700">· ${escapeHtml(x.name)}（${escapeHtml(x.value || '未填')}）</p>`).join('') +
+            `<p class="text-amber-800 mt-1">到智慧派課補上${escapeHtml(stats.dimLabel)}，或在選單管理新增這個${escapeHtml(stats.dimLabel)}。</p>`);
+        }
+        return parts.join('');
+      };
 
       const hasAnyCategory = keys.some(k => stats.counts[k] > 0);
       if (!hasAnyCategory) {
+        const anyRecord = stats.sessionCount > 0 || stats.notFound.length || stats.noAxis.length;
         return `
           <div class="bg-gray-50 rounded-xl p-6 mt-8">
             <h3 class="text-2xl font-bold text-gray-800 mb-1 flex items-center">
               <span class="mr-3 text-3xl"><i class="ph ph-chart-polar"></i></span>授課強項分布
             </h3>
-            <p class="text-sm text-gray-500 mb-4">依訓練排程中實際派課的課程分類自動統計</p>
+            <p class="text-sm text-gray-500 mb-4">${escapeHtml(how)}</p>
             <div class="text-center py-10 text-gray-500">
               <div class="text-4xl mb-2"><i class="ph ph-calendar-blank"></i></div>
-              <p class="font-medium text-gray-600">${stats.courseCount > 0 ? '課程無法對應分類' : '尚無授課紀錄'}</p>
-              ${stats.courseCount > 0 ? `
-                <p class="text-sm mt-1">這位師資有 ${stats.courseCount} 門課程，但課名在課程庫中找不到對應分類</p>
+              <p class="font-medium text-gray-600">${anyRecord ? '有授課紀錄，但對應不到雷達圖的軸' : '尚無授課紀錄'}</p>
+              ${anyRecord ? `
                 <div class="text-xs text-left bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3 inline-block max-w-md">
-                  <p class="text-amber-800 font-medium mb-1">對不上的課名：</p>
-                  ${stats.unmatchedNames.slice(0, 5).map(n => `<p class="text-amber-700">· ${n}</p>`).join('')}
-                  ${stats.unmatchedNames.length > 5 ? `<p class="text-amber-700">…另有 ${stats.unmatchedNames.length - 5} 筆</p>` : ''}
-                  <p class="text-amber-800 mt-2">通常是課程改名後，師資卡或排程仍沿用舊名稱。</p>
+                  ${problemsHtml(false) || `<p class="text-amber-800">${stats.measure === 'hours' ? '排課的時間格式認不出來（例如 09:00-12:00），時數算不出來。' : ''}</p>`}
                 </div>`
               : `<p class="text-sm mt-1">在訓練排程指派課程、或在師資卡填寫講授課程後，這裡會自動出現分布圖</p>`}
-              ${stats.assistCount > 0 ? `<p class="text-sm mt-3 text-gray-400">另有 ${stats.assistCount} 場助教紀錄，不計入主講分布</p>` : ''}
+              ${stats.assistCount > 0 && !stats.withAssist ? `<p class="text-sm mt-3 text-gray-400">另有 ${stats.assistCount} 場助教紀錄，不計入</p>` : ''}
             </div>
           </div>`;
       }
@@ -2351,26 +2410,26 @@
         const weight = count > 0 ? '600' : '400';
         const color = count > 0 ? '#374151' : '#9ca3af';
         labels += `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}"
-                     font-size="11.5" font-weight="${weight}" fill="${color}">${RADAR_CATEGORY_SHORT[k]}</text>`;
+                     font-size="11.5" font-weight="${weight}" fill="${color}">${escapeHtml(stats.labelOf(k))}</text>`;
         if (count > 0) {
           labels += `<text x="${x.toFixed(1)}" y="${(y + 17).toFixed(1)}" text-anchor="${anchor}"
-                       font-size="10.5" font-weight="700" fill="#4f46e5">${count}</text>`;
+                       font-size="10.5" font-weight="700" fill="#4f46e5">${fmt(count)}</text>`;
         }
       });
 
       // 依場次排序的明細
       const ranked = keys
-        .map(k => ({ key: k, name: RADAR_CATEGORY_SHORT[k], count: stats.counts[k] }))
+        .map(k => ({ key: k, name: stats.labelOf(k), count: stats.counts[k] }))
         .filter(r => r.count > 0)
         .sort((a, b) => b.count - a.count);
 
       const bars = ranked.map(r => `
         <div class="flex items-center gap-3">
-          <span class="text-sm text-gray-700 w-20 flex-shrink-0">${r.name}</span>
+          <span class="text-sm text-gray-700 w-20 flex-shrink-0">${escapeHtml(r.name)}</span>
           <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div class="h-full bg-indigo-500 rounded-full" style="width:${(r.count / maxCount * 100).toFixed(0)}%"></div>
           </div>
-          <span class="text-sm font-semibold text-gray-800 w-12 text-right">${r.count} 門</span>
+          <span class="text-sm font-semibold text-gray-800 w-16 text-right">${fmt(r.count)} ${stats.unit}</span>
         </div>`).join('');
 
       return `
@@ -2379,8 +2438,7 @@
             <span class="mr-3 text-3xl"><i class="ph ph-chart-polar"></i></span>授課強項分布
           </h3>
           <p class="text-sm text-gray-500 mb-5">
-            合併「訓練排程的派課紀錄」與「師資卡的講授課程」自動統計，
-            共 ${stats.courseCount} 門課程${stats.sessionCount > 0 ? `、${stats.sessionCount} 場排課` : ''}
+            ${escapeHtml(how)}。共 ${stats.courseCount} 門課程${stats.sessionCount > 0 ? `、${stats.sessionCount} 場排課` : ''}
           </p>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
@@ -2396,15 +2454,14 @@
             </div>
             <div class="space-y-3">
               ${bars}
-              ${stats.assistCount > 0 ? `
+              ${stats.assistCount > 0 && !stats.withAssist ? `
                 <p class="text-xs text-gray-500 pt-2 border-t border-gray-200 mt-3">
-                  另有 ${stats.assistCount} 場助教紀錄，不計入主講分布
+                  另有 ${stats.assistCount} 場助教紀錄，不計入
                 </p>` : ''}
               ${stats.unmatched > 0 ? `
-                <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
-                  有 ${stats.unmatched} 門課的課名對不上課程庫，未納入分類統計。
-                  通常是課程改名後，師資卡或排程仍沿用舊名稱。
-                </p>` : ''}
+                <div class="text-xs bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
+                  <p class="text-amber-800 mb-1">有 ${stats.unmatched} 門課沒算進來：</p>${problemsHtml(true)}
+                </div>` : ''}
             </div>
           </div>
         </div>`;

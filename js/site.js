@@ -29,6 +29,7 @@
     { key: 'brand',    name: '系統名稱與登入頁', desc: '顯示在首頁、登入頁、分頁標題、匯出檔與 AI 回答裡。' },
     { key: 'learning', name: '教材頁',           desc: '教材頁首頁的歡迎區塊，以及影片看到多少算完成。' },
     { key: 'schedule', name: '訓練排程',         desc: '授課時數的目標、衝堂時怎麼處理、分享課程時的訊息。' },
+    { key: 'radar',    name: '師資雷達圖',       desc: '師資詳細頁「授課強項分布」要依什麼分、算什麼。' },
     { key: 'ai',       name: 'AI 助教',          desc: 'AI 視窗裡的快速提問按鈕與提醒文字。' }
   ];
 
@@ -60,6 +61,17 @@
     { key: 'shareTemplate', group: 'schedule', label: '分享／複製課程的訊息', type: 'longtext', max: 1000,
       def: '課程資訊\n課程：{課程}\n教師：{教師}\n日期：{日期}\n時間：{時間}\n類型：{類型}\n備註：{備註}',
       help: '可用 {課程} {教師} {助教} {日期} {時間} {類型} {備註}。值是空的那一行會自動拿掉。' },
+
+    { key: 'radarDimension', group: 'radar', label: '雷達圖的軸', type: 'enum', def: 'courseCategory',
+      values: ['courseCategory', 'teachingMethod', 'courseType'],
+      valueLabels: { courseCategory: '課程分類', teachingMethod: '授課方式', courseType: '課程類型（依每一場排課）' },
+      help: '軸的名稱與順序來自「選單管理」的同名清單。選課程類型時只看訓練排程，師資卡登錄的講授課程沒有類型、不計入。' },
+    { key: 'radarMeasure', group: 'radar', label: '算什麼', type: 'enum', def: 'courses',
+      values: ['courses', 'sessions', 'hours'],
+      valueLabels: { courses: '門數：同一門課只算一次', sessions: '場次：訓練排程排了幾場', hours: '時數：訓練排程的上課時數加總' },
+      help: '場次與時數只看訓練排程；門數另外合併師資卡登錄的講授課程。' },
+    { key: 'radarIncludeAssist', group: 'radar', label: '助教紀錄', type: 'enum', def: 'no',
+      values: ['no', 'yes'], valueLabels: { no: '不算進去，另外列出場次', yes: '一起算進去' } },
 
     { key: 'aiDisclaimer', group: 'ai', label: '智慧派課 AI 提醒文字', type: 'text', max: 200,
       def: '智慧派課 AI 顧問由大型語言模型驅動，建議您對重要排程進行二次確認。' },
